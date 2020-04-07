@@ -5,21 +5,15 @@
 
 <br><br>
 
-#### VERSION HISTORY
+### VERSION HISTORY
 | version | date | modification |
 |---|---|---|
-| v0.3.0-beta | 2019. 08. 06 | First version of D'CENT Web SDK release |
-| v0.4.0-beta | 2019. 08. 09 | Added getEthereumSignedTransaction function |
-| v0.4.1-beta | 2019. 08. 15 | Fixed the function to run sequentially |
-| v0.4.2-beta | 2019. 08. 27 | Stability improvement. Fixed known bugs. |
-| v0.5.0-beta | 2019. 09. 18 | Added Time-Out feature |
-| v0.5.1-beta | 2019. 09. 20 | Change of Ethereum related API parameter type |
-| v0.5.2-beta | 2019. 12. 06 | Change dcent-web-sdk url (v2) |
+| v0.6.0-beta | 2019. 04. 07 | First version of D'CENT Web SDK connector release |
 
 <br><br><br>
 
 ## 1. INTRODUCTION
-D'CENT Web SDK allows your web application to quickly create an wallet application using D'CENT dongle.
+D'CENT Web SDK allows your web application to quickly create an wallet application using D'CENT dongle.<br>
 This guide explains how to install DCENT Web SDK and use the SDK for your web wallet application.
 
 ## 2. Architecture
@@ -31,37 +25,34 @@ When the functions is called, if the D'CENT Bridge Service is not running as a p
 
 ## 3. PACKAGES
 D'CENT Web SDK includes:
-- [API] doc : API documentation of DCENT Web SDK.
-- example : Sample Web Project using the DCENT Web SDK.
+- doc : Integration guide and API documentation of DCENT Web SDK.
 - src : DCENT Web SDK library file.
 
 ## 4. GETTING STARTED
 
-Developers can develop wallet application using our web sdk. The `dcent-web-connector.min.js` file is our sdk javascript api library file.
-1. Copy `src` directory to js folder in your Web application project
-2. Add the following to your SDK integration file:
-```html
-<script src="dcent-web-connector.min.js"></script>
-```
+Developers can develop wallet application using our web sdk. Install the `dcent-web-connector` from npm repository.
+
 ```js
-import DcentWebApi from './dcent-web-connector.min'
+import DcentWebConnector from 'dcent-web-connector'
 ```
 
 Developer can access api through `window.DcentWebConnector` object or `DcentWebConnector` object.
 
-#### Requirement
+### Requirement
 - Must have a `D'CENT Biometric wallet`. You can get "Order Now" page of D'CENT homepage. (http://dcentwallet.com)
 - You need to install the lastest `D'CENT Bridge`. (http://bridge.dcentwallet.com/download)
-- D'CENT Biometric will be connected with your PC or Labtop using USB Cable(Micro USB 5-pin type).   
+- D'CENT Biometric will be connected with your PC or Labtop using USB Cable(Micro USB 5-pin type).
 
 
 ## 5. DEVELOPMENT
 
-#### Functions
-All API functions return a `Promise`. When function processing is completed, it is resolved. If an error occurs, it is rejected. In either case, respond with a JSON object.
+### Functions
+All API functions return a `Promise`. <br>
+When function processing is completed, it is resolved. If an error occurs, it is rejected.<br>
+In either case, respond with a JSON object.<br>
 
 
-###### Returned JSON object type
+### Returned JSON object type
 ```js
 {
     "header": {
@@ -76,7 +67,9 @@ All API functions return a `Promise`. When function processing is completed, it 
 }
 ```
 <br>
-###### Common Errors
+
+### Common Errors
+
 If D'CENT wallet isn't connected via USB, you'll get the following error:
 ```js
 {
@@ -130,13 +123,13 @@ The following shows the user cancel error in the Ethereum signed Transaction.
 }
 ```
 
-#### DcentWebApi initialize
-`dcent-web-connector.min.js` provides functions for using D'CENT Biometric Wallet.
-First, you need to copy all files in `src` directory into your web application project. Then you can check the version information of D'CENT Bridge and the connection status of D'CENT Biometric Wallet by calling info function.
+### DcentWebConnector initialize
+`dcent-web-connector` provides functions for using D'CENT Biometric Wallet.
+
 ```js
 var result
 try{
-    result = await DcentWebApi.info()
+    result = await DcentWebConnector.info()
 }catch(e){
     result = e
 }
@@ -159,9 +152,9 @@ try{
 }
 ```
 
-When the function is called from your web application, if D'CENT Bridge Service is not running as a pop-up, `dcent-web-connector.min.js` will automatically open a pop-up window and send a function request
+When the function is called from your web application, if D'CENT Bridge Service is not running as a pop-up, `dcent-web-connector` will automatically open a pop-up window and send a function request
 
-#### Set TimeOut Time
+### Set TimeOut Time
 Sets the maximum time the function will run.
 Once set the timeout Time, it is valid until the value is set again.
 The default value is 60 seconds.
@@ -193,7 +186,7 @@ All functions except setTimeOutMs function are called and then respond with `JSO
   }
 ```
 
-#### Get Device Info
+### Get Device Info
 You can get connected device information using `getDeviceInfo()` function.
 ```js
 // Get connected device information
@@ -260,19 +253,19 @@ try{
 - ksm_Version : KSM(software running on SE) version of the device
 - coin_List : the list of coin which the device supported
 
-#### Set Device Label
+### Set Device Label
 If you want to change the label of device, you can do it using `setLabel()` fucntion.
 ```js
 var result
 try{
-    result = await DcentWebApi.("IoTrust")
+    result = await DcentWebApi.setLabel("IoTrust")
 }catch(e){
     result = e
 }
 ```
 After execute above code, you can see the modified label on your device when reboot the device.
 
-#### Add & Sync Account
+### Add & Sync Account
 You can add account using `syncAccount()` function. You can create an account by specifying the coin type and key path of the account you want to add.
 If you want to add token type coin account, you must specify the coin name as the first 14 digits of contract address.
 
@@ -315,7 +308,7 @@ try{
 }
 ```
 
-###### address_path
+### address_path
 address_path follows the BIP44 rules.
 ```
 m / purpose' / coin_type' / account' / change / address_index
@@ -341,14 +334,14 @@ try{
 ```
 
 
-#### Retrieve Account
+### Retrieve Account
 You can retrieve account list of connected device using `getAccountInfo()` function.
 
 ```js
 var result
 try{
     // A New Ethereum account is created.
-    result = await DcentWebApi.getAccountInfo()
+    result = await DcentWebConnector.getAccountInfo()
 }catch(e){
     result = e
 }
@@ -381,22 +374,22 @@ Returned account object has:
 - coinName : coin name of account
 - addressPath : address path of account
 
-#### Get Address
+### Get Address
 You can get address of account using `getAddress()` function.
 ```js
-var coinType = DcentWebApi.coinType.ETHEREUM
+var coinType = DcentWebConnector.coinType.ETHEREUM
 var keyPath = "m/44'/60'/0'/0/0" // key path of the account
 
 var result
 try{
     // Get Ethereum Address corresponding to keyPath
-    result = await DcentWebApi.getAddress(coinType, keyPath)
+    result = await DcentWebConnector.getAddress(coinType, keyPath)
 }catch(e){
     result = e
 }
 ```
 
-#### Get XPUB
+### Get XPUB
 You can get xpub using `getXPUB()` function.
 The BIP32 key pass must be at least 2 depth or more.
 ```js
@@ -405,13 +398,13 @@ var keyPath = "m/44'/0'" // key path of the account
 var result
 try{
     // Get extended public key corresponding to keyPath
-    result = await DcentWebApi.getXPUB(keyPath)
+    result = await DcentWebConnector.getXPUB(keyPath)
 }catch(e){
     result = e
 }
 ```
 
-#### Ethereum Signed Massage
+### Ethereum Signed Massage
 You can get a signature value to sign a user message with that private key With a given key path (BIP32).
 ```js
 var message = 'This is a message!'
@@ -424,7 +417,7 @@ try {
 }
 ```
 
-#### Signed Transaction
+### Signed Transaction
 The D'CENT Web SDK provides functions for signing transaction of coins.
 - ETHEREUM, RSK : getEthereumSignedTransaction()
 - ERC20, RRC20 : getTokenSignedTransaction()

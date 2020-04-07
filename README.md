@@ -16,7 +16,7 @@ npm i dcent-web-connector
 
 ```js
 // in Node.js
-var DcentWebConnector = require('dcent-web-connector')
+import DcentWebConnector from 'dcent-web-connector'
 
 var result
 try{
@@ -31,7 +31,7 @@ try{
 ## Test 
 `tests/unit/0_mock_test` is mockup test.
 `tests/unit/1_bridge_test` is test for real D'CENT Device.
-### preparence
+### Preparence
 If you want to test `tests/unit/1_bridge_test`,
 - run test-server 
 ```
@@ -41,7 +41,7 @@ npm run dev
 http://bridge.dcentwallet.com/download
 - connect D'CENT device using USB cable
 
-### run 
+### Run 
 ```
 npm run test
 ```

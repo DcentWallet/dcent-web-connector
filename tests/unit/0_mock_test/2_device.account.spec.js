@@ -1,4 +1,4 @@
-import DcentWebConnector from '../../../src/index'
+import DcentWebConnector from '../../../index'
 import LOG from '../../../src/utils/log'
 
 var NilMock = require('../../../src/native/__mocks__/nil')

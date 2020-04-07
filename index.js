@@ -7,12 +7,12 @@ import {
   // # 
   // Now, Bitcoin Transaction not support 
   // bitcoinTxType as dcentBitcoinTxType
-} from './type/dcent-web-type'
+} from './src/type/dcent-web-type'
 import {
   config as dcentConfig
-} from './conf/dcent-web-conf'
+} from './src/conf/dcent-web-conf'
 
-import LOG from './utils/log'
+import LOG from './src/utils/log'
 import Event from 'events'
 
 const dcent = {}

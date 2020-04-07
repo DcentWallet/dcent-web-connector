@@ -1,5 +1,4 @@
-//var DcentWebConnector = require('../../../src/index')
-import DcentWebConnector from '../../../src/index'
+import DcentWebConnector from '../../../index'
 import LOG from '../../../src/utils/log'
 
 const Values = require('../test-constants')

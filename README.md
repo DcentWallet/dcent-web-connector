@@ -1,6 +1,6 @@
 # dcent-web-connector
-This is package for connecting WEB and D'CENT biometric wallet.
-`dcent-web-connector` is modules for easy integration of D'CENT into 3rd party services.
+This is package for connecting WEB and D'CENT biometric wallet.<br>
+`dcent-web-connector` is modules for easy integration of D'CENT into 3rd party services.<br>
 User interface is presented in a popup window served from `https://bridge.dcentwallet.com/v2`.
 
 - [Integration](doc/index.md)

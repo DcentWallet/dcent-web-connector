@@ -28,18 +28,36 @@ try{
 }
 ```
 
+## Preparence
+
+- install `D'CENT Bridge`
+
+    http://bridge.dcentwallet.com/download
+
+- connect D'CENT device using USB cable
+
+
 ## Test 
-`tests/unit/0_mock_test` is mockup test.
-`tests/unit/1_bridge_test` is test for real D'CENT Device.
+
+- `tests/unit/0_mock_test` is mockup test.
+
+- `tests/unit/1_bridge_test` is test for real D'CENT Device.
+
 ### Preparence
 If you want to test `tests/unit/1_bridge_test`,
+
 - run test-server 
 ```
 npm run dev
 ```
+
 - install `D'CENT Bridge` 
-http://bridge.dcentwallet.com/download
+
+    http://bridge.dcentwallet.com/download
+
 - connect D'CENT device using USB cable
+
+
 
 ### Run 
 ```

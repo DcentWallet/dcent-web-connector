@@ -8,7 +8,7 @@
 ### VERSION HISTORY
 | version | date | modification |
 |---|---|---|
-| v0.6.0-beta | 2019. 04. 07 | First version of D'CENT Web SDK connector release |
+| v0.6.2-beta | 2019. 04. 07 | First version of D'CENT Web SDK connector release |
 
 <br><br><br>
 

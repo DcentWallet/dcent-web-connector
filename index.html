@@ -1,0 +1,392 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+  <meta charset="UTF-8">
+  <meta http-equiv="Cache-Control" content="no-cache, no-store, must-revalidate">
+  <meta http-equiv="Pragma" content="no-cache">
+  <meta http-equiv="Expires" content="0">
+  <title>Title</title>
+  <script src="https://code.jquery.com/jquery-3.3.1.js"></script>
+  <script src="plugin/jquery.json-editor.min.js"></script>
+  <script src="dcent-web-connector.min.js"></script>
+
+  <link href="https://stackpath.bootstrapcdn.com/bootstrap/4.1.3/css/bootstrap.min.css" rel="stylesheet"
+    integrity="sha384-MCw98/SFnGE8fJT3GXwEOngsV7Zt27NXFoaoApmYm81iuXoPkFOJwJ8ERdknLPMO" crossorigin="anonymous">
+  <script src="https://stackpath.bootstrapcdn.com/bootstrap/4.1.3/js/bootstrap.min.js"
+    integrity="sha384-ChfqqxuZUCnJSK3+MXmPNIyE6ZbWh2IMqE241rYiqJxyMiZ6OW/JmZQ5stwEULTy" crossorigin="anonymous">
+    </script>
+  <style>
+    button {
+      margin: 5px 5px 5px 5px;
+    }
+
+    .card {
+      margin: 10px 10px 10px 10px;
+    }
+  </style>
+</head>
+
+<body>
+  <div class="bd-example-container-body">
+    <div class="card" style="width: 50rem;">
+      <div id="command-display" class="card-header">
+        No Command
+      </div>
+      <div class="card-body">
+        <h5 class="card-title">Response</h5>
+        <pre id="json-resp-display" width="80%">["Dump"]</pre>
+      </div>
+    </div>
+    <div class="card" style="width: 50rem;">
+      <div class="card-header">
+        Functions
+      </div>
+      <div class="card-body">
+        <button id="info" type="button" class="btn btn-primary">Info</button>
+        <button id="get_info" type="button" class="btn btn-primary">Get Info</button>
+        <br />
+
+        <button id="set_label" type="button" class="btn btn-primary">Set Label</button>
+        <br />
+
+        <button id="get_account_info" type="button" class="btn btn-primary">Get Account Info</button>
+        <button id="sync_account" type="button" class="btn btn-primary">Set Sync Account </button>
+        <br />
+
+        <button id="get_xpub" type="button" class="btn btn-primary">Get XPUB </button>
+        <br />
+
+        <button id="getEthereumSignedTransaction" type="button"
+          class="btn btn-primary">getEthereumSignedTransaction</button>
+        <button id="getTokenSignedTransaction" type="button" class="btn btn-primary">getTokenSignedTransaction</button>
+        <button id="getEthereumSignedMessage" type="button" class="btn btn-primary">getEthereumSignedMessage</button>
+        <br />
+
+        <button id="get_address_bitcoin" type="button" class="btn btn-primary">Get Bitcoin
+          Address("m/44'/0'/0'/0/0")</button>
+        <button id="get_address_bitcoin_testnet" type="button" class="btn btn-primary">Get Bitcoin Testnet
+          Address("m/44'/1'/0'/0/0")</button>
+        <br />
+        <button id="get_address_bitcoin_account2" type="button" class="btn btn-primary">Get Account2 Bitcoin
+          Address("m/44'/0'/1'/0/0")</button>
+        <button id="get_address_bitcoin_testnet_account2" type="button" class="btn btn-primary">Get Account2 Bitcoin
+          Testnet
+          Address("m/44'/1'/1'/0/0")</button>
+        <br />
+
+        <button id="get_address_ethereum" type="button" class="btn btn-primary">Get Ethereum Mainnet
+          Address("m/44'/60'/0'/0/0")</button>
+        <button id="get_address_ethereum_kovan" type="button" class="btn btn-primary">Get Ethereum Kovan
+          Address("m/44'/60'/0'/0/0")</button>
+
+      </div>
+    </div>
+
+
+
+    <script>
+      var dcent = DcentWebConnector
+
+      var req_editor, resp_editor;
+
+      function set_command_name(command) {
+        $('#command-display').html("Command : " + command);
+        resp_editor.load(["Waiting for response."])
+      }
+
+      $(function () {
+        resp_editor = new JsonEditor('#json-resp-display', '');
+
+        resp_editor.load(["No Response"]);
+
+
+        $('#info').click(info_clicked);
+        $('#get_info').click(get_info_clicked);
+        $('#set_label').click(set_label_clicked);
+        $('#get_account_info').click(get_account_info_clicked);
+        $('#sync_account').click(sync_account_info_clicked);
+
+        $('#get_xpub').click(get_xpub_clicked);
+
+        $('#get_address_bitcoin').click(get_address_bitcoin_clicked);
+        $('#get_address_bitcoin_testnet').click(get_address_bitcoin_testnet_clicked);
+        $('#get_address_bitcoin_account2').click(get_address_bitcoin_account2_clicked);
+        $('#get_address_bitcoin_testnet_account2').click(get_address_bitcoin_testnet_account2_clicked);
+
+        $('#get_address_ethereum').click(get_address_ethereum_clicked);
+        $('#get_address_ethereum_kovan').click(get_address_ethereum_kovan_clicked);
+
+
+        $('#getEthereumSignedTransaction').click(getEthereumSignedTransaction_clicked);
+        $('#getTokenSignedTransaction').click(getTokenSignedTransaction_clicked);
+        $('#getEthereumSignedMessage').click(getEthereumSignedMessage_clicked);
+
+
+
+      });
+
+      async function info_clicked() {
+        set_command_name("Processing...");
+        var result = await info()
+
+        set_command_name("info")
+        resp_editor.load(result)
+      }
+
+      async function get_info_clicked() {
+        set_command_name("Processing...");
+        var result = await getInfo();
+
+        set_command_name("get_info")
+        resp_editor.load(result)
+      }
+
+      async function set_label_clicked() {
+        set_command_name("Processing...")
+        
+        var label = 'IoTrust'
+        var result  = await setLabel(label)
+        
+        set_command_name("set_label")
+        resp_editor.load(result)
+      }
+
+      async function get_account_info_clicked() {
+        set_command_name("Processing...")
+
+        var result = await getAccountInfo()
+
+        set_command_name("get_account_info")
+        resp_editor.load(result)
+      }
+
+      async function sync_account_info_clicked() {
+        set_command_name("Processing...")
+
+        let account_infos = [
+          {
+          coin_group: dcent.coinGroup.BITCOIN,
+          coin_name: dcent.coinName.BITCOIN,
+          label: "bitcoin_1",
+          balance: '0 BTC',
+          address_path: "m/44'/0'/0'/0/0"
+        }
+        ]
+        var result = await syncAccount(account_infos)
+
+        set_command_name("coin sync_account_info");
+        resp_editor.load(result)
+      };
+
+      async function get_xpub_clicked() {
+        set_command_name("Processing...");
+
+        var result = await getXpub('m/44\'/0\'/0\'')
+
+        set_command_name('get_xpub')          
+        resp_editor.load(result)
+      }
+      
+      async function get_address_bitcoin_clicked() {
+        set_command_name("Processing...");
+        var result = await getAddress(dcent.coinType.BITCOIN, "m/44'/0'/0'/0/0")
+
+        set_command_name("get_address bitcoin")
+        resp_editor.load(result)
+      }
+
+      async function get_address_bitcoin_testnet_clicked() {
+        set_command_name("Processing...");
+
+        var result = await getAddress(dcent.coinType.BITCOIN_TESTNET, "m/44'/1'/0'/0/0")
+
+        set_command_name("get_address bitcoin-testnet")
+        resp_editor.load(result);
+      }
+
+      async function get_address_bitcoin_account2_clicked() {
+        set_command_name("Processing...");
+
+        var result = await getAddress(dcent.coinType.BITCOIN, "m/44'/0'/1'/0/0")
+
+        set_command_name("get_address bitcoin m/44'/0'/1'/0/0 ")        
+        resp_editor.load(result);
+      }
+
+      async function get_address_bitcoin_testnet_account2_clicked() {
+        set_command_name("Processing...");
+        var result = await getAddress(dcent.coinType.BITCOIN_TESTNET, "m/44'/1'/1'/0/0")
+
+        set_command_name("get_address bitcoin-testnet m/44'/1'/1'/0/0 ")        
+        resp_editor.load(result);
+      }
+
+      async function get_address_ethereum_clicked() {
+        set_command_name("Processing...");
+        var result = await getAddress(dcent.coinType.ETHEREUM, "m/44'/60'/0'/0/0")
+
+        set_command_name("get_address ethereum")        
+        resp_editor.load(result)
+      }
+
+      async function get_address_ethereum_kovan_clicked() {
+        set_command_name("Processing...");
+
+        var result = await getAddress(dcent.coinType.ETHEREUM_KOVAN, "m/44'/60'/0'/0/0")
+
+        set_command_name("get_address ethereum kovan")        
+        resp_editor.load(result)
+      }
+
+      async function getEthereumSignedTransaction_clicked() {
+        set_command_name("Processing...");
+
+        var result  = await getEthereumSignedTransaction( 
+          dcent.coinType.ETHEREUM_KOVAN,
+          '8',
+          '2400000000',
+          '210000',
+          '0x354609C4c9a15d4265cF6D94010568D5Cf4d0c1B',
+          '100000000000000000',
+          '0x',
+          "m/44'/60'/0'/0/0",
+          42);
+      
+        set_command_name("getEthereumSignedTransaction kovan")       
+        resp_editor.load(result)
+      }
+
+      async function getTokenSignedTransaction_clicked() {
+        set_command_name("Processing...");
+
+        var contract = {
+          name: 'OmiseGO',
+          address: '0xd26114cd6EE289AccF82350c8d8487fedB8A0C07',
+          to: '0x354609C4c9a15d4265cF6D94010568D5Cf4d0c1B',
+          decimals: 18,
+          value: '100000000000000000',
+          symbol: 'OMG'
+        }        
+        var result = await getTokenSignedTransaction( dcent.coinType.ERC20, '21', '2400000000','1000000', "m/44'/60'/0'/0/0", 1, contract )    
+      
+        set_command_name("getTokenSignedTransaction ethereum");          
+        resp_editor.load(result)
+      }
+
+      async function getEthereumSignedMessage_clicked() {
+        set_command_name("Processing...");
+        var message = 'This is a message!'
+        var key = "m/44'/60'/0'/0/0"
+        var result = await getEthereumSignedMessage(message, key)         
+        
+        set_command_name("getEthereumSignedMessage");
+        resp_editor.load(result)
+      }
+
+      /////// DCENT WEB-SDK call
+     
+      async function info() {        
+        var result 
+        try { 
+          result = await dcent.info()
+        } catch (e) {
+          result = e
+        }
+        return result 
+      }
+
+      async function getInfo() {
+        var result 
+        try { 
+          result = await dcent.getDeviceInfo()  
+        } catch (e) {
+          result = e
+        }
+        return result 
+      }
+
+      async function setLabel(label) {
+        var result 
+        try { 
+          result = await dcent.setLabel(label)          
+        } catch (e) {
+          result = e
+        }
+        return result 
+      }
+
+      async function getAccountInfo() {
+        var result 
+        try { 
+          result = await dcent.getAccountInfo()
+        } catch (e) {
+          result = e
+        }
+        return result 
+      }
+
+      async function syncAccount(accountInfo) {
+        var result 
+        try { 
+          result = await dcent.syncAccount(accountInfo)
+        } catch (e) {
+          result = e
+        }
+        return result 
+      }
+
+      async function getXpub(key) {
+        var result 
+        try { 
+          result = await dcent.getXPUB(key)
+        } catch (e) {
+          result = e
+        }
+        return result 
+      }
+
+      async function getAddress(coinType, key) {
+        var result 
+        try { 
+          result = await dcent.getAddress(coinType, key)
+        } catch (e) {
+          result = e
+        }
+        return result 
+      }
+
+      async function getEthereumSignedTransaction( coinType, nonce, gasPrice, gasLimit, to, value, data, key, chainId) {
+        var result 
+        try { 
+          result = await dcent.getEthereumSignedTransaction(coinType, nonce, gasPrice, gasLimit, to, value, data, key, chainId)            
+        } catch (e) {
+          result = e
+        }
+        return result
+      }
+
+      async function getTokenSignedTransaction(coinGroup, nonce, gasPrice, gasLimit, key, chainId, contract) {
+        var result 
+        try { 
+          result = await dcent.getTokenSignedTransaction(coinGroup, nonce, gasPrice, gasLimit, key, chainId, contract)
+        } catch (e) {
+          result = e
+        }
+        return result 
+      }
+
+      async function getEthereumSignedMessage(message, key) {
+        var result 
+        try { 
+          result = await dcent.getEthereumSignedMessage(message, key)      
+        } catch (e) {
+          result = e
+        }
+        return result 
+      }
+    </script>
+
+</body>
+
+</html>

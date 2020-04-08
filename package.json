@@ -1,6 +1,6 @@
 {
   "name": "dcent-web-connector",
-  "version": "0.6.2-beta",
+  "version": "0.6.3-beta",
   "description": "D'CENT Web SDK Connector",
   "main": "index.js",
   "scripts": {
@@ -37,7 +37,8 @@
     "D'CENT biometric wallet",
     "dcent sdk",
     "dcent web sdk",
-    "dcentwallet"
+    "dcentwallet",
+    "dcent web connector"
   ],
   "homepage": "https://github.com/DcentWallet/dcent-web-connector#readme",
   "author": "IoTrust Co. Ltd.,",
@@ -61,5 +62,6 @@
   },
   "dependencies": {
     "events": "^3.0.0"
-  }
+  },
+  "license": "MIT"
 }

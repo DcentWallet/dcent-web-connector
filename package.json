@@ -1,6 +1,6 @@
 {
   "name": "dcent-web-connector",
-  "version": "0.6.3-beta",
+  "version": "0.6.4-beta",
   "description": "D'CENT Web SDK Connector",
   "main": "index.js",
   "scripts": {

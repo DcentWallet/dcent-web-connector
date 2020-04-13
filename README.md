@@ -32,7 +32,7 @@ try{
 
 - install `D'CENT Bridge`
 
-    http://bridge.dcentwallet.com/download
+    http://bridge.dcentwallet.com/v2/download
 
 - connect D'CENT device using USB cable
 
@@ -53,7 +53,7 @@ npm run dev
 
 - install `D'CENT Bridge` 
 
-    http://bridge.dcentwallet.com/download
+    http://bridge.dcentwallet.com/v2/download
 
 - connect D'CENT device using USB cable
 

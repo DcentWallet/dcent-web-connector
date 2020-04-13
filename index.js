@@ -173,7 +173,12 @@ dcent.call = async function (params) {
 }
 
 dcent.messageReceive = function (messageEvent) {
-  LOG.debug("messageReceive", messageEvent)
+  if (
+    messageEvent.data.event === 'BridgeEvent' ||
+    messageEvent.data.event === 'BridgeResponse'
+  ) {
+    LOG.debug("messageReceive", messageEvent)
+  }
 
   if (
     messageEvent.data.event === 'BridgeEvent' &&

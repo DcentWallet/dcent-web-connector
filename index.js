@@ -4,19 +4,24 @@ import {
   coinType as dcentCoinType,
   coinGroup as dcentCoinGroup,
   coinName as dcentCoinName,
+  klaytnTxType as dcentKlaytnTxType
   // # 
   // Now, Bitcoin Transaction not support 
   // bitcoinTxType as dcentBitcoinTxType
 } from './src/type/dcent-web-type'
 import {
-  config as dcentConfig
+  config as prodConfig
 } from './src/conf/dcent-web-conf'
+import {
+  config as devConfig
+} from './src/conf/dcent-web-conf-dev'
 
 import LOG from './src/utils/log'
 import Event from 'events'
 
 const dcent = {}
-
+let dcentConfig 
+dcentConfig = process.env.NODE_ENV === 'production' ? prodConfig : devConfig
 // TimeOut Default Time 
 var dcentCallTimeOutMs = dcentConfig.timeOutMs
 
@@ -244,8 +249,10 @@ let isHexNumberString = (str) => {
 };
 
 let checkParameter = (type, param) => {
+  LOG.debug ('param = ' , param)
+  LOG.debug ('type = ' , type)
   if (type === 'numberString') {
-    if (typeof param !== 'string') throw dcent.dcentException('param_error', 'Invaild Parameter') // must string
+    if (typeof param !== 'string') throw dcent.dcentException('param_error', 'Invaild Parameter - - ' + param) // must string
 
     if (param.indexOf('0x', 0) === -1) {
       // number string
@@ -254,7 +261,7 @@ let checkParameter = (type, param) => {
       // hex string
       if (isHexNumberString(param)) return param
     }
-    throw dcent.dcentException('param_error', 'Invaild Parameter')
+    throw dcent.dcentException('param_error', 'Invaild Parameter - - - ' + param)
   }
 
 }
@@ -317,6 +324,10 @@ function isAvaliableCoinGroup (coinGroup) {
     case dcentCoinGroup.RRC20_TESTNET.toLowerCase():
     case dcentCoinGroup.RSK.toLowerCase():
     case dcentCoinGroup.RSK_TESTNET.toLowerCase():
+    case dcentCoinGroup.KLAYTN.toLowerCase():
+    case dcentCoinGroup.KLAY_BAOBAB.toLowerCase():
+    case dcentCoinGroup.KLAYTN_KCT.toLowerCase():
+    case dcentCoinGroup.KCT_BAOBAB.toLowerCase():
       return true
     case dcentCoinGroup.BITCOIN.toLowerCase():
     case dcentCoinGroup.BITCOIN_TESTNET.toLowerCase():
@@ -342,6 +353,10 @@ function isAvaliableCoinType (coinType) {
     case dcentCoinType.RRC20_TESTNET.toLowerCase():
     case dcentCoinType.RSK.toLowerCase():
     case dcentCoinType.RSK_TESTNET.toLowerCase():
+    case dcentCoinType.KLAYTN.toLowerCase():
+    case dcentCoinType.KLAY_BAOBAB.toLowerCase():
+    case dcentCoinType.KLAYTN_KCT.toLowerCase():
+    case dcentCoinType.KCT_BAOBAB.toLowerCase():
       return true
     case dcentCoinType.BITCOIN.toLowerCase():
     case dcentCoinType.BITCOIN_TESTNET.toLowerCase():
@@ -574,6 +589,8 @@ dcent.getTokenSignedTransaction = async function (
     case dcentCoinType.ERC20_KOVAN.toLowerCase():
     case dcentCoinType.RRC20.toLowerCase():
     case dcentCoinType.RRC20_TESTNET.toLowerCase():
+    case dcentCoinGroup.KLAYTN_KCT.toLowerCase():
+    case dcentCoinGroup.KCT_BAOBAB.toLowerCase():
       break
     default:
       throw dcent.dcentException('coin_type_error', 'not supported token type')
@@ -610,9 +627,101 @@ dcent.getEthereumSignedMessage = async function (message, key) {
   })
 }
 
+/**
+ * Returns klaytn / KCT signed transaction. If you want to get sign value of "KLAYTN" or "KCT" transaction, must call this function.
+ *
+ * @param {string} coinType coin type 
+ * @param {string} txType transaction type 
+ * @param {string} nonce account nonce
+ * @param {string} gasPrice GAS price
+ * @param {string} gasLimit GAS limit 
+ * @param {string} to recipient's address
+ * @param {string} value amount of ether to be sent. ( WEI unit value )
+ * @param {string} data transaction data (ex: "0x")
+ * @param {string} key key path (BIP44)
+ * @param {number} chainId chain id
+ * @param {string} feeRatio fee ratio
+ * @returns {Object} signed transaction value
+ */
+dcent.getKlaytnSignedTransaction = async function (
+  coinType,
+  nonce,
+  gasPrice,
+  gasLimit,
+  to,
+  value,
+  data,
+  key,
+  chainId,
+  txType,
+  from,  
+  feeRatio,
+  contract
+) {
+  
+  try {
+    nonce = checkParameter('numberString', nonce)
+    gasPrice = checkParameter('numberString', gasPrice)
+    gasLimit = checkParameter('numberString', gasLimit)
+    value = checkParameter('numberString', value)
+  } catch (error) {
+    LOG.error(error)
+    throw error
+  }
+  
+  if (typeof chainId !== 'number') {
+    throw dcent.dcentException('param_error', 'Invaild Parameter chainId - ' + chainId)
+  }
+ 
+  LOG.debug('coinType.toLowerCase() : ', coinType.toLowerCase())
+  switch (coinType.toLowerCase()) {
+    case dcentCoinType.KLAYTN.toLowerCase():
+    case dcentCoinType.KLAY_BAOBAB.toLowerCase():
+      coinType = dcentCoinType.KLAYTN
+      break
+    case dcentCoinType.KLAYTN_KCT.toLowerCase():
+    case dcentCoinType.KCT_BAOBAB.toLowerCase():
+      coinType = dcentCoinType.KLAYTN_KCT
+      break
+    default:
+      throw dcent.dcentException('coin_type_error', 'not supported coin type')
+  }
+  
+  if (!txType) {
+    txType = dcentKlaytnTxType.LEGACY
+  }
+  if (!from) {
+    let addressResponse = await this.getAddress(coinType, key)
+    if (addressResponse.body.parameter.address) {
+      from = addressResponse.body.parameter.address
+    }
+  }
+ 
+  LOG.debug('getKlaytnSignedTransaction transaction')
+  return await dcent.call({
+    method: 'getKlaytnSignedTransaction',
+    params: {
+      coinType: coinType,
+      nonce: nonce,
+      gas_price: gasPrice,
+      gas_limit: gasLimit,
+      to: to,
+      value: value,
+      data: data,
+      key: key,
+      chain_id: chainId,
+      tx_type: txType,      
+      from: from,
+      fee_ratio: feeRatio,
+      contract: contract
+    }
+  })
+}
+
 dcent.coinType = dcentCoinType
 dcent.coinGroup = dcentCoinGroup
 dcent.coinName = dcentCoinName
+dcent.klaytnTxType = dcentKlaytnTxType
 // # 
 // Now, Bitcoin Transaction not support 
 //dcent.bitcoinTxType = dcentBitcoinTxType
@@ -625,6 +734,7 @@ window.DcentWebConnector = dcent // for inline script
 window.DcentWebConnector.coinType = dcentCoinType
 window.DcentWebConnector.coinGroup = dcentCoinGroup
 window.DcentWebConnector.coinName = dcentCoinName
+window.DcentWebConnector.klaytnTxType = dcentKlaytnTxType
 // # 
 // Now, Bitcoin Transaction not support 
 // window.DcentWebConnector.bitcoinTxType = dcentBitcoinTxType

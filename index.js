@@ -1,27 +1,21 @@
 'use strict'
 
-import {
-  coinType as dcentCoinType,
-  coinGroup as dcentCoinGroup,
-  coinName as dcentCoinName,
-  klaytnTxType as dcentKlaytnTxType
+const { 
+  coinType: dcentCoinType, 
+  coinGroup: dcentCoinGroup, 
+  coinName: dcentCoinName,
+  klaytnTxType: dcentKlaytnTxType
   // # 
   // Now, Bitcoin Transaction not support 
   // bitcoinTxType as dcentBitcoinTxType
-} from './src/type/dcent-web-type'
-import {
-  config as prodConfig
-} from './src/conf/dcent-web-conf'
-import {
-  config as devConfig
-} from './src/conf/dcent-web-conf-dev'
+} = require('./src/type/dcent-web-type')
 
-import LOG from './src/utils/log'
-import Event from 'events'
+const { config: dcentConfig } = require('./src/conf/dcent-web-conf')
+
+const LOG = require('./src/utils/log')
+const Event = require('events')
 
 const dcent = {}
-let dcentConfig 
-dcentConfig = process.env.NODE_ENV === 'production' ? prodConfig : devConfig
 // TimeOut Default Time 
 var dcentCallTimeOutMs = dcentConfig.timeOutMs
 
@@ -728,7 +722,7 @@ dcent.klaytnTxType = dcentKlaytnTxType
 
 const DcentWebConnector = dcent
 
-export default DcentWebConnector// for nodejs
+module.exports = DcentWebConnector// for nodejs
 
 window.DcentWebConnector = dcent // for inline script
 window.DcentWebConnector.coinType = dcentCoinType

@@ -1,6 +1,6 @@
 'use strict'
 
-export const coinType = {
+const coinType = {
   BITCOIN: 'bitcoin',
   BITCOIN_TESTNET: 'bitcoin-testnet',
   ERC20: 'erc20',
@@ -21,7 +21,7 @@ export const coinType = {
   RSK_TESTNET: 'rsk-testnet'
 }
 
-export const coinGroup = {
+const coinGroup = {
   BITCOIN: 'BITCOIN',
   BITCOIN_TESTNET: 'BTC-TESTNET',
   ERC20: 'ERC20',
@@ -42,7 +42,7 @@ export const coinGroup = {
   RSK_TESTNET: 'RSK-TESTNET'
 }
 
-export const coinName = {
+const coinName = {
   BITCOIN: 'BITCOIN',
   BITCOIN_TESTNET: 'BTC-TESTNET',
   ERC20: '',
@@ -70,7 +70,7 @@ export const coinName = {
 //   p2sh: 'p2sh'
 // }
 
-export const klaytnTxType = {
+const klaytnTxType = {
   LEGACY: 0xFF,
 	FEE_PAYER: 0xEE,
 	
@@ -89,4 +89,11 @@ export const klaytnTxType = {
 	CANCEL: 0x38,
 	FEEDELEGATED_CANCEL: 0x39,
 	FEEDELEGATED_CANCEL_WITH_RATIO: 0x3A
+}
+
+module.exports = { 
+  coinType,
+  coinGroup,
+  coinName,
+  klaytnTxType
 }

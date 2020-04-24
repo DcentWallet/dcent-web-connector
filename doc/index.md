@@ -33,7 +33,7 @@ D'CENT Web SDK includes:
 Developers can develop wallet application using our web sdk. Install the `dcent-web-connector` from npm repository.
 
 ```js
-import DcentWebConnector from 'dcent-web-connector'
+const DcentWebConnector = require('dcent-web-connector').default
 ```
 
 Developer can access api through `window.DcentWebConnector` object or `DcentWebConnector` object.
@@ -185,6 +185,21 @@ All functions except setTimeOutMs function are called and then respond with `JSO
     }
   }
 ```
+
+### Close pop-up window 
+`dcent-web-connector` will automatically open a pop-up window and send a function request. 
+After each request to device is ended, it is recommended to close popup for enhancing user experience.
+```js
+var result
+try{
+    result = await DcentWebConnector.info()
+    // close pop-up window of D'CENT Bridge Service
+    DcentWebConnector.popupWindowClose()
+}catch(e){
+    result = e
+}
+```
+
 
 ### Get Device Info
 You can get connected device information using `getDeviceInfo()` function.
@@ -423,6 +438,5 @@ The D'CENT Web SDK provides functions for signing transaction of coins.
 - ERC20, RRC20 : getTokenSignedTransaction()
 
 Call the function that matches the type of signed transaction you want to get.
-
 
 Please Refer to the `index.html` to learn more about how to use the SDK APIs. There is an Web project using our Web SDK.

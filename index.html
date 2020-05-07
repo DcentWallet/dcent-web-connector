@@ -30,6 +30,8 @@
 <body>
   <div class="bd-example-container-body">
     <div class="card" style="width: 50rem;">
+      <div id="connect-display" class="card-header">
+      </div>
       <div id="command-display" class="card-header">
         No Command
       </div>
@@ -91,13 +93,26 @@
 
     <script>
       var dcent = DcentWebConnector
-
+      
       var req_editor, resp_editor;
 
       function set_command_name(command) {
         $('#command-display').html("Command : " + command);
         resp_editor.load(["Waiting for response."])
       }
+
+      function set_connection_state(state) {
+        $('#connect-display').html("state : " + state);
+      }
+      
+      function onDecentConnected(state) {
+        if (state === DcentWebConnector.state.CONNECTED) {
+          set_connection_state('DCENT is Connected');        
+        } else if (state === DcentWebConnector.state.DISCONNECTED) {
+          set_connection_state('DCENT is Disconnected');  
+        }
+      }
+      dcent.setConnectListener(onDecentConnected)
 
       $(function () {
         resp_editor = new JsonEditor('#json-resp-display', '');

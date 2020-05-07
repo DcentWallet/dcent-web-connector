@@ -10,6 +10,10 @@ const {
   // bitcoinTxType as dcentBitcoinTxType
 } = require('./src/type/dcent-web-type')
 
+const {
+  state: dcentState
+} = require('./src/type/dcent-state')
+
 const { config: dcentConfig } = require('./src/conf/dcent-web-conf')
 
 const LOG = require('./src/utils/log')
@@ -59,6 +63,12 @@ dcent.dcentException = function (code, message) {
   return exception
 }
 
+let connectListener = null
+
+dcent.setConnectListener = function (listener) {
+  connectListener = listener
+}
+
 dcent.dcentPopupWindow = async function () {
   // popup Open
   if (!dcent.popupWindow || dcent.popupWindow.closed) {
@@ -92,7 +102,6 @@ dcent.dcentPopupWindow = async function () {
 }
 
 dcent._call = function (idx, params) {
-  LOG.debug('call', params)
   if (dcent.popupWindow) {
     var messageEvent = {
       idx: idx,
@@ -124,8 +133,6 @@ dcent.call = async function (params) {
 
   return new Promise(async (resolve, reject) => {
 
-    LOG.debug('in Promise')
-    
     if (!dcent.popupWindow || dcent.popupWindow.closed) {
       var result = await dcent.dcentPopupWindow()
       if (result !== null) {
@@ -134,12 +141,10 @@ dcent.call = async function (params) {
     }
 
     dcent.dcentWebPromise.promise.then(async function () {
-      LOG.debug('dcentWebPromise - resolve')
       dcent._call(idx, params)
     })
 
     let popUpClosedListener = () => {
-      LOG.debug ('Promise - reject')
       reject(dcent.dcentException('pop-up_closed', 'Pop-up windows has been closed'))
     }
 
@@ -162,7 +167,7 @@ dcent.call = async function (params) {
         if (messageEvent.data.payload.body.command === "transaction" && messageEvent.data.payload.body.error.code === "user_cancel") {
           resolve(messageEvent.data.payload)
         } else {
-          reject(messageEvent.data.payload.body.error.message)
+          reject(messageEvent.data.payload)
         }
       }
       } catch(e) {
@@ -185,11 +190,26 @@ dcent.messageReceive = function (messageEvent) {
 
   if (
     messageEvent.data.event === 'BridgeEvent' &&
-    messageEvent.data.type === 'data' &&
-    messageEvent.data.payload === 'popup-success'
-  ) {
-    dcent.dcentWebPromise.resolve()
-    return
+    messageEvent.data.type === 'data'
+   ) {
+    if ( messageEvent.data.payload === 'popup-success' )  {
+      dcent.dcentWebPromise.resolve()
+      return
+    }
+    if ( messageEvent.data.payload === 'popup-close' ) {
+      dcent.popupWindow = undefined
+      dcent.dcentWebPromise = dcent.dcentWebDeferred()
+      ee.emit('popUpClosed')
+      ee.removeAllListeners()
+      return
+    }
+    if ( messageEvent.data.payload === 'dcent-connected' ||
+     messageEvent.data.payload === 'dcent-disconnected') {
+      if (connectListener) {
+        connectListener(messageEvent.data.payload)
+        return
+      }
+    }
   }
 
   if (
@@ -203,6 +223,8 @@ dcent.messageReceive = function (messageEvent) {
     ee.removeAllListeners()
     return
   }
+
+
 
   if (
     messageEvent.data.event != 'BridgeResponse' ||
@@ -247,8 +269,6 @@ let isHexNumberString = (str) => {
 };
 
 let checkParameter = (type, param) => {
-  LOG.debug ('param = ' , param)
-  LOG.debug ('type = ' , type)
   if (type === 'numberString') {
     if (typeof param !== 'string') throw dcent.dcentException('param_error', 'Invaild Parameter - - ' + param) // must string
 
@@ -671,7 +691,6 @@ dcent.getKlaytnSignedTransaction = async function (
     throw dcent.dcentException('param_error', 'Invaild Parameter chainId - ' + chainId)
   }
  
-  LOG.debug('coinType.toLowerCase() : ', coinType.toLowerCase())
   switch (coinType.toLowerCase()) {
     case dcentCoinType.KLAYTN.toLowerCase():
     case dcentCoinType.KLAY_BAOBAB.toLowerCase():
@@ -695,7 +714,6 @@ dcent.getKlaytnSignedTransaction = async function (
     }
   }
  
-  LOG.debug('getKlaytnSignedTransaction transaction')
   return await dcent.call({
     method: 'getKlaytnSignedTransaction',
     params: {
@@ -716,6 +734,7 @@ dcent.getKlaytnSignedTransaction = async function (
   })
 }
 
+dcent.state = dcentState
 dcent.coinType = dcentCoinType
 dcent.coinGroup = dcentCoinGroup
 dcent.coinName = dcentCoinName
@@ -729,6 +748,7 @@ const DcentWebConnector = dcent
 module.exports = DcentWebConnector// for nodejs
 
 window.DcentWebConnector = dcent // for inline script
+window.DcentWebConnector.state = dcentState
 window.DcentWebConnector.coinType = dcentCoinType
 window.DcentWebConnector.coinGroup = dcentCoinGroup
 window.DcentWebConnector.coinName = dcentCoinName

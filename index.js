@@ -159,7 +159,11 @@ dcent.call = async function (params) {
       if (messageEvent.data.payload.header.status === "success") {
         resolve(messageEvent.data.payload)
       } else {
-        reject(messageEvent.data.payload)
+        if (messageEvent.data.payload.body.command === "transaction" && messageEvent.data.payload.body.error.code === "user_cancel") {
+          resolve(messageEvent.data.payload)
+        } else {
+          reject(messageEvent.data.payload.body.error.message)
+        }
       }
       } catch(e) {
         LOG.error(e)

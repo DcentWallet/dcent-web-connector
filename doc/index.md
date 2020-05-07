@@ -9,6 +9,7 @@
 | version | date | modification |
 |---|---|---|
 | v0.6.2-beta | 2019. 04. 07 | First version of D'CENT Web SDK connector release |
+| v0.7.0-beta | 2019. 05. 07 | add KLAYTN transaction function |
 
 <br><br><br>
 
@@ -33,7 +34,7 @@ D'CENT Web SDK includes:
 Developers can develop wallet application using our web sdk. Install the `dcent-web-connector` from npm repository.
 
 ```js
-const DcentWebConnector = require('dcent-web-connector').default
+const DcentWebConnector = require('dcent-web-connector')
 ```
 
 Developer can access api through `window.DcentWebConnector` object or `DcentWebConnector` object.
@@ -192,12 +193,12 @@ After each request to device is ended, it is recommended to close popup for enha
 ```js
 var result
 try{
-    result = await DcentWebConnector.info()
-    // close pop-up window of D'CENT Bridge Service
-    DcentWebConnector.popupWindowClose()
+    result = await DcentWebConnector.info()    
 }catch(e){
     result = e
 }
+// close pop-up window of D'CENT Bridge Service
+DcentWebConnector.popupWindowClose()
 ```
 
 
@@ -207,7 +208,7 @@ You can get connected device information using `getDeviceInfo()` function.
 // Get connected device information
 var result
 try{
-    result = await DcentWebApi.getDeviceInfo()
+    result = await DcentWebConnector.getDeviceInfo()
 }catch(e){
     result = e
 }
@@ -251,6 +252,9 @@ try{
                 },
                 {
                     "name": "EOS"
+                },
+                {
+                    "name": "KLAYTN"
                 }
             ],
             "fingerprint": {
@@ -267,13 +271,14 @@ try{
 - fw_Version : firmware version of the device
 - ksm_Version : KSM(software running on SE) version of the device
 - coin_List : the list of coin which the device supported
+(Refer to https://dcentwallet.com/SupportedCoin)
 
 ### Set Device Label
 If you want to change the label of device, you can do it using `setLabel()` fucntion.
 ```js
 var result
 try{
-    result = await DcentWebApi.setLabel("IoTrust")
+    result = await DcentWebConnector.setLabel("IoTrust")
 }catch(e){
     result = e
 }
@@ -286,8 +291,8 @@ If you want to add token type coin account, you must specify the coin name as th
 
 ```js
 let account_infos = [{
-    coin_group: DcentWebApi.coinGroup.ETHEREUM,
-    coin_name: DcentWebApi.coinName.ETHEREUM,
+    coin_group: DcentWebConnector.coinGroup.ETHEREUM,
+    coin_name: DcentWebConnector.coinName.ETHEREUM,
     label: 'ETHEREUM_1', // account label
     balance: '0 ETH', // {String} balance of account. This string will be displayed on device.
     address_path: "m/44'/60'/0'/0/0" // key path of the account. This address_path is displayed on the device with the corresponding address and QR code.
@@ -296,7 +301,7 @@ let account_infos = [{
 var result
 try{
     // Ethereum account will be created.
-    result = await DcentWebApi.syncAccount(account_infos)
+    result = await DcentWebConnector.syncAccount(account_infos)
 }catch(e){
     result = e
 }
@@ -305,8 +310,8 @@ try{
 
 ```js
 let account_infos = [{
-    coin_group: DcentWebApi.coinGroup.ETHEREUM,
-    coin_name: DcentWebApi.coinName.ETHEREUM,
+    coin_group: DcentWebConnector.coinGroup.ETHEREUM,
+    coin_name: DcentWebConnector.coinName.ETHEREUM,
     label: 'ETH_1', // account label
     balance: '1 ETH', // {String} balance of account. This string will be displayed on device.
     address_path: "m/44'/60'/0'/0/1" // key path of the account. This address_path is displayed on the device with the corresponding address and QR code.
@@ -317,7 +322,7 @@ let account_infos = [{
 var result
 try{
     // Ethereum account will be updated.
-    result = await DcentWebApi.syncAccount(account_infos)
+    result = await DcentWebConnector.syncAccount(account_infos)
 }catch(e){
     result = e
 }
@@ -332,8 +337,8 @@ Accounts are distinguished by `account'` in address_path.
 
 ```js
 let account_infos = [{
-    coin_group: DcentWebApi.coinGroup.ETHEREUM,
-    coin_name: DcentWebApi.coinName.ETHEREUM,
+    coin_group: DcentWebConnector.coinGroup.ETHEREUM,
+    coin_name: DcentWebConnector.coinName.ETHEREUM,
     label: 'ETH_2', // account label
     balance: '0 ETH', // balance of account. This string will be displayed on device.
     address_path: "m/44'/60'/1'/0/0" // key path of the account. This address_path is displayed on the device with the corresponding address and QR code.
@@ -342,12 +347,11 @@ let account_infos = [{
 var result
 try{
     // A New Ethereum account is created.
-    result = await DcentWebApi.syncAccount(account_infos)
+    result = await DcentWebConnector.syncAccount(account_infos)
 }catch(e){
     result = e
 }
 ```
-
 
 ### Retrieve Account
 You can retrieve account list of connected device using `getAccountInfo()` function.
@@ -436,6 +440,7 @@ try {
 The D'CENT Web SDK provides functions for signing transaction of coins.
 - ETHEREUM, RSK : getEthereumSignedTransaction()
 - ERC20, RRC20 : getTokenSignedTransaction()
+- KLAYTN, KLAYTN_KCT: getKlaytnSignedTransaction()
 
 Call the function that matches the type of signed transaction you want to get.
 

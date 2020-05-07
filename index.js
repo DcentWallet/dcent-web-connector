@@ -63,10 +63,10 @@ dcent.dcentException = function (code, message) {
   return exception
 }
 
-let connectListener = null
+let connectionListener = null
 
-dcent.setConnectListener = function (listener) {
-  connectListener = listener
+dcent.setConnectionListener = function (listener) {
+  connectionListener = listener
 }
 
 dcent.dcentPopupWindow = async function () {
@@ -205,8 +205,8 @@ dcent.messageReceive = function (messageEvent) {
     }
     if ( messageEvent.data.payload === 'dcent-connected' ||
      messageEvent.data.payload === 'dcent-disconnected') {
-      if (connectListener) {
-        connectListener(messageEvent.data.payload)
+      if (connectionListener) {
+        connectionListener(messageEvent.data.payload)
         return
       }
     }

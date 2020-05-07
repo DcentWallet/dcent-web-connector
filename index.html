@@ -105,14 +105,14 @@
         $('#connect-display').html("state : " + state);
       }
       
-      function onDecentConnected(state) {
+      function connectionListener(state) {
         if (state === DcentWebConnector.state.CONNECTED) {
           set_connection_state('DCENT is Connected');        
         } else if (state === DcentWebConnector.state.DISCONNECTED) {
           set_connection_state('DCENT is Disconnected');  
         }
       }
-      dcent.setConnectListener(onDecentConnected)
+      dcent.setConnectionListener(connectionListener)
 
       $(function () {
         resp_editor = new JsonEditor('#json-resp-display', '');

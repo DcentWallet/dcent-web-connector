@@ -201,6 +201,24 @@ try{
 DcentWebConnector.popupWindowClose()
 ```
 
+### Set Device Connection Listener
+Set listener for device connection state. Before processing a functions request, `dcent-web-connector` check the device connection state. If the state is changed, the device connection listener will be called. 
+```js
+// device connection listener ( callback )
+function connectionListener(state) {
+    if (state === DcentWebConnector.state.CONNECTED) {
+        console.log('DCENT is Connected');        
+    } else if (state === DcentWebConnector.state.DISCONNECTED) {
+        console.log('DCENT is Disconnected');  
+    }
+}
+try {
+    // set the device connection listener
+    DcentWebConnector.setConnectionListener(connectionListener)
+} catch(e) {    
+}
+
+```
 
 ### Get Device Info
 You can get connected device information using `getDeviceInfo()` function.

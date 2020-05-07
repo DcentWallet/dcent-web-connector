@@ -407,10 +407,27 @@ try{
     result = e
 }
 ```
+Returned response object has:
+```json
+{
+    "header": {
+        "version": "1.0",
+        "response_from": "ethereum",
+        "status": "success"
+    },
+    "body": {
+        "command": "get_address",
+        "parameter": {
+            "address": "0x354609C4c9a15d4265cF6D94010568D5Cf4d0c1B"
+        }
+    }
+}
+```
+The address string format is depend on the coin type.
 
 ### Get XPUB
 You can get xpub using `getXPUB()` function.
-The BIP32 key pass must be at least 2 depth or more.
+The BIP32 key path must be at least 2 depth or more.
 ```js
 var keyPath = "m/44'/0'" // key path of the account
 
@@ -422,6 +439,23 @@ try{
     result = e
 }
 ```
+Returned response object has:
+```json
+{
+    "header": {
+        "version": "1.0",
+        "response_from": "coin",
+        "status": "success"
+    },
+    "body": {
+        "command": "xpub",
+        "parameter": {
+            "public_key": "xpub6Bp87egy.....EdAH4sMeqY3"
+        }
+    }
+}
+```
+The public_key is xpub value. 
 
 ### Ethereum Signed Massage
 You can get a signature value to sign a user message with that private key With a given key path (BIP32).
@@ -435,13 +469,99 @@ try {
     result = e
 }
 ```
+Returned response object has:
+```json
+{
+    "header": {
+        "version": "1.0",
+        "response_from": "ethereum",
+        "status": "success"
+    },
+    "body": {
+        "command": "msg_sign",
+        "parameter": {
+            "address": "0x54b9c508aC61Eaf2CD8F9cA510ec3897CfB09382",
+            "sign": "0x0d935339......06a6291b"
+        }
+    }
+}
+```
+Broadcast the 'sign' value to block chain. 
 
-### Signed Transaction
+### Sign Transaction
 The D'CENT Web SDK provides functions for signing transaction of coins.
 - ETHEREUM, RSK : getEthereumSignedTransaction()
 - ERC20, RRC20 : getTokenSignedTransaction()
 - KLAYTN, KLAYTN_KCT: getKlaytnSignedTransaction()
 
 Call the function that matches the type of signed transaction you want to get.
+
+Returned response object of `'getEthereumSignedTransaction'` :
+```json
+{
+    "header": {
+        "version": "1.0",
+        "response_from": "ethereum",
+        "status": "success"
+    },
+    "body": {
+        "command": "transaction",
+        "parameter": {
+            "sign_v": "0x78",
+            "sign_r": "0xf9e4c3ed......9557ad37",
+            "sign_s": "0x697a2abf......b76c4cb2",
+            "signed": "f86c0884......b76c4cb2"
+        }
+    }
+}
+```
+Broadcast the 'signed' value to block chain. 
+
+Returned response object of `'getTokenSignedTransaction'` :
+```json
+{
+    "header": {
+        "version": "1.0",
+        "response_from": "erc20",
+        "status": "success"
+    },
+    "body": {
+        "command": "transaction",
+        "parameter": {
+            "signed": "0xf8a91584......cc79c29a",
+            "sign": {
+                "sign_v": "0x26",
+                "sign_r": "0x33930787......d4456f53",
+                "sign_s": "0x708126c7......cc79c29a"
+            }
+        }
+    }
+}
+```
+Broadcast the 'signed' value to block chain. 
+
+Returned response object of `'getKlaytnSignedTransaction'` :
+```json
+{
+    "header": {
+        "version": "1.0",
+        "response_from": "klaytn",
+        "status": "success"
+    },
+    "body": {
+        "command": "transaction",
+        "parameter": {
+            "sign_v": "0x4055",
+            "sign_r": "0x5b1a8134......697ce449",
+            "sign_s": "0x6aea20f1......9eb816fb"
+        }
+    }
+}
+```
+For broadcast the sign value, you must encoding the parameter values using RLP. 
+Klaytn provides 'caver-js' library. You can make raw transaction for broadcasting using 'caver-js'. 
+(https://docs.klaytn.com/bapp/sdk/caver-js/api-references)
+
+
 
 Please Refer to the `index.html` to learn more about how to use the SDK APIs. There is an Web project using our Web SDK.

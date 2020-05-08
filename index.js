@@ -682,6 +682,9 @@ dcent.getKlaytnSignedTransaction = async function (
     gasPrice = checkParameter('numberString', gasPrice)
     gasLimit = checkParameter('numberString', gasLimit)
     value = checkParameter('numberString', value)
+    if (contract) {
+      contract.decimals = checkParameter('numberString', contract.decimals)
+    }
   } catch (error) {
     LOG.error(error)
     throw error
@@ -706,6 +709,14 @@ dcent.getKlaytnSignedTransaction = async function (
   
   if (!txType) {
     txType = dcentKlaytnTxType.LEGACY
+  }
+  if (txType === dcentKlaytnTxType.SMART_CONTRACT_EXECUTION || 
+    txType === dcentKlaytnTxType.FEE_DELEGATED_SMART_CONTRACT_EXECUTION || 
+    txType === dcentKlaytnTxType.FEE_DELEGATED_SMART_CONTRACT_EXECUTION_WITH_RATIO
+    ) {
+      if (coinType !== dcentCoinType.KLAYTN_KCT) {
+        throw dcent.dcentException('coin_type_error', 'not supported coin type for smart contract execution')
+      }
   }
   if (!from) {
     let addressResponse = await this.getAddress(coinType, key)

@@ -2,7 +2,7 @@ const DcentWebConnector = require('../../../index')
 
 const Values = require('../test-constants')
 const puppeteer = require('puppeteer')
-
+const LOG = require('../../../src/utils/log')
 /* //////////////////////////////////////////////////////////////////////// */
 /* */
 /* //////////////////////////////////////////////////////////////////////// */
@@ -37,6 +37,13 @@ describe('[dcent-web-connector] device - init', () => {
         expect(response.body.parameter.coin_list).toBeDefined()
         expect(response.body.parameter.label).toBeDefined()
 
+        var connected =await page.evaluate(() => {
+            let element = document.getElementById('connect-display');
+            if (element) {
+                return element.textContent
+            }
+        });        
+        expect(connected.search('DCENT is Connected')).toBeTruthy() // setConnectionListener test .. !!
         done()
     })
 

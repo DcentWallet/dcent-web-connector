@@ -69,17 +69,17 @@
         <button id="getKlaytnSignedTransaction_kct" type="button" class="btn btn-primary">getKlaytnSignedTransaction KCT</button>
         <button id="getKlaytnSignedTransaction_kct_baobab" type="button" class="btn btn-primary">getKlaytnSignedTransaction KCT BAOBAB</button>
         <br />
-        <button id="get_address_bitcoin" type="button" class="btn btn-primary">Get Bitcoin
+        <!-- <button id="get_address_bitcoin" type="button" class="btn btn-primary">Get Bitcoin
           Address("m/44'/0'/0'/0/0")</button>
         <button id="get_address_bitcoin_testnet" type="button" class="btn btn-primary">Get Bitcoin Testnet
           Address("m/44'/1'/0'/0/0")</button>
-        <br />
-        <button id="get_address_bitcoin_account2" type="button" class="btn btn-primary">Get Account2 Bitcoin
+        <br /> -->
+        <!-- <button id="get_address_bitcoin_account2" type="button" class="btn btn-primary">Get Account2 Bitcoin
           Address("m/44'/0'/1'/0/0")</button>
         <button id="get_address_bitcoin_testnet_account2" type="button" class="btn btn-primary">Get Account2 Bitcoin
           Testnet
           Address("m/44'/1'/1'/0/0")</button>
-        <br />
+        <br /> -->
 
         <button id="get_address_ethereum" type="button" class="btn btn-primary">Get Ethereum Mainnet
           Address("m/44'/60'/0'/0/0")</button>
@@ -189,11 +189,11 @@
 
         let account_infos = [
           {
-          coin_group: dcent.coinGroup.BITCOIN,
-          coin_name: dcent.coinName.BITCOIN,
-          label: "bitcoin_1",
-          balance: '0 BTC',
-          address_path: "m/44'/0'/0'/0/0"
+          coin_group: dcent.coinGroup.ETHEREUM,
+          coin_name: dcent.coinName.ETHEREUM,
+          label: "ethereum_001",
+          balance: '0 ETH',
+          address_path: "m/44'/60/0'/0/0"
         }
         ]
         var result = await syncAccount(account_infos)

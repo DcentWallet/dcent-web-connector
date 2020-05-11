@@ -16,7 +16,7 @@ npm i dcent-web-connector
 
 ```js
 // in Node.js
-import DcentWebConnector from 'dcent-web-connector'
+const DcentWebConnector = require('dcent-web-connector').default
 
 var result
 try{

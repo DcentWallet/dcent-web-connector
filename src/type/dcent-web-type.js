@@ -1,12 +1,16 @@
 'use strict'
 
-export const coinType = {
+const coinType = {
   BITCOIN: 'bitcoin',
   BITCOIN_TESTNET: 'bitcoin-testnet',
   ERC20: 'erc20',
   ERC20_KOVAN: 'erc20',
   ETHEREUM: 'ethereum',
   ETHEREUM_KOVAN: 'ethereum',
+  KLAYTN: 'klaytn',
+  KLAY_BAOBAB: 'klaytn-testnet',
+  KLAYTN_KCT: 'klaytn-erc20',
+  KCT_BAOBAB: 'krc20-testnet',
   MONACOIN: 'monacoin',
   MONACOIN_TESTNET: 'monacoin-testnet',
   RIPPLE: 'ripple',
@@ -17,13 +21,17 @@ export const coinType = {
   RSK_TESTNET: 'rsk-testnet'
 }
 
-export const coinGroup = {
+const coinGroup = {
   BITCOIN: 'BITCOIN',
   BITCOIN_TESTNET: 'BTC-TESTNET',
   ERC20: 'ERC20',
   ERC20_KOVAN: 'ERC20_KOVAN',
   ETHEREUM: 'ETHEREUM',
   ETHEREUM_KOVAN: 'ETH-KOVAN',
+  KLAYTN: 'KLAYTN',
+  KLAY_BAOBAB: 'KLAYTN-TESTNET',
+  KLAYTN_KCT: 'KLAYTN-ERC20',
+  KCT_BAOBAB: 'KRC20-TESTNET',
   MONACOIN: 'MONACOIN',
   MONACOIN_TESTNET: 'MONA-TESTNET',
   RIPPLE: 'RIPPLE',
@@ -34,13 +42,17 @@ export const coinGroup = {
   RSK_TESTNET: 'RSK-TESTNET'
 }
 
-export const coinName = {
+const coinName = {
   BITCOIN: 'BITCOIN',
   BITCOIN_TESTNET: 'BTC-TESTNET',
   ERC20: '',
   ERC20_KOVAN: '',
   ETHEREUM: 'ETHEREUM',
   ETHEREUM_KOVAN: 'ETH-KOVAN',
+  KLAYTN: 'KLAYTN',
+  KLAY_BAOBAB: 'KLAYTN-TESTNET',
+  KLAYTN_KCT: '',
+  KCT_BAOBAB: '',
   MONACOIN: 'MONACOIN',
   MONACOIN_TESTNET: 'MONA-TESTNET',
   RIPPLE: 'RIPPLE',
@@ -57,3 +69,31 @@ export const coinName = {
 //   p2pkh: 'p2pkh',
 //   p2sh: 'p2sh'
 // }
+
+const klaytnTxType = {
+  LEGACY: 0xFF,
+	FEE_PAYER: 0xEE,
+	
+	VALUE_TRANSFER: 0x08,
+	FEE_DELEGATED_VALUE_TRANSFER: 0x09,
+	FEE_DELEGATED_VALUE_TRANSFER_WITH_RATIO: 0x0A,
+	
+	VALUE_TRANSFER_MEMO: 0x10,
+	FEE_DELEGATED_VALUE_TRANSFER_MEMO: 0x11,
+	FEE_DELEGATED_VALUE_TRANSFER_MEMO_WITH_RATIO: 0x12,
+
+	SMART_CONTRACT_EXECUTION: 0x30,
+	FEE_DELEGATED_SMART_CONTRACT_EXECUTION: 0x31,
+	FEE_DELEGATED_SMART_CONTRACT_EXECUTION_WITH_RATIO: 0x32,
+
+	CANCEL: 0x38,
+	FEE_DELEGATED_CANCEL: 0x39,
+	FEE_DELEGATED_CANCEL_WITH_RATIO: 0x3A
+}
+
+module.exports = { 
+  coinType,
+  coinGroup,
+  coinName,
+  klaytnTxType
+}

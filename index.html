@@ -30,6 +30,8 @@
 <body>
   <div class="bd-example-container-body">
     <div class="card" style="width: 50rem;">
+      <div id="connect-display" class="card-header">
+      </div>
       <div id="command-display" class="card-header">
         No Command
       </div>
@@ -62,18 +64,22 @@
         <button id="getTokenSignedTransaction" type="button" class="btn btn-primary">getTokenSignedTransaction</button>
         <button id="getEthereumSignedMessage" type="button" class="btn btn-primary">getEthereumSignedMessage</button>
         <br />
-
-        <button id="get_address_bitcoin" type="button" class="btn btn-primary">Get Bitcoin
+        <button id="getKlaytnSignedTransaction" type="button" class="btn btn-primary">getKlaytnSignedTransaction</button>
+        <button id="getKlaytnSignedTransaction_baobab" type="button" class="btn btn-primary">getKlaytnSignedTransaction BAOBAB</button>
+        <button id="getKlaytnSignedTransaction_kct" type="button" class="btn btn-primary">getKlaytnSignedTransaction KCT</button>
+        <button id="getKlaytnSignedTransaction_kct_baobab" type="button" class="btn btn-primary">getKlaytnSignedTransaction KCT BAOBAB</button>
+        <br />
+        <!-- <button id="get_address_bitcoin" type="button" class="btn btn-primary">Get Bitcoin
           Address("m/44'/0'/0'/0/0")</button>
         <button id="get_address_bitcoin_testnet" type="button" class="btn btn-primary">Get Bitcoin Testnet
           Address("m/44'/1'/0'/0/0")</button>
-        <br />
-        <button id="get_address_bitcoin_account2" type="button" class="btn btn-primary">Get Account2 Bitcoin
+        <br /> -->
+        <!-- <button id="get_address_bitcoin_account2" type="button" class="btn btn-primary">Get Account2 Bitcoin
           Address("m/44'/0'/1'/0/0")</button>
         <button id="get_address_bitcoin_testnet_account2" type="button" class="btn btn-primary">Get Account2 Bitcoin
           Testnet
           Address("m/44'/1'/1'/0/0")</button>
-        <br />
+        <br /> -->
 
         <button id="get_address_ethereum" type="button" class="btn btn-primary">Get Ethereum Mainnet
           Address("m/44'/60'/0'/0/0")</button>
@@ -87,13 +93,26 @@
 
     <script>
       var dcent = DcentWebConnector
-
+      
       var req_editor, resp_editor;
 
       function set_command_name(command) {
         $('#command-display').html("Command : " + command);
         resp_editor.load(["Waiting for response."])
       }
+
+      function set_connection_state(state) {
+        $('#connect-display').html("state : " + state);
+      }
+      
+      function connectionListener(state) {
+        if (state === DcentWebConnector.state.CONNECTED) {
+          set_connection_state('DCENT is Connected');        
+        } else if (state === DcentWebConnector.state.DISCONNECTED) {
+          set_connection_state('DCENT is Disconnected');  
+        }
+      }
+      dcent.setConnectionListener(connectionListener)
 
       $(function () {
         resp_editor = new JsonEditor('#json-resp-display', '');
@@ -122,6 +141,10 @@
         $('#getTokenSignedTransaction').click(getTokenSignedTransaction_clicked);
         $('#getEthereumSignedMessage').click(getEthereumSignedMessage_clicked);
 
+        $('#getKlaytnSignedTransaction').click(getKlaytnSignedTransaction_clicked);
+        $('#getKlaytnSignedTransaction_baobab').click(getKlaytnSignedTransaction_baobab_clicked);
+        $('#getKlaytnSignedTransaction_kct').click(getKlaytnSignedTransaction_kct_clicked);
+        $('#getKlaytnSignedTransaction_kct_baobab').click(getKlaytnSignedTransaction_kct_baobab_clicked);
 
 
       });
@@ -166,11 +189,11 @@
 
         let account_infos = [
           {
-          coin_group: dcent.coinGroup.BITCOIN,
-          coin_name: dcent.coinName.BITCOIN,
-          label: "bitcoin_1",
-          balance: '0 BTC',
-          address_path: "m/44'/0'/0'/0/0"
+          coin_group: dcent.coinGroup.ETHEREUM,
+          coin_name: dcent.coinName.ETHEREUM,
+          label: "ethereum_001",
+          balance: '0 ETH',
+          address_path: "m/44'/60/0'/0/0"
         }
         ]
         var result = await syncAccount(account_infos)
@@ -284,6 +307,102 @@
         resp_editor.load(result)
       }
 
+      async function getKlaytnSignedTransaction_clicked() {
+        set_command_name("Processing...");
+
+        var result  = await getKlaytnSignedTransaction( 
+          dcent.coinType.KLAYTN,
+          '7',
+          '25000000000',
+          '21000',
+          '0xdcaBc4E7BD685498e8464a9CaCBf99587C74310c',
+          '50000000000000000',
+          '0x',
+          "m/44'/8217'/0'/0/0",
+          8217,
+          dcent.klaytnTxType.VALUE_TRANSFER
+        );
+      
+        set_command_name("getKlaytnSignedTransaction")       
+        resp_editor.load(result)
+      }
+
+      async function getKlaytnSignedTransaction_baobab_clicked() {
+        set_command_name("Processing...");
+       
+        var result  = await getKlaytnSignedTransaction( 
+          dcent.coinType.KLAY_BAOBAB,
+          '7',
+          '25000000000',
+          '21000',
+          '0xdcaBc4E7BD685498e8464a9CaCBf99587C74310c',
+          '50000000000000000',
+          '0x',
+          "m/44'/8217'/0'/0/0",
+          1001,
+          dcent.klaytnTxType.VALUE_TRANSFER
+        );
+      
+        set_command_name("getKlaytnSignedTransaction")       
+        resp_editor.load(result)
+      }
+
+      async function getKlaytnSignedTransaction_kct_clicked() {
+        set_command_name("Processing...");
+
+        var contract = {
+          "name":"COSM",
+          "decimals":"18",
+          "symbol":"COSM"
+        }        
+        var result  = await getKlaytnSignedTransaction( 
+          dcent.coinType.KLAYTN_KCT,
+          '7',
+          '25000000000',
+          '21000',
+          '0x52CFDA3E278837d852C4315586C9464BE762647E', 
+          '1000000000000000000',
+          '0xa9059cbb000000000000000000000000dcaBc4E7BD685498e8464a9CaCBf99587C74310c',
+          "m/44'/8217'/0'/0/0",
+          8217,
+          dcent.klaytnTxType.SMART_CONTRACT_EXECUTION,
+          '',
+          0,
+          contract
+        );
+
+        set_command_name("getKlaytnSignedTransaction KCT");          
+        resp_editor.load(result)
+      }
+
+      async function getKlaytnSignedTransaction_kct_baobab_clicked() {
+        set_command_name("Processing...");
+
+        var contract = {
+          "name":"BAOBABTOKEN",
+          "decimals":"8",
+          "symbol":"BAO"
+        }        
+        var result  = await getKlaytnSignedTransaction( 
+          dcent.coinType.KCT_BAOBAB,
+          '7',
+          '25000000000',
+          '21000',
+          '0x52CFDA3E278837d852C4315586C9464BE762647E', 
+          '100000000',
+          '0xa9059cbb000000000000000000000000dcaBc4E7BD685498e8464a9CaCBf99587C74310c',
+          "m/44'/8217'/0'/0/0",
+          1001,
+          dcent.klaytnTxType.SMART_CONTRACT_EXECUTION,
+          '',
+          0,
+          contract
+        );
+
+        set_command_name("getKlaytnSignedTransaction KCT BAOBAB");          
+        resp_editor.load(result)
+      }
+
       /////// DCENT WEB-SDK call
      
       async function info() {        
@@ -385,6 +504,18 @@
         }
         return result 
       }
+
+      async function getKlaytnSignedTransaction( coinType, nonce, gasPrice, gasLimit, to, value, 
+                                data, key, chainId, txType, from, feeRatio, contract ) {
+        var result 
+        try { 
+          result = await dcent.getKlaytnSignedTransaction(coinType, nonce, gasPrice, gasLimit, to, value, data, key, chainId, txType, from, feeRatio, contract )            
+        } catch (e) {
+          result = e
+        }
+        return result
+      }
+
     </script>
 
 </body>

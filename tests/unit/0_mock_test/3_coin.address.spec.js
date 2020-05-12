@@ -1,4 +1,4 @@
-import DcentWebConnector from '../../../index'
+const DcentWebConnector = require('../../../index')
 
 var NilMock = require('../../../src/native/__mocks__/nil')
 const Values = require('../test-constants')

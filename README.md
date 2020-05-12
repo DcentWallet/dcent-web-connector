@@ -16,7 +16,7 @@ npm i dcent-web-connector
 
 ```js
 // in Node.js
-import DcentWebConnector from 'dcent-web-connector'
+const DcentWebConnector = require('dcent-web-connector')
 
 var result
 try{
@@ -32,7 +32,7 @@ try{
 
 - install `D'CENT Bridge`
 
-    http://bridge.dcentwallet.com/v2/download
+    https://bridge.dcentwallet.com/v2/download
 
 - connect D'CENT device using USB cable
 

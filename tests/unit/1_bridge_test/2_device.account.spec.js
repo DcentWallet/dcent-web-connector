@@ -1,5 +1,4 @@
-import DcentWebConnector from '../../../index'
-import LOG from '../../../src/utils/log'
+const DcentWebConnector = require('../../../index')
 
 const Values = require('../test-constants')
 const puppeteer = require('puppeteer')

@@ -1,22 +1,25 @@
 'use strict'
 
-import {
-  coinType as dcentCoinType,
-  coinGroup as dcentCoinGroup,
-  coinName as dcentCoinName,
+const { 
+  coinType: dcentCoinType, 
+  coinGroup: dcentCoinGroup, 
+  coinName: dcentCoinName,
+  klaytnTxType: dcentKlaytnTxType
   // # 
   // Now, Bitcoin Transaction not support 
   // bitcoinTxType as dcentBitcoinTxType
-} from './src/type/dcent-web-type'
-import {
-  config as dcentConfig
-} from './src/conf/dcent-web-conf'
+} = require('./src/type/dcent-web-type')
 
-import LOG from './src/utils/log'
-import Event from 'events'
+const {
+  state: dcentState
+} = require('./src/type/dcent-state')
+
+const { config: dcentConfig } = require('./src/conf/dcent-web-conf')
+
+const LOG = require('./src/utils/log')
+const Event = require('events')
 
 const dcent = {}
-
 // TimeOut Default Time 
 var dcentCallTimeOutMs = dcentConfig.timeOutMs
 
@@ -60,6 +63,12 @@ dcent.dcentException = function (code, message) {
   return exception
 }
 
+let connectionListener = null
+
+dcent.setConnectionListener = function (listener) {
+  connectionListener = listener
+}
+
 dcent.dcentPopupWindow = async function () {
   // popup Open
   if (!dcent.popupWindow || dcent.popupWindow.closed) {
@@ -93,7 +102,6 @@ dcent.dcentPopupWindow = async function () {
 }
 
 dcent._call = function (idx, params) {
-  LOG.debug('call', params)
   if (dcent.popupWindow) {
     var messageEvent = {
       idx: idx,
@@ -125,8 +133,6 @@ dcent.call = async function (params) {
 
   return new Promise(async (resolve, reject) => {
 
-    LOG.debug('in Promise')
-    
     if (!dcent.popupWindow || dcent.popupWindow.closed) {
       var result = await dcent.dcentPopupWindow()
       if (result !== null) {
@@ -135,12 +141,10 @@ dcent.call = async function (params) {
     }
 
     dcent.dcentWebPromise.promise.then(async function () {
-      LOG.debug('dcentWebPromise - resolve')
       dcent._call(idx, params)
     })
 
     let popUpClosedListener = () => {
-      LOG.debug ('Promise - reject')
       reject(dcent.dcentException('pop-up_closed', 'Pop-up windows has been closed'))
     }
 
@@ -160,7 +164,11 @@ dcent.call = async function (params) {
       if (messageEvent.data.payload.header.status === "success") {
         resolve(messageEvent.data.payload)
       } else {
-        reject(messageEvent.data.payload)
+        if (messageEvent.data.payload.body.command === "transaction" && messageEvent.data.payload.body.error.code === "user_cancel") {
+          resolve(messageEvent.data.payload)
+        } else {
+          reject(messageEvent.data.payload)
+        }
       }
       } catch(e) {
         LOG.error(e)
@@ -182,11 +190,26 @@ dcent.messageReceive = function (messageEvent) {
 
   if (
     messageEvent.data.event === 'BridgeEvent' &&
-    messageEvent.data.type === 'data' &&
-    messageEvent.data.payload === 'popup-success'
-  ) {
-    dcent.dcentWebPromise.resolve()
-    return
+    messageEvent.data.type === 'data'
+   ) {
+    if ( messageEvent.data.payload === 'popup-success' )  {
+      dcent.dcentWebPromise.resolve()
+      return
+    }
+    if ( messageEvent.data.payload === 'popup-close' ) {
+      dcent.popupWindow = undefined
+      dcent.dcentWebPromise = dcent.dcentWebDeferred()
+      ee.emit('popUpClosed')
+      ee.removeAllListeners()
+      return
+    }
+    if ( messageEvent.data.payload === 'dcent-connected' ||
+     messageEvent.data.payload === 'dcent-disconnected') {
+      if (connectionListener) {
+        connectionListener(messageEvent.data.payload)
+        return
+      }
+    }
   }
 
   if (
@@ -200,6 +223,8 @@ dcent.messageReceive = function (messageEvent) {
     ee.removeAllListeners()
     return
   }
+
+
 
   if (
     messageEvent.data.event != 'BridgeResponse' ||
@@ -245,7 +270,7 @@ let isHexNumberString = (str) => {
 
 let checkParameter = (type, param) => {
   if (type === 'numberString') {
-    if (typeof param !== 'string') throw dcent.dcentException('param_error', 'Invaild Parameter') // must string
+    if (typeof param !== 'string') throw dcent.dcentException('param_error', 'Invaild Parameter - - ' + param) // must string
 
     if (param.indexOf('0x', 0) === -1) {
       // number string
@@ -254,7 +279,7 @@ let checkParameter = (type, param) => {
       // hex string
       if (isHexNumberString(param)) return param
     }
-    throw dcent.dcentException('param_error', 'Invaild Parameter')
+    throw dcent.dcentException('param_error', 'Invaild Parameter - - - ' + param)
   }
 
 }
@@ -317,6 +342,10 @@ function isAvaliableCoinGroup (coinGroup) {
     case dcentCoinGroup.RRC20_TESTNET.toLowerCase():
     case dcentCoinGroup.RSK.toLowerCase():
     case dcentCoinGroup.RSK_TESTNET.toLowerCase():
+    case dcentCoinGroup.KLAYTN.toLowerCase():
+    case dcentCoinGroup.KLAY_BAOBAB.toLowerCase():
+    case dcentCoinGroup.KLAYTN_KCT.toLowerCase():
+    case dcentCoinGroup.KCT_BAOBAB.toLowerCase():
       return true
     case dcentCoinGroup.BITCOIN.toLowerCase():
     case dcentCoinGroup.BITCOIN_TESTNET.toLowerCase():
@@ -342,6 +371,10 @@ function isAvaliableCoinType (coinType) {
     case dcentCoinType.RRC20_TESTNET.toLowerCase():
     case dcentCoinType.RSK.toLowerCase():
     case dcentCoinType.RSK_TESTNET.toLowerCase():
+    case dcentCoinType.KLAYTN.toLowerCase():
+    case dcentCoinType.KLAY_BAOBAB.toLowerCase():
+    case dcentCoinType.KLAYTN_KCT.toLowerCase():
+    case dcentCoinType.KCT_BAOBAB.toLowerCase():
       return true
     case dcentCoinType.BITCOIN.toLowerCase():
     case dcentCoinType.BITCOIN_TESTNET.toLowerCase():
@@ -574,6 +607,8 @@ dcent.getTokenSignedTransaction = async function (
     case dcentCoinType.ERC20_KOVAN.toLowerCase():
     case dcentCoinType.RRC20.toLowerCase():
     case dcentCoinType.RRC20_TESTNET.toLowerCase():
+    case dcentCoinGroup.KLAYTN_KCT.toLowerCase():
+    case dcentCoinGroup.KCT_BAOBAB.toLowerCase():
       break
     default:
       throw dcent.dcentException('coin_type_error', 'not supported token type')
@@ -610,21 +645,125 @@ dcent.getEthereumSignedMessage = async function (message, key) {
   })
 }
 
+/**
+ * Returns klaytn / KCT signed transaction. If you want to get sign value of "KLAYTN" or "KCT" transaction, must call this function.
+ *
+ * @param {string} coinType coin type 
+ * @param {string} txType transaction type 
+ * @param {string} nonce account nonce
+ * @param {string} gasPrice GAS price
+ * @param {string} gasLimit GAS limit 
+ * @param {string} to recipient's address
+ * @param {string} value amount of ether to be sent. ( WEI unit value )
+ * @param {string} data transaction data (ex: "0x")
+ * @param {string} key key path (BIP44)
+ * @param {number} chainId chain id
+ * @param {string} feeRatio fee ratio
+ * @returns {Object} signed transaction value
+ */
+dcent.getKlaytnSignedTransaction = async function (
+  coinType,
+  nonce,
+  gasPrice,
+  gasLimit,
+  to,
+  value,
+  data,
+  key,
+  chainId,
+  txType,
+  from,  
+  feeRatio,
+  contract
+) {
+  
+  try {
+    nonce = checkParameter('numberString', nonce)
+    gasPrice = checkParameter('numberString', gasPrice)
+    gasLimit = checkParameter('numberString', gasLimit)
+    value = checkParameter('numberString', value)
+    if (contract) {
+      contract.decimals = checkParameter('numberString', contract.decimals)
+    }
+  } catch (error) {
+    LOG.error(error)
+    throw error
+  }
+  
+  if (typeof chainId !== 'number') {
+    throw dcent.dcentException('param_error', 'Invaild Parameter chainId - ' + chainId)
+  }
+ 
+  switch (coinType.toLowerCase()) {
+    case dcentCoinType.KLAYTN.toLowerCase():
+    case dcentCoinType.KLAY_BAOBAB.toLowerCase():
+      coinType = dcentCoinType.KLAYTN
+      break
+    case dcentCoinType.KLAYTN_KCT.toLowerCase():
+    case dcentCoinType.KCT_BAOBAB.toLowerCase():
+      coinType = dcentCoinType.KLAYTN_KCT
+      break
+    default:
+      throw dcent.dcentException('coin_type_error', 'not supported coin type')
+  }
+  
+  if (!txType) {
+    txType = dcentKlaytnTxType.LEGACY
+  }
+  if (txType === dcentKlaytnTxType.SMART_CONTRACT_EXECUTION || 
+    txType === dcentKlaytnTxType.FEE_DELEGATED_SMART_CONTRACT_EXECUTION || 
+    txType === dcentKlaytnTxType.FEE_DELEGATED_SMART_CONTRACT_EXECUTION_WITH_RATIO
+    ) {
+      if (coinType !== dcentCoinType.KLAYTN_KCT) {
+        throw dcent.dcentException('coin_type_error', 'not supported coin type for smart contract execution')
+      }
+  }
+  if (!from) {
+    let addressResponse = await this.getAddress(coinType, key)
+    if (addressResponse.body.parameter.address) {
+      from = addressResponse.body.parameter.address
+    }
+  }
+ 
+  return await dcent.call({
+    method: 'getKlaytnSignedTransaction',
+    params: {
+      coinType: coinType,
+      nonce: nonce,
+      gas_price: gasPrice,
+      gas_limit: gasLimit,
+      to: to,
+      value: value,
+      data: data,
+      key: key,
+      chain_id: chainId,
+      tx_type: txType,      
+      from: from,
+      fee_ratio: feeRatio,
+      contract: contract
+    }
+  })
+}
+
+dcent.state = dcentState
 dcent.coinType = dcentCoinType
 dcent.coinGroup = dcentCoinGroup
 dcent.coinName = dcentCoinName
+dcent.klaytnTxType = dcentKlaytnTxType
 // # 
 // Now, Bitcoin Transaction not support 
 //dcent.bitcoinTxType = dcentBitcoinTxType
 
 const DcentWebConnector = dcent
 
-export default DcentWebConnector// for nodejs
+module.exports = DcentWebConnector// for nodejs
 
 window.DcentWebConnector = dcent // for inline script
+window.DcentWebConnector.state = dcentState
 window.DcentWebConnector.coinType = dcentCoinType
 window.DcentWebConnector.coinGroup = dcentCoinGroup
 window.DcentWebConnector.coinName = dcentCoinName
+window.DcentWebConnector.klaytnTxType = dcentKlaytnTxType
 // # 
 // Now, Bitcoin Transaction not support 
 // window.DcentWebConnector.bitcoinTxType = dcentBitcoinTxType

@@ -11,7 +11,7 @@ describe('[dcent-web-connector] Bridge - init', () => {
     let bowser
     let page
     beforeAll(async () => {
-        let bowser = await puppeteer.launch({
+        bowser = await puppeteer.launch({
             headless: false
         })
         page = await bowser.newPage();

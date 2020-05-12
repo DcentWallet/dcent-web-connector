@@ -1,5 +1,5 @@
 const DcentWebConnector = require('../../../index')
-
+const LOG = require('../../../src/utils/log')
 const Values = require('../test-constants')
 const puppeteer = require('puppeteer')
 
@@ -11,7 +11,7 @@ describe('[dcent-web-connector] Bridge - init', () => {
     let bowser
     let page
     beforeAll(async () => {
-        let bowser = await puppeteer.launch({
+        bowser = await puppeteer.launch({
             headless: false
         })
         page = await bowser.newPage();
@@ -285,33 +285,33 @@ describe('[dcent-web-connector] Bridge - init', () => {
         done()
     })
 
-    it('getKlaytnSignedTransaction() - SMART_CONTRACT_EXECUTION invalid coin type 3', async (done) => { 
-        var contract = {
-            "name":"BAOBABTOKEN",
-            "decimals":"8",
-            "symbol":"BAO"
-          }        
-        let coinType = DcentWebConnector.coinType.KLAYTN
-        let nonce = '8'
-        let gasPrice = '25000000000'
-        let gasLimit = '21000'
-        let to = '0x52CFDA3E278837d852C4315586C9464BE762647E'
-        let value = '50000000000000000'
-        let data = '0xa9059cbb000000000000000000000000dcaBc4E7BD685498e8464a9CaCBf99587C74310c'
-        let key = "m/44'/8217'/0'/0/0"
-        let chainId = 8217
-        let txType = DcentWebConnector.klaytnTxType.SMART_CONTRACT_EXECUTION
-        let from = ''
-        let feeRatio = 0
+    // it('getKlaytnSignedTransaction() - SMART_CONTRACT_EXECUTION invalid coin type 3', async (done) => { 
+    //     var contract = {
+    //         "name":"BAOBABTOKEN",
+    //         "decimals":"8",
+    //         "symbol":"BAO"
+    //       }        
+    //     let coinType = DcentWebConnector.coinType.KLAYTN
+    //     let nonce = '8'
+    //     let gasPrice = '25000000000'
+    //     let gasLimit = '21000'
+    //     let to = '0x52CFDA3E278837d852C4315586C9464BE762647E'
+    //     let value = '50000000000000000'
+    //     let data = '0xa9059cbb000000000000000000000000dcaBc4E7BD685498e8464a9CaCBf99587C74310c'
+    //     let key = "m/44'/8217'/0'/0/0"
+    //     let chainId = 8217
+    //     let txType = DcentWebConnector.klaytnTxType.SMART_CONTRACT_EXECUTION
+    //     let from = ''
+    //     let feeRatio = 0
         
-       var response = await page.evaluate( (coinType, nonce, gasPrice, gasLimit, to, value, data, key, chainId, txType, from, feeRatio, contract) => {
-            return getKlaytnSignedTransaction(coinType, nonce, gasPrice, gasLimit, to, value, 
-                data, key, chainId, txType, from, feeRatio, contract)  
-        }, coinType, nonce, gasPrice, gasLimit, to, value, data, key, chainId, txType, from, feeRatio, contract )
+    //    var response = await page.evaluate( (coinType, nonce, gasPrice, gasLimit, to, value, data, key, chainId, txType, from, feeRatio, contract) => {
+    //         return getKlaytnSignedTransaction(coinType, nonce, gasPrice, gasLimit, to, value, 
+    //             data, key, chainId, txType, from, feeRatio, contract)  
+    //     }, coinType, nonce, gasPrice, gasLimit, to, value, data, key, chainId, txType, from, feeRatio, contract )
 
-        expect(response.header.status).toBe(Values.RESP_STATUS.ERROR)
-        done()
-    })
+    //     expect(response.header.status).toBe(Values.RESP_STATUS.ERROR)
+    //     done()
+    // })
 
     it('getKlaytnSignedTransaction() - SMART_CONTRACT_EXECUTION invalid coin type 4', async (done) => { 
         var contract = {
@@ -396,7 +396,34 @@ describe('[dcent-web-connector] Bridge - init', () => {
         done()
     })
 
-    it('getKlaytnSignedTransaction() - SMART_CONTRACT_EXECUTION success', async (done) => { 
+    it('getKlaytnSignedTransaction() - SMART_CONTRACT_EXECUTION success 1', async (done) => { 
+        let coinType = DcentWebConnector.coinType.KLAYTN
+        let nonce = '8'
+        let gasPrice = '25000000000'
+        let gasLimit = '21000'
+        let to = '0x52CFDA3E278837d852C4315586C9464BE762647E'
+        let value = '50000000000000000'
+        let data = '0xa9059cbb000000000000000000000000dcaBc4E7BD685498e8464a9CaCBf99587C74310c'
+        let key = "m/44'/8217'/0'/0/0"
+        let chainId = 8217
+        let txType = DcentWebConnector.klaytnTxType.SMART_CONTRACT_EXECUTION
+        
+       var response = await page.evaluate( (coinType, nonce, gasPrice, gasLimit, to, value, data, key, chainId, txType, from, feeRatio, contract) => {
+            return getKlaytnSignedTransaction(coinType, nonce, gasPrice, gasLimit, to, value, 
+                data, key, chainId, txType)  
+        }, coinType, nonce, gasPrice, gasLimit, to, value, data, key, chainId, txType)
+
+        expect(response.header.status).toBe(Values.RESP_STATUS.SUCCESS)
+        expect(response.body.command).toBe(Values.CMD.TRANSACTION)
+        expect(response.body.parameter).toBeDefined()
+        // TODO: address, sign value format check !! 
+        expect(response.body.parameter.sign_v).toBeDefined()
+        expect(response.body.parameter.sign_r).toBeDefined()
+        expect(response.body.parameter.sign_s).toBeDefined()
+        done()
+    })
+
+    it('getKlaytnSignedTransaction() - SMART_CONTRACT_EXECUTION success 2', async (done) => { 
         var contract = {
             "name":"BAOBABTOKEN",
             "decimals":"8",
@@ -429,25 +456,6 @@ describe('[dcent-web-connector] Bridge - init', () => {
         expect(response.body.parameter.sign_s).toBeDefined()
         done()
     })
-
-    // it('getEthereumSignedMessage() - success ', async (done) => { 
-
-    //     let message = 'This is a message!'
-    //     let key = 'm/44\'/60\'/0\'/0/0'        
-    //     var response = await page.evaluate( (message, key) => {
-    //         return getEthereumSignedMessage(message, key)
-    //     }, message, key )
-
-    //     expect(response.header.status).toBe(Values.RESP_STATUS.SUCCESS)
-    //     expect(response.body.command).toBe(Values.CMD.MSG_SIGN)
-    //     expect(response.body.parameter).toBeDefined()
-    //     // TODO: address, sign value format check !! 
-    //     expect(response.body.parameter.address).toBeDefined()
-    //     expect(response.body.parameter.sign).toBeDefined()
-
-    //     done()
-    // })
-
 })
 
 /* //////////////////////////////////////////////////////////////////////// */

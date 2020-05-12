@@ -710,14 +710,7 @@ dcent.getKlaytnSignedTransaction = async function (
   if (!txType) {
     txType = dcentKlaytnTxType.LEGACY
   }
-  if (txType === dcentKlaytnTxType.SMART_CONTRACT_EXECUTION || 
-    txType === dcentKlaytnTxType.FEE_DELEGATED_SMART_CONTRACT_EXECUTION || 
-    txType === dcentKlaytnTxType.FEE_DELEGATED_SMART_CONTRACT_EXECUTION_WITH_RATIO
-    ) {
-      if (coinType !== dcentCoinType.KLAYTN_KCT) {
-        throw dcent.dcentException('coin_type_error', 'not supported coin type for smart contract execution')
-      }
-  }
+  
   if (!from) {
     let addressResponse = await this.getAddress(coinType, key)
     if (addressResponse.body.parameter.address) {

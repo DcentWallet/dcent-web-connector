@@ -8,7 +8,7 @@
     "build-dev": "webpack --mode development",
     "build": "webpack --mode production",
     "test": "jest --detectOpenHandles --coverage --forceExit --runInBand",
-    "unit-mock": "jest --coverage --runInBand 0_mock_test"
+    "unit-mock": "jest --coverage --forceExit --runInBand 0_mock_test"
   },
   "jest": {
     "preset": "jest-puppeteer",

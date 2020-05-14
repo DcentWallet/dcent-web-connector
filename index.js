@@ -69,35 +69,43 @@ dcent.setConnectionListener = function (listener) {
   connectionListener = listener
 }
 
-dcent.dcentPopupWindow = async function () {
-  // popup Open
-  if (!dcent.popupWindow || dcent.popupWindow.closed) {
-    //var strWindowFeatures = 'width=1600, height=900, left=200, top=0'
-    //var strWindowFeatures = ''
-    dcent.popupWindow = window.open('', '_blank')
-    if (
-      !dcent.popupWindow ||
-      dcent.popupWindow.closed ||
-      typeof dcent.popupWindow.closed === 'undefined'
-    ) {
-      return {
-        header: {
-          version: '1.0',
-          response_from: 'api',
-          status: 'error'
-        },
-        body: {
-          error: {
-            code: 'pop-up_blocked',
-            message: 'Pop-up blocked. Please enable pop-up'
-          }
-        }
+const popupErrorException = (message) => {
+  return {
+    header: {
+      version: '1.0',
+      response_from: 'api',
+      status: 'error'
+    },
+    body: {
+      error: {
+        code: 'pop-up_blocked',
+        message: message
       }
     }
-    if (dcent.popupWindow) {
-      dcent.popupWindow.location.href = dcentConfig.popUpUrl
+  }
+}
+
+dcent.dcentPopupWindow = async function () {
+  try {
+    // popup Open
+    if (!dcent.popupWindow || dcent.popupWindow.closed) {
+      //var strWindowFeatures = 'width=1600, height=900, left=200, top=0'
+      //var strWindowFeatures = ''
+      dcent.popupWindow = window.open('', '_blank')
+      if (
+        !dcent.popupWindow ||
+        dcent.popupWindow.closed ||
+        typeof dcent.popupWindow.closed === 'undefined'
+      ) {
+        return popupErrorException('Pop-up blocked. Please enable pop-up')
+      }
+      if (dcent.popupWindow) {
+        dcent.popupWindow.location.href = dcentConfig.popUpUrl
+      }
+      return null
     }
-    return null
+  } catch(e) {
+    return popupErrorException(e.message)
   }
 }
 

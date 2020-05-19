@@ -12,7 +12,7 @@ User interface is presented in a popup window served from `https://bridge.dcentw
 npm i dcent-web-connector
 ```
 
-## Useage
+## Usage
 
 ```js
 // in Node.js

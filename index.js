@@ -1,4 +1,3 @@
-'use strict'
 
 const { 
   coinType: dcentCoinType, 
@@ -27,6 +26,8 @@ dcent.messageRequestIdx = 0
 dcent.messageResponsetIdx = 0
 
 dcent.popupWindow = undefined
+dcent.popupTab = undefined
+dcent.iframe = undefined
 
 dcent.dcentWebDeferred = function () {
   let localResolve
@@ -69,6 +70,18 @@ dcent.setConnectionListener = function (listener) {
   connectionListener = listener
 }
 
+const clearPopup = () => {
+  if (dcent.popupWindow) {
+    dcent.popupWindow = undefined
+    if (dcent.popupTab) {
+      chrome.tabs.remove(dcent.popupTab.id)
+    }
+    dcent.popupTab = undefined
+    dcent.dcentWebPromise = dcent.dcentWebDeferred()
+    ee.emit('popUpClosed')
+    ee.removeAllListeners()
+  }
+}
 const popupErrorException = (message) => {
   return {
     header: {
@@ -88,42 +101,41 @@ const popupErrorException = (message) => {
 dcent.dcentPopupWindow = async function () {
   try {
     // popup Open
-    if (!dcent.popupWindow || dcent.popupWindow.closed) {
-      //var strWindowFeatures = 'width=1600, height=900, left=200, top=0'
-      //var strWindowFeatures = ''
+    LOG.debug('dcent.dcentPopupWindow  called ') 
+
+   let extension = typeof chrome !== 'undefined' && chrome.runtime && typeof chrome.runtime.onConnect !== 'undefined'
+   if (!extension) {
       dcent.popupWindow = window.open('', '_blank')
-      if (
-        !dcent.popupWindow ||
-        dcent.popupWindow.closed ||
-        typeof dcent.popupWindow.closed === 'undefined'
-      ) {
-        return popupErrorException('Pop-up blocked. Please enable pop-up')
-      }
+      LOG.debug('window.open create dcent.popupWindow opener = ', dcent.popupWindow.opener) 
+
       if (dcent.popupWindow) {
         dcent.popupWindow.location.href = dcentConfig.popUpUrl
+      } else {
+        return popupErrorException(e.message)
       }
-      return null
+   } else {
+        LOG.debug('create iframe') 
+        dcent.iframe = document.createElement('iframe')
+        dcent.iframe.src = dcentConfig.popUpUrl + '/iframe'
+        document.body.appendChild(dcent.iframe )
+        dcent.popupWindow = dcent.iframe.contentWindow
+        return null
     }
-  } catch(e) {
-    return popupErrorException(e.message)
+  } catch (e) {
+    return popupErrorException( e || e.message )
   }
+  return null
 }
 
 dcent._call = function (idx, params) {
-  if (dcent.popupWindow) {
-    var messageEvent = {
-      idx: idx,
-      event: 'BridgeRequest',
-      type: 'json',
-      payload: params
-    }
-
-    LOG.debug('messageSend', messageEvent)
-
-    dcent.popupWindow.postMessage(messageEvent,
-      '*'
-    )
+  var messageEvent = {
+    idx: idx,
+    event: 'BridgeRequest',
+    type: 'json',
+    payload: params
   }
+
+  postMessage(messageEvent)
   // TODO : Error  Popup is not Opened.  
 }
 
@@ -138,18 +150,19 @@ const getEventName = (idx) => {
 dcent.call = async function (params) {
 
   let idx = dcent.messageRequestIdx++
-
+  
   return new Promise(async (resolve, reject) => {
 
     if (!dcent.popupWindow || dcent.popupWindow.closed) {
       var result = await dcent.dcentPopupWindow()
+      LOG.debug('dcent.call --- result : ', result)
       if (result !== null) {
         reject(result)
       }
     }
-
+   // LOG.debug('dcent.dcentWebPromise.promise - ', dcent.dcentWebPromise.promise)
     dcent.dcentWebPromise.promise.then(async function () {
-      dcent._call(idx, params)
+       dcent._call(idx, params)
     })
 
     let popUpClosedListener = () => {
@@ -188,7 +201,45 @@ dcent.call = async function (params) {
   })
 }
 
+const createDcentTab = () => {
+  LOG.debug('createDcentTab')
+  if (dcent.popupTab !== undefined && dcent.popupTab !== null) return 
+
+  let url = dcentConfig.popUpUrl + '?_from_extension=true'
+  chrome.windows.getCurrent(null, function (currentWindow) {
+    if (currentWindow.type !== 'normal') {
+      chrome.windows.create({
+        url: url
+      }, function (newWindow) {
+        chrome.tabs.query({
+          windowId: newWindow.id,
+          active: true
+        }, function (tabs) {
+           LOG.debug('create window and tab')
+           dcent.popupTab = tabs[0];
+        });
+      });
+    } 
+    else {
+       chrome.tabs.query({
+        currentWindow: true,
+        active: true
+      }, function (tabs) {
+        //_this4.extensionTabId = tabs[0].id; // $FlowIssue chrome not declared outside
+
+        chrome.tabs.create({
+          url: url,
+          index: tabs[0].index + 1
+        }, function (tab) {
+          dcent.popupTab = tab;
+        });
+      });
+    }
+  })
+}
+
 dcent.messageReceive = function (messageEvent) {
+  //LOG.debug("messageReceive", messageEvent)
   if (
     messageEvent.data.event === 'BridgeEvent' ||
     messageEvent.data.event === 'BridgeResponse'
@@ -200,15 +251,17 @@ dcent.messageReceive = function (messageEvent) {
     messageEvent.data.event === 'BridgeEvent' &&
     messageEvent.data.type === 'data'
    ) {
+    if ( messageEvent.data.payload === 'dcent-iframe-init')  {
+      dcent.eventSource = messageEvent.source
+      createDcentTab()
+      return
+    }
     if ( messageEvent.data.payload === 'popup-success' )  {
       dcent.dcentWebPromise.resolve()
       return
     }
     if ( messageEvent.data.payload === 'popup-close' ) {
-      dcent.popupWindow = undefined
-      dcent.dcentWebPromise = dcent.dcentWebDeferred()
-      ee.emit('popUpClosed')
-      ee.removeAllListeners()
+      clearPopup()
       return
     }
     if ( messageEvent.data.payload === 'dcent-connected' ||
@@ -219,20 +272,6 @@ dcent.messageReceive = function (messageEvent) {
       }
     }
   }
-
-  if (
-    messageEvent.data.event === 'BridgeEvent' &&
-    messageEvent.data.type === 'data' &&
-    messageEvent.data.payload === 'popup-close'
-  ) {
-    dcent.popupWindow = undefined
-    dcent.dcentWebPromise = dcent.dcentWebDeferred()
-    ee.emit('popUpClosed')
-    ee.removeAllListeners()
-    return
-  }
-
-
 
   if (
     messageEvent.data.event != 'BridgeResponse' ||
@@ -247,18 +286,40 @@ dcent.messageReceive = function (messageEvent) {
 }
 
 dcent.popupWindowClose = function () {
-  if (dcent.popupWindow) {
-    dcent.popupWindow.postMessage({
+  if (dcent.popupTab) {
+    // call close..
+    clearPopup()
+  } else {
+    postMessage({
       event: 'BridgeEvent',
       type: 'data',
       payload: 'popup-close'
-    },
-      '*'
-    )
+    })  
   }
 }
 
-window.addEventListener('message', dcent.messageReceive, false)
+const postMessage = (message) => {
+  if (dcent.popupWindow) {
+    try {
+      //LOG.debug('send message to window - ', dcent.popupWindow)
+      let origin = dcent.iframe.src.match(/^.+\:\/\/[^\/]+/)[0]
+      LOG.debug('origin- ', origin)
+      LOG.debug('message- ', message)
+      //dcent.popupWindow.postMessage(message, origin)
+      dcent.popupWindow.postMessage(message,origin)
+      //dcent.popupWindow.postMessage(message, origin)
+      // if (dcent.iframe) {
+      //   dcent.iframe.contentWindow.postMessage(message, dcent.iframe.src.match(/^.+\:\/\/[^\/]+/)) 
+      // } else {
+      //   dcent.popupWindow.postMessage(message, dcent.popupWindow.src.match(/^.+\:\/\/[^\/]+/))
+      // }
+    } catch (e) {
+      LOG.error(e)
+    }
+  }
+}
+
+window.addEventListener('message', dcent.messageReceive, false )
 window.addEventListener('beforeunload', dcent.popupWindowClose)
 
 let isNumberString = (str) => {

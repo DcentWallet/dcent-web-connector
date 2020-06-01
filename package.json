@@ -1,15 +1,16 @@
 {
   "name": "dcent-web-connector",
-  "version": "0.7.2-beta",
+  "version": "0.7.3",
   "description": "D'CENT Web SDK Connector",
   "main": "index.js",
   "scripts": {
-    "dev": "npm run build-dev && webpack-dev-server --mode development",
-    "build-dev": "webpack --mode development",
-    "build": "webpack --mode production",
+    "dev": "npm run build-dev && webpack-dev-server --mode development && npm run copy",
+    "build-dev": "webpack --mode development && npm run copy",
+    "build": "webpack --mode production && npm run copy",
     "test": "jest --detectOpenHandles --coverage --forceExit --runInBand",
     "unit-mock": "jest --coverage --runInBand 0_mock_test",
-    "unit-bridge": "jest --coverage --runInBand 1_bridge_test"
+    "unit-bridge": "jest --coverage --runInBand 1_bridge_test",
+    "copy": "ls && cp dist/dcent-web-connector.min.js examples/webextension/"
   },
   "jest": {
     "preset": "jest-puppeteer",

@@ -74,9 +74,8 @@ const clearPopup = () => {
   if (dcent.popupWindow) {
     dcent.popupWindow = undefined
     if (dcent.popupTab) {
-      chrome.tabs.remove(dcent.popupTab.id)
+      dcent.popupTab = undefined
     }
-    dcent.popupTab = undefined
     dcent.dcentWebPromise = dcent.dcentWebDeferred()
     ee.emit('popUpClosed')
     ee.removeAllListeners()
@@ -115,10 +114,18 @@ dcent.dcentPopupWindow = async function () {
       }
    } else {
         LOG.debug('create iframe') 
+        let dcentIframe = document.getElementById('dcent-connect')
+        if (dcentIframe) {
+          dcentIframe.parentNode.removeChild(dcentIframe);
+        }
         dcent.iframe = document.createElement('iframe')
         dcent.iframe.src = dcentConfig.popUpUrl + '/iframe'
+        dcent.iframe.id = 'dcent-connect'
         document.body.appendChild(dcent.iframe )
         dcent.popupWindow = dcent.iframe.contentWindow
+        if(dcent.popupTab) {
+          dcent.popupTab = undefined
+        }
         return null
     }
   } catch (e) {
@@ -286,16 +293,11 @@ dcent.messageReceive = function (messageEvent) {
 }
 
 dcent.popupWindowClose = function () {
-  if (dcent.popupTab) {
-    // call close..
-    clearPopup()
-  } else {
-    postMessage({
-      event: 'BridgeEvent',
-      type: 'data',
-      payload: 'popup-close'
-    })  
-  }
+  postMessage({
+    event: 'BridgeEvent',
+    type: 'data',
+    payload: 'popup-close'
+  })  
 }
 
 const postMessage = (message) => {
@@ -303,16 +305,7 @@ const postMessage = (message) => {
     try {
       //LOG.debug('send message to window - ', dcent.popupWindow)
       let origin = dcent.iframe.src.match(/^.+\:\/\/[^\/]+/)[0]
-      LOG.debug('origin- ', origin)
-      LOG.debug('message- ', message)
-      //dcent.popupWindow.postMessage(message, origin)
-      dcent.popupWindow.postMessage(message,origin)
-      //dcent.popupWindow.postMessage(message, origin)
-      // if (dcent.iframe) {
-      //   dcent.iframe.contentWindow.postMessage(message, dcent.iframe.src.match(/^.+\:\/\/[^\/]+/)) 
-      // } else {
-      //   dcent.popupWindow.postMessage(message, dcent.popupWindow.src.match(/^.+\:\/\/[^\/]+/))
-      // }
+      dcent.popupWindow.postMessage(message,origin)     
     } catch (e) {
       LOG.error(e)
     }

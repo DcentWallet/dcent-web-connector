@@ -564,6 +564,24 @@ describe('[dcent-web-connector] Bridge - init', () => {
         done()
     })
 
+    it('getEthereumSignedMessage() - success ', async (done) => { 
+
+        let message = '0x546869732069732061206D65737361676521212121'
+        let key = 'm/44\'/60\'/0\'/0/0'        
+        var response = await page.evaluate( (message, key) => {
+            return getEthereumSignedMessage(message, key)
+        }, message, key )
+
+        expect(response.header.status).toBe(Values.RESP_STATUS.SUCCESS)
+        expect(response.body.command).toBe(Values.CMD.MSG_SIGN)
+        expect(response.body.parameter).toBeDefined()
+        // TODO: address, sign value format check !! 
+        expect(response.body.parameter.address).toBeDefined()
+        expect(response.body.parameter.sign).toBeDefined()
+
+        done()
+    })
+
 })
 
 /* //////////////////////////////////////////////////////////////////////// */

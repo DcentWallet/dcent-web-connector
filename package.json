@@ -5,12 +5,11 @@
   "main": "index.js",
   "scripts": {
     "dev": "npm run build-dev && webpack-dev-server --mode development && npm run copy",
-    "build-dev": "webpack --mode development && npm run copy",
-    "build": "webpack --mode production && npm run copy",
+    "build-dev": "webpack --mode development",
+    "build": "webpack --mode production",
     "test": "jest --detectOpenHandles --coverage --forceExit --runInBand",
     "unit-mock": "jest --coverage --runInBand 0_mock_test",
-    "unit-bridge": "jest --coverage --runInBand 1_bridge_test",
-    "copy": "ls && cp dist/dcent-web-connector.min.js examples/webextension/"
+    "unit-bridge": "jest --coverage --runInBand 1_bridge_test"
   },
   "jest": {
     "preset": "jest-puppeteer",

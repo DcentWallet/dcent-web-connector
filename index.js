@@ -303,8 +303,10 @@ dcent.popupWindowClose = function () {
 const postMessage = (message) => {
   if (dcent.popupWindow) {
     try {
-      //LOG.debug('send message to window - ', dcent.popupWindow)
-      let origin = dcent.iframe.src.match(/^.+\:\/\/[^\/]+/)[0]
+      let origin = '*' 
+      if (dcent.iframe) {
+        origin = dcent.iframe.src.match(/^.+\:\/\/[^\/]+/)[0]
+      } 
       dcent.popupWindow.postMessage(message,origin)     
     } catch (e) {
       LOG.error(e)

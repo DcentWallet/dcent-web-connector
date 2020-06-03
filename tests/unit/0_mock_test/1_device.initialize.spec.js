@@ -22,7 +22,18 @@ window.open = () => {
             }
         }
         DcentWebConnector.messageReceive(messageEvent)
-    }, 1000)
+    }, 100)
+    setTimeout(() => {
+        let messageEvent = {
+            isTrusted: true,
+            data: {
+                event: 'BridgeEvent',
+                type: 'data',
+                payload: 'dcent-connected'
+            }
+        }
+        DcentWebConnector.messageReceive(messageEvent)
+    }, 300)
     
     let result = {
         closed: false,
@@ -44,6 +55,13 @@ describe('[dcent-web-connector] MOCK - device init', () => {
     })
     
     it('getDeviceInfo() - success ', async (done) => {
+
+        let connectionState = ''
+        function connectionListener(state) {
+            connectionState = state 
+        }
+        DcentWebConnector.setConnectionListener(connectionListener)
+
         var response 
         try {
             response = await DcentWebConnector.getDeviceInfo()
@@ -58,7 +76,8 @@ describe('[dcent-web-connector] MOCK - device init', () => {
         expect(response.body.parameter.state).toBeDefined()
         expect(response.body.parameter.coin_list).toBeDefined()
         expect(response.body.parameter.label).toBeDefined()
-
+         
+        expect(connectionState).toBe(DcentWebConnector.state.CONNECTED) // setConnectionListener test .. !!
         done()
     })
 
@@ -109,6 +128,27 @@ describe('[dcent-web-connector] MOCK - device init', () => {
         expect(response.header.status).toBe(Values.RESP_STATUS.SUCCESS)
         expect(response.body.command).toBe(Values.CMD.SET_LABEL)
 
+        done()
+    })
+
+    it('dcent disconnect listener  - success ', async (done) => {
+
+        let connectionState = ''
+        function connectionListener(state) {
+            connectionState = state 
+        }
+        DcentWebConnector.setConnectionListener(connectionListener)
+        let messageEvent = {
+            isTrusted: true,
+            data: {
+                event: 'BridgeEvent',
+                type: 'data',
+                payload: 'dcent-disconnected'
+            }
+        }
+        DcentWebConnector.messageReceive(messageEvent)
+        
+        expect(connectionState).toBe(DcentWebConnector.state.DISCONNECTED) // setConnectionListener test .. !!
         done()
     })
 })

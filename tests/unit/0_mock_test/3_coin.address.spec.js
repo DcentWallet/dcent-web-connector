@@ -22,7 +22,18 @@ window.open = () => {
             }
         }
         DcentWebConnector.messageReceive(messageEvent)
-    }, 1000)
+    }, 100)
+    setTimeout(() => {
+        let messageEvent = {
+            isTrusted: true,
+            data: {
+                event: 'BridgeEvent',
+                type: 'data',
+                payload: 'dcent-connected'
+            }
+        }
+        DcentWebConnector.messageReceive(messageEvent)
+    }, 300)
     
     let result = {
         closed: false,
@@ -59,10 +70,34 @@ describe('[dcent-web-connector] MOCK - coin address', () => {
         done()
     })
 
-    it('getAddress() - invalid coin type ', async (done) => {
+    it('getAddress() - invalid coin type 1', async (done) => {
         var response 
         try {
             response = await DcentWebConnector.getAddress('ETHEREUM-ABCCD', "m/44'/60'/0'/0/0");  
+        } catch (e) {            
+            response = e
+        }     
+
+        expect(response.header.status).toBe(Values.RESP_STATUS.ERROR)
+        done()
+    })
+
+    it('getAddress() - invalid coin type 2 ', async (done) => {
+        var response 
+        try {
+            response = await DcentWebConnector.getAddress();  
+        } catch (e) {            
+            response = e
+        }     
+
+        expect(response.header.status).toBe(Values.RESP_STATUS.ERROR)
+        done()
+    })
+
+    it('getAddress() - invalid coin type 3 ', async (done) => {
+        var response 
+        try {
+            response = await DcentWebConnector.getAddress(DcentWebConnector.coinType.BITCOIN, "m/44'/0'/0'/0/0");  
         } catch (e) {            
             response = e
         }     

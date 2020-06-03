@@ -22,7 +22,18 @@ window.open = () => {
             }
         }
         DcentWebConnector.messageReceive(messageEvent)
-    }, 1000)
+    }, 100)
+    setTimeout(() => {
+        let messageEvent = {
+            isTrusted: true,
+            data: {
+                event: 'BridgeEvent',
+                type: 'data',
+                payload: 'dcent-connected'
+            }
+        }
+        DcentWebConnector.messageReceive(messageEvent)
+    }, 300)
     
     let result = {
         closed: false,
@@ -156,6 +167,27 @@ describe('[dcent-web-connector] MOCK - coin sign', () => {
             response = e
         }
         expect(response.header.status).toBe(Values.RESP_STATUS.ERROR)
+        done()
+    })
+
+    it('getEthereumSignedTransaction() - invalid chainId ', async (done) => { 
+        var response 
+        try {
+            response = await DcentWebConnector.getEthereumSignedTransaction( DcentWebConnector.coinType.ETHEREUM,
+            '8',
+            '2400000000',
+            '210000',
+            '0x354609C4c9a15d4265cF6D94010568D5Cf4d0c1B',
+            '100000000000000000',
+            '0x',
+            "m/44'/60'/0'/0/0",
+            'A')
+        } catch (e) {
+            response = e
+        }
+        expect(response.header.status).toBe(Values.RESP_STATUS.ERROR)
+        expect(response.body.error.code).toBe('param_error')
+        expect(response.body.error.message).toBeDefined()
         done()
     })
 

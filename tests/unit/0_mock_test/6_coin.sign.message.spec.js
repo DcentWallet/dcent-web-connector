@@ -2,6 +2,7 @@ const DcentWebConnector = require('../../../index')
 
 var NilMock = require('../../../src/native/__mocks__/nil')
 const Values = require('../test-constants')
+
 /* //////////////////////////////////////////////////////////////////////// */
 /* */
 /* //////////////////////////////////////////////////////////////////////// */
@@ -48,65 +49,20 @@ window.open = () => {
 /* */
 /* //////////////////////////////////////////////////////////////////////// */
 
-describe('[dcent-web-connector] MOCK - bridge timeout fail', () => {
+describe('[dcent-web-connector] MOCK - coin sign message', () => {
     afterAll(() => {
         DcentWebConnector.popupWindowClose()
     })
-
-    it('setTimeOutMs() - fail ', async (done) => {
+    
+    it('getSignedMessage() - current not support', async (done) => { 
         var response 
         try {
-            DcentWebConnector.setTimeOutMs('abc')
+            response = await DcentWebConnector.getSignedMessage()
         } catch (e) {
             response = e
         }
+
         expect(response.header.status).toBe(Values.RESP_STATUS.ERROR)
-        expect(response.body.error.code).toBe('param_error')
-        expect(response.body.error.message).toBeDefined()
-
-        done()
-    })
-})
-
-describe('[dcent-web-connector] MOCK - bridge timeout success', () => {
-    afterAll(() => {
-        DcentWebConnector.popupWindowClose()
-    })
-
-    it('setTimeOutMs() - success ', async (done) => {
-        var response 
-        try {
-            DcentWebConnector.setTimeOutMs(30)
-            response = await DcentWebConnector.info()        
-        } catch (e) {
-            response = e
-        }
-        expect(response.header.status).toBe(Values.RESP_STATUS.ERROR)
-        expect(response.body.error.code).toBe('time_out')
-        expect(response.body.error.message).toBeDefined()
-
-        done()
-    })
-})
-
-describe('[dcent-web-connector] MOCK - bridge init', () => {
-    afterAll(() => {
-        DcentWebConnector.popupWindowClose()
-    })
-
-    it('info() - success ', async (done) => {
-        var response 
-        try {
-            DcentWebConnector.setTimeOutMs(10000)
-            response = await DcentWebConnector.info()        
-        } catch (e) {
-            response = e
-        }
-        expect(response.header.status).toBe(Values.RESP_STATUS.SUCCESS)
-        expect(response.body.command).toBe(Values.CMD.INFO)
-        expect(response.body.parameter.version).toBeDefined()
-        expect(response.body.parameter.isUsbAttached).toBeTruthy()
-
         done()
     })
 })

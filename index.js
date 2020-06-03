@@ -338,7 +338,7 @@ let isHexNumberString = (str) => {
 
 let checkParameter = (type, param) => {
   if (type === 'numberString') {
-    if (typeof param !== 'string') throw dcent.dcentException('param_error', 'Invaild Parameter - - ' + param) // must string
+    if (typeof param !== 'string') throw dcent.dcentException('param_error', 'Invaild Parameter - ' + param) // must string
 
     if (param.indexOf('0x', 0) === -1) {
       // number string
@@ -431,10 +431,10 @@ function isAvaliableCoinType (coinType) {
     return false
   }
   switch (coinType.toLowerCase()) {
-    case dcentCoinType.ERC20.toLowerCase():
-    case dcentCoinType.ERC20_KOVAN.toLowerCase():
     case dcentCoinType.ETHEREUM.toLowerCase():
     case dcentCoinType.ETHEREUM_KOVAN.toLowerCase():
+    case dcentCoinType.ERC20.toLowerCase():
+    case dcentCoinType.ERC20_KOVAN.toLowerCase():
     case dcentCoinType.RRC20.toLowerCase():
     case dcentCoinType.RRC20_TESTNET.toLowerCase():
     case dcentCoinType.RSK.toLowerCase():
@@ -754,7 +754,6 @@ dcent.getKlaytnSignedTransaction = async function (
       contract.decimals = checkParameter('numberString', contract.decimals)
     }
   } catch (error) {
-    LOG.error(error)
     throw error
   }
   

@@ -155,7 +155,35 @@ const defaultDeviceResponse = {
                 "sign": "0x1d36f3c4142f1c8b14c70afb6093310af6e46cbe83ae386b021e2b03c157a9237120e47c869aa6c449eddde7d103647f82c0f5c2f5ab6649a6851c2bedde06601b"
             }
         }
-    }
+    },
+    getKlaytnSignedTransaction: {
+        header: {
+            version: '1.0',
+            response_from: 'klaytn',
+            status: 'success'
+        },
+        body: {
+            command:'transaction',
+            "parameter": {
+                "sign_v": "0x4056",
+                "sign_r": "0xe80b33d305ca6c2ab0519ecf3aeb5af4628fbdf134d8316a2aa32975e0cbf3cf",
+                "sign_s": "0x61b565596adaa43193744ea8944f36be7eef392237462dcd64886960fc63062a"
+            }
+        }
+    },
+    getSignedMessage: {
+        header: {
+            version: '1.0',
+            response_from: 'bridge',
+            status: 'error'
+        },
+        body: {
+            error: {
+                code: 'command_error',
+                message: 'not support command'
+            }
+        }
+    },
 }
 /* //////////////////////////////////////////////////////////////////////// */
 /* */

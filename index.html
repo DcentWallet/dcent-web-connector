@@ -58,7 +58,8 @@
 
         <button id="get_xpub" type="button" class="btn btn-primary">Get XPUB </button>
         <br />
-
+        <button id="getSignedMessage_Klaytn" type="button" class="btn btn-primary">getSignedMessage - Klaytn</button>
+        <br />
         <button id="getEthereumSignedTransaction" type="button"
           class="btn btn-primary">getEthereumSignedTransaction</button>
         <button id="getTokenSignedTransaction" type="button" class="btn btn-primary">getTokenSignedTransaction</button>
@@ -136,7 +137,7 @@
         $('#get_address_ethereum').click(get_address_ethereum_clicked);
         $('#get_address_ethereum_kovan').click(get_address_ethereum_kovan_clicked);
 
-
+        $('#getSignedMessage_Klaytn').click(getSignedMessage_Klaytn_clicked);
         $('#getEthereumSignedTransaction').click(getEthereumSignedTransaction_clicked);
         $('#getTokenSignedTransaction').click(getTokenSignedTransaction_clicked);
         $('#getEthereumSignedMessage').click(getEthereumSignedMessage_clicked);
@@ -262,6 +263,17 @@
         resp_editor.load(result)
       }
 
+      async function getSignedMessage_Klaytn_clicked() {
+        set_command_name("Processing...");
+
+        var result  = await getSingedMessage( 
+          dcent.coinType.KLAYTN,
+          "m/44'/8217'/0'/0/0",
+          'This is a message!!');
+      
+        set_command_name("getSingedMessage - Klaytn")       
+        resp_editor.load(result)
+      }
       async function getEthereumSignedTransaction_clicked() {
         set_command_name("Processing...");
 
@@ -473,6 +485,15 @@
           result = e
         }
         return result 
+      }
+      async function getSingedMessage( coinType, key, message) {
+        var result 
+        try { 
+          result = await dcent.getSignedMessage(coinType, key, message)            
+        } catch (e) {
+          result = e
+        }
+        return result
       }
 
       async function getEthereumSignedTransaction( coinType, nonce, gasPrice, gasLimit, to, value, data, key, chainId) {

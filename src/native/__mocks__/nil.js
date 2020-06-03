@@ -49,6 +49,12 @@ const requestToBridge = (payload) => {
     case Method.GET_ETH_SIGN_MSG:
         response = defaultDeviceResponse.getEthereumSignedMessage
         break;
+    case Method.GET_KLAY_SIGN_TX:
+        response = defaultDeviceResponse.getKlaytnSignedTransaction
+        break;
+    case Method.GET_SIGN_MSG:
+        response = defaultDeviceResponse.getSignedMessage
+        break;
     default:
         response = 'error'
       throw new Error('Not implemented Method in Mock : ' + method)

@@ -13,6 +13,8 @@ module.exports = {
     GET_ETH_SIGN_TX: 'getEthereumSignedTransaction',
     GET_ETH_TOKEN_SIGN_TX: 'getTokenSignedTransaction',
     GET_ETH_SIGN_MSG: 'getEthereumSignedMessage',
+    GET_KLAY_SIGN_TX: 'getKlaytnSignedTransaction',
+    GET_SIGN_MSG: 'getSignedMessage',
 }
 
 /* //////////////////////////////////////////////////////////////////////// */

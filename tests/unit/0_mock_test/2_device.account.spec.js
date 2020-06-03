@@ -22,7 +22,18 @@ window.open = () => {
             }
         }
         DcentWebConnector.messageReceive(messageEvent)
-    }, 1000)
+    }, 100)
+    setTimeout(() => {
+        let messageEvent = {
+            isTrusted: true,
+            data: {
+                event: 'BridgeEvent',
+                type: 'data',
+                payload: 'dcent-connected'
+            }
+        }
+        DcentWebConnector.messageReceive(messageEvent)
+    }, 300)
     
     let result = {
         closed: false,
@@ -88,7 +99,7 @@ describe('[dcent-web-connector] MOCK - device account', () => {
         done()
     })
 
-    it('syncAccount() - invalid coin group ', async (done) => {
+    it('syncAccount() - invalid coin group 1', async (done) => {
         let accountInfo = [
             {
                 coin_group: 'ETHEREUM-C',
@@ -105,10 +116,57 @@ describe('[dcent-web-connector] MOCK - device account', () => {
             response = e
         }    
         expect(response.header.status).toBe(Values.RESP_STATUS.ERROR)
+        expect(response.body.error.code).toBe('coin_group_error')
+        expect(response.body.error.message).toBeDefined()  
         done()
     })
 
-    it('syncAccount() - invalid coin group ', async (done) => {
+    it('syncAccount() - invalid coin group 2', async (done) => {
+        let accountInfo = [
+            {
+                coin_group: DcentWebConnector.coinGroup.BITCOIN,//
+                coin_name: DcentWebConnector.coinName.BITCOIN,//
+                label: 'btc 01',
+                address_path: "m/44'/0'/0'/0/0",
+                balance: '0 btc'
+            }
+        ]
+        var response
+        try {
+            response = await DcentWebConnector.syncAccount(accountInfo)        
+        } catch (e) {
+            response = e
+        }    
+
+        expect(response.header.status).toBe(Values.RESP_STATUS.ERROR)
+        expect(response.body.error.code).toBe('coin_group_error')
+        expect(response.body.error.message).toBeDefined()  
+        done()
+    })
+
+    it('syncAccount() - invalid coin group 3', async (done) => {
+        let accountInfo = [
+            {
+                coin_name: 'ETHEREUM-C',//
+                label: 'IoTrust',
+                address_path: "m/44'/60'/0'/0/0",
+                balance: '0 ETH'
+            }
+        ]
+        var response
+        try {
+            response = await DcentWebConnector.syncAccount(accountInfo)   
+        } catch (e) {
+            response = e
+        }    
+
+        expect(response.header.status).toBe(Values.RESP_STATUS.ERROR)
+        expect(response.body.error.code).toBe('coin_group_error')
+        expect(response.body.error.message).toBeDefined()     
+        done()
+    })
+
+    it('syncAccount() - invalid coin group 4', async (done) => {
         let accountInfo = [
             {
                 coin_group: 'ETHEREUM-C',//
@@ -126,8 +184,35 @@ describe('[dcent-web-connector] MOCK - device account', () => {
         }    
 
         expect(response.header.status).toBe(Values.RESP_STATUS.ERROR)
+        expect(response.body.error.code).toBe('coin_group_error')
+        expect(response.body.error.message).toBeDefined()  
         done()
     })
+
+    it('syncAccount() - invalid coin name ', async (done) => {
+        let accountInfo = [
+            {
+                coin_group: DcentWebConnector.coinGroup.ETHEREUM,//
+                coin_name: 'ETHEREUM-C',//
+                label: 'IoTrust',
+                address_path: "m/44'/60'/0'/0/0",
+                balance: '0 ETH'
+            }
+        ]
+        var response
+        try {
+            response = await DcentWebConnector.syncAccount(accountInfo)        
+        } catch (e) {
+            response = e
+        }    
+
+        expect(response.header.status).toBe(Values.RESP_STATUS.ERROR)
+        expect(response.body.error.code).toBe('coin_name_error')
+        expect(response.body.error.message).toBeDefined()
+        
+        done()
+    })
+
 
     it('syncAccount() - success ', async (done) => { 
         let account_infos = [

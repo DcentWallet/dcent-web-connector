@@ -234,10 +234,13 @@ const createDcentTab = () => {
         active: true
       }, function (tabs) {
         //_this4.extensionTabId = tabs[0].id; // $FlowIssue chrome not declared outside
-
+        let index = 0
+        if (tabs.length > 0) {
+          index = tabs[0].index + 1
+        }
         chrome.tabs.create({
           url: url,
-          index: tabs[0].index + 1
+          index: index
         }, function (tab) {
           dcent.popupTab = tab;
         });
@@ -799,6 +802,17 @@ dcent.getKlaytnSignedTransaction = async function (
       from: from,
       fee_ratio: feeRatio,
       contract: contract
+    }
+  })
+}
+
+dcent.getSignedMessage = async function (coinType, key, message) {
+  return await dcent.call({
+    method: 'getSignedMessage',
+    params: {
+      coinType: coinType,
+      key: key,
+      message: message,
     }
   })
 }

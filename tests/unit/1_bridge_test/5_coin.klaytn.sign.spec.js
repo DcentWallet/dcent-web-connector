@@ -398,7 +398,6 @@ describe('[dcent-web-connector] Bridge - init', () => {
                 data, key, chainId, txType)
         }, coinType, nonce, gasPrice, gasLimit, to, value, data, key, chainId, txType)
 
-        LOG.test(response)
         expect(response.header.status).toBe(Values.RESP_STATUS.SUCCESS)
         expect(response.body.command).toBe(Values.CMD.TRANSACTION)
         expect(response.body.parameter).toBeDefined()

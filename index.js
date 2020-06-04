@@ -786,8 +786,6 @@ dcent.getKlaytnSignedTransaction = async function (
   }
   
   if (!from) {
-    LOG.test('coinType - ', coinType)
-    LOG.test('key - ', key)
     const addressResponse = await this.getAddress(coinType, key)
     if (addressResponse.body.parameter.address) {
       from = addressResponse.body.parameter.address

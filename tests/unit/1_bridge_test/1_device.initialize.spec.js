@@ -2,7 +2,7 @@ const DcentWebConnector = require('../../../index')
 
 const Values = require('../test-constants')
 const puppeteer = require('puppeteer')
-const LOG = require('../../../src/utils/log')
+// const LOG = require('../../../src/utils/log')
 /* //////////////////////////////////////////////////////////////////////// */
 /* */
 /* //////////////////////////////////////////////////////////////////////// */
@@ -12,9 +12,9 @@ describe('[dcent-web-connector] device - init', () => {
     let page
     beforeAll(async () => {
         bowser = await puppeteer.launch({
-            headless: false
+            headless: false,
         })
-        page = await bowser.newPage();
+        page = await bowser.newPage()
 
         await page.goto('http://localhost:9090')
     })
@@ -22,10 +22,11 @@ describe('[dcent-web-connector] device - init', () => {
         DcentWebConnector.popupWindowClose()
         bowser.close()
     })
-    
-    it('getDeviceInfo() - success ', async (done) => {
-        var response = await page.evaluate( () => {
-            return getInfo()       
+
+    it('getDeviceInfo()- success ', async (done) => {
+        var response = await page.evaluate(() => {
+            // eslint-disable-next-line no-undef
+            return getInfo()
         })
 
         expect(response.header.status).toBe(Values.RESP_STATUS.SUCCESS)
@@ -37,55 +38,57 @@ describe('[dcent-web-connector] device - init', () => {
         expect(response.body.parameter.coin_list).toBeDefined()
         expect(response.body.parameter.label).toBeDefined()
 
-        var connected =await page.evaluate(() => {
-            let element = document.getElementById('connect-display');
+        var connected = await page.evaluate(() => {
+            const element = document.getElementById('connect-display')
             if (element) {
                 return element.textContent
             }
-        });        
-        expect(connected.search('DCENT is Connected')).toBeTruthy() // setConnectionListener test .. !!
+        })
+        expect(connected.search('DCENT is Connected')).toBeTruthy()// setConnectionListener test .. !!
         done()
     })
 
-    it('setLabel() - with Invalid label length ', async (done) => {
-        var response = await page.evaluate( () => {
-            return setLabel('AbcdeFghijkLMNOPQRS12345')  
+    it('setLabel()- with Invalid label length ', async (done) => {
+        var response = await page.evaluate(() => {
+            // eslint-disable-next-line no-undef
+            return setLabel('AbcdeFghijkLMNOPQRS12345')
         })
         expect(response.header.status).toBe(Values.RESP_STATUS.ERROR)
         done()
     })
 
-    it('setLabel() - with null label ', async (done) => {
-        var response = await page.evaluate( () => {
-            return setLabel() 
+    it('setLabel()- with null label ', async (done) => {
+        var response = await page.evaluate(() => {
+            // eslint-disable-next-line no-undef
+            return setLabel()
         })
         expect(response.header.status).toBe(Values.RESP_STATUS.ERROR)
         done()
     })
 
-    it('setLabel() - with Invalid charactor label ', async (done) => {
-        var response = await page.evaluate( () => {
-            return setLabel(';;;;;;;;') 
+    it('setLabel()- with Invalid charactor label ', async (done) => {
+        var response = await page.evaluate(() => {
+            // eslint-disable-next-line no-undef
+            return setLabel('')
         })
         expect(response.header.status).toBe(Values.RESP_STATUS.ERROR)
         done()
     })
-    
-    it('setLabel() - success ', async (done) => {
-        var response = await page.evaluate( () => {
-            var result 
+
+    it('setLabel()- success ', async (done) => {
+        var response = await page.evaluate(() => {
+            var result
             try {
-                result = setLabel('IoTrust')        
+                // eslint-disable-next-line no-undef
+                result = setLabel('IoTrust')
             } catch (e) {
                 result = e
             }
-            return  result   
+            return result
         })
         expect(response.header.status).toBe(Values.RESP_STATUS.SUCCESS)
         done()
     })
-
-
 })
 
 /* //////////////////////////////////////////////////////////////////////// */

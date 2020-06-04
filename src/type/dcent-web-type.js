@@ -18,7 +18,7 @@ const coinType = {
   RRC20: 'rrc20',
   RRC20_TESTNET: 'rrc20',
   RSK: 'rsk',
-  RSK_TESTNET: 'rsk-testnet'
+  RSK_TESTNET: 'rsk-testnet',
 }
 
 const coinGroup = {
@@ -39,7 +39,7 @@ const coinGroup = {
   RRC20: 'RRC20',
   RRC20_TESTNET: 'RRC20-TESTNET',
   RSK: 'RSK',
-  RSK_TESTNET: 'RSK-TESTNET'
+  RSK_TESTNET: 'RSK-TESTNET',
 }
 
 const coinName = {
@@ -60,7 +60,7 @@ const coinName = {
   RRC20: '',
   RRC20_TESTNET: '',
   RSK: 'RSK',
-  RSK_TESTNET: 'RSK-TESTNET'
+  RSK_TESTNET: 'RSK-TESTNET',
 }
 
 // export const bitcoinTxType = {
@@ -73,11 +73,11 @@ const coinName = {
 const klaytnTxType = {
   LEGACY: 0xFF,
 	FEE_PAYER: 0xEE,
-	
+
 	VALUE_TRANSFER: 0x08,
 	FEE_DELEGATED_VALUE_TRANSFER: 0x09,
 	FEE_DELEGATED_VALUE_TRANSFER_WITH_RATIO: 0x0A,
-	
+
 	VALUE_TRANSFER_MEMO: 0x10,
 	FEE_DELEGATED_VALUE_TRANSFER_MEMO: 0x11,
 	FEE_DELEGATED_VALUE_TRANSFER_MEMO_WITH_RATIO: 0x12,
@@ -88,12 +88,12 @@ const klaytnTxType = {
 
 	CANCEL: 0x38,
 	FEE_DELEGATED_CANCEL: 0x39,
-	FEE_DELEGATED_CANCEL_WITH_RATIO: 0x3A
+	FEE_DELEGATED_CANCEL_WITH_RATIO: 0x3A,
 }
 
-module.exports = { 
+module.exports = {
   coinType,
   coinGroup,
   coinName,
-  klaytnTxType
+  klaytnTxType,
 }

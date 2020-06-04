@@ -3,6 +3,6 @@ const state = {
     DISCONNECTED: 'dcent-disconnected',
 }
 
-module.exports = { 
-    state
+module.exports = {
+    state,
 }

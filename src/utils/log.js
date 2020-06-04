@@ -40,9 +40,9 @@ const error = console.error.bind(window.console, '[ERROR] ') // eslint-disable-l
 const test = console.warn.bind(window.console, '[TEST] ') // eslint-disable-line no-console
 
 const NOT_IMPLEMENTED = function () {
-    var callerLine = (new Error()).stack.toString().split(/\r\n|\n/)[2];
+    var callerLine = (new Error()).stack.toString().split(/\r\n|\n/)[2]
     var clean = normalizeCallerLine(callerLine)
-    console.log('[NOT_IMPLEMENTED]' + clean)  // eslint-disable-line no-console
+    console.log('[NOT_IMPLEMENTED]' + clean) // eslint-disable-line no-console
     throw new Error('NOT_IMPLEMENTED')
 }
 

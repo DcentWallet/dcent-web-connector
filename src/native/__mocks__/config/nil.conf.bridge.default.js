@@ -7,22 +7,22 @@ const defaultBridgeResponse = {
         header: {
             version: '1.0',
             response_from: 'bridge',
-            status: 'success'
+            status: 'success',
         },
         body: {
-            command:'info',
+            command: 'info',
             parameter: {
                 version: '1.0.6',
-                isUsbAttached: true
-            }
-        }
-    }
+                isUsbAttached: true,
+            },
+        },
+    },
 }
 /* //////////////////////////////////////////////////////////////////////// */
 /* */
 /* //////////////////////////////////////////////////////////////////////// */
 export default {
-    defaultBridgeResponse
+    defaultBridgeResponse,
 }
 
 /* //////////////////////////////////////////////////////////////////////// */

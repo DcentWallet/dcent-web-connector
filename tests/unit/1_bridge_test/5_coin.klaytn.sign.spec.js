@@ -1,7 +1,7 @@
 const DcentWebConnector = require('../../../index')
 const Values = require('../test-constants')
 const puppeteer = require('puppeteer')
-const LOG = require('../../../src/utils/log')
+// const LOG = require('../../../src/utils/log')
 
 /* //////////////////////////////////////////////////////////////////////// */
 /* */

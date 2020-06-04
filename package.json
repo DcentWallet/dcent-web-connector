@@ -7,10 +7,11 @@
     "dev": "npm run build-dev && webpack-dev-server --mode development",
     "build-dev": "webpack --mode development",
     "build": "webpack --mode production",
-    "test": "jest --detectOpenHandles --coverage --forceExit --runInBand",
+    "test": "npm run lint && jest --detectOpenHandles --coverage --forceExit --runInBand",
     "unit-mock": "jest --coverage --runInBand 0_mock_test",
     "unit-bridge": "jest --coverage --runInBand 1_bridge_test",
-    "lint": "eslint --ext .js index.js src tests --fix"
+    "lint": "eslint --ext .js index.js src tests",
+    "lint:fix": "eslint --ext .js index.js src tests --fix"
   },
   "jest": {
     "preset": "jest-puppeteer",

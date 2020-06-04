@@ -106,12 +106,12 @@ dcent.dcentPopupWindow = async function () {
    let extension = typeof chrome !== 'undefined' && chrome.runtime && typeof chrome.runtime.onConnect !== 'undefined'
    if (!extension) {
       dcent.popupWindow = window.open('', '_blank')
-      LOG.debug('window.open create dcent.popupWindow opener = ', dcent.popupWindow.opener) 
-
+      
       if (dcent.popupWindow) {
+        LOG.debug('window.open create dcent.popupWindow opener = ', dcent.popupWindow.opener) 
         dcent.popupWindow.location.href = dcentConfig.popUpUrl
       } else {
-        return popupErrorException(e.message)
+        return popupErrorException('window is not open')
       }
    } else {
         LOG.debug('create iframe') 

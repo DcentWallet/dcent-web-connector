@@ -2,6 +2,7 @@ const DcentWebConnector = require('../../../index')
 
 var NilMock = require('../../../src/native/__mocks__/nil')
 const Values = require('../test-constants')
+var LOG = require('../../../src/utils/log')
 /* //////////////////////////////////////////////////////////////////////// */
 /* */
 /* //////////////////////////////////////////////////////////////////////// */
@@ -84,8 +85,7 @@ describe('[dcent-web-connector] MOCK - bridge timeout success', () => {
         expect(response.header.status).toBe(Values.RESP_STATUS.ERROR)
         expect(response.body.error.code).toBe('time_out')
         expect(response.body.error.message).toBeDefined()
-
-        done()
+        done()    
     })
 })
 
@@ -107,6 +107,51 @@ describe('[dcent-web-connector] MOCK - bridge init', () => {
         expect(response.body.parameter.version).toBeDefined()
         expect(response.body.parameter.isUsbAttached).toBeTruthy()
 
+        done()
+    })
+
+    it('popup close  - success ', async (done) => {
+        let messageEvent = {
+            isTrusted: true,
+            data: {
+                event: 'BridgeEvent',
+                type: 'data',
+                payload: 'popup-close'
+            }
+        }
+        DcentWebConnector.messageReceive(messageEvent)
+
+        expect(!DcentWebConnector.popupWindow || DcentWebConnector.popupWindow.closed).toBeTruthy()
+
+        done()
+    })
+
+    it('window open fail ', async (done) => {
+        window.open = null
+        var response 
+        try {
+            response = await DcentWebConnector.info()        
+        } catch (e) {
+            response = e
+        }
+
+        expect(response.header.status).toBe(Values.RESP_STATUS.ERROR)
+        expect(response.body.error.code).toBe('pop-up_blocked')
+        expect(response.body.error.message).toBeDefined()
+
+        window.open = () => {
+            return null
+        }
+        var response 
+        try {
+            response = await DcentWebConnector.info()        
+        } catch (e) {
+            response = e
+        }
+
+        expect(response.header.status).toBe(Values.RESP_STATUS.ERROR)
+        expect(response.body.error.code).toBe('pop-up_blocked')
+        expect(response.body.error.message).toBeDefined()
         done()
     })
 })

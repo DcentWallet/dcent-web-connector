@@ -163,7 +163,6 @@ dcent.call = async function (params) {
 
     if (!dcent.popupWindow || dcent.popupWindow.closed) {
       var result = await dcent.dcentPopupWindow()
-      LOG.debug('dcent.call --- result : ', result)
       if (result !== null) {
         reject(result)
       }
@@ -200,7 +199,7 @@ dcent.call = async function (params) {
         }
       }
       } catch(e) {
-        LOG.error(e)
+        // LOG.error(e)
       }
     }
     ee.once('popUpClosed', popUpClosedListener)
@@ -211,6 +210,8 @@ dcent.call = async function (params) {
 
 const createDcentTab = () => {
   LOG.debug('createDcentTab')
+  if ( typeof chrome === 'undefined' ) return
+
   if (dcent.popupTab !== undefined && dcent.popupTab !== null) return 
 
   let url = dcentConfig.popUpUrl + '?_from_extension=true'
@@ -313,7 +314,7 @@ const postMessage = (message) => {
       } 
       dcent.popupWindow.postMessage(message,origin)     
     } catch (e) {
-      LOG.error(e)
+      // LOG.error(e)
     }
   }
 }

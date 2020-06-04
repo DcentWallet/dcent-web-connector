@@ -10,41 +10,40 @@ const Values = require('../test-constants')
 // Before TEST : Set Message Receiver and window.open
 NilMock.setMessageReceiver(DcentWebConnector.messageReceive)
 window.open = () => {
-    // # 
+    // #
     // Send Event
     setTimeout(() => {
-        let messageEvent = {
+        const messageEvent = {
             isTrusted: true,
             data: {
                 event: 'BridgeEvent',
                 type: 'data',
-                payload: 'popup-success'
-            }
+                payload: 'popup-success',
+            },
         }
         DcentWebConnector.messageReceive(messageEvent)
     }, 100)
     setTimeout(() => {
-        let messageEvent = {
+        const messageEvent = {
             isTrusted: true,
             data: {
                 event: 'BridgeEvent',
                 type: 'data',
-                payload: 'dcent-connected'
-            }
+                payload: 'dcent-connected',
+            },
         }
         DcentWebConnector.messageReceive(messageEvent)
     }, 300)
-    
-    let result = {
+
+    const result = {
         closed: false,
         location: {
-            href: ''
+            href: '',
         },
-        postMessage: NilMock.postMessage
+        postMessage: NilMock.postMessage,
     }
     return result
 }
-
 /* //////////////////////////////////////////////////////////////////////// */
 /* */
 /* //////////////////////////////////////////////////////////////////////// */
@@ -53,11 +52,11 @@ describe('[dcent-web-connector] MOCK - coin sign', () => {
     afterAll(() => {
         DcentWebConnector.popupWindowClose()
     })
-    
-    it('getKlaytnSignedTransaction() - invalid coin type 1', async (done) => { 
-        var response 
+
+    it('getKlaytnSignedTransaction() - invalid coin type 1', async (done) => {
+        var response
         try {
-            response = await DcentWebConnector.getKlaytnSignedTransaction( 'KLAYTNNNN',
+            response = await DcentWebConnector.getKlaytnSignedTransaction('KLAYTNNNN',
             '8',
             '25000000000',
             '21000',
@@ -76,10 +75,10 @@ describe('[dcent-web-connector] MOCK - coin sign', () => {
         done()
     })
 
-    it('getKlaytnSignedTransaction() - invalid coin type 2', async (done) => { 
-        var response 
+    it('getKlaytnSignedTransaction() - invalid coin type 2', async (done) => {
+        var response
         try {
-            response = await DcentWebConnector.getKlaytnSignedTransaction(  DcentWebConnector.coinType.ETHEREUM,
+            response = await DcentWebConnector.getKlaytnSignedTransaction(DcentWebConnector.coinType.ETHEREUM,
             '8',
             '25000000000',
             '21000',
@@ -98,10 +97,10 @@ describe('[dcent-web-connector] MOCK - coin sign', () => {
         done()
     })
 
-    it('getKlaytnSignedTransaction() - invalid coin type 3', async (done) => { 
-        var response 
+    it('getKlaytnSignedTransaction() - invalid coin type 3', async (done) => {
+        var response
         try {
-            response = await DcentWebConnector.getKlaytnSignedTransaction(  DcentWebConnector.coinType.BITCOIN,
+            response = await DcentWebConnector.getKlaytnSignedTransaction(DcentWebConnector.coinType.BITCOIN,
             '8',
             '25000000000',
             '21000',
@@ -120,10 +119,10 @@ describe('[dcent-web-connector] MOCK - coin sign', () => {
         done()
     })
 
-    it('getKlaytnSignedTransaction() - invalid nonce', async (done) => { 
-        var response 
+    it('getKlaytnSignedTransaction() - invalid nonce', async (done) => {
+        var response
         try {
-            response = await DcentWebConnector.getKlaytnSignedTransaction(  DcentWebConnector.coinType.KLAYTN,
+            response = await DcentWebConnector.getKlaytnSignedTransaction(DcentWebConnector.coinType.KLAYTN,
             '8a',
             '25000000000',
             '21000',
@@ -142,10 +141,10 @@ describe('[dcent-web-connector] MOCK - coin sign', () => {
         done()
     })
 
-    it('getKlaytnSignedTransaction() - invalid gasPrice', async (done) => { 
-        var response 
+    it('getKlaytnSignedTransaction() - invalid gasPrice', async (done) => {
+        var response
         try {
-            response = await DcentWebConnector.getKlaytnSignedTransaction(  DcentWebConnector.coinType.KLAYTN,
+            response = await DcentWebConnector.getKlaytnSignedTransaction(DcentWebConnector.coinType.KLAYTN,
             '8',
             '2A000000000',
             '21000',
@@ -164,10 +163,10 @@ describe('[dcent-web-connector] MOCK - coin sign', () => {
         done()
     })
 
-    it('getKlaytnSignedTransaction() - invalid gasLimit', async (done) => { 
-        var response 
+    it('getKlaytnSignedTransaction() - invalid gasLimit', async (done) => {
+        var response
         try {
-            response = await DcentWebConnector.getKlaytnSignedTransaction(  DcentWebConnector.coinType.KLAYTN,
+            response = await DcentWebConnector.getKlaytnSignedTransaction(DcentWebConnector.coinType.KLAYTN,
             '8',
             '25000000000',
             '2A000',
@@ -186,10 +185,10 @@ describe('[dcent-web-connector] MOCK - coin sign', () => {
         done()
     })
 
-    it('getKlaytnSignedTransaction() - invalid value', async (done) => { 
-        var response 
+    it('getKlaytnSignedTransaction() - invalid value', async (done) => {
+        var response
         try {
-            response = await DcentWebConnector.getKlaytnSignedTransaction(  DcentWebConnector.coinType.KLAYTN,
+            response = await DcentWebConnector.getKlaytnSignedTransaction(DcentWebConnector.coinType.KLAYTN,
             '8',
             '25000000000',
             '21000',
@@ -208,10 +207,10 @@ describe('[dcent-web-connector] MOCK - coin sign', () => {
         done()
     })
 
-    it('getKlaytnSignedTransaction() - invalid chinId', async (done) => { 
-        var response 
+    it('getKlaytnSignedTransaction() - invalid chinId', async (done) => {
+        var response
         try {
-            response = await DcentWebConnector.getKlaytnSignedTransaction(  DcentWebConnector.coinType.KLAYTN,
+            response = await DcentWebConnector.getKlaytnSignedTransaction(DcentWebConnector.coinType.KLAYTN,
             '8',
             '25000000000',
             '21000',
@@ -230,15 +229,15 @@ describe('[dcent-web-connector] MOCK - coin sign', () => {
         done()
     })
 
-    it('getKlaytnSignedTransaction() - SMART_CONTRACT_EXECUTION invalid coin type 1', async (done) => { 
+    it('getKlaytnSignedTransaction() - SMART_CONTRACT_EXECUTION invalid coin type 1', async (done) => {
         var contract = {
-            "name":"BAOBABTOKEN",
-            "decimals":"8",
-            "symbol":"BAO"
-          }    
-        var response 
+            'name': 'BAOBABTOKEN',
+            'decimals': '8',
+            'symbol': 'BAO',
+          }
+        var response
         try {
-            response = await DcentWebConnector.getKlaytnSignedTransaction(  DcentWebConnector.coinType.ETHEREUM,
+            response = await DcentWebConnector.getKlaytnSignedTransaction(DcentWebConnector.coinType.ETHEREUM,
             '8',
             '25000000000',
             '21000',
@@ -260,15 +259,15 @@ describe('[dcent-web-connector] MOCK - coin sign', () => {
         done()
     })
 
-    it('getKlaytnSignedTransaction() - SMART_CONTRACT_EXECUTION invalid coin type 2', async (done) => { 
+    it('getKlaytnSignedTransaction() - SMART_CONTRACT_EXECUTION invalid coin type 2', async (done) => {
         var contract = {
-            "name":"BAOBABTOKEN",
-            "decimals":"8",
-            "symbol":"BAO"
-          }    
-        var response 
+            'name': 'BAOBABTOKEN',
+            'decimals': '8',
+            'symbol': 'BAO',
+          }
+        var response
         try {
-            response = await DcentWebConnector.getKlaytnSignedTransaction(  DcentWebConnector.coinType.BITCOIN,
+            response = await DcentWebConnector.getKlaytnSignedTransaction(DcentWebConnector.coinType.BITCOIN,
             '8',
             '25000000000',
             '21000',
@@ -290,15 +289,15 @@ describe('[dcent-web-connector] MOCK - coin sign', () => {
         done()
     })
 
-    it('getKlaytnSignedTransaction() - SMART_CONTRACT_EXECUTION invalid coin type 4', async (done) => { 
+    it('getKlaytnSignedTransaction() - SMART_CONTRACT_EXECUTION invalid coin type 4', async (done) => {
         var contract = {
-            "name":"BAOBABTOKEN",
-            "decimals":"8",
-            "symbol":"BAO"
-          }    
-        var response 
+            'name': 'BAOBABTOKEN',
+            'decimals': '8',
+            'symbol': 'BAO',
+          }
+        var response
         try {
-            response = await DcentWebConnector.getKlaytnSignedTransaction(  'KCT-odsfsf',
+            response = await DcentWebConnector.getKlaytnSignedTransaction('KCT-odsfsf',
             '8',
             '25000000000',
             '21000',
@@ -320,15 +319,15 @@ describe('[dcent-web-connector] MOCK - coin sign', () => {
         done()
     })
 
-    it('getKlaytnSignedTransaction() - SMART_CONTRACT_EXECUTION invalid  decimal of contract', async (done) => { 
+    it('getKlaytnSignedTransaction() - SMART_CONTRACT_EXECUTION invalid  decimal of contract', async (done) => {
         var contract = {
-            "name":"BAOBABTOKEN",
-            "decimals":"a1",
-            "symbol":"BAO"
-          }    
-        var response 
+            'name': 'BAOBABTOKEN',
+            'decimals': 'a1',
+            'symbol': 'BAO',
+          }
+        var response
         try {
-            response = await DcentWebConnector.getKlaytnSignedTransaction(   DcentWebConnector.coinType.KLAYTN_KCT,
+            response = await DcentWebConnector.getKlaytnSignedTransaction(DcentWebConnector.coinType.KLAYTN_KCT,
             '8',
             '25000000000',
             '21000',
@@ -350,10 +349,10 @@ describe('[dcent-web-connector] MOCK - coin sign', () => {
         done()
     })
 
-    it('getKlaytnSignedTransaction() - success', async (done) => { 
-        var response 
+    it('getKlaytnSignedTransaction() - success', async (done) => {
+        var response
         try {
-            response = await DcentWebConnector.getKlaytnSignedTransaction(   DcentWebConnector.coinType.KLAYTN,
+            response = await DcentWebConnector.getKlaytnSignedTransaction(DcentWebConnector.coinType.KLAYTN,
             '8',
             '25000000000',
             '21000',
@@ -371,17 +370,17 @@ describe('[dcent-web-connector] MOCK - coin sign', () => {
         expect(response.header.status).toBe(Values.RESP_STATUS.SUCCESS)
         expect(response.body.command).toBe(Values.CMD.TRANSACTION)
         expect(response.body.parameter).toBeDefined()
-        // TODO: address, sign value format check !! 
+        // TODO: address, sign value format check !!
         expect(response.body.parameter.sign_v).toBeDefined()
         expect(response.body.parameter.sign_r).toBeDefined()
         expect(response.body.parameter.sign_s).toBeDefined()
         done()
     })
 
-    it('getKlaytnSignedTransaction() - success without txType', async (done) => { 
-        var response 
+    it('getKlaytnSignedTransaction() - success without txType', async (done) => {
+        var response
         try {
-            response = await DcentWebConnector.getKlaytnSignedTransaction(   DcentWebConnector.coinType.KLAYTN,
+            response = await DcentWebConnector.getKlaytnSignedTransaction(DcentWebConnector.coinType.KLAYTN,
             '8',
             '25000000000',
             '21000',
@@ -398,17 +397,17 @@ describe('[dcent-web-connector] MOCK - coin sign', () => {
         expect(response.header.status).toBe(Values.RESP_STATUS.SUCCESS)
         expect(response.body.command).toBe(Values.CMD.TRANSACTION)
         expect(response.body.parameter).toBeDefined()
-        // TODO: address, sign value format check !! 
+        // TODO: address, sign value format check !!
         expect(response.body.parameter.sign_v).toBeDefined()
         expect(response.body.parameter.sign_r).toBeDefined()
         expect(response.body.parameter.sign_s).toBeDefined()
         done()
     })
 
-    it('getKlaytnSignedTransaction() - SMART_CONTRACT_EXECUTION success 1', async (done) => { 
-        var response 
+    it('getKlaytnSignedTransaction() - SMART_CONTRACT_EXECUTION success 1', async (done) => {
+        var response
         try {
-            response = await DcentWebConnector.getKlaytnSignedTransaction(   DcentWebConnector.coinType.KLAYTN,
+            response = await DcentWebConnector.getKlaytnSignedTransaction(DcentWebConnector.coinType.KLAYTN,
             '8',
             '25000000000',
             '21000',
@@ -426,22 +425,22 @@ describe('[dcent-web-connector] MOCK - coin sign', () => {
         expect(response.header.status).toBe(Values.RESP_STATUS.SUCCESS)
         expect(response.body.command).toBe(Values.CMD.TRANSACTION)
         expect(response.body.parameter).toBeDefined()
-        // TODO: address, sign value format check !! 
+        // TODO: address, sign value format check !!
         expect(response.body.parameter.sign_v).toBeDefined()
         expect(response.body.parameter.sign_r).toBeDefined()
         expect(response.body.parameter.sign_s).toBeDefined()
         done()
     })
 
-    it('getKlaytnSignedTransaction() - SMART_CONTRACT_EXECUTION success 2', async (done) => { 
+    it('getKlaytnSignedTransaction() - SMART_CONTRACT_EXECUTION success 2', async (done) => {
         var contract = {
-            "name":"BAOBABTOKEN",
-            "decimals":"8",
-            "symbol":"BAO"
-        }   
-        var response 
+            'name': 'BAOBABTOKEN',
+            'decimals': '8',
+            'symbol': 'BAO',
+        }
+        var response
         try {
-            response = await DcentWebConnector.getKlaytnSignedTransaction(   DcentWebConnector.coinType.KLAYTN_KCT,
+            response = await DcentWebConnector.getKlaytnSignedTransaction(DcentWebConnector.coinType.KLAYTN_KCT,
             '8',
             '25000000000',
             '21000',
@@ -462,7 +461,7 @@ describe('[dcent-web-connector] MOCK - coin sign', () => {
         expect(response.header.status).toBe(Values.RESP_STATUS.SUCCESS)
         expect(response.body.command).toBe(Values.CMD.TRANSACTION)
         expect(response.body.parameter).toBeDefined()
-        // TODO: address, sign value format check !! 
+        // TODO: address, sign value format check !!
         expect(response.body.parameter.sign_v).toBeDefined()
         expect(response.body.parameter.sign_r).toBeDefined()
         expect(response.body.parameter.sign_s).toBeDefined()

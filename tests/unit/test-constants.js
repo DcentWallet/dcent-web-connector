@@ -1,7 +1,7 @@
 
 const results = {
     SUCCESS: 'success',
-    ERROR: 'error'
+    ERROR: 'error',
 }
 
 const commands = {
@@ -13,10 +13,10 @@ const commands = {
     GET_XPUB: 'xpub',
     GET_ADDRESS: 'get_address',
     MSG_SIGN: 'msg_sign',
-    TRANSACTION: 'transaction'
+    TRANSACTION: 'transaction',
 }
 
 module.exports = {
     RESP_STATUS: results,
-    CMD: commands
+    CMD: commands,
 }

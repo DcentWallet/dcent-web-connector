@@ -10,37 +10,37 @@ const Values = require('../test-constants')
 // Before TEST : Set Message Receiver and window.open
 NilMock.setMessageReceiver(DcentWebConnector.messageReceive)
 window.open = () => {
-    // # 
+    // #
     // Send Event
     setTimeout(() => {
-        let messageEvent = {
+        const messageEvent = {
             isTrusted: true,
             data: {
                 event: 'BridgeEvent',
                 type: 'data',
-                payload: 'popup-success'
-            }
+                payload: 'popup-success',
+            },
         }
         DcentWebConnector.messageReceive(messageEvent)
     }, 100)
     setTimeout(() => {
-        let messageEvent = {
+        const messageEvent = {
             isTrusted: true,
             data: {
                 event: 'BridgeEvent',
                 type: 'data',
-                payload: 'dcent-connected'
-            }
+                payload: 'dcent-connected',
+            },
         }
         DcentWebConnector.messageReceive(messageEvent)
     }, 300)
-    
-    let result = {
+
+    const result = {
         closed: false,
         location: {
-            href: ''
+            href: '',
         },
-        postMessage: NilMock.postMessage
+        postMessage: NilMock.postMessage,
     }
     return result
 }
@@ -53,9 +53,9 @@ describe('[dcent-web-connector] MOCK - coin sign message', () => {
     afterAll(() => {
         DcentWebConnector.popupWindowClose()
     })
-    
-    it('getSignedMessage() - current not support', async (done) => { 
-        var response 
+
+    it('getSignedMessage() - current not support', async (done) => {
+        var response
         try {
             response = await DcentWebConnector.getSignedMessage()
         } catch (e) {

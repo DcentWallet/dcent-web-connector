@@ -16,7 +16,7 @@ const defaultDeviceResponse = NilConfDevice.defaultDeviceResponse
 
 const requestToBridge = (payload) => {
   let response = ''
-  let method = payload.method
+  const method = payload.method
   LOG.debug('payload.method = ', method)
   switch (method) {
     case Method.INFO:
@@ -24,37 +24,37 @@ const requestToBridge = (payload) => {
         break
     case Method.GET_DEVICE_INFO:
         response = defaultDeviceResponse.getInfo
-        break;
+        break
     case Method.SET_LABEL:
         response = defaultDeviceResponse.setLabel
-        break;
+        break
     case Method.SYNC_ACCOUNT:
         response = defaultDeviceResponse.syncAccount
-        break;
+        break
     case Method.GET_ACCOUNT_INFO:
         response = defaultDeviceResponse.getAccountInfo
-        break;
+        break
     case Method.GET_XPUB:
         response = defaultDeviceResponse.getXpub
-        break;
+        break
     case Method.GET_ADDRESS:
         response = defaultDeviceResponse.getAddress
-        break;
+        break
     case Method.GET_ETH_SIGN_TX:
         response = defaultDeviceResponse.getEthereumSignedTransaction
-        break;
+        break
     case Method.GET_ETH_TOKEN_SIGN_TX:
         response = defaultDeviceResponse.getTokenSignedTransaction
-        break;
+        break
     case Method.GET_ETH_SIGN_MSG:
         response = defaultDeviceResponse.getEthereumSignedMessage
-        break;
+        break
     case Method.GET_KLAY_SIGN_TX:
         response = defaultDeviceResponse.getKlaytnSignedTransaction
-        break;
+        break
     case Method.GET_SIGN_MSG:
         response = defaultDeviceResponse.getSignedMessage
-        break;
+        break
     default:
         response = 'error'
       throw new Error('Not implemented Method in Mock : ' + method)
@@ -63,59 +63,57 @@ const requestToBridge = (payload) => {
 }
 
 
-let messageReceiver 
+let messageReceiver
 const setMessageReceiver = (mr) => {
     messageReceiver = mr
 }
 
 const postMessage = (message) => {
     let respPayload
-  
+
     LOG.debug('message.event = ', message.event)
     LOG.debug('message.type = ', message.type)
     LOG.debug('message.payload = ', message.payload)
     if (message.event === 'BridgeRequest') {
        respPayload = requestToBridge(message.payload)
-    } 
-    LOG.debug('respPayload = ' , respPayload)
-         
+    }
+    LOG.debug('respPayload = ', respPayload)
+
     setTimeout(() => {
         if (typeof respPayload === 'undefined') {
             // reject(new Error('fake Error'))
-            // send error response 
-            respPayload =  {
+            // send error response
+            respPayload = {
                 header: {
                     version: '1.0',
                     response_from: 'device',
-                    status: 'error'
+                    status: 'error',
                 },
                 body: {
-                    error:{
+                    error: {
                         code: '',
-                        message: 'Device is not attached'
-                    }
-                }
+                        message: 'Device is not attached',
+                    },
+                },
             }
-        } 
-        let response = {
+        }
+        const response = {
             isTrusted: true,
             data: {
                 event: 'BridgeResponse',
                 type: 'json',
-                payload: respPayload
-            }
-        } 
+                payload: respPayload,
+            },
+        }
         messageReceiver(response)
     }, 1000)
-    
   }
-  
+
 module.exports = {
     postMessage,
-    setMessageReceiver
+    setMessageReceiver,
 }
 
-  /* //////////////////////////////////////////////////////////////////////// */
-  /* */
-  /* //////////////////////////////////////////////////////////////////////// */
-  
+/* //////////////////////////////////////////////////////////////////////// */
+/* */
+/* //////////////////////////////////////////////////////////////////////// */

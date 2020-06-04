@@ -10,41 +10,40 @@ const Values = require('../test-constants')
 // Before TEST : Set Message Receiver and window.open
 NilMock.setMessageReceiver(DcentWebConnector.messageReceive)
 window.open = () => {
-    // # 
+    // #
     // Send Event
     setTimeout(() => {
-        let messageEvent = {
+        const messageEvent = {
             isTrusted: true,
             data: {
                 event: 'BridgeEvent',
                 type: 'data',
-                payload: 'popup-success'
-            }
+                payload: 'popup-success',
+            },
         }
         DcentWebConnector.messageReceive(messageEvent)
     }, 100)
     setTimeout(() => {
-        let messageEvent = {
+        const messageEvent = {
             isTrusted: true,
             data: {
                 event: 'BridgeEvent',
                 type: 'data',
-                payload: 'dcent-connected'
-            }
+                payload: 'dcent-connected',
+            },
         }
         DcentWebConnector.messageReceive(messageEvent)
     }, 300)
-    
-    let result = {
+
+    const result = {
         closed: false,
         location: {
-            href: ''
+            href: '',
         },
-        postMessage: NilMock.postMessage
+        postMessage: NilMock.postMessage,
     }
     return result
 }
-
 /* //////////////////////////////////////////////////////////////////////// */
 /* */
 /* //////////////////////////////////////////////////////////////////////// */
@@ -54,13 +53,13 @@ describe('[dcent-web-connector] MOCK - coin address', () => {
         DcentWebConnector.popupWindowClose()
     })
 
-    it('getXPUB() - success ', async (done) => { 
-        var response 
+    it('getXPUB() - success ', async (done) => {
+        var response
         try {
             response = await DcentWebConnector.getXPUB('m/44\'/0\'/0\'')
-        } catch (e) {            
+        } catch (e) {
             response = e
-        }     
+        }
 
         expect(response.header.status).toBe(Values.RESP_STATUS.SUCCESS)
         expect(response.body.command).toBe(Values.CMD.GET_XPUB)
@@ -71,48 +70,48 @@ describe('[dcent-web-connector] MOCK - coin address', () => {
     })
 
     it('getAddress() - invalid coin type 1', async (done) => {
-        var response 
+        var response
         try {
-            response = await DcentWebConnector.getAddress('ETHEREUM-ABCCD', "m/44'/60'/0'/0/0");  
-        } catch (e) {            
+            response = await DcentWebConnector.getAddress('ETHEREUM-ABCCD', "m/44'/60'/0'/0/0")
+        } catch (e) {
             response = e
-        }     
+        }
 
         expect(response.header.status).toBe(Values.RESP_STATUS.ERROR)
         done()
     })
 
     it('getAddress() - invalid coin type 2 ', async (done) => {
-        var response 
+        var response
         try {
-            response = await DcentWebConnector.getAddress();  
-        } catch (e) {            
+            response = await DcentWebConnector.getAddress()
+        } catch (e) {
             response = e
-        }     
+        }
 
         expect(response.header.status).toBe(Values.RESP_STATUS.ERROR)
         done()
     })
 
     it('getAddress() - invalid coin type 3 ', async (done) => {
-        var response 
+        var response
         try {
-            response = await DcentWebConnector.getAddress(DcentWebConnector.coinType.BITCOIN, "m/44'/0'/0'/0/0");  
-        } catch (e) {            
+            response = await DcentWebConnector.getAddress(DcentWebConnector.coinType.BITCOIN, "m/44'/0'/0'/0/0")
+        } catch (e) {
             response = e
-        }     
+        }
 
         expect(response.header.status).toBe(Values.RESP_STATUS.ERROR)
         done()
     })
 
     it('getAddress() - success ', async (done) => {
-        var response 
+        var response
         try {
-            response = await DcentWebConnector.getAddress(DcentWebConnector.coinType.ETHEREUM, "m/44'/60'/0'/0/0");  
-        } catch (e) {            
+            response = await DcentWebConnector.getAddress(DcentWebConnector.coinType.ETHEREUM, "m/44'/60'/0'/0/0")
+        } catch (e) {
             response = e
-        }     
+        }
 
         expect(response.header.status).toBe(Values.RESP_STATUS.SUCCESS)
         expect(response.body.command).toBe(Values.CMD.GET_ADDRESS)

@@ -12,9 +12,9 @@ describe('[dcent-web-connector] Bridge - init', () => {
     let page
     beforeAll(async () => {
         bowser = await puppeteer.launch({
-            headless: false
+            headless: false,
         })
-        page = await bowser.newPage();
+        page = await bowser.newPage()
 
         await page.goto('http://localhost:9090')
     })
@@ -22,11 +22,12 @@ describe('[dcent-web-connector] Bridge - init', () => {
         DcentWebConnector.popupWindowClose()
         bowser.close()
     })
-    
+
     it('getDeviceInfo() - success ', async (done) => {
-        await page.exposeFunction( 'dcentGetDeviceInfo', DcentWebConnector.getDeviceInfo )
-        var response = await page.evaluate( () => {
-            return getInfo()        
+        await page.exposeFunction('dcentGetDeviceInfo', DcentWebConnector.getDeviceInfo)
+        var response = await page.evaluate(() => {
+            // eslint-disable-next-line no-undef
+            return getInfo()
         })
         expect(response.header.status).toBe(Values.RESP_STATUS.SUCCESS)
         expect(response.body.command).toBe(Values.CMD.GET_INFO)
@@ -39,31 +40,34 @@ describe('[dcent-web-connector] Bridge - init', () => {
 
         done()
     })
-    
+
     it('getXPUB() - invalid key path', async (done) => {
-        let keyPath = '9/44\'/0\'/0\''
-        var response = await page.evaluate( (keyPath) => {
-            return getXpub(keyPath)  
+        const keyPath = '9/44\'/0\'/0\''
+        var response = await page.evaluate((keyPath) => {
+            // eslint-disable-next-line no-undef
+            return getXpub(keyPath)
         }, keyPath)
         expect(response.header.status).toBe(Values.RESP_STATUS.ERROR)
         done()
     })
 
     it('getXPUB() - invalid key path 2', async (done) => {
-        let keyPath = 'm/a\'/0\'/0\''
-        var response = await page.evaluate( (keyPath) => {
-            return getXpub(keyPath)  
+        const keyPath = 'm/a\'/0\'/0\''
+        var response = await page.evaluate((keyPath) => {
+            // eslint-disable-next-line no-undef
+            return getXpub(keyPath)
         }, keyPath)
         expect(response.header.status).toBe(Values.RESP_STATUS.ERROR)
         done()
     })
 
     it('getXPUB() - success', async (done) => {
-        let keyPath = 'm/44\'/60\'/0\''
-        var response = await page.evaluate( (keyPath) => {
-            return getXpub(keyPath)  
+        const keyPath = 'm/44\'/60\'/0\''
+        var response = await page.evaluate((keyPath) => {
+            // eslint-disable-next-line no-undef
+            return getXpub(keyPath)
         }, keyPath)
-        
+
         expect(response.header.status).toBe(Values.RESP_STATUS.SUCCESS)
         expect(response.body.command).toBe(Values.CMD.GET_XPUB)
         expect(response.body.parameter).toBeDefined()
@@ -73,40 +77,43 @@ describe('[dcent-web-connector] Bridge - init', () => {
     })
 
     it('getAddress() - invalid coinType ', async (done) => {
-        let coinType = 'ETHEREUM-ds'
-        let keyPath = "m/44'/60'/0'/0/0"
-        var response = await page.evaluate( (coinType, keyPath) => {
-            return getAddress(coinType, keyPath)  
+        const coinType = 'ETHEREUM-ds'
+        const keyPath = "m/44'/60'/0'/0/0"
+        var response = await page.evaluate((coinType, keyPath) => {
+            // eslint-disable-next-line no-undef
+            return getAddress(coinType, keyPath)
         }, coinType, keyPath)
         expect(response.header.status).toBe(Values.RESP_STATUS.ERROR)
         done()
     })
 
     it('getAddress() - invalid keypath 1', async (done) => {
-        let coinType = DcentWebConnector.coinType.ETHEREUM
-        let keyPath = "k/44'/60'/0'/0/0"
-        var response = await page.evaluate( (coinType, keyPath) => {
-            return getAddress(coinType, keyPath)  
+        const coinType = DcentWebConnector.coinType.ETHEREUM
+        const keyPath = "k/44'/60'/0'/0/0"
+        var response = await page.evaluate((coinType, keyPath) => {
+            // eslint-disable-next-line no-undef
+            return getAddress(coinType, keyPath)
         }, coinType, keyPath)
         expect(response.header.status).toBe(Values.RESP_STATUS.ERROR)
         done()
     })
 
     it('getAddress() - invalid keypath 2', async (done) => {
-        let coinType = DcentWebConnector.coinType.ETHEREUM
-        let keyPath = "m/a'/60'/0'/0/0"
-        var response = await page.evaluate( (coinType, keyPath) => {
-            return getAddress(coinType, keyPath)  
+        const coinType = DcentWebConnector.coinType.ETHEREUM
+        const keyPath = "m/a'/60'/0'/0/0"
+        var response = await page.evaluate((coinType, keyPath) => {
+            // eslint-disable-next-line no-undef
+            return getAddress(coinType, keyPath)
         }, coinType, keyPath)
         expect(response.header.status).toBe(Values.RESP_STATUS.ERROR)
         done()
     })
 
     // it('getAddress() - success ETHEREUM', async (done) => {
-    //     let coinType = DcentWebConnector.coinType.ETHEREUM
-    //     let keyPath = "m/44'/60'/0'/0/0"
-    //     var response = await page.evaluate( (coinType, keyPath) => {
-    //         return getAddress(coinType, keyPath)  
+    //     const coinType = DcentWebConnector.coinType.ETHEREUM
+    //     const keyPath = "m/44'/60'/0'/0/0"
+    //     var response = await page.evaluate((coinType, keyPath) => {
+    //         return getAddress(coinType, keyPath)
     //     }, coinType, keyPath)
     //     expect(response.header.status).toBe(Values.RESP_STATUS.SUCCESS)
     //     expect(response.body.parameter.address).toBeDefined()
@@ -115,10 +122,11 @@ describe('[dcent-web-connector] Bridge - init', () => {
     // })
 
     it('getAddress() - success ETHEREUM', async (done) => {
-        let coinType = DcentWebConnector.coinType.ETHEREUM
-        let keyPath = "m/44'/60'/0'/0/0"
-        var response = await page.evaluate( (coinType, keyPath) => {
-            return getAddress(coinType, keyPath)  
+        const coinType = DcentWebConnector.coinType.ETHEREUM
+        const keyPath = "m/44'/60'/0'/0/0"
+        var response = await page.evaluate((coinType, keyPath) => {
+            // eslint-disable-next-line no-undef
+            return getAddress(coinType, keyPath)
         }, coinType, keyPath)
         expect(response.header.status).toBe(Values.RESP_STATUS.SUCCESS)
         expect(response.body.parameter.address).toBeDefined()

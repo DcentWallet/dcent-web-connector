@@ -10,37 +10,37 @@ const Values = require('../test-constants')
 // Before TEST : Set Message Receiver and window.open
 NilMock.setMessageReceiver(DcentWebConnector.messageReceive)
 window.open = () => {
-    // # 
+    // #
     // Send Event
     setTimeout(() => {
-        let messageEvent = {
+        const messageEvent = {
             isTrusted: true,
             data: {
                 event: 'BridgeEvent',
                 type: 'data',
-                payload: 'popup-success'
-            }
+                payload: 'popup-success',
+            },
         }
         DcentWebConnector.messageReceive(messageEvent)
     }, 100)
     setTimeout(() => {
-        let messageEvent = {
+        const messageEvent = {
             isTrusted: true,
             data: {
                 event: 'BridgeEvent',
                 type: 'data',
-                payload: 'dcent-connected'
-            }
+                payload: 'dcent-connected',
+            },
         }
         DcentWebConnector.messageReceive(messageEvent)
     }, 300)
-    
-    let result = {
+
+    const result = {
         closed: false,
         location: {
-            href: ''
+            href: '',
         },
-        postMessage: NilMock.postMessage
+        postMessage: NilMock.postMessage,
     }
     return result
 }
@@ -53,16 +53,16 @@ describe('[dcent-web-connector] MOCK - device init', () => {
     afterAll(() => {
         DcentWebConnector.popupWindowClose()
     })
-    
+
     it('getDeviceInfo() - success ', async (done) => {
 
         let connectionState = ''
-        function connectionListener(state) {
-            connectionState = state 
+        function connectionListener (state) {
+            connectionState = state
         }
         DcentWebConnector.setConnectionListener(connectionListener)
 
-        var response 
+        let response
         try {
             response = await DcentWebConnector.getDeviceInfo()
         } catch (e) {
@@ -76,15 +76,15 @@ describe('[dcent-web-connector] MOCK - device init', () => {
         expect(response.body.parameter.state).toBeDefined()
         expect(response.body.parameter.coin_list).toBeDefined()
         expect(response.body.parameter.label).toBeDefined()
-         
+
         expect(connectionState).toBe(DcentWebConnector.state.CONNECTED) // setConnectionListener test .. !!
         done()
     })
 
     it('setLabel() - with Invalid label length ', async (done) => {
-        var response 
+        var response
         try {
-            response = await DcentWebConnector.setLabel('AbcdeFghijkLMNOPQRS12345') 
+            response = await DcentWebConnector.setLabel('AbcdeFghijkLMNOPQRS12345')
         } catch (e) {
             response = e
         }
@@ -94,9 +94,9 @@ describe('[dcent-web-connector] MOCK - device init', () => {
     })
 
     it('setLabel() - with null label ', async (done) => {
-        var response 
+        var response
         try {
-            response = await DcentWebConnector.setLabel()    
+            response = await DcentWebConnector.setLabel()
         } catch (e) {
             response = e
         }
@@ -106,9 +106,9 @@ describe('[dcent-web-connector] MOCK - device init', () => {
     })
 
     it('setLabel() - with Invalid charactor label ', async (done) => {
-        var response 
+        var response
         try {
-            response = await DcentWebConnector.setLabel(';;;;;;;;')      
+            response = await DcentWebConnector.setLabel(';;;;;;;;')
         } catch (e) {
             response = e
         }
@@ -118,9 +118,9 @@ describe('[dcent-web-connector] MOCK - device init', () => {
     })
 
     it('setLabel() - success ', async (done) => {
-        var response 
+        var response
         try {
-            response = await DcentWebConnector.setLabel('IoTrust')        
+            response = await DcentWebConnector.setLabel('IoTrust')
         } catch (e) {
             response = e
         }
@@ -134,20 +134,20 @@ describe('[dcent-web-connector] MOCK - device init', () => {
     it('dcent disconnect listener  - success ', async (done) => {
 
         let connectionState = ''
-        function connectionListener(state) {
-            connectionState = state 
+        function connectionListener (state) {
+            connectionState = state
         }
         DcentWebConnector.setConnectionListener(connectionListener)
-        let messageEvent = {
+        const messageEvent = {
             isTrusted: true,
             data: {
                 event: 'BridgeEvent',
                 type: 'data',
-                payload: 'dcent-disconnected'
-            }
+                payload: 'dcent-disconnected',
+            },
         }
         DcentWebConnector.messageReceive(messageEvent)
-        
+
         expect(connectionState).toBe(DcentWebConnector.state.DISCONNECTED) // setConnectionListener test .. !!
         done()
     })

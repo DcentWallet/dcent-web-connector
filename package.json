@@ -10,7 +10,7 @@
     "test": "jest --detectOpenHandles --coverage --forceExit --runInBand",
     "unit-mock": "jest --coverage --runInBand 0_mock_test",
     "unit-bridge": "jest --coverage --runInBand 1_bridge_test",
-    "lint": "eslint --ext .js index.js src tests"
+    "lint": "eslint --ext .js index.js src tests --fix"
   },
   "jest": {
     "preset": "jest-puppeteer",

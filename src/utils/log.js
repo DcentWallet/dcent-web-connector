@@ -22,12 +22,12 @@ const normalizeCallerLine = (line) => {
     return normalized
 }
 
-let info = console.log.bind(window.console, '[INFO] ')  // eslint-disable-line no-console
+let info = console.log.bind(window.console, '[INFO] ') // eslint-disable-line no-console
 if (isTest) {
     info = () => { }
 }
 
-let debug = console.log.bind(window.console, '[DEBUG] ')  // eslint-disable-line no-console
+let debug = console.log.bind(window.console, '[DEBUG] ') // eslint-disable-line no-console
 if (!isDebug) {
     debug = () => { }
 }

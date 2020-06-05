@@ -10,6 +10,7 @@
 |---|---|---|
 | v0.6.2-beta | 2019. 04. 07 | First version of D'CENT Web SDK connector release |
 | v0.7.0-beta | 2019. 05. 07 | add KLAYTN transaction function |
+| v0.8.0 | 2020. 06. 05 | add 'getSignedMessage' function |
 
 <br><br><br>
 
@@ -351,7 +352,7 @@ address_path follows the BIP44 rules.
 ```
 m / purpose' / coin_type' / account' / change / address_index
 ```
-Accounts are distinguished by `account'` in address_path.
+Accounts are distinguished by `account` in address_path.
 
 ```js
 let account_infos = [{
@@ -399,7 +400,7 @@ Returned account object has:
                     "coin_group": "ETHEREUM",
                     "coin_name": "ETHEREUM",
                     "label": "eth_1",
-                    "address_path": "m/44'/60'/0'/0/0"                    
+                    "address_path": "m/44'/60'/0'/0/0"
                 }
             ]
         }
@@ -477,6 +478,7 @@ The public_key is xpub value.
 
 ### Ethereum Signed Massage
 You can get a signature value to sign a user message with that private key With a given key path (BIP32).
+The input message is prefixed with 'Ethereum sign message' and then hashed and signed.
 ```js
 var message = 'This is a message!'
 var result
@@ -504,7 +506,40 @@ Returned response object has:
     }
 }
 ```
-Broadcast the 'sign' value to block chain. 
+
+
+### Signed Massage
+You can get a signature value to sign a user message with that private key With a given key path (BIP32).
+The input message is prefixed depending on the coin type and then hashed and signed.
+```js
+var message = 'This is a message!'
+var key =  "m/44'/60'/0'/0/0"
+var result
+try {
+    result = await dcent.getSignedMessage( DcentWebConnector.coinType.ETHEREUM, key, message);
+} catch (e) {
+    console.log(e)
+    result = e
+}
+```
+Returned response object has:
+```json
+{
+    "header": {
+        "version": "1.0",
+        "response_from": "ethereum",
+        "status": "success"
+    },
+    "body": {
+        "command": "msg_sign",
+        "parameter": {
+            "address": "0x54b9c508aC61Eaf2CD8F9cA510ec3897CfB09382",
+            "sign": "0x0d935339......06a6291b"
+        }
+    }
+}
+```
+
 
 ### Sign Transaction
 The D'CENT Web SDK provides functions for signing transaction of coins.
@@ -576,10 +611,8 @@ Returned response object of `'getKlaytnSignedTransaction'` :
     }
 }
 ```
-For broadcast the sign value, you must encoding the parameter values using RLP. 
-Klaytn provides 'caver-js' library. You can make raw transaction for broadcasting using 'caver-js'. 
+For broadcast the sign value, you must encoding the parameter values using RLP.
+Klaytn provides 'caver-js' library. You can make raw transaction for broadcasting using 'caver-js'.
 (https://docs.klaytn.com/bapp/sdk/caver-js/api-references)
-
-
 
 Please Refer to the `index.html` to learn more about how to use the SDK APIs. There is an Web project using our Web SDK.

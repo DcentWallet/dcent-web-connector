@@ -302,6 +302,7 @@ dcent.messageReceive = function (messageEvent) {
 }
 
 dcent.popupWindowClose = function () {
+  // eslint-disable-next-line no-undef
   const extension = typeof chrome !== 'undefined' && chrome.runtime && typeof chrome.runtime.onConnect !== 'undefined'
   if (!extension) {
     postMessage({
@@ -310,6 +311,7 @@ dcent.popupWindowClose = function () {
       payload: 'popup-close'
     })  
   } else {
+    // eslint-disable-next-line no-undef
     chrome.tabs.remove(dcent.popupTab.id, () => {})    
   }
 }

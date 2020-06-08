@@ -302,11 +302,16 @@ dcent.messageReceive = function (messageEvent) {
 }
 
 dcent.popupWindowClose = function () {
-  postMessage({
-    event: 'BridgeEvent',
-    type: 'data',
-    payload: 'popup-close'
-  })  
+  const extension = typeof chrome !== 'undefined' && chrome.runtime && typeof chrome.runtime.onConnect !== 'undefined'
+  if (!extension) {
+    postMessage({
+      event: 'BridgeEvent',
+      type: 'data',
+      payload: 'popup-close'
+    })  
+  } else {
+    chrome.tabs.remove(dcent.popupTab.id, () => {})    
+  }
 }
 
 const postMessage = (message) => {

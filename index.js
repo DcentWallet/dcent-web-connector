@@ -311,8 +311,8 @@ dcent.popupWindowClose = function () {
       payload: 'popup-close'
     })  
   } else {
-    // eslint-disable-next-line no-undef
-    if(dcent.popupTab && dcent.popupTab.id) {
+    if (dcent.popupTab && dcent.popupTab.id) {
+      // eslint-disable-next-line no-undef
       chrome.tabs.remove(dcent.popupTab.id, () => {
         dcent.popupWindow = undefined
         dcent.popupTab = undefined

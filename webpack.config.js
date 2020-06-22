@@ -8,7 +8,7 @@ const CopyPlugin = require('copy-webpack-plugin');
 module.exports = {
     target: "web",
     entry: {
-        'dcent-web-connector': './index.js'
+        'dcent-web-connector': './src/index.js'
     },
 
     devtool: process.env.NODE_ENV === 'production' ? false : 'inline-source-map',

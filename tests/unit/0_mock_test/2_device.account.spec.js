@@ -1,4 +1,4 @@
-const DcentWebConnector = require('../../../index')
+const DcentWebConnector = require('../../../src/index')
 
 var NilMock = require('../../../src/native/__mocks__/nil')
 const Values = require('../test-constants')
@@ -120,28 +120,28 @@ describe('[dcent-web-connector] MOCK - device account', () => {
         done()
     })
 
-    it('syncAccount() - invalid coin group 2', async (done) => {
-        const accountInfo = [
-            {
-                coin_group: DcentWebConnector.coinGroup.BITCOIN, //
-                coin_name: DcentWebConnector.coinName.BITCOIN, //
-                label: 'btc 01',
-                address_path: "m/44'/0'/0'/0/0",
-                balance: '0 btc',
-            },
-        ]
-        var response
-        try {
-            response = await DcentWebConnector.syncAccount(accountInfo)
-        } catch (e) {
-            response = e
-        }
+    // it('syncAccount() - invalid coin group 2', async (done) => {
+    //     const accountInfo = [
+    //         {
+    //             coin_group: DcentWebConnector.coinGroup.BITCOIN, //
+    //             coin_name: DcentWebConnector.coinName.BITCOIN, //
+    //             label: 'btc_01',
+    //             address_path: "m/44'/0'/0'/0/0",
+    //             balance: '0 btc',
+    //         },
+    //     ]
+    //     var response
+    //     try {
+    //         response = await DcentWebConnector.syncAccount(accountInfo)
+    //     } catch (e) {
+    //         response = e
+    //     }
 
-        expect(response.header.status).toBe(Values.RESP_STATUS.ERROR)
-        expect(response.body.error.code).toBe('coin_group_error')
-        expect(response.body.error.message).toBeDefined()
-        done()
-    })
+    //     expect(response.header.status).toBe(Values.RESP_STATUS.ERROR)
+    //     expect(response.body.error.code).toBe('coin_group_error')
+    //     expect(response.body.error.message).toBeDefined()
+    //     done()
+    // })
 
     it('syncAccount() - invalid coin group 3', async (done) => {
         const accountInfo = [

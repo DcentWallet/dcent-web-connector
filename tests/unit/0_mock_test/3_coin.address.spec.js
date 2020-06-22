@@ -1,4 +1,4 @@
-const DcentWebConnector = require('../../../index')
+const DcentWebConnector = require('../../../src/index')
 
 var NilMock = require('../../../src/native/__mocks__/nil')
 const Values = require('../test-constants')
@@ -93,17 +93,17 @@ describe('[dcent-web-connector] MOCK - coin address', () => {
         done()
     })
 
-    it('getAddress() - invalid coin type 3 ', async (done) => {
-        var response
-        try {
-            response = await DcentWebConnector.getAddress(DcentWebConnector.coinType.BITCOIN, "m/44'/0'/0'/0/0")
-        } catch (e) {
-            response = e
-        }
+    // it('getAddress() - invalid coin type 3 ', async (done) => {
+    //     var response
+    //     try {
+    //         response = await DcentWebConnector.getAddress(DcentWebConnector.coinType.BITCOIN, "m/44'/0'/0'/0/0")
+    //     } catch (e) {
+    //         response = e
+    //     }
 
-        expect(response.header.status).toBe(Values.RESP_STATUS.ERROR)
-        done()
-    })
+    //     expect(response.header.status).toBe(Values.RESP_STATUS.ERROR)
+    //     done()
+    // })
 
     it('getAddress() - success ', async (done) => {
         var response

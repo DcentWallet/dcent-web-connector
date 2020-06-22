@@ -1,4 +1,4 @@
-const DcentWebConnector = require('../../../index')
+const DcentWebConnector = require('../../../src/index')
 
 const Values = require('../test-constants')
 const puppeteer = require('puppeteer')

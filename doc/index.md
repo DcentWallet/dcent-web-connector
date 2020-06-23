@@ -11,6 +11,7 @@
 | v0.6.2-beta | 2019. 04. 07 | First version of D'CENT Web SDK connector release |
 | v0.7.0-beta | 2019. 05. 07 | add KLAYTN transaction function |
 | v0.8.0 | 2020. 06. 05 | add 'getSignedMessage' function |
+| v0.9.0 | 2020. 06. 22 | add interface for BITCOIN transaction |
 
 <br><br><br>
 
@@ -543,76 +544,187 @@ Returned response object has:
 
 ### Sign Transaction
 The D'CENT Web SDK provides functions for signing transaction of coins.
-- ETHEREUM, RSK : getEthereumSignedTransaction()
-- ERC20, RRC20 : getTokenSignedTransaction()
-- KLAYTN, KLAYTN_KCT: getKlaytnSignedTransaction()
 
-Call the function that matches the type of signed transaction you want to get.
+**getEthereumSignedTransaction()**
+- This fuction for :
+    - ETHEREUM
+    - RSK
 
-Returned response object of `'getEthereumSignedTransaction'` :
-```json
-{
-    "header": {
-        "version": "1.0",
-        "response_from": "ethereum",
-        "status": "success"
-    },
-    "body": {
-        "command": "transaction",
-        "parameter": {
-            "sign_v": "0x78",
-            "sign_r": "0xf9e4c3ed......9557ad37",
-            "sign_s": "0x697a2abf......b76c4cb2",
-            "signed": "f86c0884......b76c4cb2"
-        }
-    }
-}
-```
-Broadcast the 'signed' value to block chain. 
+- Parameters :
+    - coinType
+    - nonce
+    - gasPrice
+    - gasLimit
+    - to (address)
+    - value
+    - data
+    - key path for signing
+    - chain ID
 
-Returned response object of `'getTokenSignedTransaction'` :
-```json
-{
-    "header": {
-        "version": "1.0",
-        "response_from": "erc20",
-        "status": "success"
-    },
-    "body": {
-        "command": "transaction",
-        "parameter": {
-            "signed": "0xf8a91584......cc79c29a",
-            "sign": {
-                "sign_v": "0x26",
-                "sign_r": "0x33930787......d4456f53",
-                "sign_s": "0x708126c7......cc79c29a"
+- Returned response object:
+    ```json
+    {
+        "header": {
+            "version": "1.0",
+            "response_from": "ethereum",
+            "status": "success"
+        },
+        "body": {
+            "command": "transaction",
+            "parameter": {
+                "sign_v": "0x78",
+                "sign_r": "0xf9e4c3ed......9557ad37",
+                "sign_s": "0x697a2abf......b76c4cb2",
+                "signed": "f86c0884......b76c4cb2"
             }
         }
     }
-}
-```
-Broadcast the 'signed' value to block chain. 
+    ```
+**getTokenSignedTransaction()**
+- This fuction for :
+    - ERC20
+    - RRC20
 
-Returned response object of `'getKlaytnSignedTransaction'` :
-```json
-{
-    "header": {
-        "version": "1.0",
-        "response_from": "klaytn",
-        "status": "success"
-    },
-    "body": {
-        "command": "transaction",
-        "parameter": {
-            "sign_v": "0x4055",
-            "sign_r": "0x5b1a8134......697ce449",
-            "sign_s": "0x6aea20f1......9eb816fb"
+- Parameters :
+    - coinType
+    - nonce
+    - gasPrice
+    - gasLimit
+    - value
+    - key path for signing
+    - chain ID
+    - contract information :
+        ```js
+        // example
+        {
+          name: 'OmiseGO',
+          address: '0xd26114cd6EE289AccF82350c8d8487fedB8A0C07',
+          to: '0x354609C4c9a15d4265cF6D94010568D5Cf4d0c1B',
+          decimals: 18,
+          value: '100000000000000000',
+          symbol: 'OMG'
+        }  
+        ```            
+
+- Returned response object:
+    ```json
+    {
+        "header": {
+            "version": "1.0",
+            "response_from": "erc20",
+            "status": "success"
+        },
+        "body": {
+            "command": "transaction",
+            "parameter": {
+                "signed": "0xf8a91584......cc79c29a",
+                "sign": {
+                    "sign_v": "0x26",
+                    "sign_r": "0x33930787......d4456f53",
+                    "sign_s": "0x708126c7......cc79c29a"
+                }
+            }
         }
     }
-}
-```
+    ```
+
+**getKlaytnSignedTransaction()**
+- This fuction for :
+    - KLAYTN
+    - KLAYTN_KCT
+
+- Parameters :
+    - coinType
+    - nonce
+    - gasPrice
+    - gasLimit
+    - to (address)
+    - value
+    - data
+    - key path for signing
+    - chain ID
+    - Transaction type
+    - from (address)
+    - fee ratio
+    - contract information :
+        ```js
+        // example
+        {
+          name: 'COSM',
+          decimals: 18,
+          symbol: 'COSM'
+        }  
+        ```
+
+- Returned response object:
+    ```json
+    {
+        "header": {
+            "version": "1.0",
+            "response_from": "klaytn",
+            "status": "success"
+        },
+        "body": {
+            "command": "transaction",
+            "parameter": {
+                "sign_v": "0x4055",
+                "sign_r": "0x5b1a8134......697ce449",
+                "sign_s": "0x6aea20f1......9eb816fb"
+            }
+        }
+    }
+    ```
 For broadcast the sign value, you must encoding the parameter values using RLP.
 Klaytn provides 'caver-js' library. You can make raw transaction for broadcasting using 'caver-js'.
 (https://docs.klaytn.com/bapp/sdk/caver-js/api-references)
+
+
+**getBitcoinSignedTransaction()**
+- This fuction for :
+    - BITCOIN
+    - MONACOIN
+
+- Parameters :
+    - transaction: this value generated by `getBitcoinTransactionObject()`
+- Useage:
+    ```js
+    // generate Bitcoin Transaction object
+    let transaction = dcent.getBitcoinTransactionObject(dcent.coinType.BITCOIN)
+    // Set input parameter(previous tx) in Bitcoin Transaction object
+    transaction = dcent.addBitcoinTransactionInput(transaction,
+        '0100000001e297417c46........293fce63b88ac00000000', //  full of previous tx data
+        1, // index of previous tx output to be sent
+        dcent.bitcoinTxType.p2pkh, // bitcoin tx type for this UTXO
+        "m/44'/0'/0'/1/0") // signing key path
+    transaction = dcent.addBitcoinTransactionInput(transaction,
+        '0100000001e297417c46.........93fce63b88ac00000000',
+        0,
+        dcent.bitcoinTxType.p2pkh,
+        "m/44'/0'/0'/0/7")
+    // Set output parameter(spending information) in Bitcoin Transaction object
+    transaction = dcent.addBitcoinTransactionOutput(transaction,
+            dcent.bitcoinTxType.p2pkh, // transaction type or this field can indicate output as a “change”
+            '10000', // amount of coin to spend. Satoshi unit.
+            ['1traqiFvydVk2hWdCj3WGRJbe4CGtfyHA']) // Base58Check encoded address of the receiver.
+        result = await dcent.getBitcoinSignedTransaction(transaction)
+    ```
+
+- Returned response object:
+    ```json
+    {
+        "header": {
+            "version": "1.0",
+            "response_from": "erc20",
+            "status": "success"
+        },
+        "body": {
+            "command": "transaction",
+            "parameter": {
+                "signed": "0100000002233ee1fbcf.....71e088ac00000000"
+            }
+        }
+    }
+    ```
+
 
 Please Refer to the `index.html` to learn more about how to use the SDK APIs. There is an Web project using our Web SDK.

@@ -44,25 +44,43 @@ window.open = () => {
     }
     return result
 }
-
 /* //////////////////////////////////////////////////////////////////////// */
 /* */
 /* //////////////////////////////////////////////////////////////////////// */
 
-describe('[dcent-web-connector] MOCK - coin sign message', () => {
+describe('[dcent-web-connector] MOCK - coin address', () => {
     afterAll(() => {
         DcentWebConnector.popupWindowClose()
     })
 
-    it('getSignedMessage() - current not support', async (done) => {
+    it('getAddress() - BITCOIN ', async (done) => {
         var response
         try {
-            response = await DcentWebConnector.getSignedMessage()
+            response = await DcentWebConnector.getAddress(DcentWebConnector.coinType.BITCOIN, "m/44'/0'/0'/0/0")
         } catch (e) {
             response = e
         }
 
-        expect(response.header.status).toBe(Values.RESP_STATUS.ERROR)
+        expect(response.header.status).toBe(Values.RESP_STATUS.SUCCESS)
+        expect(response.body.command).toBe(Values.CMD.GET_ADDRESS)
+        expect(response.body.parameter).toBeDefined()
+        expect(response.body.parameter.address.startsWith('1')).toBeTruthy()
+        done()
+    })
+
+    it('getAddress() - success ', async (done) => {
+        var response
+        try {
+            response = await DcentWebConnector.getAddress(DcentWebConnector.coinType.MONACOIN, "m/44'/22'/0'/0/0")
+        } catch (e) {
+            response = e
+        }
+
+        expect(response.header.status).toBe(Values.RESP_STATUS.SUCCESS)
+        expect(response.body.command).toBe(Values.CMD.GET_ADDRESS)
+        expect(response.body.parameter).toBeDefined()
+        expect(response.body.parameter.address.startsWith('M')).toBeTruthy()
+
         done()
     })
 })

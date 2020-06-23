@@ -1,4 +1,4 @@
-const DcentWebConnector = require('../../../index')
+const DcentWebConnector = require('../../../src/index')
 
 var NilMock = require('../../../src/native/__mocks__/nil')
 const Values = require('../test-constants')
@@ -366,7 +366,6 @@ describe('[dcent-web-connector] MOCK - coin sign', () => {
         } catch (e) {
             response = e
         }
-
         expect(response.header.status).toBe(Values.RESP_STATUS.SUCCESS)
         expect(response.body.command).toBe(Values.CMD.TRANSACTION)
         expect(response.body.parameter).toBeDefined()

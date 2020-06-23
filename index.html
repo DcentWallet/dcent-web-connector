@@ -60,6 +60,9 @@
         <br />
         <button id="getSignedMessage_Klaytn" type="button" class="btn btn-primary">getSignedMessage - Klaytn</button>
         <br />
+        <button id="getBitcoinSignedTransaction" type="button"
+          class="btn btn-primary">getBitcoinSignedTransaction</button>
+        <br />
         <button id="getEthereumSignedTransaction" type="button"
           class="btn btn-primary">getEthereumSignedTransaction</button>
         <button id="getTokenSignedTransaction" type="button" class="btn btn-primary">getTokenSignedTransaction</button>
@@ -70,17 +73,16 @@
         <button id="getKlaytnSignedTransaction_kct" type="button" class="btn btn-primary">getKlaytnSignedTransaction KCT</button>
         <button id="getKlaytnSignedTransaction_kct_baobab" type="button" class="btn btn-primary">getKlaytnSignedTransaction KCT BAOBAB</button>
         <br />
-        <!-- <button id="get_address_bitcoin" type="button" class="btn btn-primary">Get Bitcoin
+        <button id="get_address_bitcoin" type="button" class="btn btn-primary">Get Bitcoin
           Address("m/44'/0'/0'/0/0")</button>
         <button id="get_address_bitcoin_testnet" type="button" class="btn btn-primary">Get Bitcoin Testnet
           Address("m/44'/1'/0'/0/0")</button>
-        <br /> -->
-        <!-- <button id="get_address_bitcoin_account2" type="button" class="btn btn-primary">Get Account2 Bitcoin
+        <button id="get_address_bitcoin_account2" type="button" class="btn btn-primary">Get Account2 Bitcoin
           Address("m/44'/0'/1'/0/0")</button>
         <button id="get_address_bitcoin_testnet_account2" type="button" class="btn btn-primary">Get Account2 Bitcoin
           Testnet
           Address("m/44'/1'/1'/0/0")</button>
-        <br /> -->
+        <br />
 
         <button id="get_address_ethereum" type="button" class="btn btn-primary">Get Ethereum Mainnet
           Address("m/44'/60'/0'/0/0")</button>
@@ -137,6 +139,8 @@
         $('#get_address_ethereum').click(get_address_ethereum_clicked);
         $('#get_address_ethereum_kovan').click(get_address_ethereum_kovan_clicked);
 
+        $('#getBitcoinSignedTransaction').click(getBitcoinSignedTransaction_clicked);
+        
         $('#getSignedMessage_Klaytn').click(getSignedMessage_Klaytn_clicked);
         $('#getEthereumSignedTransaction').click(getEthereumSignedTransaction_clicked);
         $('#getTokenSignedTransaction').click(getTokenSignedTransaction_clicked);
@@ -263,15 +267,24 @@
         resp_editor.load(result)
       }
 
+      async function getBitcoinSignedTransaction_clicked() {
+        set_command_name("Processing...");
+
+        var result  = await getBitcoinSignedTransaction( );
+      
+        set_command_name("getBitcoinSignedTransaction")       
+        resp_editor.load(result)
+      }
+
       async function getSignedMessage_Klaytn_clicked() {
         set_command_name("Processing...");
 
-        var result  = await getSingedMessage( 
+        var result  = await getSignedMessage( 
           dcent.coinType.KLAYTN,
           "m/44'/8217'/0'/0/0",
           'This is a message!!');
       
-        set_command_name("getSingedMessage - Klaytn")       
+        set_command_name("getSignedMessage - Klaytn")       
         resp_editor.load(result)
       }
       async function getEthereumSignedTransaction_clicked() {
@@ -486,7 +499,7 @@
         }
         return result 
       }
-      async function getSingedMessage( coinType, key, message) {
+      async function getSignedMessage( coinType, key, message) {
         var result 
         try { 
           result = await dcent.getSignedMessage(coinType, key, message)            
@@ -496,6 +509,30 @@
         return result
       }
 
+      async function getBitcoinSignedTransaction () {
+        var result 
+        try { 
+          let transaction = dcent.getBitcoinTransactionObject(dcent.coinType.MONACOIN)
+          transaction = dcent.addBitcoinTransactionInput(transaction,
+                '0100000001e297417c4607617bdb083f54b859cff3ae36c714c0f8ef6aab01c134fa2e9a4a010000006a47304402207dfeeb09c88e60d74be5d9c3e7c11d73af1cf42b8d171dbbb88321c58ab1c94402202649d517ed38c22d5a518e95b57791d1883ad76819666ea4d7c664693620d76a012102d69564b9d04220fca66d0ed68f0d5bcdeba8021bc7385e30d973be3662c71b71ffffffff02b80b0000000000001976a914705d92811e3ec14b4b90f975ef8676c56f31b63b88ac1fc70000000000001976a91440d06ce0cb98954e53d3633ca908b44293fce63b88ac00000000',
+                1, 
+                dcent.bitcoinTxType.p2pkh, 
+                "m/44'/0'/0'/1/0")
+          transaction = dcent.addBitcoinTransactionInput(transaction,
+                '0100000001e297417c4607617bdb083f54b859cff3ae36c714c0f8ef6aab01c134fa2e9a4a010000006a47304402207dfeeb09c88e60d74be5d9c3e7c11d73af1cf42b8d171dbbb88321c58ab1c94402202649d517ed38c22d5a518e95b57791d1883ad76819666ea4d7c664693620d76a012102d69564b9d04220fca66d0ed68f0d5bcdeba8021bc7385e30d973be3662c71b71ffffffff02b80b0000000000001976a914705d92811e3ec14b4b90f975ef8676c56f31b63b88ac1fc70000000000001976a91440d06ce0cb98954e53d3633ca908b44293fce63b88ac00000000',
+                0, 
+                dcent.bitcoinTxType.p2pkh, 
+                "m/44'/0'/0'/0/7")
+          transaction = dcent.addBitcoinTransactionOutput(transaction,
+               dcent.bitcoinTxType.p2pkh,
+                '10000',
+                ['1traqiFvydVk2hWdCj3WGRJbe4CGtfyHA'])
+          result = await dcent.getBitcoinSignedTransaction(transaction)            
+        } catch (e) {
+          result = e
+        }
+        return result
+      }
       async function getEthereumSignedTransaction( coinType, nonce, gasPrice, gasLimit, to, value, data, key, chainId) {
         var result 
         try { 

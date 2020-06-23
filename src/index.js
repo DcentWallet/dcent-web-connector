@@ -4,19 +4,17 @@ const {
   coinType: dcentCoinType, 
   coinGroup: dcentCoinGroup, 
   coinName: dcentCoinName,
-  klaytnTxType: dcentKlaytnTxType
-  // # 
-  // Now, Bitcoin Transaction not support 
-  // bitcoinTxType as dcentBitcoinTxType
-} = require('./src/type/dcent-web-type')
+  bitcoinTxType: dcentBitcoinTxType,
+  klaytnTxType: dcentKlaytnTxType  
+} = require('./type/dcent-web-type')
 
 const {
   state: dcentState
-} = require('./src/type/dcent-state')
+} = require('./type/dcent-state')
 
-const { config: dcentConfig } = require('./src/conf/dcent-web-conf')
+const { config: dcentConfig } = require('./conf/dcent-web-conf')
 
-const LOG = require('./src/utils/log')
+const LOG = require('./utils/log')
 const Event = require('events')
 
 const dcent = {}
@@ -426,6 +424,10 @@ function isAvaliableCoinGroup (coinGroup) {
     return false
   }
   switch (coinGroup.toLowerCase()) {
+    case dcentCoinGroup.BITCOIN.toLowerCase():
+    case dcentCoinGroup.BITCOIN_TESTNET.toLowerCase():
+    case dcentCoinGroup.MONACOIN.toLowerCase():
+    case dcentCoinGroup.MONACOIN_TESTNET.toLowerCase():    
     case dcentCoinGroup.ERC20.toLowerCase():
     case dcentCoinGroup.ERC20_KOVAN.toLowerCase():
     case dcentCoinGroup.ETHEREUM.toLowerCase():
@@ -439,10 +441,6 @@ function isAvaliableCoinGroup (coinGroup) {
     case dcentCoinGroup.KLAYTN_KCT.toLowerCase():
     case dcentCoinGroup.KCT_BAOBAB.toLowerCase():
       return true
-    case dcentCoinGroup.BITCOIN.toLowerCase():
-    case dcentCoinGroup.BITCOIN_TESTNET.toLowerCase():
-    case dcentCoinGroup.MONACOIN.toLowerCase():
-    case dcentCoinGroup.MONACOIN_TESTNET.toLowerCase():
     case dcentCoinGroup.RIPPLE.toLowerCase():
     case dcentCoinGroup.RIPPLE_TESTNET.toLowerCase():
     default:
@@ -455,6 +453,10 @@ function isAvaliableCoinType (coinType) {
     return false
   }
   switch (coinType.toLowerCase()) {
+    case dcentCoinType.BITCOIN.toLowerCase():
+    case dcentCoinType.BITCOIN_TESTNET.toLowerCase():
+    case dcentCoinType.MONACOIN.toLowerCase():
+    case dcentCoinType.MONACOIN_TESTNET.toLowerCase():
     case dcentCoinType.ETHEREUM.toLowerCase():
     case dcentCoinType.ETHEREUM_KOVAN.toLowerCase():
     case dcentCoinType.ERC20.toLowerCase():
@@ -468,10 +470,6 @@ function isAvaliableCoinType (coinType) {
     case dcentCoinType.KLAYTN_KCT.toLowerCase():
     case dcentCoinType.KCT_BAOBAB.toLowerCase():
       return true
-    case dcentCoinType.BITCOIN.toLowerCase():
-    case dcentCoinType.BITCOIN_TESTNET.toLowerCase():
-    case dcentCoinType.MONACOIN.toLowerCase():
-    case dcentCoinType.MONACOIN_TESTNET.toLowerCase():
     case dcentCoinType.RIPPLE.toLowerCase():
     case dcentCoinType.RIPPLE_TESTNET.toLowerCase():
     default:
@@ -488,6 +486,20 @@ function isTokenType (coinGroup) {
     case dcentCoinGroup.ERC20_KOVAN.toLowerCase():
     case dcentCoinType.RRC20.toLowerCase():
     case dcentCoinType.RRC20_TESTNET.toLowerCase():
+    case dcentCoinType.KLAYTN_KCT.toLowerCase():
+    case dcentCoinType.KCT_BAOBAB.toLowerCase():
+      return true
+    default:
+      return false
+  }
+}
+
+function isBitcoinTxCoinType (coinType) {
+  switch (coinType.toLowerCase()) {
+    case dcentCoinType.BITCOIN.toLowerCase():
+    case dcentCoinType.BITCOIN_TESTNET.toLowerCase():
+    case dcentCoinType.MONACOIN.toLowerCase():
+    case dcentCoinType.MONACOIN_TESTNET.toLowerCase():
       return true
     default:
       return false
@@ -590,6 +602,119 @@ dcent.getXPUB = async function (key, bip32name) {
     }
   })
 }
+
+/**
+ * Returns a JSON Object for Bitcoin transaction.
+ * @param {string} coinType coin type
+ * @returns {Object} that D'CENT Bitcoin Transaction JSON Object.
+ */
+dcent.getBitcoinTransactionObject = function (coinType) {
+  if (!isBitcoinTxCoinType(coinType)) {
+    throw dcent.dcentException('coin_type_error', 'not supported coin type')
+  }
+  const txObject = {
+    request: {
+      header: {
+        version: '1.0',
+        request_to: ''
+      },
+      body: {
+        command: '',
+        parameter: {}
+      }
+    }
+  }
+  txObject.request.header.request_to = coinType
+  txObject.request.body.command = 'transaction'
+  txObject.request.body.parameter = {}
+  txObject.request.body.parameter.version = 1
+  txObject.request.body.parameter.locktime = 0
+
+  return txObject
+}
+
+
+/**
+ *  previous transaction output information to be used. Max Number of “input” is 50.
+ *
+ * @param {Object} transaction JSON Object Returned from getBitCoinTransaction Function
+ * @param {string} prevTx Previous full transaction data. This data will be used for generating previous transaction hash, and for check the amount of coin to be sent. Raw Transaction data with Hex formatted.
+ * @param {number} utxoIdx index of transaction output from prev_tx
+ * @param {string} type p2pkh | p2pk | p2sh 
+ * @param {string} key key path for generating signature
+ * @returns {Object} setting result. if you setting completely is true otherwise false.
+ */
+dcent.addBitcoinTransactionInput = function (
+  transaction,
+  prevTx,
+  utxoIdx,
+  type,
+  key
+) {
+
+  const parameter = transaction.request.body.parameter
+
+  parameter.input = parameter.input || []
+
+  parameter.input.push({
+    prev_tx: prevTx,
+    utxo_idx: utxoIdx,
+    type: type,
+    key: key
+  })
+
+  return transaction
+}
+
+/**
+ * bitcoin spending information. Max number of “output” is 10.
+ *
+ * @param {Object} transaction JSON Object Returned from getBitCoinTransaction Function
+ * @param {string} type p2pkh | p2pk | p2sh | change
+ * @param {number} value amount of coin to send
+ * @param {string} to address of receiver
+ * @returns {Object} setting result. if you setting completely is true otherwise false.
+ */
+dcent.addBitcoinTransactionOutput = function (
+  transaction,
+  type,
+  value,
+  to
+) {
+  const parameter = transaction.request.body.parameter
+
+  parameter.output = parameter.output || []
+
+  parameter.output.push({
+    type: type,
+    value: value,
+    to: to
+  })
+
+  return transaction
+}
+
+/**
+ * Returns signed transaction value. If you want to get sign value of "BITCOIN" or "MONACOIN" transaction, must call this function.
+ *
+ * @param {Object} transaction JSON Object Returned from getBitCoinTransaction Function
+ * @returns {Object} signed transaction value
+ */
+dcent.getBitcoinSignedTransaction = async function (transaction) {
+
+  if (transaction === null || typeof transaction === 'undefined') {
+    throw dcent.dcentException('param_error', 'transaction object is undefined or null')
+  }
+
+  LOG.debug('transaction : ', JSON.stringify(transaction))
+  return await dcent.call({
+    method: 'getBitcoinSignedTransaction',
+    params: {
+      transaction: transaction
+    }
+  })
+}
+
 
 /**
  * Returns ethereum signed transaction. If you want to get sign value of "ETHEREUM" or "RSK" transaction, must call this function.
@@ -844,6 +969,7 @@ dcent.state = dcentState
 dcent.coinType = dcentCoinType
 dcent.coinGroup = dcentCoinGroup
 dcent.coinName = dcentCoinName
+dcent.bitcoinTxType = dcentBitcoinTxType
 dcent.klaytnTxType = dcentKlaytnTxType
 // # 
 // Now, Bitcoin Transaction not support 
@@ -858,6 +984,7 @@ window.DcentWebConnector.state = dcentState
 window.DcentWebConnector.coinType = dcentCoinType
 window.DcentWebConnector.coinGroup = dcentCoinGroup
 window.DcentWebConnector.coinName = dcentCoinName
+window.DcentWebConnector.bitcoinTxType = dcentBitcoinTxType
 window.DcentWebConnector.klaytnTxType = dcentKlaytnTxType
 // # 
 // Now, Bitcoin Transaction not support 

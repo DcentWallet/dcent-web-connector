@@ -63,12 +63,15 @@ const coinName = {
   RSK_TESTNET: 'RSK-TESTNET',
 }
 
-// export const bitcoinTxType = {
-//   change: 'change',
-//   p2pk: 'p2pk',
-//   p2pkh: 'p2pkh',
-//   p2sh: 'p2sh'
-// }
+const bitcoinTxType = {
+  change: 'change',
+  p2pk: 'p2pk',
+  p2pkh: 'p2pkh',
+  p2sh: 'p2sh',
+  multisig: 'multisig',
+  p2wpkh: 'p2wpkh',
+  p2wsh: 'p2wsh'
+}
 
 const klaytnTxType = {
   LEGACY: 0xFF,
@@ -95,5 +98,6 @@ module.exports = {
   coinType,
   coinGroup,
   coinName,
+  bitcoinTxType,
   klaytnTxType,
 }

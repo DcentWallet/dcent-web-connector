@@ -2,7 +2,7 @@
   "name": "dcent-web-connector",
   "version": "0.8.1",
   "description": "D'CENT Web SDK Connector",
-  "main": "index.js",
+  "main": "src/index.js",
   "scripts": {
     "dev": "npm run build-dev && webpack-dev-server --mode development",
     "build-dev": "webpack --mode development",

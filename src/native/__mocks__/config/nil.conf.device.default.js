@@ -95,7 +95,7 @@ const defaultDeviceResponse = {
             },
         },
     },
-    getAddress: {
+    getAddressEth: {
         header: {
             version: '1.0',
             response_from: 'ethereum',
@@ -105,6 +105,45 @@ const defaultDeviceResponse = {
             command: 'get_address',
             parameter: {
                 address: '0xe5c23dAa6480e45141647E5AeB321832150a28D4',
+            },
+        },
+    },
+    getAddressBtc: {
+        header: {
+            version: '1.0',
+            response_from: 'bitcoin',
+            status: 'success',
+        },
+        body: {
+            command: 'get_address',
+            parameter: {
+                address: '15JYUDHdLyE98oATycpp1pb8MjBRQtZZob',
+            },
+        },
+    },
+    getAddressMona: {
+        header: {
+            version: '1.0',
+            response_from: 'bitcoin',
+            status: 'success',
+        },
+        body: {
+            command: 'get_address',
+            parameter: {
+                address: 'MMXNNP5sSv6sZ1pP3tqQvNutTgu2bN73KN',
+            },
+        },
+    },
+    getAddressInvalid: {
+        header: {
+            version: '1.0',
+            response_from: 'bridge',
+            status: 'error',
+        },
+        body: {
+            error: {
+                code: 'coin_type_error',
+                message: 'not support coin type',
             },
         },
     },
@@ -182,6 +221,19 @@ const defaultDeviceResponse = {
                 code: 'command_error',
                 message: 'not support command',
             },
+        },
+    },
+    getBitcoinSignedTransaction: {
+        header: {
+            version: '1.0',
+            response_from: 'bitcoin',
+            status: 'success',
+        },
+        body: {
+            command: 'transaction',
+            parameter: {
+                signed: '0100000002233ee1fbcf38213de9933a44096de5880af7e9adafb3b2d0417a4ff1248b31ea010000006a473044022078c11dc7e6f83f8a95e6bbe95a870cbaac74f025cc2565e4f05ce7588b4b956402202a629768f78e10708a3d8537d0852e067279185f64fcc765309fac09de1add25012102d69564b9d04220fca66d0ed68f0d5bcdeba8021bc7385e30d973be3662c71b71ffffffff233ee1fbcf38213de9933a44096de5880af7e9adafb3b2d0417a4ff1248b31ea000000006a47304402201288aa5d68484de5cae63355de3a380cce08a93ef3b573ce15ea7248e3a7337a022055de4a72c069439050c22a84115f82d769ca23b3824507c24dc61d71d10ce036012103b20b2943add03533b34b53e1563cd3b89eb20763589c035dc6f9714746075583ffffffff0110270000000000001976a91409ce9aaea4672781106e066efe7d740c6cbd71e088ac00000000'
+                }
         },
     },
 }

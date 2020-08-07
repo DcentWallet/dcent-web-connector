@@ -17,7 +17,6 @@ const defaultDeviceResponse = NilConfDevice.defaultDeviceResponse
 const requestToBridge = (payload) => {
   let response = ''
   const method = payload.method
-  LOG.debug('payload.method = ', method)
   switch (method) {
     case Method.INFO:
         response = defaultBridgeResponse.info
@@ -38,7 +37,20 @@ const requestToBridge = (payload) => {
         response = defaultDeviceResponse.getXpub
         break
     case Method.GET_ADDRESS:
-        response = defaultDeviceResponse.getAddress
+        switch (payload.params.coinType) {
+            case 'bitcoin':
+                response = defaultDeviceResponse.getAddressBtc
+                break
+            case 'ethereum':
+                response = defaultDeviceResponse.getAddressEth
+                break
+            case 'monacoin':
+                response = defaultDeviceResponse.getAddressMona
+                break
+            default:
+                response = defaultDeviceResponse.getAddressEth // default mock 
+                break
+        }
         break
     case Method.GET_ETH_SIGN_TX:
         response = defaultDeviceResponse.getEthereumSignedTransaction
@@ -54,6 +66,9 @@ const requestToBridge = (payload) => {
         break
     case Method.GET_SIGN_MSG:
         response = defaultDeviceResponse.getSignedMessage
+        break
+    case Method.GET_BTC_SIGN_TX:
+        response = defaultDeviceResponse.getBitcoinSignedTransaction
         break
     default:
         response = 'error'

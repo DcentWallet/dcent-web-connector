@@ -770,8 +770,6 @@ Klaytn provides 'caver-js' library. You can make raw transaction for broadcastin
         }
     }
     ```
-For broadcast the sign transaction, you must serialization the parameter values according to the [XRP Doc](https://xrpl.org/serialization.html).
-XRP provides ['ripple-binary-codec'](https://github.com/ripple/ripple-binary-codec) library. You can make raw transaction for broadcasting using 'ripple-binary-codec'.
-
+For broadcast the sign transaction, you must reconstruct transaction include TxnSignature & SigningPubKey for normal (single-signature) or Signers array for multi-signed-transaction 
 
 Please Refer to the `index.html` to learn more about how to use the SDK APIs. There is an Web project using our Web SDK.

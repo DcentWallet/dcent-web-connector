@@ -733,6 +733,8 @@ Klaytn provides 'caver-js' library. You can make raw transaction for broadcastin
 - Parameters :
     - transaction: this value conforms JSON format of Transaction Types in [XRP Doc](https://xrpl.org/transaction-formats.html).
     - key: key path, wallet sign with that private key with a given key path (BIP32 ex) "m/44'/144'/0'/0/0").
+- Requirements:
+    - `D'CENT Bridge` version 1.1.4 or higher is required.
 - Useage:
     ```js
     const transactionJson = {
@@ -770,6 +772,6 @@ Klaytn provides 'caver-js' library. You can make raw transaction for broadcastin
         }
     }
     ```
-For broadcast the sign transaction, you must reconstruct transaction include TxnSignature & SigningPubKey for normal (single-signature) or Signers array for multi-signed-transaction 
+For broadcast the sign transaction, you must reconstruct transaction include `TxnSignature` & `SigningPubKey` for normal (single-signature) or `Signers` array for multi-signed-transaction 
 
 Please Refer to the `index.html` to learn more about how to use the SDK APIs. There is an Web project using our Web SDK.

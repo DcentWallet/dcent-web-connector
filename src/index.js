@@ -440,9 +440,9 @@ function isAvaliableCoinGroup (coinGroup) {
     case dcentCoinGroup.KLAY_BAOBAB.toLowerCase():
     case dcentCoinGroup.KLAYTN_KCT.toLowerCase():
     case dcentCoinGroup.KCT_BAOBAB.toLowerCase():
-      return true
     case dcentCoinGroup.RIPPLE.toLowerCase():
     case dcentCoinGroup.RIPPLE_TESTNET.toLowerCase():
+      return true
     default:
       return false
   }
@@ -469,9 +469,9 @@ function isAvaliableCoinType (coinType) {
     case dcentCoinType.KLAY_BAOBAB.toLowerCase():
     case dcentCoinType.KLAYTN_KCT.toLowerCase():
     case dcentCoinType.KCT_BAOBAB.toLowerCase():
-      return true
     case dcentCoinType.RIPPLE.toLowerCase():
     case dcentCoinType.RIPPLE_TESTNET.toLowerCase():
+      return true
     default:
       return false
   }
@@ -961,6 +961,23 @@ dcent.getSignedMessage = async function (coinType, key, message) {
       coinType: coinType,
       key: key,
       message: message,
+    }
+  })
+}
+
+/**
+ * Returns Ripple signData
+ *
+ * @param {Object} transaction to be sign
+ * @param {string} key key path (BIP44) ex) "m/44'/144'/0'/0/0"
+ * @returns {Object} SignData {sign:'string', pubkey:'string', accountId:'string' } in body.parameter
+ */
+dcent.getRippleSignedTransaction = async function (transaction, key) {
+  return await dcent.call({
+    method: 'getRippleSignTransaction',
+    params: {
+      key: key,
+      transaction: transaction
     }
   })
 }

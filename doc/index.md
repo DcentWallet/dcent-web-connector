@@ -726,5 +726,52 @@ Klaytn provides 'caver-js' library. You can make raw transaction for broadcastin
     }
     ```
 
+**getRippleSignedTransaction()**
+- This fuction for :
+    - XRP(Ripple)
+
+- Parameters :
+    - transaction: this value conforms JSON format of Transaction Types in [XRP Doc](https://xrpl.org/transaction-formats.html).
+    - key: key path, wallet sign with that private key with a given key path (BIP32 ex) "m/44'/144'/0'/0/0").
+- Useage:
+    ```js
+    const transactionJson = {
+        "TransactionType": "AccountSet",
+        "Account": "rfQrsnD8ywrgSX457qshpBTDru7EDnM2Lb",
+        "Fee": "10",
+        "Sequence": 34,
+        "MessageKey": "02000000000000000000000000415F8315C9948AD91E2CCE5B8583A36DA431FB61",
+        "Flags": 2147483648,
+    }
+
+    var result
+    try {
+        result = await dcent.getRippleSignedTransaction(transactionJson, "m/44'/144'/0'/0/0");    
+    } catch (e) {
+        console.log(e)
+        result = e
+    }
+    ```
+- Returned response object:
+    ```json
+    {
+        "header": {
+            "version": "1.0",
+            "response_from": "ripple",
+            "status": "success"
+        },
+        "body": {
+            "command": "get_sign",
+            "parameter": {
+                "sign": "3045022100e81c9e2...8e373e30b8f5e0a33eb094ffc7c8d009ad71fd7581b6b89ef9",
+                "pubkey": "02c65f2a496909123973282c47edbd0e760bb44bb0d87ec1b30115b2ce3072c766",
+                "accountId": "462a5a061ebe03fb52e5bca443233bcc6d0e9699"
+            }
+        }
+    }
+    ```
+For broadcast the sign transaction, you must serialization the parameter values according to the [XRP Doc](https://xrpl.org/serialization.html).
+XRP provides ['ripple-binary-codec'](https://github.com/ripple/ripple-binary-codec) library. You can make raw transaction for broadcasting using 'ripple-binary-codec'.
+
 
 Please Refer to the `index.html` to learn more about how to use the SDK APIs. There is an Web project using our Web SDK.

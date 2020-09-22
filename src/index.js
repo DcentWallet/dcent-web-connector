@@ -5,7 +5,8 @@ const {
   coinGroup: dcentCoinGroup, 
   coinName: dcentCoinName,
   bitcoinTxType: dcentBitcoinTxType,
-  klaytnTxType: dcentKlaytnTxType  
+  klaytnTxType: dcentKlaytnTxType,
+  xrpTxType: dcentXrpTxType  
 } = require('./type/dcent-web-type')
 
 const {
@@ -979,6 +980,10 @@ dcent.getXrpSignedTransaction = async function (transaction, key) {
           throw dcent.dcentException('param_error', 'TypeError: Required field type is not matched')
     }
     
+    if (typeof dcentXrpTxType[transaction.TransactionType] === 'undefined') {
+      throw dcent.dcentException('param_error', 'Invalid Transaction Type: ' +  transaction.TransactionType)
+    }
+
     checkParameter('numberString', transaction.Fee)
   } catch (error) {
     throw error
@@ -999,6 +1004,7 @@ dcent.coinGroup = dcentCoinGroup
 dcent.coinName = dcentCoinName
 dcent.bitcoinTxType = dcentBitcoinTxType
 dcent.klaytnTxType = dcentKlaytnTxType
+dcent.xrpTxType = dcentXrpTxType
 // # 
 // Now, Bitcoin Transaction not support 
 // dcent.bitcoinTxType = dcentBitcoinTxType

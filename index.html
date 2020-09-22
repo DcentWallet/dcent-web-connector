@@ -74,7 +74,7 @@
         <button id="getKlaytnSignedTransaction_kct_baobab" type="button" class="btn btn-primary">getKlaytnSignedTransaction KCT BAOBAB</button>
         <br />
         
-        <button id="getRippleSignedTransaction" type="button" class="btn btn-primary">getRippleSignedTransaction</button>
+        <button id="getXrpSignedTransaction" type="button" class="btn btn-primary">getXrpSignedTransaction</button>
         <br />
 
         <button id="get_address_bitcoin" type="button" class="btn btn-primary">Get Bitcoin
@@ -162,7 +162,7 @@
         $('#getKlaytnSignedTransaction_kct').click(getKlaytnSignedTransaction_kct_clicked);
         $('#getKlaytnSignedTransaction_kct_baobab').click(getKlaytnSignedTransaction_kct_baobab_clicked);
 
-        $('#getRippleSignedTransaction').click(getRippleSignedTransaction_clicked);
+        $('#getXrpSignedTransaction').click(getXrpSignedTransaction_clicked);
         
 
       });
@@ -450,7 +450,7 @@
         resp_editor.load(result)
       }
 
-      async function getRippleSignedTransaction_clicked() {
+      async function getXrpSignedTransaction_clicked() {
         set_command_name("Processing...");
         var transactionJson = {
           "TransactionType": "AccountSet",
@@ -460,9 +460,9 @@
           "MessageKey": "02000000000000000000000000415F8315C9948AD91E2CCE5B8583A36DA431FB61",
           "Flags": 2147483648,
         }
-        var result  = await getRippleSignedTransaction(transactionJson, "m/44'/144'/0'/0/0");
+        var result  = await getXrpSignedTransaction(transactionJson, "m/44'/144'/0'/0/0");
       
-        set_command_name("getRippleSignedTransaction")       
+        set_command_name("getXrpSignedTransaction")       
         resp_editor.load(result)
       }
 
@@ -612,10 +612,10 @@
         return result
       }
 
-      async function getRippleSignedTransaction(transaction, key) {
+      async function getXrpSignedTransaction(transaction, key) {
         var result 
         try { 
-          result = await dcent.getRippleSignedTransaction(transaction, key)      
+          result = await dcent.getXrpSignedTransaction(transaction, key)      
         } catch (e) {
           result = e
         }

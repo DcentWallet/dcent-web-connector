@@ -966,15 +966,26 @@ dcent.getSignedMessage = async function (coinType, key, message) {
 }
 
 /**
- * Returns Ripple signData
+ * Returns XRP signData
  *
  * @param {Object} transaction to be sign
  * @param {string} key key path (BIP44) ex) "m/44'/144'/0'/0/0"
  * @returns {Object} SignData {sign:'string', pubkey:'string', accountId:'string' } in body.parameter
  */
-dcent.getRippleSignedTransaction = async function (transaction, key) {
+dcent.getXrpSignedTransaction = async function (transaction, key) {
+  try {
+    if (typeof transaction.Account !== 'string' || typeof transaction.TransactionType !== 'string' ||
+        typeof transaction.Fee !== 'string' || typeof transaction.Sequence !== 'number') {
+          throw dcent.dcentException('param_error', 'TypeError: Required field type is not matched')
+    }
+    
+    checkParameter('numberString', transaction.Fee)
+  } catch (error) {
+    throw error
+  }
+
   return await dcent.call({
-    method: 'getRippleSignTransaction',
+    method: 'getXrpSignedTransaction',
     params: {
       key: key,
       transaction: transaction

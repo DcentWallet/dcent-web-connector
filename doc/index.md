@@ -726,7 +726,7 @@ Klaytn provides 'caver-js' library. You can make raw transaction for broadcastin
     }
     ```
 
-**getRippleSignedTransaction()**
+**getXrpSignedTransaction()**
 - This fuction for :
     - XRP(Ripple)
 
@@ -748,7 +748,7 @@ Klaytn provides 'caver-js' library. You can make raw transaction for broadcastin
 
     var result
     try {
-        result = await dcent.getRippleSignedTransaction(transactionJson, "m/44'/144'/0'/0/0");    
+        result = await dcent.getXrpSignedTransaction(transactionJson, "m/44'/144'/0'/0/0");    
     } catch (e) {
         console.log(e)
         result = e

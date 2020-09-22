@@ -981,7 +981,7 @@ dcent.getXrpSignedTransaction = async function (transaction, key) {
     }
     
     if (typeof dcentXrpTxType[transaction.TransactionType] === 'undefined') {
-      throw dcent.dcentException('param_error', 'Invalid Transaction Type: ' +  transaction.TransactionType)
+      throw dcent.dcentException('param_error', 'Invalid Transaction Type: ' + transaction.TransactionType)
     }
 
     checkParameter('numberString', transaction.Fee)

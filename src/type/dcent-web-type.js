@@ -112,7 +112,7 @@ const xrpTxType = {
   OfferCreate: 'OfferCreate', 
   Payment: 'Payment',
   PaymentChannelClaim: 'PaymentChannelClaim', 
-  PaymentChannelCreate:'PaymentChannelCreate', 
+  PaymentChannelCreate: 'PaymentChannelCreate', 
   PaymentChannelFund: 'PaymentChannelFund', 
   SetRegularKey: 'SetRegularKey', 
   SignerListSet: 'SignerListSet', 

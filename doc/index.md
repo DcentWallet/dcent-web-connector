@@ -738,7 +738,7 @@ Klaytn provides 'caver-js' library. You can make raw transaction for broadcastin
 - Useage:
     ```js
     const transactionJson = {
-        "TransactionType": "AccountSet",
+        "TransactionType": "AccountSet", // or use defined value `dcent.xrpTxType.AccountSet`
         "Account": "rfQrsnD8ywrgSX457qshpBTDru7EDnM2Lb",
         "Fee": "10",
         "Sequence": 34,

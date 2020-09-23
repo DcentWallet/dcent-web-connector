@@ -735,6 +735,7 @@ Klaytn provides 'caver-js' library. You can make raw transaction for broadcastin
     - key: key path, wallet sign with that private key with a given key path (BIP32 ex) "m/44'/144'/0'/0/0").
 - Requirements:
     - `D'CENT Bridge` version 1.1.4 or higher is required.
+    - D'CENT Biometric Wallet version 2.4.0. or higher is required.
 - Useage:
     ```js
     const transactionJson = {
@@ -743,7 +744,7 @@ Klaytn provides 'caver-js' library. You can make raw transaction for broadcastin
         "Fee": "10",
         "Sequence": 34,
         "MessageKey": "02000000000000000000000000415F8315C9948AD91E2CCE5B8583A36DA431FB61",
-        "Flags": 2147483648,
+        "Flags": 2147483648, // if exist then D'Cent check that `tfFullyCanonicalSig` is set?
     }
 
     var result

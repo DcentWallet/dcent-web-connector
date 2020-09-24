@@ -5,7 +5,8 @@ const {
   coinGroup: dcentCoinGroup, 
   coinName: dcentCoinName,
   bitcoinTxType: dcentBitcoinTxType,
-  klaytnTxType: dcentKlaytnTxType  
+  klaytnTxType: dcentKlaytnTxType,
+  xrpTxType: dcentXrpTxType  
 } = require('./type/dcent-web-type')
 
 const {
@@ -440,9 +441,9 @@ function isAvaliableCoinGroup (coinGroup) {
     case dcentCoinGroup.KLAY_BAOBAB.toLowerCase():
     case dcentCoinGroup.KLAYTN_KCT.toLowerCase():
     case dcentCoinGroup.KCT_BAOBAB.toLowerCase():
-      return true
     case dcentCoinGroup.RIPPLE.toLowerCase():
     case dcentCoinGroup.RIPPLE_TESTNET.toLowerCase():
+      return true
     default:
       return false
   }
@@ -469,9 +470,9 @@ function isAvaliableCoinType (coinType) {
     case dcentCoinType.KLAY_BAOBAB.toLowerCase():
     case dcentCoinType.KLAYTN_KCT.toLowerCase():
     case dcentCoinType.KCT_BAOBAB.toLowerCase():
-      return true
     case dcentCoinType.RIPPLE.toLowerCase():
     case dcentCoinType.RIPPLE_TESTNET.toLowerCase():
+      return true
     default:
       return false
   }
@@ -965,12 +966,45 @@ dcent.getSignedMessage = async function (coinType, key, message) {
   })
 }
 
+/**
+ * Returns XRP signData
+ *
+ * @param {Object} transaction to be sign
+ * @param {string} key key path (BIP44) ex) "m/44'/144'/0'/0/0"
+ * @returns {Object} SignData {sign:'string', pubkey:'string', accountId:'string' } in body.parameter
+ */
+dcent.getXrpSignedTransaction = async function (transaction, key) {
+  try {
+    if (typeof transaction.Account !== 'string' || typeof transaction.TransactionType !== 'string' ||
+        typeof transaction.Fee !== 'string' || typeof transaction.Sequence !== 'number') {
+          throw dcent.dcentException('param_error', 'TypeError: Required field type is not matched')
+    }
+    
+    if (typeof dcentXrpTxType[transaction.TransactionType] === 'undefined') {
+      throw dcent.dcentException('param_error', 'Invalid Transaction Type: ' + transaction.TransactionType)
+    }
+
+    checkParameter('numberString', transaction.Fee)
+  } catch (error) {
+    throw error
+  }
+
+  return await dcent.call({
+    method: 'getXrpSignedTransaction',
+    params: {
+      key: key,
+      transaction: transaction
+    }
+  })
+}
+
 dcent.state = dcentState
 dcent.coinType = dcentCoinType
 dcent.coinGroup = dcentCoinGroup
 dcent.coinName = dcentCoinName
 dcent.bitcoinTxType = dcentBitcoinTxType
 dcent.klaytnTxType = dcentKlaytnTxType
+dcent.xrpTxType = dcentXrpTxType
 // # 
 // Now, Bitcoin Transaction not support 
 // dcent.bitcoinTxType = dcentBitcoinTxType

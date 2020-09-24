@@ -73,6 +73,10 @@
         <button id="getKlaytnSignedTransaction_kct" type="button" class="btn btn-primary">getKlaytnSignedTransaction KCT</button>
         <button id="getKlaytnSignedTransaction_kct_baobab" type="button" class="btn btn-primary">getKlaytnSignedTransaction KCT BAOBAB</button>
         <br />
+        
+        <button id="getXrpSignedTransaction" type="button" class="btn btn-primary">getXrpSignedTransaction</button>
+        <br />
+
         <button id="get_address_bitcoin" type="button" class="btn btn-primary">Get Bitcoin
           Address("m/44'/0'/0'/0/0")</button>
         <button id="get_address_bitcoin_testnet" type="button" class="btn btn-primary">Get Bitcoin Testnet
@@ -88,6 +92,11 @@
           Address("m/44'/60'/0'/0/0")</button>
         <button id="get_address_ethereum_kovan" type="button" class="btn btn-primary">Get Ethereum Kovan
           Address("m/44'/60'/0'/0/0")</button>
+        <br />
+
+        <button id="get_address_ripple" type="button" class="btn btn-primary">Get Ripple Mainnet
+          Address("m/44'/144'/0'/0/0")</button>
+        <br />
 
       </div>
     </div>
@@ -139,6 +148,8 @@
         $('#get_address_ethereum').click(get_address_ethereum_clicked);
         $('#get_address_ethereum_kovan').click(get_address_ethereum_kovan_clicked);
 
+        $('#get_address_ripple').click(get_address_ripple_clicked);
+
         $('#getBitcoinSignedTransaction').click(getBitcoinSignedTransaction_clicked);
         
         $('#getSignedMessage_Klaytn').click(getSignedMessage_Klaytn_clicked);
@@ -151,6 +162,8 @@
         $('#getKlaytnSignedTransaction_kct').click(getKlaytnSignedTransaction_kct_clicked);
         $('#getKlaytnSignedTransaction_kct_baobab').click(getKlaytnSignedTransaction_kct_baobab_clicked);
 
+        $('#getXrpSignedTransaction').click(getXrpSignedTransaction_clicked);
+        
 
       });
 
@@ -264,6 +277,15 @@
         var result = await getAddress(dcent.coinType.ETHEREUM_KOVAN, "m/44'/60'/0'/0/0")
 
         set_command_name("get_address ethereum kovan")        
+        resp_editor.load(result)
+      }
+
+      async function get_address_ripple_clicked() {
+        set_command_name("Processing...");
+
+        var result = await getAddress(dcent.coinType.RIPPLE, "m/44'/144'/0'/0/0")
+
+        set_command_name("get_address ripple")        
         resp_editor.load(result)
       }
 
@@ -428,6 +450,22 @@
         resp_editor.load(result)
       }
 
+      async function getXrpSignedTransaction_clicked() {
+        set_command_name("Processing...");
+        var transactionJson = {
+          "TransactionType": dcent.xrpTxType.AccountSet,
+          "Account": "rfQrsnD8ywrgSX457qshpBTDru7EDnM2Lb",
+          "Fee": "10",
+          "Sequence": 25,
+          "MessageKey": "02000000000000000000000000415F8315C9948AD91E2CCE5B8583A36DA431FB61",
+          "Flags": 2147483648,
+        }
+        var result  = await getXrpSignedTransaction(transactionJson, "m/44'/144'/0'/0/0");
+      
+        set_command_name("getXrpSignedTransaction")       
+        resp_editor.load(result)
+      }
+
       /////// DCENT WEB-SDK call
      
       async function info() {        
@@ -574,6 +612,15 @@
         return result
       }
 
+      async function getXrpSignedTransaction(transaction, key) {
+        var result 
+        try { 
+          result = await dcent.getXrpSignedTransaction(transaction, key)      
+        } catch (e) {
+          result = e
+        }
+        return result 
+      }
     </script>
 
 </body>

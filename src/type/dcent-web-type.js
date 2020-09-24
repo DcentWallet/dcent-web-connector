@@ -98,10 +98,32 @@ const klaytnTxType = {
 	FEE_DELEGATED_CANCEL_WITH_RATIO: 0x3A,
 }
 
+const xrpTxType = {
+  AccountSet: 'AccountSet', 
+  AccountDelete: 'AccountDelete', 
+  CheckCancel: 'CheckCancel', 
+  CheckCash: 'CheckCash', 
+  CheckCreate: 'CheckCreate', 
+  DepositPreauth: 'DepositPreauth',
+  EscrowCancel: 'EscrowCancel', 
+  EscrowCreate: 'EscrowCreate', 
+  EscrowFinish: 'EscrowFinish', 
+  OfferCancel: 'OfferCancel', 
+  OfferCreate: 'OfferCreate', 
+  Payment: 'Payment',
+  PaymentChannelClaim: 'PaymentChannelClaim', 
+  PaymentChannelCreate: 'PaymentChannelCreate', 
+  PaymentChannelFund: 'PaymentChannelFund', 
+  SetRegularKey: 'SetRegularKey', 
+  SignerListSet: 'SignerListSet', 
+  TrustSet: 'TrustSet'
+}
+
 module.exports = {
   coinType,
   coinGroup,
   coinName,
   bitcoinTxType,
   klaytnTxType,
+  xrpTxType,
 }

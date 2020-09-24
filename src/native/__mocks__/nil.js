@@ -70,6 +70,9 @@ const requestToBridge = (payload) => {
     case Method.GET_BTC_SIGN_TX:
         response = defaultDeviceResponse.getBitcoinSignedTransaction
         break
+    case Method.GET_XRP_SIGN_TX:
+        response = defaultDeviceResponse.getXrpSignedTransaction
+        break
     default:
         response = 'error'
       throw new Error('Not implemented Method in Mock : ' + method)

@@ -12,6 +12,7 @@
 | v0.7.0-beta | 2019. 05. 07 | add KLAYTN transaction function |
 | v0.8.0 | 2020. 06. 05 | add 'getSignedMessage' function |
 | v0.9.0 | 2020. 06. 22 | add interface for BITCOIN transaction |
+| v0.10.0 | 2020. 09. 28 | add interface for Ripple full transaction |
 
 <br><br><br>
 

@@ -774,13 +774,11 @@ Klaytn provides 'caver-js' library. You can make raw transaction for broadcastin
         }
     }
     ```
-For broadcast the sign transaction, you must reconstruct transaction include `TxnSignature` & `SigningPubKey` for normal (single-signature) or `Signers` array for multi-signed-transaction 
 
 - Send a Multi-Signed Transaction
     - Reference the [XRP Doc](https://xrpl.org/send-a-multi-signed-transaction.html)
     - Multi-signing a Transaction
-        1. First, prepare by referring to [Set Up Multi-Signing](https://xrpl.org/set-up-multi-signing.html)
-        -  You can get address of account using `getAddress()` function.
+        1. First, prepare by referring to [Set Up Multi-Signing](https://xrpl.org/set-up-multi-signing.html) (You can get address of account using `getAddress()` function.)
         2. Get signature
 
 
@@ -803,7 +801,7 @@ For broadcast the sign transaction, you must reconstruct transaction include `Tx
     var result
     var signer = {}
     try {
-        // Set SignerEntry's key path
+        // Keypath is SignerEntry's key path
         result = await dcent.getXrpSignedTransaction(transactionJson, "m/44'/144'/1'/0/0");
         signer = {
             "Account": "rBV2LGGm5XAc5KbL7hBaPnLnUJ5aTQzVj9", // addrs.encodeAccountID(Buffer.from(result.accountId,'hex'))
@@ -816,5 +814,7 @@ For broadcast the sign transaction, you must reconstruct transaction include `Tx
     }
 
     ```
+For broadcast the sign transaction, you must reconstruct transaction include `TxnSignature` & `SigningPubKey` for normal (single-signature) or `Signers` array for multi-signed-transaction 
+
 
 Please Refer to the `index.html` to learn more about how to use the SDK APIs. There is an Web project using our Web SDK.

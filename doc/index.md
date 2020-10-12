@@ -776,4 +776,45 @@ Klaytn provides 'caver-js' library. You can make raw transaction for broadcastin
     ```
 For broadcast the sign transaction, you must reconstruct transaction include `TxnSignature` & `SigningPubKey` for normal (single-signature) or `Signers` array for multi-signed-transaction 
 
+- Send a Multi-Signed Transaction
+    - Reference the [XRP Doc](https://xrpl.org/send-a-multi-signed-transaction.html)
+    - Multi-signing a Transaction
+        1. First, prepare by referring to [Set Up Multi-Signing](https://xrpl.org/set-up-multi-signing.html)
+        -  You can get address of account using `getAddress()` function.
+        2. Get signature
+
+
+    ```js
+    // You can use xrp library for encoding
+    //const api = require('ripple-binary-codec')
+    //const addrs = require('ripple-address-codec')
+
+    const transactionJson = {
+        "TransactionType": "Payment",
+        "Account": "rfQrsnD8ywrgSX457qshpBTDru7EDnM2Lb",
+        "Fee": "30", // normal cost * (1 + N)
+        "Sequence": 45,
+        "Amount": "1234567",
+        "Flags": 2147483648,
+        "Destination": "rJZMdVmbqFPi5oMyzGKJhHW9mNHwpiYKpS",
+        "SigningPubKey": "", // Must be blank
+    }
+
+    var result
+    var signer = {}
+    try {
+        // Set SignerEntry's key path
+        result = await dcent.getXrpSignedTransaction(transactionJson, "m/44'/144'/1'/0/0");
+        signer = {
+            "Account": "rBV2LGGm5XAc5KbL7hBaPnLnUJ5aTQzVj9", // addrs.encodeAccountID(Buffer.from(result.accountId,'hex'))
+            "SigningPubKey": result.pubkey,
+            "TxnSignature": result.sign
+        }
+    } catch (e) {
+        console.log(e)
+        result = e
+    }
+
+    ```
+
 Please Refer to the `index.html` to learn more about how to use the SDK APIs. There is an Web project using our Web SDK.

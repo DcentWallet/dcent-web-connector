@@ -13,7 +13,7 @@
 | v0.8.0 | 2020. 06. 05 | add 'getSignedMessage' function |
 | v0.9.0 | 2020. 06. 22 | add interface for BITCOIN transaction |
 | v0.10.0 | 2020. 09. 28 | add interface for Ripple full transaction |
-
+| v0.10.1 | 2020. 11. 30 | modify description for Ripple full transaction |
 <br><br><br>
 
 ## 1. INTRODUCTION

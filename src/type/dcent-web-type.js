@@ -19,6 +19,10 @@ const coinType = {
   RRC20_TESTNET: 'rrc20',
   RSK: 'rsk',
   RSK_TESTNET: 'rsk-testnet',
+  XDC: 'xinfin',
+  XRC20: 'xinfin',
+  XDC_APOTHEM: 'xrc20',
+  XRC20_APOTHEM: 'xrc20',
 }
 
 const coinGroup = {
@@ -40,6 +44,10 @@ const coinGroup = {
   RRC20_TESTNET: 'RRC20-TESTNET',
   RSK: 'RSK',
   RSK_TESTNET: 'RSK-TESTNET',
+  XDC: 'XINFIN',
+  XRC20: 'XRC20',
+  XDC_APOTHEM: 'XDC-APOTHEM',
+  XRC20_APOTHEM: 'XRC20-APOTHEM',
 }
 
 const coinName = {
@@ -61,6 +69,10 @@ const coinName = {
   RRC20_TESTNET: '',
   RSK: 'RSK',
   RSK_TESTNET: 'RSK-TESTNET',
+  XDC: 'XINFIN',
+  XRC20: '',
+  XDC_APOTHEM: 'XDC-APOTHEM',
+  XRC20_APOTHEM: '',
 }
 
 const bitcoinTxType = {

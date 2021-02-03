@@ -443,6 +443,10 @@ function isAvaliableCoinGroup (coinGroup) {
     case dcentCoinGroup.KCT_BAOBAB.toLowerCase():
     case dcentCoinGroup.RIPPLE.toLowerCase():
     case dcentCoinGroup.RIPPLE_TESTNET.toLowerCase():
+    case dcentCoinGroup.XDC.toLowerCase():
+    case dcentCoinGroup.XDC_APOTHEM.toLowerCase():
+    case dcentCoinGroup.XRC20.toLowerCase():
+    case dcentCoinGroup.XRC20_APOTHEM.toLowerCase():
       return true
     default:
       return false
@@ -472,6 +476,10 @@ function isAvaliableCoinType (coinType) {
     case dcentCoinType.KCT_BAOBAB.toLowerCase():
     case dcentCoinType.RIPPLE.toLowerCase():
     case dcentCoinType.RIPPLE_TESTNET.toLowerCase():
+    case dcentCoinType.XDC.toLowerCase():
+    case dcentCoinType.XDC_APOTHEM.toLowerCase():
+    case dcentCoinType.XRC20.toLowerCase():
+    case dcentCoinType.XRC20_APOTHEM.toLowerCase():
       return true
     default:
       return false
@@ -489,6 +497,8 @@ function isTokenType (coinGroup) {
     case dcentCoinType.RRC20_TESTNET.toLowerCase():
     case dcentCoinType.KLAYTN_KCT.toLowerCase():
     case dcentCoinType.KCT_BAOBAB.toLowerCase():
+    case dcentCoinGroup.XRC20.toLowerCase():
+    case dcentCoinGroup.XRC20_APOTHEM.toLowerCase():
       return true
     default:
       return false
@@ -825,6 +835,8 @@ dcent.getTokenSignedTransaction = async function (
     case dcentCoinType.ERC20_KOVAN.toLowerCase():
     case dcentCoinType.RRC20.toLowerCase():
     case dcentCoinType.RRC20_TESTNET.toLowerCase():
+    case dcentCoinType.XRC20.toLowerCase():
+    case dcentCoinType.XRC20_APOTHEM.toLowerCase():
     case dcentCoinGroup.KLAYTN_KCT.toLowerCase():
     case dcentCoinGroup.KCT_BAOBAB.toLowerCase():
       break

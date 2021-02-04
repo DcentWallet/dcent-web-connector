@@ -13,9 +13,11 @@ const {
   state: dcentState
 } = require('./type/dcent-state')
 
-const { config: dcentConfig } = require('./conf/dcent-web-conf')
+
+const { config: dcentConfig } = require('./conf/dcent-web-conf-dev')
 
 const LOG = require('./utils/log')
+const XDCPrefixConverter = require('./utils/xdc-prefix-converter')
 const Event = require('events')
 
 const dcent = {}
@@ -772,6 +774,10 @@ dcent.getEthereumSignedTransaction = async function (
     case dcentCoinType.RSK.toLowerCase():
     case dcentCoinType.RSK_TESTNET.toLowerCase():
       break
+    case dcentCoinType.XDC.toLowerCase():
+    case dcentCoinType.XDC_APOTHEM.toLowerCase():
+      to = XDCPrefixConverter(to)
+      break
     default:
       throw dcent.dcentException('coin_type_error', 'not supported coin type')
   }
@@ -835,10 +841,13 @@ dcent.getTokenSignedTransaction = async function (
     case dcentCoinType.ERC20_KOVAN.toLowerCase():
     case dcentCoinType.RRC20.toLowerCase():
     case dcentCoinType.RRC20_TESTNET.toLowerCase():
-    case dcentCoinType.XRC20.toLowerCase():
-    case dcentCoinType.XRC20_APOTHEM.toLowerCase():
     case dcentCoinGroup.KLAYTN_KCT.toLowerCase():
     case dcentCoinGroup.KCT_BAOBAB.toLowerCase():
+      break
+    case dcentCoinType.XRC20.toLowerCase():
+    case dcentCoinType.XRC20_APOTHEM.toLowerCase():
+      contract.to = XDCPrefixConverter(contract.to)
+      contract.address = XDCPrefixConverter(contract.address)
       break
     default:
       throw dcent.dcentException('coin_type_error', 'not supported token type')

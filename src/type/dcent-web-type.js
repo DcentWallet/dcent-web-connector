@@ -20,8 +20,8 @@ const coinType = {
   RSK: 'rsk',
   RSK_TESTNET: 'rsk-testnet',
   XDC: 'xinfin',
-  XRC20: 'xinfin',
-  XDC_APOTHEM: 'xrc20',
+  XRC20: 'xrc20',
+  XDC_APOTHEM: 'xinfin',
   XRC20_APOTHEM: 'xrc20',
 }
 

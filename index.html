@@ -68,6 +68,10 @@
         <button id="getTokenSignedTransaction" type="button" class="btn btn-primary">getTokenSignedTransaction</button>
         <button id="getEthereumSignedMessage" type="button" class="btn btn-primary">getEthereumSignedMessage</button>
         <br />
+        <button id="getXDCSignedTransaction" type="button"
+          class="btn btn-primary">getXDCSignedTransaction</button>
+        <button id="getXRCTokenSignedTransaction" type="button" class="btn btn-primary">getXRCTokenSignedTransaction</button>
+        <br>
         <button id="getKlaytnSignedTransaction" type="button" class="btn btn-primary">getKlaytnSignedTransaction</button>
         <button id="getKlaytnSignedTransaction_baobab" type="button" class="btn btn-primary">getKlaytnSignedTransaction BAOBAB</button>
         <button id="getKlaytnSignedTransaction_kct" type="button" class="btn btn-primary">getKlaytnSignedTransaction KCT</button>
@@ -97,6 +101,10 @@
         <button id="get_address_ripple" type="button" class="btn btn-primary">Get Ripple Mainnet
           Address("m/44'/144'/0'/0/0")</button>
         <br />
+        <button id="get_address_xdc" type="button" class="btn btn-primary">Get XDC Mainnet
+          Address("m/44'/550'/0'/0/0")</button>
+        <br />
+        
 
       </div>
     </div>
@@ -150,11 +158,15 @@
 
         $('#get_address_ripple').click(get_address_ripple_clicked);
 
+        $('#get_address_xdc').click(get_address_xdc_clicked);
+
         $('#getBitcoinSignedTransaction').click(getBitcoinSignedTransaction_clicked);
         
         $('#getSignedMessage_Klaytn').click(getSignedMessage_Klaytn_clicked);
         $('#getEthereumSignedTransaction').click(getEthereumSignedTransaction_clicked);
+        $('#getXDCSignedTransaction').click(getXDCSignedTransaction_clicked);
         $('#getTokenSignedTransaction').click(getTokenSignedTransaction_clicked);
+        $('#getXRCTokenSignedTransaction').click(getXRCTokenSignedTransaction_clicked);
         $('#getEthereumSignedMessage').click(getEthereumSignedMessage_clicked);
 
         $('#getKlaytnSignedTransaction').click(getKlaytnSignedTransaction_clicked);
@@ -289,6 +301,15 @@
         resp_editor.load(result)
       }
 
+      async function get_address_xdc_clicked() {
+        set_command_name("Processing...");
+
+        var result = await getAddress(dcent.coinType.XDC, "m/44'/550'/0'/0/0")
+
+        set_command_name("get_address xdc")        
+        resp_editor.load(result)
+      }
+
       async function getBitcoinSignedTransaction_clicked() {
         set_command_name("Processing...");
 
@@ -326,6 +347,23 @@
         set_command_name("getEthereumSignedTransaction kovan")       
         resp_editor.load(result)
       }
+      async function getXDCSignedTransaction_clicked() {
+        set_command_name("Processing...");
+
+        var result  = await getEthereumSignedTransaction( 
+          dcent.coinType.XDC,
+          '8',
+          '2400000000',
+          '210000',
+          'xdc1232A36Fa8191BA08a661f65635b37EB3D5ACc9e',
+          '10000000000000000000',
+          '',
+          "m/44'/550'/0'/0/0",
+          50);
+      
+        set_command_name("getXDCSignedTransaction xdc")       
+        resp_editor.load(result)
+      }
 
       async function getTokenSignedTransaction_clicked() {
         set_command_name("Processing...");
@@ -339,6 +377,22 @@
           symbol: 'OMG'
         }        
         var result = await getTokenSignedTransaction( dcent.coinType.ERC20, '21', '2400000000','1000000', "m/44'/60'/0'/0/0", 1, contract )    
+      
+        set_command_name("getTokenSignedTransaction ethereum");          
+        resp_editor.load(result)
+      }
+      async function getXRCTokenSignedTransaction_clicked() {
+        set_command_name("Processing...");
+
+        var contract = {
+          name: 'OmiseGO',
+          address: 'xdcd26114cd6EE289AccF82350c8d8487fedB8A0C07',
+          to: 'xdc354609C4c9a15d4265cF6D94010568D5Cf4d0c1B',
+          decimals: 18,
+          value: '100000000000000000',
+          symbol: 'OMG'
+        }        
+        var result = await getTokenSignedTransaction( dcent.coinType.XRC20, '21', '2400000000','1000000', "m/44'/550'/0'/0/0", 1, contract )    
       
         set_command_name("getTokenSignedTransaction ethereum");          
         resp_editor.load(result)

@@ -14,7 +14,7 @@ const {
 } = require('./type/dcent-state')
 
 
-const { config: dcentConfig } = require('./conf/dcent-web-conf-dev')
+const { config: dcentConfig } = require('./conf/dcent-web-conf')
 
 const LOG = require('./utils/log')
 const XDCPrefixConverter = require('./utils/xdc-prefix-converter')

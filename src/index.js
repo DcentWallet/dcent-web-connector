@@ -342,8 +342,10 @@ const postMessage = (message) => {
   }
 }
 
-window.addEventListener('message', dcent.messageReceive, false)
-window.addEventListener('beforeunload', dcent.popupWindowClose)
+if (typeof window !== 'undefined') {
+  window.addEventListener('message', dcent.messageReceive, false)
+  window.addEventListener('beforeunload', dcent.popupWindowClose)
+}
 
 const isNumberString = (str) => {
   if (/^[0-9]+$/.test(str)) {
@@ -1034,13 +1036,12 @@ const DcentWebConnector = dcent
 
 module.exports = DcentWebConnector// for nodejs
 
-window.DcentWebConnector = dcent // for inline script
-window.DcentWebConnector.state = dcentState
-window.DcentWebConnector.coinType = dcentCoinType
-window.DcentWebConnector.coinGroup = dcentCoinGroup
-window.DcentWebConnector.coinName = dcentCoinName
-window.DcentWebConnector.bitcoinTxType = dcentBitcoinTxType
-window.DcentWebConnector.klaytnTxType = dcentKlaytnTxType
-// # 
-// Now, Bitcoin Transaction not support 
-// window.DcentWebConnector.bitcoinTxType = dcentBitcoinTxType
+if (typeof window !== 'undefined') {
+  window.DcentWebConnector = dcent // for inline script
+  window.DcentWebConnector.state = dcentState
+  window.DcentWebConnector.coinType = dcentCoinType
+  window.DcentWebConnector.coinGroup = dcentCoinGroup
+  window.DcentWebConnector.coinName = dcentCoinName
+  window.DcentWebConnector.bitcoinTxType = dcentBitcoinTxType
+  window.DcentWebConnector.klaytnTxType = dcentKlaytnTxType
+}

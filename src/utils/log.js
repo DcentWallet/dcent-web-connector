@@ -22,12 +22,12 @@ const normalizeCallerLine = (line) => {
     return normalized
 }
 
-let info = console.log.bind(window.console, '[INFO] ') // eslint-disable-line no-console
+let info = console.log.bind(console, '[INFO] ') // eslint-disable-line no-console
 if (isTest) {
     info = () => { }
 }
 
-let debug = console.log.bind(window.console, '[DEBUG] ') // eslint-disable-line no-console
+let debug = console.log.bind(console, '[DEBUG] ') // eslint-disable-line no-console
 if (!isDebug) {
     debug = () => { }
 }
@@ -35,9 +35,9 @@ if (isTest) {
     debug = () => { }
 }
 
-const warn = console.warn.bind(window.console, '[WARN] ') // eslint-disable-line no-console
-const error = console.error.bind(window.console, '[ERROR] ') // eslint-disable-line no-console
-const test = console.warn.bind(window.console, '[TEST] ') // eslint-disable-line no-console
+const warn = console.warn.bind(console, '[WARN] ') // eslint-disable-line no-console
+const error = console.error.bind(console, '[ERROR] ') // eslint-disable-line no-console
+const test = console.warn.bind(console, '[TEST] ') // eslint-disable-line no-console
 
 const NOT_IMPLEMENTED = function () {
     var callerLine = (new Error()).stack.toString().split(/\r\n|\n/)[2]

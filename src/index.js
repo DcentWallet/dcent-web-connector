@@ -13,9 +13,11 @@ const {
   state: dcentState
 } = require('./type/dcent-state')
 
+
 const { config: dcentConfig } = require('./conf/dcent-web-conf')
 
 const LOG = require('./utils/log')
+const XDCPrefixConverter = require('./utils/xdc-prefix-converter')
 const Event = require('events')
 
 const dcent = {}
@@ -340,8 +342,10 @@ const postMessage = (message) => {
   }
 }
 
-window.addEventListener('message', dcent.messageReceive, false)
-window.addEventListener('beforeunload', dcent.popupWindowClose)
+if (typeof window !== 'undefined') {
+  window.addEventListener('message', dcent.messageReceive, false)
+  window.addEventListener('beforeunload', dcent.popupWindowClose)
+}
 
 const isNumberString = (str) => {
   if (/^[0-9]+$/.test(str)) {
@@ -443,6 +447,10 @@ function isAvaliableCoinGroup (coinGroup) {
     case dcentCoinGroup.KCT_BAOBAB.toLowerCase():
     case dcentCoinGroup.RIPPLE.toLowerCase():
     case dcentCoinGroup.RIPPLE_TESTNET.toLowerCase():
+    case dcentCoinGroup.XDC.toLowerCase():
+    case dcentCoinGroup.XDC_APOTHEM.toLowerCase():
+    case dcentCoinGroup.XRC20.toLowerCase():
+    case dcentCoinGroup.XRC20_APOTHEM.toLowerCase():
       return true
     default:
       return false
@@ -472,6 +480,10 @@ function isAvaliableCoinType (coinType) {
     case dcentCoinType.KCT_BAOBAB.toLowerCase():
     case dcentCoinType.RIPPLE.toLowerCase():
     case dcentCoinType.RIPPLE_TESTNET.toLowerCase():
+    case dcentCoinType.XDC.toLowerCase():
+    case dcentCoinType.XDC_APOTHEM.toLowerCase():
+    case dcentCoinType.XRC20.toLowerCase():
+    case dcentCoinType.XRC20_APOTHEM.toLowerCase():
       return true
     default:
       return false
@@ -489,6 +501,8 @@ function isTokenType (coinGroup) {
     case dcentCoinType.RRC20_TESTNET.toLowerCase():
     case dcentCoinType.KLAYTN_KCT.toLowerCase():
     case dcentCoinType.KCT_BAOBAB.toLowerCase():
+    case dcentCoinGroup.XRC20.toLowerCase():
+    case dcentCoinGroup.XRC20_APOTHEM.toLowerCase():
       return true
     default:
       return false
@@ -762,6 +776,10 @@ dcent.getEthereumSignedTransaction = async function (
     case dcentCoinType.RSK.toLowerCase():
     case dcentCoinType.RSK_TESTNET.toLowerCase():
       break
+    case dcentCoinType.XDC.toLowerCase():
+    case dcentCoinType.XDC_APOTHEM.toLowerCase():
+      to = XDCPrefixConverter(to)
+      break
     default:
       throw dcent.dcentException('coin_type_error', 'not supported coin type')
   }
@@ -827,6 +845,11 @@ dcent.getTokenSignedTransaction = async function (
     case dcentCoinType.RRC20_TESTNET.toLowerCase():
     case dcentCoinGroup.KLAYTN_KCT.toLowerCase():
     case dcentCoinGroup.KCT_BAOBAB.toLowerCase():
+      break
+    case dcentCoinType.XRC20.toLowerCase():
+    case dcentCoinType.XRC20_APOTHEM.toLowerCase():
+      contract.to = XDCPrefixConverter(contract.to)
+      contract.address = XDCPrefixConverter(contract.address)
       break
     default:
       throw dcent.dcentException('coin_type_error', 'not supported token type')
@@ -1013,13 +1036,12 @@ const DcentWebConnector = dcent
 
 module.exports = DcentWebConnector// for nodejs
 
-window.DcentWebConnector = dcent // for inline script
-window.DcentWebConnector.state = dcentState
-window.DcentWebConnector.coinType = dcentCoinType
-window.DcentWebConnector.coinGroup = dcentCoinGroup
-window.DcentWebConnector.coinName = dcentCoinName
-window.DcentWebConnector.bitcoinTxType = dcentBitcoinTxType
-window.DcentWebConnector.klaytnTxType = dcentKlaytnTxType
-// # 
-// Now, Bitcoin Transaction not support 
-// window.DcentWebConnector.bitcoinTxType = dcentBitcoinTxType
+if (typeof window !== 'undefined') {
+  window.DcentWebConnector = dcent // for inline script
+  window.DcentWebConnector.state = dcentState
+  window.DcentWebConnector.coinType = dcentCoinType
+  window.DcentWebConnector.coinGroup = dcentCoinGroup
+  window.DcentWebConnector.coinName = dcentCoinName
+  window.DcentWebConnector.bitcoinTxType = dcentBitcoinTxType
+  window.DcentWebConnector.klaytnTxType = dcentKlaytnTxType
+}

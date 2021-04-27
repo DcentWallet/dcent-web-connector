@@ -580,6 +580,22 @@ dcent.getAccountInfo = async function () {
 }
 
 /**
+ * 
+ * @param {Array} addresses 
+ */
+dcent.selectAddress = async function (addresses) {
+  if (!Array.isArray(addresses)) {
+    throw dcent.dcentException('param_error', 'addresses is not array')
+  }
+  return await dcent.call({
+    method: 'selectAddress',
+    params: {
+      addresses: addresses
+    }
+  })
+}
+
+/**
  * Returns Coin address value of all coin types using string value of key path.
  * 
  * @param {string} coinType coin type. 

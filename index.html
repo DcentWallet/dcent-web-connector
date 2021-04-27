@@ -51,7 +51,8 @@
 
         <button id="set_label" type="button" class="btn btn-primary">Set Label</button>
         <br />
-
+        <button id="select_address" type="button" class="btn btn-primary">Select Address</button>
+        <br />
         <button id="get_account_info" type="button" class="btn btn-primary">Get Account Info</button>
         <button id="sync_account" type="button" class="btn btn-primary">Set Sync Account </button>
         <br />
@@ -143,6 +144,7 @@
         $('#info').click(info_clicked);
         $('#get_info').click(get_info_clicked);
         $('#set_label').click(set_label_clicked);
+        $('#select_address').click(select_address_clicked);
         $('#get_account_info').click(get_account_info_clicked);
         $('#sync_account').click(sync_account_info_clicked);
 
@@ -202,6 +204,14 @@
         var result  = await setLabel(label)
         
         set_command_name("set_label")
+        resp_editor.load(result)
+      }
+
+      async function select_address_clicked() {
+        set_command_name("Processing...");
+        var result = await selectAddress();
+
+        set_command_name("select_address")
         resp_editor.load(result)
       }
 
@@ -540,6 +550,26 @@
           result = e
         }
         return result 
+      }
+
+      async function selectAddress() {
+        var result 
+        try {
+          let addresses = [
+            {
+              address: '0x1234567812345678123456781234567812345678',
+              path: `m'/44'/60'/0'/0/0`
+            },
+            {
+              address: '0xabcdabcdabcdabcdabcdabcdabcdabcdabcdabcd',
+              path: `m'/44'/8217'/0'/0/0`
+            }
+          ]
+          result = await dcent.selectAddress(addresses)
+        } catch (e) {
+          result = e
+        }
+        return result
       }
 
       async function setLabel(label) {

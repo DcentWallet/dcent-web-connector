@@ -513,7 +513,11 @@ Returned response object has:
     "body": {
         "command": "select_address",
         "parameter": {
-            "selectedIndex": 0
+            "selected_index": 0,
+            "selected_address": {
+                "address": "0x1234567812345678123456781234567812345678",
+                "path": "m'/44'/60'/0'/0/0"
+            }
         }
     }
 }

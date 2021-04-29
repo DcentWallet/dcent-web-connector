@@ -15,6 +15,7 @@
 | v0.10.0 | 2020. 09. 28 | add interface for Ripple full transaction |
 | v0.10.1 | 2020. 11. 30 | modify description for Ripple full transaction |
 | v0.10.3 | 2021. 03. 15 | add XDC transaction function |
+| v0.10.4 | 2021. 03. 15 | add Select address function |
 <br><br><br>
 
 ## 1. INTRODUCTION
@@ -478,6 +479,51 @@ Returned response object has:
 }
 ```
 The public_key is xpub value. 
+
+
+### Select Address
+Show you address list and you can select an address using `selectAddress()` function.
+```js
+var result
+try{
+    // Get extended public key corresponding to keyPath
+    let addresses = [
+        {
+            address: '0x1234567812345678123456781234567812345678',
+            path: `m'/44'/60'/0'/0/0`
+        },
+        {
+            address: '0xabcdabcdabcdabcdabcdabcdabcdabcdabcdabcd',
+            path: `m'/44'/8217'/0'/0/0`
+        }
+    ]
+    result = await dcent.selectAddress(addresses)
+}catch(e){
+    result = e
+}
+```
+Returned response object has:
+```json
+{
+    "header": {
+        "version": "1.0",
+        "response_from": "bridge",
+        "status": "success"
+    },
+    "body": {
+        "command": "select_address",
+        "parameter": {
+            "selected_index": 0,
+            "selected_address": {
+                "address": "0x1234567812345678123456781234567812345678",
+                "path": "m'/44'/60'/0'/0/0"
+            }
+        }
+    }
+}
+```
+The 'selectedIndex' is index of addresses array. 
+
 
 ### Ethereum Signed Massage
 You can get a signature value to sign a user message with that private key With a given key path (BIP32).

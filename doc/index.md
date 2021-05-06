@@ -15,7 +15,7 @@
 | v0.10.0 | 2020. 09. 28 | add interface for Ripple full transaction |
 | v0.10.1 | 2020. 11. 30 | modify description for Ripple full transaction |
 | v0.10.3 | 2021. 03. 15 | add XDC transaction function |
-| v0.10.4 | 2021. 03. 15 | add Select address function |
+| v0.10.4 | 2021. 05. 06 | add Select address function |
 <br><br><br>
 
 ## 1. INTRODUCTION

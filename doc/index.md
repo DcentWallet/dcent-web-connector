@@ -557,6 +557,39 @@ Returned response object has:
 ```
 
 
+### Signed Data
+You can get a signature value to sign message with that private key With a given key path (BIP32).
+The input data is hex string format. The input data is hashed and signed.
+
+```js
+var message = "0x1901f2cee375fa42b42143804025fc449deafd50cc031ca257e0b194a650a912090feb4221181ff3f1a83ea7313993ca9218496e424604ba9492bb4052c03d5c3df8"
+var key =  "m/44'/60'/0'/0/0"
+var result
+try {
+    result = await dcent.getSignedData(key, message);
+} catch (e) {
+    console.log(e)
+    result = e
+}
+```
+Returned response object has:
+```json
+{
+    "header": {
+        "version": "1.0",
+        "response_from": "ethereum",
+        "status": "success"
+    },
+    "body": {
+        "command": "sign_data",
+        "parameter": {
+            "address": "0x54b9c508aC61Eaf2CD8F9cA510ec3897CfB09382",
+            "sign": "0x0d935339......06a6291b"
+        }
+    }
+}
+```
+
 ### Signed Massage
 You can get a signature value to sign a user message with that private key With a given key path (BIP32).
 The input message is prefixed depending on the coin type and then hashed and signed.

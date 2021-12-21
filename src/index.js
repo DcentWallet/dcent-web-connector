@@ -1005,6 +1005,16 @@ dcent.getSignedMessage = async function (coinType, key, message) {
   })
 }
 
+dcent.getSignedTypedData = async function (key, message) {
+  return await dcent.call({
+    method: 'getSignedTypedData',
+    params: {
+      key: key,
+      message: message,
+    }
+  })
+}
+
 /**
  * Returns XRP signData
  *

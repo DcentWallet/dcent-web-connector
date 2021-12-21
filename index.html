@@ -69,6 +69,8 @@
         <button id="getTokenSignedTransaction" type="button" class="btn btn-primary">getTokenSignedTransaction</button>
         <button id="getEthereumSignedMessage" type="button" class="btn btn-primary">getEthereumSignedMessage</button>
         <br />
+        <button id="getSignedTypedData" type="button" class="btn btn-primary">getSignedTypedData</button>
+        <br />
         <button id="getXDCSignedTransaction" type="button"
           class="btn btn-primary">getXDCSignedTransaction</button>
         <button id="getXRCTokenSignedTransaction" type="button" class="btn btn-primary">getXRCTokenSignedTransaction</button>
@@ -170,6 +172,8 @@
         $('#getTokenSignedTransaction').click(getTokenSignedTransaction_clicked);
         $('#getXRCTokenSignedTransaction').click(getXRCTokenSignedTransaction_clicked);
         $('#getEthereumSignedMessage').click(getEthereumSignedMessage_clicked);
+
+        $('#getSignedTypedData').click(getSignedTypedData_clicked);
 
         $('#getKlaytnSignedTransaction').click(getKlaytnSignedTransaction_clicked);
         $('#getKlaytnSignedTransaction_baobab').click(getKlaytnSignedTransaction_baobab_clicked);
@@ -335,11 +339,25 @@
         var result  = await getSignedMessage( 
           dcent.coinType.KLAYTN,
           "m/44'/8217'/0'/0/0",
-          'This is a message!!');
+          '0x31323334');
+          //[0x31, 0x32, 0x33, 0x34]);
       
         set_command_name("getSignedMessage - Klaytn")       
         resp_editor.load(result)
       }
+
+      async function getSignedTypedData_clicked() {
+        set_command_name("Processing...");
+        var message = '0x313233343536373839'
+        var result  = await getSignedTypedData( 
+          "m/44'/60'/0'/0/0",
+          message);
+          //[0x31, 0x32, 0x33, 0x34]);
+      
+        set_command_name("getSignedTypedData ..")       
+        resp_editor.load(result)
+      }
+
       async function getEthereumSignedTransaction_clicked() {
         set_command_name("Processing...");
 
@@ -410,8 +428,9 @@
 
       async function getEthereumSignedMessage_clicked() {
         set_command_name("Processing...");
-        var message = 'This is a message!'
+        var data = '0x313233343536373839'// 'This is a message!'
         var key = "m/44'/60'/0'/0/0"
+        var message = ethUtil.keccak256(data)
         var result = await getEthereumSignedMessage(message, key)         
         
         set_command_name("getEthereumSignedMessage");
@@ -630,6 +649,15 @@
         }
         return result
       }
+      async function getSignedTypedData( key, message) {
+        var result 
+        try { 
+          result = await dcent.getSignedTypedData(key, message)            
+        } catch (e) {
+          result = e
+        }
+        return result
+      }      
 
       async function getBitcoinSignedTransaction () {
         var result 

@@ -1005,9 +1005,9 @@ dcent.getSignedMessage = async function (coinType, key, message) {
   })
 }
 
-dcent.getSignedTypedData = async function (key, message) {
+dcent.getSignedData = async function (key, message) {
   return await dcent.call({
-    method: 'getSignedTypedData',
+    method: 'getSignedData',
     params: {
       key: key,
       message: message,

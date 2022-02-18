@@ -23,6 +23,10 @@ const coinType = {
   XRC20: 'xrc20',
   XDC_APOTHEM: 'xinfin',
   XRC20_APOTHEM: 'xrc20',
+  HEDERA: 'hedera',
+  HEDERA_TESTNET: 'hedera-testnet',
+  HEDERA_HTS: 'hedera-hts',
+  HTS_TESTNET: 'hedera-hts-test',
 }
 
 const coinGroup = {
@@ -48,6 +52,10 @@ const coinGroup = {
   XRC20: 'XRC20',
   XDC_APOTHEM: 'XDC-APOTHEM',
   XRC20_APOTHEM: 'XRC20-APOTHEM',
+  HEDERA: 'HEDERA',
+  HEDERA_TESTNET: 'HEDERA-TESTNET',
+  HEDERA_HTS: 'HEDERA-HTS',
+  HTS_TESTNET: 'HTS-TESTNET',
 }
 
 const coinName = {
@@ -73,6 +81,10 @@ const coinName = {
   XRC20: '',
   XDC_APOTHEM: 'XDC-APOTHEM',
   XRC20_APOTHEM: '',
+  HEDERA: 'HEDERA',
+  HEDERA_TESTNET: 'HEDERA-TESTNET',
+  HEDERA_HTS: '',
+  HTS_TESTNET: '',
 }
 
 const bitcoinTxType = {

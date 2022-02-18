@@ -484,6 +484,10 @@ function isAvaliableCoinType (coinType) {
     case dcentCoinType.XDC_APOTHEM.toLowerCase():
     case dcentCoinType.XRC20.toLowerCase():
     case dcentCoinType.XRC20_APOTHEM.toLowerCase():
+    case dcentCoinType.HEDERA.toLowerCase():
+    case dcentCoinType.HEDERA_HTS.toLowerCase():
+    case dcentCoinType.HEDERA_TESTNET.toLowerCase():
+    case dcentCoinType.HTS_TESTNET.toLowerCase():
       return true
     default:
       return false
@@ -1043,6 +1047,23 @@ dcent.getXrpSignedTransaction = async function (transaction, key) {
     params: {
       key: key,
       transaction: transaction
+    }
+  })
+}
+
+dcent.getHederaSignedTransaction = async function ({
+  unsignedTx,
+  path,
+  symbol,
+  decimals,
+}) {
+  return await dcent.call({
+    method: 'getHederaSignedTransaction',
+    params: {
+      unsigned_tx: unsignedTx,
+      path,
+      symbol,
+      decimals,
     }
   })
 }

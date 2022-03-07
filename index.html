@@ -82,6 +82,11 @@
         <br />
         
         <button id="getXrpSignedTransaction" type="button" class="btn btn-primary">getXrpSignedTransaction</button>
+        <br />     
+
+        <button id="getHederaSignedTransaction" type="button" class="btn btn-primary">getHederaSignedTransaction</button>
+        <br />
+        <button id="getHTSSignedTransaction" type="button" class="btn btn-primary">getHTSSignedTransaction</button>
         <br />
 
         <button id="get_address_bitcoin" type="button" class="btn btn-primary">Get Bitcoin
@@ -106,6 +111,9 @@
         <br />
         <button id="get_address_xdc" type="button" class="btn btn-primary">Get XDC Mainnet
           Address("m/44'/550'/0'/0/0")</button>
+        <br />
+        <button id="get_address_hedera" type="button" class="btn btn-primary">Get Hedera Mainnet
+          Address("m/44'/3030'/0'")</button>
         <br />
         
 
@@ -164,6 +172,8 @@
 
         $('#get_address_xdc').click(get_address_xdc_clicked);
 
+        $('#get_address_hedera').click(get_address_hedera_clicked);
+
         $('#getBitcoinSignedTransaction').click(getBitcoinSignedTransaction_clicked);
         
         $('#getSignedMessage_Klaytn').click(getSignedMessage_Klaytn_clicked);
@@ -181,6 +191,9 @@
         $('#getKlaytnSignedTransaction_kct_baobab').click(getKlaytnSignedTransaction_kct_baobab_clicked);
 
         $('#getXrpSignedTransaction').click(getXrpSignedTransaction_clicked);
+
+        $('#getHederaSignedTransaction').click(getHederaSignedTransaction_clicked);
+        $('#getHTSSignedTransaction').click(getHTSSignedTransaction_clicked);
         
 
       });
@@ -321,6 +334,15 @@
         var result = await getAddress(dcent.coinType.XDC, "m/44'/550'/0'/0/0")
 
         set_command_name("get_address xdc")        
+        resp_editor.load(result)
+      }
+
+      async function get_address_hedera_clicked() {
+        set_command_name("Processing...");
+
+        var result = await getAddress(dcent.coinType.HEDERA, "m/44'/3030'/0'")
+
+        set_command_name("get_address hedera")        
         resp_editor.load(result)
       }
 
@@ -549,6 +571,34 @@
         resp_editor.load(result)
       }
 
+      async function getHederaSignedTransaction_clicked() {
+        set_command_name("Processing...");
+        var transactionJson = {
+          unsignedTx: '0a1a0a0c088dfbbc9006108885e6a90112080800100018d6c0151800120608001000180318c0843d22020878320072260a240a100a080800100018d6c01510ef8de29a030a100a080800100018f6a72810f08de29a03',
+          path: `m/44'/3030'/0'`,
+          symbol: 'HBAR',
+          decimals: '8',
+        }
+        var result  = await getHederaSignedTransaction(transactionJson);
+      
+        set_command_name("getHederaSignedTransaction")
+        resp_editor.load(result)
+      }
+
+      async function getHTSSignedTransaction_clicked() {
+        set_command_name("Processing...");
+        var transactionJson = {
+          unsignedTx: '0a190a0b08c08ebd900610b181d17212080800100018d6c0151800120608001000180318c0843d22020878320072300a00122c0a08080010001885e707120f0a080800100018d6c01510ff83af5f120f0a080800100018e6e825108084af5f',
+          path: `m/44'/3030'/0'`,
+          symbol: 'JAM',
+          decimals: '8',
+        }
+        var result  = await getHederaSignedTransaction(transactionJson);
+      
+        set_command_name("getHederaSignedTransaction")
+        resp_editor.load(result)
+      }
+
       /////// DCENT WEB-SDK call
      
       async function info() {        
@@ -728,6 +778,16 @@
         var result 
         try { 
           result = await dcent.getXrpSignedTransaction(transaction, key)      
+        } catch (e) {
+          result = e
+        }
+        return result 
+      }
+
+      async function getHederaSignedTransaction(transaction) {
+        var result 
+        try { 
+          result = await dcent.getHederaSignedTransaction(transaction)      
         } catch (e) {
           result = e
         }

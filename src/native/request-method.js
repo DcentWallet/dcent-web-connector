@@ -16,7 +16,8 @@ module.exports = {
     GET_KLAY_SIGN_TX: 'getKlaytnSignedTransaction',
     GET_SIGN_MSG: 'getSignedMessage',
     GET_BTC_SIGN_TX: 'getBitcoinSignedTransaction',
-    GET_XRP_SIGN_TX: 'getXrpSignedTransaction'
+    GET_XRP_SIGN_TX: 'getXrpSignedTransaction',
+    GET_HEDERA_SIGN_TX: 'getHederaSignedTransaction',
 }
 
 /* //////////////////////////////////////////////////////////////////////// */

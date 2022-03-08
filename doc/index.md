@@ -928,5 +928,80 @@ Klaytn provides 'caver-js' library. You can make raw transaction for broadcastin
     ```
 For broadcast the sign transaction, you must reconstruct transaction include `TxnSignature` & `SigningPubKey` for normal (single-signature) or `Signers` array for multi-signed-transaction 
 
+**getHederaSignedTransaction()**
+- This fuction for :
+    - Hedera(HTS)
+
+- Parameters :
+    - unsignedTx: unsigned hexadecimal tx [Hedera Docs](https://docs.hedera.com/guides/getting-started/transfer-hbar)
+    - path: key path, wallet sign with that private key with a given key path (BIP32 ex) "m/44'/144'/0'").
+    - symbol: symbol, It is a symbol that the wallet displays on the screen.
+    - decimals: hedera or hts token's decimals.
+- Requirements:
+    - `D'CENT Bridge` version 1.10.0 or higher is required.
+    - D'CENT Biometric Wallet version 2.13.0. or higher is required.
+- Useage:
+    ```js
+    const _buf2hex = (buffer) => { // buffer is an ArrayBuffer
+    return Array.prototype.map.call(new Uint8Array(buffer), x => ('00' + x.toString(16)).slice(-2)).join('');
+    }
+    const client = HederaSDK.Client.forMainnet()
+    const nodeList = client._network.getNodeAccountIdsForExecute()
+    const validStart = Timestamp.generate()
+    const fromAccountId = AccountId.fromString('accountIdString')
+    const txId = new TransactionId(fromAccountId, validStart)
+    const tx = new HederaSDK.TransferTransaction()
+
+    // when you transfer hbar
+    tx.addHbarTransfer(fromAccountId, HederaSDK.Hbar.fromTinybars('-' + amountTinybar))
+    tx.addHbarTransfer('toAccountIdString', HederaSDK.Hbar.fromTinybars(amountTinybar))
+
+    // or you can transfer token like this.
+    tx.addTokenTransfer(contractAddress, fromAccountId, HederaSDK.Hbar.fromTinybars('-' + amountTinybar))
+    tx.addTokenTransfer(contractAddress, 'toAccountIdString', HederaSDK.Hbar.fromTinybars(amountTinybar))
+
+
+    tx.setNodeAccountIds([nodeList[nodeList.length - 1]])
+    tx.setTransactionId(txId)
+    tx.setTransactionMemo('')
+    tx.setMaxTransactionFee(fee)
+    tx.freeze()
+
+    const bodyBytes = tx._signedTransactions[0].bodyBytes
+    const unsignedTx = _buf2hex(bodyBytes)
+
+    const transactionJson = {
+        unsignedTx: unsignedTx,
+        path: `m/44'/3030'/0'`,
+        symobl: HBAR,
+        decimals: 8,
+    }
+
+    var result
+    try {
+        result = await dcent.getHederaSignedTransaction(transactionJson);    
+    } catch (e) {
+        console.log(e)
+        result = e
+    }
+    ```
+- Returned response object:
+    ```json
+    {
+        "header": {
+            "version": "1.0",
+            "response_from": "hedera",
+            "status": "success"
+        },
+        "body": {
+            "command": "transaction",
+            "parameter": {
+                "signed_tx": "0x31aa13b5e04cb6fc6381ea0520bf7f6727ebdb6e96cd7ca8625bb3e3dd36cf0e2cee4ece13aa9f7ddc09ee10c74aa00af954201829d8016317f10f5a921dcc0d",
+                "pubkey": "0x9a5c753d02038e512c06867556324b37181c9c1fc19c21c27752c520e8f0d822"
+            }
+        }
+    }
+    ```
+
 
 Please Refer to the `index.html` to learn more about how to use the SDK APIs. There is an Web project using our Web SDK.

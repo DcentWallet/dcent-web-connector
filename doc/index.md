@@ -16,6 +16,8 @@
 | v0.10.1 | 2020. 11. 30 | modify description for Ripple full transaction |
 | v0.10.3 | 2021. 03. 15 | add XDC transaction function |
 | v0.10.4 | 2021. 05. 06 | add Select address function |
+| v0.10.5 | 2021. 12. 23 | support sign data function|
+| v0.11.0 | 2021. 03. 08 | add interface for Hedera transaction |
 <br><br><br>
 
 ## 1. INTRODUCTION
@@ -622,6 +624,36 @@ Returned response object has:
 }
 ```
 
+### Signed Data
+You can get a signature value to sign a user data with that private key With a given key path (BIP32).
+```js
+var data = '0x10111213141516171819'
+var key =  "m/44'/60'/0'/0/0"
+var result
+try {
+    result = await dcent.getSignedData( key, data);
+} catch (e) {
+    console.log(e)
+    result = e
+}
+```
+Returned response object has:
+```json
+{
+    "header": {
+        "version": "1.0",
+        "response_from": "ethereum",
+        "status": "success"
+    },
+    "body": {
+        "command": "sign_data",
+        "parameter": {
+            "address": "0x54b9c508aC61Eaf2CD8F9cA510ec3897CfB09382",
+            "sign": "0x0d935339......06a6291b"
+        }
+    }
+}
+```
 
 ### Sign Transaction
 The D'CENT Web SDK provides functions for signing transaction of coins.

@@ -756,13 +756,15 @@ dcent.getBitcoinSignedTransaction = async function (transaction) {
  *
  * @param {string} coinType coin type 
  * @param {string} nonce account nonce
- * @param {string} gasPrice GAS price
+ * @param {string} gasPrice GAS price or maxFeePerGas(EIP1559)
  * @param {string} gasLimit GAS limit 
  * @param {string} to recipient's address
  * @param {string} value amount of ether to be sent. ( WEI unit value )
  * @param {string} data transaction data (ex: "0x")
  * @param {string} key key path (BIP44)
  * @param {number} chainId chain id
+ * @param {number} txType EIP 2718 TransactionType 
+ * @param {Object} typeOption EIP 2718 TransactionPayload except above parameter(nonce, ..., chainId) 
  * @returns {Object} signed transaction value
  */
 dcent.getEthereumSignedTransaction = async function (
@@ -774,20 +776,24 @@ dcent.getEthereumSignedTransaction = async function (
   value,
   data,
   key,
-  chainId
+  chainId,
+  txType = 0,
+  typeOptions = {}
 ) {
+
+  if (typeof chainId !== 'number' || typeof txType !== 'number' || txType < 0 || txType > 2) {
+    throw dcent.dcentException('param_error', 'Invaild Parameter')
+  }
 
   try {
     nonce = checkParameter('numberString', nonce)
-    gasPrice = checkParameter('numberString', gasPrice)
+    if (txType !== 2) {
+      gasPrice = checkParameter('numberString', gasPrice)
+    }
     gasLimit = checkParameter('numberString', gasLimit)
     value = checkParameter('numberString', value)
   } catch (error) {
     throw error
-  }
-
-  if (typeof chainId !== 'number') {
-    throw dcent.dcentException('param_error', 'Invaild Parameter')
   }
 
   switch (coinType.toLowerCase()) {
@@ -804,19 +810,33 @@ dcent.getEthereumSignedTransaction = async function (
       throw dcent.dcentException('coin_type_error', 'not supported coin type')
   }
 
+  const params = {
+    coinType: coinType,
+    nonce: nonce,
+    gas_price: gasPrice,
+    gas_limit: gasLimit,
+    to: to,
+    value: value,
+    data: data,
+    key: key,
+    chain_id: chainId,
+    tx_type: txType,
+    type_options: typeOptions
+  }
+
+  let method = 'getEthereumSignedTransaction'
+
+  // #
+  // 
+  if (txType !== 0) {
+    params.tx_type = txType
+    params.type_options = typeOptions
+    method = 'getEthereumSignedTypedTransaction'
+  }
+
   return await dcent.call({
-    method: 'getEthereumSignedTransaction',
-    params: {
-      coinType: coinType,
-      nonce: nonce,
-      gas_price: gasPrice,
-      gas_limit: gasLimit,
-      to: to,
-      value: value,
-      data: data,
-      key: key,
-      chain_id: chainId
-    }
+    method: method,
+    params: params
   })
 }
 

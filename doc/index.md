@@ -938,8 +938,8 @@ For broadcast the sign transaction, you must reconstruct transaction include `Tx
     - symbol: symbol, It is a symbol that the wallet displays on the screen.
     - decimals: hedera or hts token's decimals.
 - Requirements:
-    - `D'CENT Bridge` version 1.10.0 or higher is required.
-    - D'CENT Biometric Wallet version 2.13.0. or higher is required.
+    - `D'CENT Bridge` version 1.2.1 or higher is required.
+    - D'CENT Biometric Wallet version 2.19.3. or higher is required.
 - Useage:
     ```js
     const _buf2hex = (buffer) => { // buffer is an ArrayBuffer
@@ -965,7 +965,7 @@ For broadcast the sign transaction, you must reconstruct transaction include `Tx
     tx.setTransactionId(txId)
     tx.setTransactionMemo('')
     tx.setMaxTransactionFee(fee)
-    tx.freeze()
+    tx.freezeWith(client);
 
     const bodyBytes = tx._signedTransactions[0].bodyBytes
     const unsignedTx = _buf2hex(bodyBytes)

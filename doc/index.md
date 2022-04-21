@@ -673,6 +673,9 @@ The D'CENT Web SDK provides functions for signing transaction of coins.
     - data
     - key path for signing
     - chain ID
+    - txType:number EIP 2718 TransactionType(optional)
+    - typeOptions:Object `{'accessList': [], 'maxPriorityFeePerGas': '0x0', 'maxFeePerGas': '0x0'}` 
+    
 
 - Returned response object:
     ```json

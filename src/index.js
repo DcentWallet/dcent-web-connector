@@ -756,7 +756,7 @@ dcent.getBitcoinSignedTransaction = async function (transaction) {
  *
  * @param {string} coinType coin type 
  * @param {string} nonce account nonce
- * @param {string} gasPrice GAS price or maxFeePerGas(EIP1559)
+ * @param {string} gasPrice GAS price
  * @param {string} gasLimit GAS limit 
  * @param {string} to recipient's address
  * @param {string} value amount of ether to be sent. ( WEI unit value )

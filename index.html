@@ -24,6 +24,10 @@
     .card {
       margin: 10px 10px 10px 10px;
     }
+
+    .json-display {
+      max-height: 500px;
+    }
   </style>
 </head>
 
@@ -37,7 +41,7 @@
       </div>
       <div class="card-body">
         <h5 class="card-title">Response</h5>
-        <pre id="json-resp-display" width="80%">["Dump"]</pre>
+        <pre class="json-display" id="json-resp-display" width="80%">["Dump"]</pre>
       </div>
     </div>
     <div class="card" style="width: 50rem;">
@@ -47,8 +51,6 @@
       <div class="card-body">
         <button id="info" type="button" class="btn btn-primary">Info</button>
         <button id="get_info" type="button" class="btn btn-primary">Get Info</button>
-        <br />
-
         <button id="set_label" type="button" class="btn btn-primary">Set Label</button>
         <br />
         <button id="select_address" type="button" class="btn btn-primary">Select Address</button>
@@ -59,8 +61,6 @@
 
         <button id="get_xpub" type="button" class="btn btn-primary">Get XPUB </button>
         <br />
-        <button id="getSignedMessage_Klaytn" type="button" class="btn btn-primary">getSignedMessage - Klaytn</button>
-        <br />
         <button id="getBitcoinSignedTransaction" type="button"
           class="btn btn-primary">getBitcoinSignedTransaction</button>
         <br />
@@ -68,24 +68,24 @@
           class="btn btn-primary">getEthereumSignedTransaction</button>
         <button id="getTokenSignedTransaction" type="button" class="btn btn-primary">getTokenSignedTransaction</button>
         <button id="getEthereumSignedMessage" type="button" class="btn btn-primary">getEthereumSignedMessage</button>
-        <br />
         <button id="getSignedData" type="button" class="btn btn-primary">getSignedData</button>
         <br />
         <button id="getXDCSignedTransaction" type="button"
           class="btn btn-primary">getXDCSignedTransaction</button>
         <button id="getXRCTokenSignedTransaction" type="button" class="btn btn-primary">getXRCTokenSignedTransaction</button>
         <br>
+        <button id="getSignedMessage_Klaytn" type="button" class="btn btn-primary">getSignedMessage - Klaytn</button>
         <button id="getKlaytnSignedTransaction" type="button" class="btn btn-primary">getKlaytnSignedTransaction</button>
         <button id="getKlaytnSignedTransaction_baobab" type="button" class="btn btn-primary">getKlaytnSignedTransaction BAOBAB</button>
         <button id="getKlaytnSignedTransaction_kct" type="button" class="btn btn-primary">getKlaytnSignedTransaction KCT</button>
         <button id="getKlaytnSignedTransaction_kct_baobab" type="button" class="btn btn-primary">getKlaytnSignedTransaction KCT BAOBAB</button>
+        
         <br />
         
         <button id="getXrpSignedTransaction" type="button" class="btn btn-primary">getXrpSignedTransaction</button>
         <br />     
 
         <button id="getHederaSignedTransaction" type="button" class="btn btn-primary">getHederaSignedTransaction</button>
-        <br />
         <button id="getHTSSignedTransaction" type="button" class="btn btn-primary">getHTSSignedTransaction</button>
         <br />
 

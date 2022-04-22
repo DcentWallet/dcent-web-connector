@@ -134,6 +134,18 @@ describe('[dcent-web-connector] Bridge - init', () => {
         done()
     })
 
+    it('getAddress() - success HEDERA', async (done) => {
+        const coinType = DcentWebConnector.coinType.HEDERA
+        const keyPath = "m/44'/3030'/0'"
+        var response = await page.evaluate((coinType, keyPath) => {
+            // eslint-disable-next-line no-undef
+            return getAddress(coinType, keyPath)
+        }, coinType, keyPath)
+        expect(response.header.status).toBe(Values.RESP_STATUS.SUCCESS)
+        expect(response.body.parameter.address).toBeDefined()
+        done()
+    })
+
 })
 
 /* //////////////////////////////////////////////////////////////////////// */

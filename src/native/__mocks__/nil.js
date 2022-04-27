@@ -73,6 +73,9 @@ const requestToBridge = (payload) => {
     case Method.GET_XRP_SIGN_TX:
         response = defaultDeviceResponse.getXrpSignedTransaction
         break
+    case Method.GET_HEDERA_SIGN_TX:
+        response = defaultDeviceResponse.getHederaTransaction
+        break
     default:
         response = 'error'
       throw new Error('Not implemented Method in Mock : ' + method)

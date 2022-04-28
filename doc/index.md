@@ -18,7 +18,7 @@
 | v0.10.4 | 2021. 05. 06 | add Select address function |
 | v0.10.5 | 2021. 12. 23 | support sign data function|
 | v0.11.0 | 2021. 03. 08 | add interface for Hedera transaction |
-| v0.11.1 | 2021. 04. 21 | modify getEthereumSignedTransaction interface for EIP-2718 |
+| v0.11.2 | 2021. 04. 21 | modify getEthereumSignedTransaction interface for EIP-2718 |
 <br><br><br>
 
 ## 1. INTRODUCTION

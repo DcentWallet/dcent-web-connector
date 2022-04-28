@@ -18,6 +18,7 @@
 | v0.10.4 | 2021. 05. 06 | add Select address function |
 | v0.10.5 | 2021. 12. 23 | support sign data function|
 | v0.11.0 | 2021. 03. 08 | add interface for Hedera transaction |
+| v0.11.1 | 2021. 04. 21 | modify getEthereumSignedTransaction interface for EIP-2718 |
 <br><br><br>
 
 ## 1. INTRODUCTION
@@ -561,10 +562,20 @@ Returned response object has:
 
 ### Signed Data
 You can get a signature value to sign message with that private key With a given key path (BIP32).
-The input data is hex string format. The input data is hashed and signed.
+The input data is consist of EIP-712 palyload and version(V3 and V4, 'V1' is not supported)
 
 ```js
-var message = "0x1901f2cee375fa42b42143804025fc449deafd50cc031ca257e0b194a650a912090feb4221181ff3f1a83ea7313993ca9218496e424604ba9492bb4052c03d5c3df8"
+// V4 example
+var message = {
+    version: 'V4',
+    payload: {
+       domain: { ... },
+       message: { ... },
+       primaryType: { ... }
+       types: { EIP712Domain: { ... }, ...}
+    }
+}
+
 var key =  "m/44'/60'/0'/0/0"
 var result
 try {
@@ -673,6 +684,9 @@ The D'CENT Web SDK provides functions for signing transaction of coins.
     - data
     - key path for signing
     - chain ID
+    - txType:number EIP 2718 TransactionType(optional)
+    - typeOptions:Object `{'accessList': [], 'maxPriorityFeePerGas': '0x0', 'maxFeePerGas': '0x0'}` 
+    
 
 - Returned response object:
     ```json

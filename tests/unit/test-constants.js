@@ -14,6 +14,7 @@ const commands = {
     GET_ADDRESS: 'get_address',
     MSG_SIGN: 'msg_sign',
     TRANSACTION: 'transaction',
+    TYPED_TRANSACTION: 'typed_transaction',
     GET_SIGN: 'get_sign',
 }
 

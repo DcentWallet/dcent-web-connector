@@ -31,6 +31,7 @@ dcent.popupWindow = undefined
 dcent.popupTab = undefined
 dcent.iframe = undefined
 
+const isManifestV3 = typeof chrome !== 'undefined' && chrome.runtime && chrome.runtime.getManifest().manifest_version === 3
 dcent.dcentWebDeferred = function () {
   let localResolve
   let localReject
@@ -102,8 +103,11 @@ const popupErrorException = (message) => {
 dcent.dcentPopupWindow = async function () {
   try {
     // popup Open
-    LOG.debug('dcent.dcentPopupWindow  called ')
-
+    LOG.debug('dcent.dcentPopupWindow  called --- v3')
+    if(isManifestV3) {
+      await createDcentTab()
+      return null;
+    }
    // eslint-disable-next-line no-undef
    const extension = typeof chrome !== 'undefined' && chrome.runtime && typeof chrome.runtime.onConnect !== 'undefined'
    if (!extension) {
@@ -171,7 +175,8 @@ dcent.call = async function (params) {
     }
    // LOG.debug('dcent.dcentWebPromise.promise - ', dcent.dcentWebPromise.promise)
     dcent.dcentWebPromise.promise.then(async function () {
-       dcent._call(idx, params)
+      LOG.debug('dcent.dcentWebPromise.promise - ')
+      dcent._call(idx, params)
     })
 
     const popUpClosedListener = () => {
@@ -210,49 +215,42 @@ dcent.call = async function (params) {
   })
 }
 
-const createDcentTab = () => {
+const createDcentTab = async () => {
   LOG.debug('createDcentTab')
   if (typeof chrome === 'undefined') return
 
   if (dcent.popupTab !== undefined && dcent.popupTab !== null) return 
 
-  const url = dcentConfig.popUpUrl + '?_from_extension=true'
+  const url = isManifestV3 ? dcentConfig.popUpUrl + '?_from_extension_mv3=true&_extId=' + chrome.runtime.id : dcentConfig.popUpUrl + '?_from_extension=true'
   // eslint-disable-next-line no-undef
-  chrome.windows.getCurrent(null, function (currentWindow) {
-    if (currentWindow.type !== 'normal') {
-      // eslint-disable-next-line no-undef
-      chrome.windows.create({
-        url: url
-      }, function (newWindow) {
-        // eslint-disable-next-line no-undef
-        chrome.tabs.query({
-          windowId: newWindow.id,
-          active: true
-        }, function (tabs) {
-           LOG.debug('create window and tab')
-           dcent.popupTab = tabs[0]
-        })
-      })
-    } else {
-       // eslint-disable-next-line no-undef
-       chrome.tabs.query({
-        currentWindow: true,
-        active: true
-      }, function (tabs) {
-        let index = 0
-        if (tabs.length > 0) {
-          index = tabs[0].index + 1
-        }
-        // eslint-disable-next-line no-undef
-        chrome.tabs.create({
-          url: url,
-          index: index
-        }, function (tab) {
-          dcent.popupTab = tab
-        })
-      })
+  const currentWindow = await chrome.windows.getCurrent(null)
+  if (currentWindow.type !== 'normal') {
+    // eslint-disable-next-line no-undef
+    const newWindow = await chrome.windows.create({ url: url })
+    // eslint-disable-next-line no-undef
+    const tabs = await chrome.tabs.query({
+      windowId: newWindow.id,
+      active: true
+    })
+    LOG.debug('create window and tab 1 - ', tabs[0].id)
+    dcent.popupTab = tabs[0]
+  } else {
+    // eslint-disable-next-line no-undef
+    const tabs = chrome.tabs.query({
+      currentWindow: true,
+      active: true
+    })
+    let index = 0
+    if (tabs.length > 0) {
+      index = tabs[0].index + 1
     }
-  })
+    // eslint-disable-next-line no-undef
+    const tab = await chrome.tabs.create({
+      url: url,
+      index: index
+    })
+    dcent.popupTab = tab
+  }
 }
 
 dcent.messageReceive = function (messageEvent) {
@@ -319,15 +317,39 @@ dcent.popupWindowClose = function () {
         dcent.popupTab = undefined
       })
     }
-    const dcentIframe = document.getElementById('dcent-connect')
-    if (dcentIframe) {
-      dcentIframe.parentNode.removeChild(dcentIframe)
-    }    
+    if (!isManifestV3) {
+      const dcentIframe = document.getElementById('dcent-connect')
+      if (dcentIframe) {
+        dcentIframe.parentNode.removeChild(dcentIframe)
+      }    
+    }
     clearPopup()
   }
 }
 
+function sendMessageToBridge (message) {
+  const divApp = document.querySelector("div#app")
+  if(divApp) {
+    const messageEvent = new CustomEvent('mv3_message', { detail: message } )
+    divApp.dispatchEvent(messageEvent)
+  }
+}
+
 const postMessage = (message) => {
+  if (isManifestV3) {
+    LOG.debug('mv3 message send: ', message)
+    LOG.debug('mv3 message send: ', dcent.popupTab.id)
+    chrome.scripting.executeScript({
+      target: {tabId: dcent.popupTab.id},
+      func: sendMessageToBridge,
+      args: [
+        message
+      ]
+    })
+    LOG.debug('mv3 message sent')
+    return
+  }
+  // if mv2
   if (dcent.popupWindow) {
     try {
       let origin = '*' 
@@ -342,9 +364,20 @@ const postMessage = (message) => {
   }
 }
 
-if (typeof window !== 'undefined') {
-  window.addEventListener('message', dcent.messageReceive, false)
-  window.addEventListener('beforeunload', dcent.popupWindowClose)
+if(isManifestV3) {
+  chrome.runtime.onMessageExternal.addListener((message, sender, sendResponse) => {
+    console.log("onMessageExternal: Received message : ", message);
+    dcent.messageReceive({data: message})
+  })
+  // chrome.runtime.onMessage.addListener((message, sender, sendResponse) => {
+  //   console.log("onMessage : Received message from : ", message);
+  //   dcent.messageReceive({data: message})
+  // })
+} else {
+  if (typeof window !== 'undefined') {
+    window.addEventListener('message', dcent.messageReceive, false)
+    window.addEventListener('beforeunload', dcent.popupWindowClose)
+  }
 }
 
 const isNumberString = (str) => {

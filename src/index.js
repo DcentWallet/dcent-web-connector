@@ -1,12 +1,12 @@
 'use strict'
 
-const { 
-  coinType: dcentCoinType, 
-  coinGroup: dcentCoinGroup, 
+const {
+  coinType: dcentCoinType,
+  coinGroup: dcentCoinGroup,
   coinName: dcentCoinName,
   bitcoinTxType: dcentBitcoinTxType,
   klaytnTxType: dcentKlaytnTxType,
-  xrpTxType: dcentXrpTxType  
+  xrpTxType: dcentXrpTxType
 } = require('./type/dcent-web-type')
 
 const {
@@ -31,6 +31,7 @@ dcent.popupWindow = undefined
 dcent.popupTab = undefined
 dcent.iframe = undefined
 
+// eslint-disable-next-line no-undef
 const isManifestV3 = typeof chrome !== 'undefined' && chrome.runtime && chrome.runtime.getManifest().manifest_version === 3
 dcent.dcentWebDeferred = function () {
   let localResolve
@@ -104,36 +105,36 @@ dcent.dcentPopupWindow = async function () {
   try {
     // popup Open
     LOG.debug('dcent.dcentPopupWindow  called --- v3')
-    if(isManifestV3) {
+    if (isManifestV3) {
       await createDcentTab()
-      return null;
+      return null
     }
-   // eslint-disable-next-line no-undef
-   const extension = typeof chrome !== 'undefined' && chrome.runtime && typeof chrome.runtime.onConnect !== 'undefined'
-   if (!extension) {
+    // eslint-disable-next-line no-undef
+    const extension = typeof chrome !== 'undefined' && chrome.runtime && typeof chrome.runtime.onConnect !== 'undefined'
+    if (!extension) {
       dcent.popupWindow = window.open('', '_blank')
-      
+
       if (dcent.popupWindow) {
-        LOG.debug('window.open create dcent.popupWindow opener = ', dcent.popupWindow.opener) 
+        LOG.debug('window.open create dcent.popupWindow opener = ', dcent.popupWindow.opener)
         dcent.popupWindow.location.href = dcentConfig.popUpUrl
       } else {
         return popupErrorException('window is not open')
       }
-   } else {
-        LOG.debug('create iframe') 
-        const dcentIframe = document.getElementById('dcent-connect')
-        if (dcentIframe) {
-          dcentIframe.parentNode.removeChild(dcentIframe)
-        }
-        dcent.iframe = document.createElement('iframe')
-        dcent.iframe.src = dcentConfig.popUpUrl + '/iframe'
-        dcent.iframe.id = 'dcent-connect'
-        document.body.appendChild(dcent.iframe)
-        dcent.popupWindow = dcent.iframe.contentWindow
-        if (dcent.popupTab) {
-          dcent.popupTab = undefined
-        }
-        return null
+    } else {
+      LOG.debug('create iframe')
+      const dcentIframe = document.getElementById('dcent-connect')
+      if (dcentIframe) {
+        dcentIframe.parentNode.removeChild(dcentIframe)
+      }
+      dcent.iframe = document.createElement('iframe')
+      dcent.iframe.src = dcentConfig.popUpUrl + '/iframe'
+      dcent.iframe.id = 'dcent-connect'
+      document.body.appendChild(dcent.iframe)
+      dcent.popupWindow = dcent.iframe.contentWindow
+      if (dcent.popupTab) {
+        dcent.popupTab = undefined
+      }
+      return null
     }
   } catch (e) {
     return popupErrorException(e || e.message)
@@ -164,7 +165,7 @@ const getEventName = (idx) => {
 dcent.call = async function (params) {
 
   const idx = dcent.messageRequestIdx++
-  
+
   return new Promise(async (resolve, reject) => {
 
     if (!dcent.popupWindow || dcent.popupWindow.closed) {
@@ -173,7 +174,7 @@ dcent.call = async function (params) {
         reject(result)
       }
     }
-   // LOG.debug('dcent.dcentWebPromise.promise - ', dcent.dcentWebPromise.promise)
+    // LOG.debug('dcent.dcentWebPromise.promise - ', dcent.dcentWebPromise.promise)
     dcent.dcentWebPromise.promise.then(async function () {
       LOG.debug('dcent.dcentWebPromise.promise - ')
       dcent._call(idx, params)
@@ -196,15 +197,15 @@ dcent.call = async function (params) {
       ee.removeListener('popUpClosed', popUpClosedListener)
       LOG.debug('eventEmitter - emit', messageEvent)
       try {
-      if (messageEvent.data.payload.header.status === 'success') {
-        resolve(messageEvent.data.payload)
-      } else {
-        if (messageEvent.data.payload.body.command === 'transaction' && messageEvent.data.payload.body.error.code === 'user_cancel') {
+        if (messageEvent.data.payload.header.status === 'success') {
           resolve(messageEvent.data.payload)
         } else {
-          reject(messageEvent.data.payload)
+          if (messageEvent.data.payload.body.command === 'transaction' && messageEvent.data.payload.body.error.code === 'user_cancel') {
+            resolve(messageEvent.data.payload)
+          } else {
+            reject(messageEvent.data.payload)
+          }
         }
-      }
       } catch (e) {
         // LOG.error(e)
       }
@@ -219,8 +220,9 @@ const createDcentTab = async () => {
   LOG.debug('createDcentTab')
   if (typeof chrome === 'undefined') return
 
-  if (dcent.popupTab !== undefined && dcent.popupTab !== null) return 
+  if (dcent.popupTab !== undefined && dcent.popupTab !== null) return
 
+  // eslint-disable-next-line no-undef
   const url = isManifestV3 ? dcentConfig.popUpUrl + '?_from_extension_mv3=true&_extId=' + chrome.runtime.id : dcentConfig.popUpUrl + '?_from_extension=true'
   // eslint-disable-next-line no-undef
   const currentWindow = await chrome.windows.getCurrent(null)
@@ -265,7 +267,7 @@ dcent.messageReceive = function (messageEvent) {
   if (
     messageEvent.data.event === 'BridgeEvent' &&
     messageEvent.data.type === 'data'
-   ) {
+  ) {
     if (messageEvent.data.payload === 'dcent-iframe-init') {
       dcent.eventSource = messageEvent.source
       createDcentTab()
@@ -280,7 +282,7 @@ dcent.messageReceive = function (messageEvent) {
       return
     }
     if (messageEvent.data.payload === 'dcent-connected' ||
-     messageEvent.data.payload === 'dcent-disconnected') {
+      messageEvent.data.payload === 'dcent-disconnected') {
       if (connectionListener) {
         connectionListener(messageEvent.data.payload)
         return
@@ -308,7 +310,7 @@ dcent.popupWindowClose = function () {
       event: 'BridgeEvent',
       type: 'data',
       payload: 'popup-close'
-    })  
+    })
   } else {
     if (dcent.popupTab && dcent.popupTab.id) {
       // eslint-disable-next-line no-undef
@@ -321,16 +323,16 @@ dcent.popupWindowClose = function () {
       const dcentIframe = document.getElementById('dcent-connect')
       if (dcentIframe) {
         dcentIframe.parentNode.removeChild(dcentIframe)
-      }    
+      }
     }
     clearPopup()
   }
 }
 
 function sendMessageToBridge (message) {
-  const divApp = document.querySelector("div#app")
-  if(divApp) {
-    const messageEvent = new CustomEvent('mv3_message', { detail: message } )
+  const divApp = document.querySelector('div#app')
+  if (divApp) {
+    const messageEvent = new CustomEvent('mv3_message', { detail: message })
     divApp.dispatchEvent(messageEvent)
   }
 }
@@ -339,8 +341,9 @@ const postMessage = (message) => {
   if (isManifestV3) {
     LOG.debug('mv3 message send: ', message)
     LOG.debug('mv3 message send: ', dcent.popupTab.id)
+    // eslint-disable-next-line no-undef
     chrome.scripting.executeScript({
-      target: {tabId: dcent.popupTab.id},
+      target: { tabId: dcent.popupTab.id },
       func: sendMessageToBridge,
       args: [
         message
@@ -352,22 +355,22 @@ const postMessage = (message) => {
   // if mv2
   if (dcent.popupWindow) {
     try {
-      let origin = '*' 
+      let origin = '*'
       if (dcent.iframe) {
         // eslint-disable-next-line no-useless-escape
         origin = dcent.iframe.src.match(/^.+\:\/\/[^\/]+/)[0]
-      } 
-      dcent.popupWindow.postMessage(message, origin)     
+      }
+      dcent.popupWindow.postMessage(message, origin)
     } catch (e) {
       // LOG.error(e)
     }
   }
 }
 
-if(isManifestV3) {
+if (isManifestV3) {
+  // eslint-disable-next-line no-undef
   chrome.runtime.onMessageExternal.addListener((message, sender, sendResponse) => {
-    console.log("onMessageExternal: Received message : ", message);
-    dcent.messageReceive({data: message})
+    dcent.messageReceive({ data: message })
   })
   // chrome.runtime.onMessage.addListener((message, sender, sendResponse) => {
   //   console.log("onMessage : Received message from : ", message);
@@ -452,12 +455,11 @@ function isAvaliableLabel (label) {
   var regExp = /^[a-zA-Z\d.!#$%&\+\-_]{2,14}$/
   if (!label || !regExp.test(label)) {
     return false
-  }  
+  }
   return true
 }
 
 function isAvaliableCoinGroup (coinGroup) {
-  
   if (!coinGroup) {
     return false
   }
@@ -465,7 +467,7 @@ function isAvaliableCoinGroup (coinGroup) {
     case dcentCoinGroup.BITCOIN.toLowerCase():
     case dcentCoinGroup.BITCOIN_TESTNET.toLowerCase():
     case dcentCoinGroup.MONACOIN.toLowerCase():
-    case dcentCoinGroup.MONACOIN_TESTNET.toLowerCase():    
+    case dcentCoinGroup.MONACOIN_TESTNET.toLowerCase():
     case dcentCoinGroup.ERC20.toLowerCase():
     case dcentCoinGroup.ERC20_KOVAN.toLowerCase():
     case dcentCoinGroup.ETHEREUM.toLowerCase():
@@ -567,7 +569,7 @@ function isBitcoinTxCoinType (coinType) {
 dcent.setLabel = async function (label) {
   if (!isAvaliableLabel(label)) {
     throw dcent.dcentException('param_error', 'Invalid Label : ' + label)
-  }  
+  }
 
   return await dcent.call({
     method: 'setLabel',
@@ -644,7 +646,7 @@ dcent.getAddress = async function (coinType, path) {
   if (!isAvaliableCoinType(coinType)) {
     throw dcent.dcentException('coin_type_error', 'not supported coin type')
   }
-  
+
   return await dcent.call({
     method: 'getAddress',
     params: {
@@ -986,11 +988,11 @@ dcent.getKlaytnSignedTransaction = async function (
   key,
   chainId,
   txType,
-  from,  
+  from,
   feeRatio,
   contract
 ) {
-  
+
   try {
     nonce = checkParameter('numberString', nonce)
     gasPrice = checkParameter('numberString', gasPrice)
@@ -1002,11 +1004,11 @@ dcent.getKlaytnSignedTransaction = async function (
   } catch (error) {
     throw error
   }
-  
+
   if (typeof chainId !== 'number') {
     throw dcent.dcentException('param_error', 'Invaild Parameter chainId - ' + chainId)
   }
- 
+
   switch (coinType.toLowerCase()) {
     case dcentCoinType.KLAYTN.toLowerCase():
     case dcentCoinType.KLAY_BAOBAB.toLowerCase():
@@ -1019,18 +1021,18 @@ dcent.getKlaytnSignedTransaction = async function (
     default:
       throw dcent.dcentException('coin_type_error', 'not supported coin type')
   }
-  
+
   if (!txType) {
     txType = dcentKlaytnTxType.LEGACY
   }
-  
+
   if (!from) {
     const addressResponse = await this.getAddress(coinType, key)
     if (addressResponse.body.parameter.address) {
       from = addressResponse.body.parameter.address
     }
   }
- 
+
   return await dcent.call({
     method: 'getKlaytnSignedTransaction',
     params: {
@@ -1043,7 +1045,7 @@ dcent.getKlaytnSignedTransaction = async function (
       data: data,
       key: key,
       chain_id: chainId,
-      tx_type: txType,      
+      tx_type: txType,
       from: from,
       fee_ratio: feeRatio,
       contract: contract,
@@ -1082,10 +1084,10 @@ dcent.getSignedData = async function (key, message) {
 dcent.getXrpSignedTransaction = async function (transaction, key) {
   try {
     if (typeof transaction.Account !== 'string' || typeof transaction.TransactionType !== 'string' ||
-        typeof transaction.Fee !== 'string' || typeof transaction.Sequence !== 'number') {
-          throw dcent.dcentException('param_error', 'TypeError: Required field type is not matched')
+      typeof transaction.Fee !== 'string' || typeof transaction.Sequence !== 'number') {
+      throw dcent.dcentException('param_error', 'TypeError: Required field type is not matched')
     }
-    
+
     if (typeof dcentXrpTxType[transaction.TransactionType] === 'undefined') {
       throw dcent.dcentException('param_error', 'Invalid Transaction Type: ' + transaction.TransactionType)
     }

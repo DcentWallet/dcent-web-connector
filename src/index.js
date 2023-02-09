@@ -171,7 +171,7 @@ dcent.call = async function (params) {
     }
    // LOG.debug('dcent.dcentWebPromise.promise - ', dcent.dcentWebPromise.promise)
     dcent.dcentWebPromise.promise.then(async function () {
-       dcent._call(idx, params)
+      dcent._call(idx, params)
     })
 
     const popUpClosedListener = () => {
@@ -488,6 +488,12 @@ function isAvaliableCoinType (coinType) {
     case dcentCoinType.HEDERA_HTS.toLowerCase():
     case dcentCoinType.HEDERA_TESTNET.toLowerCase():
     case dcentCoinType.HTS_TESTNET.toLowerCase():
+    case dcentCoinType.STELLAR.toLowerCase():
+    case dcentCoinType.STELLAR_TESTNET.toLowerCase():
+    case dcentCoinType.TRON.toLowerCase():
+    case dcentCoinType.TRON_TESTNET.toLowerCase():
+    case dcentCoinType.TRON_TRC_TOKEN.toLowerCase():
+    case dcentCoinType.TRON_TRC_TESTNET.toLowerCase():
       return true
     default:
       return false
@@ -1084,6 +1090,51 @@ dcent.getHederaSignedTransaction = async function ({
       path,
       symbol,
       decimals,
+    }
+  })
+}
+
+dcent.getStellarSignedTransaction = async function ({
+  unsignedTx,
+  fee,
+  path,
+}) {
+  return await dcent.call({
+    method: 'getStellarSignedTransaction',
+    params: {
+      unsigned_tx: unsignedTx,
+      fee,
+      path,
+    }
+  })
+}
+
+dcent.getTronSignedTransaction = async function ({
+  unsignedTx,
+  fee,
+  path,
+}) {
+  return await dcent.call({
+    method: 'getTronSignedTransaction',
+    params: {
+      unsigned_tx: unsignedTx,
+      fee,
+      path,
+    }
+  })
+}
+
+dcent.getTrcTokenSignedTransaction = async function ({
+  unsignedTx,
+  fee,
+  path,
+}) {
+  return await dcent.call({
+    method: 'getTrcTokenSignedTransaction',
+    params: {
+      unsigned_tx: unsignedTx,
+      fee,
+      path,
     }
   })
 }

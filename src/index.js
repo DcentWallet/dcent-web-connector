@@ -1130,7 +1130,7 @@ dcent.getTrcTokenSignedTransaction = async function ({
   path,
 }) {
   return await dcent.call({
-    method: 'getTrcTokenSignedTransaction',
+    method: 'getTronSignedTransaction',
     params: {
       unsigned_tx: unsignedTx,
       fee,

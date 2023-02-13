@@ -27,6 +27,12 @@ const coinType = {
   HEDERA_TESTNET: 'hedera-testnet',
   HEDERA_HTS: 'hedera-hts',
   HTS_TESTNET: 'hedera-hts-test',
+  STELLAR: 'stellar',
+  STELLAR_TESTNET: 'stellar-testnet',
+  TRON: 'tron',
+  TRON_TESTNET: 'tron-testnet',
+  TRON_TRC_TOKEN: 'trc-token',
+  TRON_TRC_TESTNET: 'trc-testnet',
 }
 
 const coinGroup = {
@@ -56,6 +62,12 @@ const coinGroup = {
   HEDERA_TESTNET: 'HEDERA-TESTNET',
   HEDERA_HTS: 'HEDERA-HTS',
   HTS_TESTNET: 'HTS-TESTNET',
+  STELLAR: 'STELLAR',
+  XLM_TESTNET: 'XLM-TESTNET',
+  TRON: 'TRON',
+  TRX_TESTNET: 'TRX-TESTNET',
+  TRC_TOKEN: 'TRC-TOKEN',
+  TRC_TESTNET: 'TRC-TESTNET',
 }
 
 const coinName = {
@@ -85,6 +97,12 @@ const coinName = {
   HEDERA_TESTNET: 'HEDERA-TESTNET',
   HEDERA_HTS: '',
   HTS_TESTNET: '',
+  STELLAR: 'STELLAR',
+  XLM_TESTNET: 'XLM-TESTNET',
+  TRON: 'TRON',
+  TRX_TESTNET: 'TRX-TESTNET',
+  TRC_TOKEN: 'TRC-TOKEN',
+  TRC_TESTNET: 'TRC-TESTNET',
 }
 
 const bitcoinTxType = {

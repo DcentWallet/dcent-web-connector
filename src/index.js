@@ -238,7 +238,7 @@ const createDcentTab = async () => {
     dcent.popupTab = tabs[0]
   } else {
     // eslint-disable-next-line no-undef
-    const tabs = chrome.tabs.query({
+    const tabs = await chrome.tabs.query({
       currentWindow: true,
       active: true
     })

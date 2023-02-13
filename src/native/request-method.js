@@ -18,6 +18,9 @@ module.exports = {
     GET_BTC_SIGN_TX: 'getBitcoinSignedTransaction',
     GET_XRP_SIGN_TX: 'getXrpSignedTransaction',
     GET_HEDERA_SIGN_TX: 'getHederaSignedTransaction',
+    GET_STELLAR_SIGN_TX: 'getStellarSignedTransaction',
+    GET_TRON_SIGN_TX: 'getTronSignedTransaction',
+    GET_TRC_TOKEN_SIGN_TX: 'getTrcTokenSignedTransaction',
 }
 
 /* //////////////////////////////////////////////////////////////////////// */

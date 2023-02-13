@@ -1,3 +1,5 @@
 examples
 node_modules
 tests/coverage
+dist/index.html
+dist/plugin/jquery.json-editor.min.js

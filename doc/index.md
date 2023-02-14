@@ -1017,5 +1017,165 @@ For broadcast the sign transaction, you must reconstruct transaction include `Tx
     }
     ```
 
+**getStellarSignedTransaction()**
+- This fuction for :
+    - Stellar(XLM)
+
+- Parameters :
+    - transactionJson: this value conforms JSON format of Transaction Types in [Stellar Docs](https://developers.stellar.org/docs/tutorials/send-and-receive-payments)
+- Requirements:
+    - `D'CENT Bridge` version 1.2.1 or higher is required.
+    - D'CENT Biometric Wallet version 2.20.0. or higher is required.
+- Useage:
+    ```js
+    const _buf2hex = (buffer) => { // buffer is an ArrayBuffer
+        return Array.prototype.map.call(new Uint8Array(buffer), x => ('00' + x.toString(16)).slice(-2)).join('');
+    }
+    const server = new StellarSdk.Server('https://horizon.stellar.org')
+    const account = await server.loadAccount(address)
+    
+    // Operation
+    const operationXdr = StellarSdk.Operation.createAccount({
+        destination: toAddr,
+        startingBalance: amount
+    })
+    
+    // Builder
+    const transactionBuilder = new StellarSdk.TransactionBuilder(account, { 
+        fee: StellarSdk.BASE_FEE,
+        networkPassphrase: StellarSdk.Networks.TESTNET
+    })
+    .addOperation(operationXdr)
+    .setTimeout(300)
+    .build()
+    
+    const unsignedTx = _buf2hex(transactionBuilder.signatureBase())
+
+    const transactionJson = {
+        unsignedTx: unsignedTx,
+        fee: StellarSdk.BASE_FEE
+        path: `m/44'/148'/0'`,
+    }
+
+    var result
+    try {
+        result = await dcent.getStellarSignedTransaction(transactionJson);    
+    } catch (e) {
+        console.log(e)
+        result = e
+    }
+    ```
+- Returned response object:
+    ```json
+    {
+        "header": {
+            "version": "1.0",
+            "response_from": "stellar",
+            "status": "success"
+        },
+        "body": {
+            "command": "transaction",
+            "parameter": {
+                "signed_tx": "0x9b1cb82eb924178980b1d35f99ae24142d25ba08efabd1dfe7f4741028d03f3fe80770b395176b9d49381d98660e2746d38986b4e31af738524ca0936a7aa901",
+                "pubkey": "0x283957814f67abe6eda79128d3d54655a1ec8c595aece2c12f0848461a4ef659"
+            }
+        }
+    }
+    ```
+
+**getTronSignedTransaction()**
+- This fuction for :
+    - Tron(TRX)
+    - Tron Token(TRC, call `getTrcTokenSignedTransaction()`)
+
+- Parameters :
+    - transactionJson: this value conforms JSON format of Transaction Types in [Tron Docs](https://github.com/tronscan/tronscan-node-client)
+- Requirements:
+    - `D'CENT Bridge` version 1.2.1 or higher is required.
+    - D'CENT Biometric Wallet version 2.3.0. or higher is required.
+- Useage:
+    ```js
+    const decode58Check = require('@tronscan/client/src/utils/crypto').decode58Check
+    const { Transaction } = require('@tronscan/client/src/protocol/core/Tron_pb')
+    const googleProtobufAnyPb = require('google-protobuf/google/protobuf/any_pb.js')
+    const _buf2hex = (buffer) => { // buffer is an ArrayBuffer
+        return Array.prototype.map.call(new Uint8Array(buffer), x => ('00' + x.toString(16)).slice(-2)).join('');
+    }
+    const baseURL = 'https://api.trongrid.io'
+    // get node info
+    const command = '/wallet/getnodeinfo'
+    const reponse = await axios.get(baseURL + command)
+    let dataInfo = response.data
+    let arrBlcokInfo = dataInfo.block.split(',')
+    const nodeInfo = {
+        number: arrBlcokInfo[0].split(':')[1],
+        hash: arrBlcokInfo[1].split(':')[1],
+    }
+    
+    let transferContract = new TronscanSdk.TransferContract()
+    transferContract.setToAddress(Uint8Array.from(decode58Check(toAddr)))
+    transferContract.setOwnerAddress(Uint8Array.from(decode58Check(fromAddr)))
+    transferContract.setAmount(amount)
+    
+    let anyValue = new googleProtobufAnyPb.Any();
+    anyValue.pack(transferContract.serializeBinary(), 'protocol.' + typeName)
+    let contract = new Transaction.Contract();
+    contract.setType(contractType)
+    contract.setParameter(anyValue)
+    
+    const refBlockHash = Buffer.from(nodeInfo.hash, 'hex').slice(8, 16).toString('base64');
+    const blockNumber = Number(nodeInfo.number);
+    const refBlockBytes = getBlockBytes(blockNumber).toString('base64');
+
+    let raw = new Transaction.raw()
+
+    raw.addContract(contract);
+    raw.setRefBlockNum(blockNumber)
+    raw.setRefBlockBytes(refBlockBytes)
+    raw.setRefBlockHash(refBlockHash)
+    raw.setTimestamp(Date.now());
+    raw.setExpiration(Date.now() + (100 * 60 * 60 * 1000)) // 10 hours
+    if (contractType === Transaction.Contract.ContractType.TRIGGERSMARTCONTRACT) {
+        raw.setFeeLimit(50 * 1000000) // transfer fee limit
+    }
+    let transaction = new Transaction();
+    transaction.setRawData(raw);
+    
+    const unsignedTx = _buf2hex(raw.serializeBinary())
+
+    const transactionJson = {
+        unsignedTx: unsignedTx,
+        fee: fee
+        path: `m/44'/195'/0'/0/0`,
+    }
+
+    var result
+    try {
+        result = await dcent.getTronSignedTransaction(transactionJson);    
+    } catch (e) {
+        console.log(e)
+        result = e
+    }
+    ```
+- Returned response object:
+    - The property of the response's parameter, the pubkey is deprecated.
+
+    ```json
+    {
+        "header": {
+            "version": "1.0",
+            "response_from": "tron",
+            "status": "success"
+        },
+        "body": {
+            "command": "transaction",
+            "parameter": {
+                "signed_tx": "0x35544659743d463715380a2f66205ac9c38feb04033c29a5d415f8b009f566664a1972ac8be256308ec9b38a726f02eec103fc74963d7caf783cd55f1d7610d900",
+                "pubkey": "0x000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000"
+            }
+        }
+    }
+    ```
+
 
 Please Refer to the `index.html` to learn more about how to use the SDK APIs. There is an Web project using our Web SDK.

@@ -1025,7 +1025,7 @@ For broadcast the sign transaction, you must reconstruct transaction include `Tx
 - Parameters :
     - transactionJson: this value conforms JSON format of Transaction Types in [Stellar Docs](https://developers.stellar.org/docs/tutorials/send-and-receive-payments)
 - Requirements:
-    - `D'CENT Bridge` version 1.2.1 or higher is required.
+    - `D'CENT Bridge` version 1.4.0 or higher is required.
     - D'CENT Biometric Wallet version 2.20.0. or higher is required.
 - Useage:
     ```js
@@ -1092,7 +1092,7 @@ For broadcast the sign transaction, you must reconstruct transaction include `Tx
 - Parameters :
     - transactionJson: this value conforms JSON format of Transaction Types in [Tron Docs](https://github.com/tronscan/tronscan-node-client)
 - Requirements:
-    - `D'CENT Bridge` version 1.2.1 or higher is required.
+    - `D'CENT Bridge` version 1.4.0 or higher is required.
     - D'CENT Biometric Wallet version 2.3.0. or higher is required.
 - Useage:
     ```js

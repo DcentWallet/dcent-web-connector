@@ -17,8 +17,9 @@
 | v0.10.3 | 2021. 03. 15 | add XDC transaction function |
 | v0.10.4 | 2021. 05. 06 | add Select address function |
 | v0.10.5 | 2021. 12. 23 | support sign data function|
-| v0.11.0 | 2021. 03. 08 | add interface for Hedera transaction |
-| v0.11.2 | 2021. 04. 21 | modify getEthereumSignedTransaction interface for EIP-2718 |
+| v0.11.0 | 2022. 03. 08 | add interface for Hedera transaction |
+| v0.11.2 | 2022. 04. 21 | modify getEthereumSignedTransaction interface for EIP-2718 |
+| v0.12.0 | 2023. 02. 15 | add Tron & Stellar transaction transaction functions |
 <br><br><br>
 
 ## 1. INTRODUCTION

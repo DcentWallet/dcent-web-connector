@@ -254,7 +254,7 @@ const defaultDeviceResponse = {
     getHederaTransaction: {
         header: {
             version: '1.0',
-            response_from: 'ripple',
+            response_from: 'hedera',
             status: 'success'
         },
         body: {
@@ -263,6 +263,19 @@ const defaultDeviceResponse = {
                 sign: '3045022100fb4b7a28d3419651420ed6745601b72ec4e8a3ffbcbf3052ebb39b76fba1e0ba0220570ba64c9fd6f63982efb500857b29742d578e54e7c776c2b1230da23ebe238e',
                 pubkey: '02c65f2a496909123973282c47edbd0e760bb44bb0d87ec1b30115b2ce3072c766',
                 accountId: '462a5a061ebe03fb52e5bca443233bcc6d0e9699'
+            }
+        }
+    },
+    getUnionTransaction: {
+        header: {
+            version: '1.0',
+            response_from: 'union',
+            status: 'success'
+        },
+        body: {
+            command: 'get_sign',
+            parameter: {
+                signed: '3045022100fb4b7a28d3419651420ed6745601b72ec4e8a3ffbcbf3052ebb39b76fba1e0ba0220570ba64c9fd6f63982efb500857b29742d578e54e7c776c2b1230da23ebe238e',
             }
         }
     }

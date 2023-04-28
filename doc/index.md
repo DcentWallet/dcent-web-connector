@@ -1177,6 +1177,87 @@ For broadcast the sign transaction, you must reconstruct transaction include `Tx
         }
     }
     ```
+**getHavahSignedTransaction()**
+- This fuction for :
+    - HAVAH(HTS)
 
+- Parameters :
+    - unsignedTx: unsigned hexadecimal tx [Hevah(ICON) Docs](https://docs.icon.community/getting-started/how-to-run-a-local-network/decentralizing-a-local-network)
+    - path: key path, wallet sign with that private key with a given key path (BIP32 ex) "m/44'/144'/0'").
+    - symbol: symbol, It is a symbol that the wallet displays on the screen.
+    - decimals: hedera or hts token's decimals.
+- Requirements:
+    - `D'CENT Bridge` version 1.4.1 or higher is required.
+    - D'CENT Biometric Wallet version 2.26.0. or higher is required.
+- Useage:
+    ```js
+    import IconService from 'icon-sdk-js'
+
+    const { IconBuilder, IconAmount, IconConverter, IconUtil } = IconService
+
+    const httpProvider = new HttpProvider('https://ctz.solidwallet.io/api/v3');
+    const iconService = new IconService(httpProvider);
+    // networkId of node 1:mainnet, 2~:etc
+    const networkId = new BigNumber("3"); // input node’s networkld
+    const version = new BigNumber("3"); // version
+    
+    // Recommended icx transfer step limit :
+    // use 'default' step cost in the response of getStepCosts API
+    const stepLimit = await this.getDefaultStepCost(); // Please refer to the above description.
+
+    // Timestamp is used to prevent the identical transactions. Only current time is required (Standard unit : us)
+    // If the timestamp is considerably different from the current time, the transaction will be rejected.
+    const timestamp = (new Date()).getTime() * 1000;
+    const value = IconAmount.of(Number(amount), IconAmount.Unit.ICX).toLoop()
+
+    // Enter transaction information
+    const { IcxTransactionBuilder } = IconBuilder
+    const icxTransactionBuilder = new IcxTransactionBuilder();
+    const transaction = icxTransactionBuilder
+      .nid(networkId)
+      .from(walletAddress)
+      .to(MockData.WALLET_ADDRESS_2)
+      .value(value)
+      .version(version)
+      .stepLimit(stepLimit)
+      .timestamp(timestamp)
+      .nonce(IconConverter.toBigNumber(1))
+      .build();
+
+    const rawData = Buffer.from(IconUtil.generateHashKey(IconConverter.toRawTransaction(tx))).toString('hex')
+    const sigHash = rawData
+
+    const transactionJson = {
+        sigHash: sigHash,
+        path: `m/44'/858'/0'/0/0`,
+        decimals: 18,
+        fee: '0004e28e2290f000', // 0.001375
+        symbol: 'HVH',
+    }
+
+    var result
+    try {
+        result = await dcent.getUnionSignedTransaction(transactionJson);    
+    } catch (e) {
+        console.log(e)
+        result = e
+    }
+    ```
+- Returned response object:
+    ```json
+    {
+        "header": {
+            "version": "1.0",
+            "response_from": "havah",
+            "status": "success"
+        },
+        "body": {
+            "command": "transaction",
+            "parameter": {
+                "signed_tx": "0x31aa13b5e04cb6fc6381ea0520bf7f6727ebdb6e96cd7ca8625bb3e3dd36cf0e2cee4ece13aa9f7ddc09ee10c74aa00af954201829d8016317f10f5a921dcc0d"
+            }
+        }
+    }
+    ```
 
 Please Refer to the `index.html` to learn more about how to use the SDK APIs. There is an Web project using our Web SDK.

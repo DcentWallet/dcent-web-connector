@@ -76,6 +76,9 @@ const requestToBridge = (payload) => {
     case Method.GET_HEDERA_SIGN_TX:
         response = defaultDeviceResponse.getHederaTransaction
         break
+    case Method.GET_UNION_SIGN_TX:
+        response = defaultDeviceResponse.getUnionTransaction
+        break
     default:
         response = 'error'
       throw new Error('Not implemented Method in Mock : ' + method)

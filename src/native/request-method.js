@@ -21,6 +21,17 @@ module.exports = {
     GET_STELLAR_SIGN_TX: 'getStellarSignedTransaction',
     GET_TRON_SIGN_TX: 'getTronSignedTransaction',
     GET_TRC_TOKEN_SIGN_TX: 'getTrcTokenSignedTransaction',
+    GET_UNION_SIGN_TX: 'getUnionSignedTransaction'
+    // GET_POLCADOT_SIGN_TX: 'getUnionSignedTransaction',
+    // GET_COSMOS_SIGN_TX: 'getUnionSignedTransaction',
+    // GET_TEZOS_SIGN_TX: 'getUnionSignedTransaction',
+    // GET_XTZ_FA_SIGN_TX: 'getUnionSignedTransaction',
+    // GET_VECHAIN_SIGN_TX: 'getUnionSignedTransaction',
+    // GET_VECHAIN_ERC20_SIGN_TX: 'getUnionSignedTransaction',
+    // GET_NEAR_SIGN_TX: 'getUnionSignedTransaction',
+    // GET_CZONE_SIGN_TX: 'getUnionSignedTransaction',
+    // GET_HAVAH_SIGN_TX: 'getUnionSignedTransaction',
+    // GET_HAVAH_HSP20_SIGN_TX: 'getUnionSignedTransaction',
 }
 
 /* //////////////////////////////////////////////////////////////////////// */

@@ -99,6 +99,8 @@
         <button id="getTrcTokenSignedTransaction" type="button" class="btn btn-primary">getTrcTokenSignedTransaction</button>
         <br />
 
+        <button id="getHavahSignedTransaction" type="button" class="btn btn-primary">getHavahSignedTransaction</button>
+
         <button id="get_address_bitcoin" type="button" class="btn btn-primary">Get Bitcoin
           Address("m/44'/0'/0'/0/0")</button>
         <button id="get_address_bitcoin_testnet" type="button" class="btn btn-primary">Get Bitcoin Testnet
@@ -219,7 +221,8 @@
 
         $('#getTronSignedTransaction').click(getTronSignedTransaction_clicked);
         $('#getTrcTokenSignedTransaction').click(getTrcTokenSignedTransaction_clicked);
-
+        
+        $('#getHavahSignedTransaction').click(getHavahSignedTransaction_clicked);
       });
 
       async function info_clicked() {
@@ -798,6 +801,22 @@
         resp_editor.load(result)
       }
 
+      async function getHavahSignedTransaction_clicked() {
+        set_command_name("Processing...");
+        var transactionJson = {
+          coinType: dcent.coinType.HAVAH,
+          sigHash: '6963785f73656e645472616e73616374696f6e2e66726f6d2e6878316531333433353935303532383335613064396137643064396533353839633433323831623262642e6e69642e30783130302e6e6f6e63652e3078312e737465704c696d69742e307831616462302e74696d657374616d702e3078356661316631343633666161302e746f2e6878353833323164313731633833393465613434303638376562623462353832623037353739356663352e76616c75652e307833636235396163376237353734652e76657273696f6e2e307833',
+          path: `m/44'/858'/0'/0/0`,
+          decimals: 18,
+          fee: '0004e28e2290f000', // 0.001375
+          symbol: 'HVH',
+        }
+        var result  = await getUnionSignedTransaction(transactionJson);
+      
+        set_command_name("getHavahSignedTransaction")
+        resp_editor.load(result)
+      }
+
       /////// DCENT WEB-SDK call
 
       async function info() {        
@@ -1017,6 +1036,16 @@
         var result 
         try { 
           result = await dcent.getTrcTokenSignedTransaction(transaction)      
+        } catch (e) {
+          result = e
+        }
+        return result 
+      }
+
+      async function getUnionSignedTransaction(transaction) {
+        var result 
+        try { 
+          result = await dcent.getUnionSignedTransaction(transaction)      
         } catch (e) {
           result = e
         }

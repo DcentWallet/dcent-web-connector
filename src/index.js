@@ -529,6 +529,21 @@ function isAvaliableCoinType (coinType) {
     case dcentCoinType.TRON_TESTNET.toLowerCase():
     case dcentCoinType.TRON_TRC_TOKEN.toLowerCase():
     case dcentCoinType.TRON_TRC_TESTNET.toLowerCase():
+    case dcentCoinType.POLKADOT.toLowerCase():
+    case dcentCoinType.COSMOS.toLowerCase():
+    case dcentCoinType.TEZOS.toLowerCase():
+    case dcentCoinType.TEZOS_TESTNET.toLowerCase():
+    case dcentCoinType.XTZ_FA.toLowerCase():
+    case dcentCoinType.XTZ_FA_TESTNET.toLowerCase():
+    case dcentCoinType.VECHAIN.toLowerCase():
+    case dcentCoinType.VECHAIN_ERC20.toLowerCase():
+    case dcentCoinType.NEAR.toLowerCase():
+    case dcentCoinType.NEAR_TESTNET.toLowerCase():
+    case dcentCoinType.CZONE.toLowerCase():
+    case dcentCoinType.HAVAH.toLowerCase():
+    case dcentCoinType.HAVAH_TESTNET.toLowerCase():
+    case dcentCoinType.HAVAH_HSP20.toLowerCase():
+    case dcentCoinType.HAVAH_HSP20_TESTNET.toLowerCase():
       return true
     default:
       return false
@@ -548,6 +563,11 @@ function isTokenType (coinGroup) {
     case dcentCoinType.KCT_BAOBAB.toLowerCase():
     case dcentCoinGroup.XRC20.toLowerCase():
     case dcentCoinGroup.XRC20_APOTHEM.toLowerCase():
+    case dcentCoinGroup.XTZ_FA.toLowerCase():
+    case dcentCoinGroup.XTZ_FA_TESTNET.toLowerCase():
+    case dcentCoinGroup.VECHAIN_ERC20.toLowerCase():
+    case dcentCoinGroup.HAVAH_HSP20.toLowerCase():
+    case dcentCoinGroup.HAVAH_HSP20_TESTNET.toLowerCase():
       return true
     default:
       return false
@@ -1170,6 +1190,31 @@ dcent.getTrcTokenSignedTransaction = async function ({
       unsigned_tx: unsignedTx,
       fee,
       path,
+    }
+  })
+}
+
+dcent.getUnionSignedTransaction = async function ({
+  coinType,
+  sigHash,
+  fee,
+  decimals,
+  nonce,
+  path,
+  symbol,
+  optionParam,
+}) {
+  return await dcent.call({
+    method: 'getUnionSignedTransaction',
+    params: {
+      coinType,
+      nonce,
+      decimals,
+      sig_hash: sigHash,
+      fee,
+      path,
+      symbol,
+      optionParam,
     }
   })
 }

@@ -76,8 +76,23 @@ const requestToBridge = (payload) => {
     case Method.GET_HEDERA_SIGN_TX:
         response = defaultDeviceResponse.getHederaTransaction
         break
-    case Method.GET_UNION_SIGN_TX:
-        response = defaultDeviceResponse.getUnionTransaction
+    case Method.GET_POLKADOT_SIGN_TX:
+        response = defaultDeviceResponse.getPolkadotSignedTransaction
+        break
+    case Method.GET_COSMOS_SIGN_TX:
+        response = defaultDeviceResponse.getCosmosSignedTransaction
+        break
+    case Method.GET_TEZOS_SIGN_TX:
+        response = defaultDeviceResponse.getTezosSignedTransaction
+        break
+    case Method.GET_VECHAIN_SIGN_TX:
+        response = defaultDeviceResponse.getVechainSignedTransaction
+        break
+    case Method.GET_NEAR_SIGN_TX:
+        response = defaultDeviceResponse.getNearSignedTransaction
+        break
+    case Method.GET_HAVAH_SIGN_TX:
+        response = defaultDeviceResponse.getHavahSignedTransaction
         break
     default:
         response = 'error'

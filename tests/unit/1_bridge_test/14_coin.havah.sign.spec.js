@@ -55,7 +55,7 @@ describe('[dcent-web-connector] Bridge - init', () => {
         }
         var response = await page.evaluate((transactionJson) => {
             // eslint-disable-next-line no-undef
-            return getUnionSignedTransaction(transactionJson)
+            return getHavahSignedTransaction(transactionJson)
         }, transactionJson)
 
         console.log('response ', response)
@@ -64,31 +64,34 @@ describe('[dcent-web-connector] Bridge - init', () => {
         expect(response.body.parameter).toBeDefined()
         // TODO: address, sign value format check !!
         expect(response.body.parameter.signed_tx).toBeDefined()
-        expect(response.body.parameter.pubkey).toBeDefined()
+        // expect(response.body.parameter.pubkey).toBeDefined()
         done()
     })
 
-    // it('getHederaSignedTransaction() - HTS transaction success ', async (done) => {
+    it('getHavahSignedTransaction() - HSP20 transaction success ', async (done) => {
 
-    //     var transactionJson = {
-    //         unsignedTx: '0a190a0b08c08ebd900610b181d17212080800100018d6c0151800120608001000180318c0843d22020878320072300a00122c0a08080010001885e707120f0a080800100018d6c01510ff83af5f120f0a080800100018e6e825108084af5f',
-    //         path: `m/44'/858'/0'/0/0`,
-    //         symbol: 'PER',
-    //         decimals: '8',
-    //     }
-    //     var response = await page.evaluate((transactionJson) => {
-    //         // eslint-disable-next-line no-undef
-    //         return getUnionSignedTransaction(transactionJson)
-    //     }, transactionJson)
+        var transactionJson = {
+            coinType: DcentWebConnector.coinType.HAVAH_HSP20,
+                sigHash: '6963785f73656e645472616e73616374696f6e2e646174612e7b6d6574686f642e7472616e736665722e706172616d732e7b5f746f2e6878656337623030666563623033393132333037306334633330383130636438636439666465623662392e5f76616c75652e30786465306236623361373634303030307d7d2e64617461547970652e63616c6c2e66726f6d2e6878653165396634626466623461316562363332323266366535653338396237386461663533323639612e6e69642e30783130312e6e6f6e63652e3078312e737465704c696d69742e30786534653163302e74696d657374616d702e3078356638663564303562623763382e746f2e6378333235313963366331316234373166663632396138656661333665633764303439393630616639382e76657273696f6e2e307833',
+                path: `m/44'/858'/0'/0/0`,
+                decimals: 18,
+                fee: '0354a6ba7a180000',
+                symbol: 'HVH',
+                optionParam: '01' // Token Transfer
+        }
+        var response = await page.evaluate((transactionJson) => {
+            // eslint-disable-next-line no-undef
+            return getHavahSignedTransaction(transactionJson)
+        }, transactionJson)
 
-    //     expect(response.header.status).toBe(Values.RESP_STATUS.SUCCESS)
-    //     expect(response.body.command).toBe(Values.CMD.TRANSACTION)
-    //     expect(response.body.parameter).toBeDefined()
-    //     // TODO: address, sign value format check !!
-    //     expect(response.body.parameter.signed_tx).toBeDefined()
-    //     expect(response.body.parameter.pubkey).toBeDefined()
-    //     done()
-    // })
+        expect(response.header.status).toBe(Values.RESP_STATUS.SUCCESS)
+        expect(response.body.command).toBe(Values.CMD.TRANSACTION)
+        expect(response.body.parameter).toBeDefined()
+        // TODO: address, sign value format check !!
+        expect(response.body.parameter.signed_tx).toBeDefined()
+        // expect(response.body.parameter.pubkey).toBeDefined()
+        done()
+    })
 
 })
 

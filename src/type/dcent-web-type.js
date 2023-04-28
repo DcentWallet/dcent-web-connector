@@ -33,7 +33,7 @@ const coinType = {
   TRON_TESTNET: 'tron-testnet',
   TRON_TRC_TOKEN: 'trc-token',
   TRON_TRC_TESTNET: 'trc-testnet',
-  POLKADOT: 'polcadot',
+  POLKADOT: 'polkadot',
   COSMOS: 'cosmos',
   TEZOS: 'tezos',
   TEZOS_TESTNET: 'tezos-testnet',

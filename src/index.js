@@ -1194,7 +1194,33 @@ dcent.getTrcTokenSignedTransaction = async function ({
   })
 }
 
-dcent.getUnionSignedTransaction = async function ({
+dcent.getPolkadotSignedTransaction = async function ({
+  coinType,
+  sigHash,
+  fee,
+  decimals,
+  nonce,
+  path,
+  symbol,
+  optionParam,
+}) {
+  console.log('polcadot sign2')
+  return await dcent.call({
+    method: 'getPolkadotSignedTransaction',
+    params: {
+      coinType,
+      nonce,
+      decimals,
+      sig_hash: sigHash,
+      fee,
+      path,
+      symbol,
+      optionParam,
+    }
+  })
+}
+
+dcent.getCosmosSignedTransaction = async function ({
   coinType,
   sigHash,
   fee,
@@ -1205,7 +1231,107 @@ dcent.getUnionSignedTransaction = async function ({
   optionParam,
 }) {
   return await dcent.call({
-    method: 'getUnionSignedTransaction',
+    method: 'getCosmosSignedTransaction',
+    params: {
+      coinType,
+      nonce,
+      decimals,
+      sig_hash: sigHash,
+      fee,
+      path,
+      symbol,
+      optionParam,
+    }
+  })
+}
+
+dcent.getTezosSignedTransaction = async function ({
+  coinType,
+  sigHash,
+  fee,
+  decimals,
+  nonce,
+  path,
+  symbol,
+  optionParam,
+}) {
+  return await dcent.call({
+    method: 'getTezosSignedTransaction',
+    params: {
+      coinType,
+      nonce,
+      decimals,
+      sig_hash: sigHash,
+      fee,
+      path,
+      symbol,
+      optionParam,
+    }
+  })
+}
+
+dcent.getVechainSignedTransaction = async function ({
+  coinType,
+  sigHash,
+  fee,
+  decimals,
+  nonce,
+  path,
+  symbol,
+  optionParam,
+}) {
+  return await dcent.call({
+    method: 'getVechainSignedTransaction',
+    params: {
+      coinType,
+      nonce,
+      decimals,
+      sig_hash: sigHash,
+      fee,
+      path,
+      symbol,
+      optionParam,
+    }
+  })
+}
+
+dcent.getNearSignedTransaction = async function ({
+  coinType,
+  sigHash,
+  fee,
+  decimals,
+  nonce,
+  path,
+  symbol,
+  optionParam,
+}) {
+  return await dcent.call({
+    method: 'getNearSignedTransaction',
+    params: {
+      coinType,
+      nonce,
+      decimals,
+      sig_hash: sigHash,
+      fee,
+      path,
+      symbol,
+      optionParam,
+    }
+  })
+}
+
+dcent.getHavahSignedTransaction = async function ({
+  coinType,
+  sigHash,
+  fee,
+  decimals,
+  nonce,
+  path,
+  symbol,
+  optionParam,
+}) {
+  return await dcent.call({
+    method: 'getHavahSignedTransaction',
     params: {
       coinType,
       nonce,

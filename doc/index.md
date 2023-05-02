@@ -7,21 +7,22 @@
 
 ### VERSION HISTORY
 
-| version              | date         | modification                                               |
-| -------------------- | ------------ | ---------------------------------------------------------- |
-| v0.6.2-beta          | 2019. 04. 07 | First version of D'CENT Web SDK connector release          |
-| v0.7.0-beta          | 2019. 05. 07 | add KLAYTN transaction function                            |
-| v0.8.0               | 2020. 06. 05 | add 'getSignedMessage' function                            |
-| v0.9.0               | 2020. 06. 22 | add interface for BITCOIN transaction                      |
-| v0.10.0              | 2020. 09. 28 | add interface for Ripple full transaction                  |
-| v0.10.1              | 2020. 11. 30 | modify description for Ripple full transaction             |
-| v0.10.3              | 2021. 03. 15 | add XDC transaction function                               |
-| v0.10.4              | 2021. 05. 06 | add Select address function                                |
-| v0.10.5              | 2021. 12. 23 | support sign data function                                 |
-| v0.11.0              | 2022. 03. 08 | add interface for Hedera transaction                       |
-| v0.11.2              | 2022. 04. 21 | modify getEthereumSignedTransaction interface for EIP-2718 |
-| v0.12.0              | 2023. 02. 15 | add Tron & Stellar transaction transaction functions       |
-| `<br><br>``<br>` |              |                                                            |
+| version            | date         | modification                                                                |
+| ------------------ | ------------ | --------------------------------------------------------------------------- |
+| v0.6.2-beta        | 2019. 04. 07 | First version of D'CENT Web SDK connector release                           |
+| v0.7.0-beta        | 2019. 05. 07 | add KLAYTN transaction function                                             |
+| v0.8.0             | 2020. 06. 05 | add 'getSignedMessage' function                                             |
+| v0.9.0             | 2020. 06. 22 | add interface for BITCOIN transaction                                       |
+| v0.10.0            | 2020. 09. 28 | add interface for Ripple full transaction                                   |
+| v0.10.1            | 2020. 11. 30 | modify description for Ripple full transaction                              |
+| v0.10.3            | 2021. 03. 15 | add XDC transaction function                                                |
+| v0.10.4            | 2021. 05. 06 | add Select address function                                                 |
+| v0.10.5            | 2021. 12. 23 | support sign data function                                                  |
+| v0.11.0            | 2022. 03. 08 | add interface for Hedera transaction                                        |
+| v0.11.2            | 2022. 04. 21 | modify getEthereumSignedTransaction interface for EIP-2718                  |
+| v0.12.0            | 2023. 02. 15 | add Tron & Stellar transaction functions                                    |
+| v0.13.0            | 2023. 05.    | add Polkadot & Cosmos & Tezos & Vechain & Near & Havah transaction function |
+| `<br><br>``<br>` |              |                                                                             |
 
 ## 1. INTRODUCTION
 
@@ -236,7 +237,7 @@ Set listener for device connection state. Before processing a functions request,
 // device connection listener ( callback )
 function connectionListener(state) {
     if (state === DcentWebConnector.state.CONNECTED) {
-        console.log('DCENT is Connected');      
+        console.log('DCENT is Connected');    
     } else if (state === DcentWebConnector.state.DISCONNECTED) {
         console.log('DCENT is Disconnected');  
     }
@@ -1272,15 +1273,499 @@ For broadcast the sign transaction, you must reconstruct transaction include `Tx
   }
   ```
 
+**getPolkadotSignedTransaction()**
+
+- This fuction for :
+
+  - POLCKADOT(DOT)
+- Parameters :
+
+  - unsignedTx: unsigned hexadecimal tx [Polkadot Docs](https://wiki.polkadot.network/docs/build-transaction-construction)
+  - path: key path, wallet sign with that private key with a given key path (BIP32 ex) "m/44'/354'/0'/0/0").
+  - fee: fee, It is fee that wallet displays on the screen.
+  - symbol: symbol, It is a symbol that the wallet displays on the screen.
+  - decimals: hedera or hts token's decimals.
+- Requirements:
+
+  - `D'CENT Bridge` version 1.4.1 or higher is required.
+  - D'CENT Biometric Wallet version 2.19.1 or higher is required.
+  - Useage:
+
+    ```js
+    import { ApiPromise, HttpProvider } from '@polkadot/api'
+
+    const httpProvider = new HttpProvider('https://rpc.polkadot.io');
+    const api = await ApiPromise({ provider: httpProvider });
+    // Wait until we are ready and connected
+    await api.isReady;
+
+    const blockNumber = await api.rpc.chain.getHeader()
+    const blockHash = await api.rpc.chain.getBlockHash(blockNumber.number.toHex())
+    // create SignerPayload
+    const signerPayload = api.createType('SignerPayload', {
+       genesisHash: api.genesisHash,
+       runtimeVersion: api.runtimeVersion,
+       version: api.extrinsicVersion,
+       blockHash: blockHash,
+       blockNumber: blockNumber.number,
+       era: api.createType('ExtrinsicEra', {
+         current: blockNumber.number,
+         period: 50
+       }),
+       nonce,
+       address: to,
+       method: api.tx.balances.transfer(to, amount).method,
+    });
+
+    const sigHash = signerPayload.toRaw().data
+
+    const transactionJson = {
+        coinType: dcent.coinType.POLKADOT,
+        sigHash: sigHash,
+        path: `m/44'/354'/0'/0/0`,
+        decimals, // 12
+        fee: BigNumber(convertToWei(fee, decimals)).toString(16).padStart(16, '0'),
+        symbol: 'DOT',
+    }
+
+    var result
+    try {
+        result = await dcent.getPolKadotSignedTransaction(transactionJson);  
+    } catch (e) {
+        console.log(e)
+        result = e
+    }
+    ```
+- Returned response object:
+
+  ```json
+  {
+      "header": {
+          "version": "1.0",
+          "response_from": "polkadot",
+          "status": "success"
+      },
+      "body": {
+          "command": "transaction",
+          "parameter": {
+              "signed_tx": "0x31aa13b5e04cb6fc6381ea0520bf7f6727ebdb6e96cd7ca8625bb3e3dd36cf0e2cee4ece13aa9f7ddc09ee10c74aa00af954201829d8016317f10f5a921dcc0d"
+          }
+      }
+  }
+  ```
+
+
+
+
+**getCosmosSignedTransaction()**
+
+- This fuction for :
+
+  - COSMOS(ATOM)
+- Parameters :
+
+  - unsignedTx: unsigned hexadecimal tx [Cosmos Docs](https://github.com/cosmostation/cosmosjs)
+  - path: key path, wallet sign with that private key with a given key path (BIP32 ex) "m/44'/144'/0'").
+  - fee: fee, It is fee that wallet displays on the screen.
+  - symbol: symbol, It is a symbol that the wallet displays on the screen.
+  - decimals: hedera or hts token's decimals.
+- Requirements:
+
+  - `D'CENT Bridge` version 1.4.1 or higher is required.
+  - D'CENT Biometric Wallet version 2.21.0 or higher is required.
+    - czone: 2.25.0 or higher is required.
+- Useage:
+
+  ```js
+  import message from "@cosmostation/cosmosjs/src/messages/proto";
+
+  // signDoc = (1)txBody + (2)authInfo
+  // ---------------------------------- (1)txBody ----------------------------------
+  const msgSend = new message.cosmos.bank.v1beta1.MsgSend({
+  		from_address: address,
+  		to_address: "cosmos1jf874x5vr6wkza6ahvamck4sy4w76aq4w9c4s5",
+  		amount: [{ denom: "uatom", amount: String(100000) }]		// 6 decimal places (1000000 uatom = 1 ATOM)
+  	});
+
+  const msgSendAny = new message.google.protobuf.Any({
+  		type_url: "/cosmos.bank.v1beta1.MsgSend",
+  		value: message.cosmos.bank.v1beta1.MsgSend.encode(msgSend).finish()
+  	});
+
+  const txBody = new message.cosmos.tx.v1beta1.TxBody({ messages: [msgSendAny], memo: "" });
+
+  // --------------------------------- (2)authInfo ---------------------------------
+  const signerInfo = new message.cosmos.tx.v1beta1.SignerInfo({
+  		public_key: pubKeyAny,
+  		mode_info: { single: { mode: message.cosmos.tx.signing.v1beta1.SignMode.SIGN_MODE_DIRECT } },
+  		sequence: data.account.sequence
+  	});
+
+  const feeValue = new message.cosmos.tx.v1beta1.Fee({
+  		amount: [{ denom: "uatom", amount: String(5000) }],
+  		gas_limit: 200000
+  	});
+
+  const authInfo = new message.cosmos.tx.v1beta1.AuthInfo({ signer_infos: [signerInfo], fee: feeValue });
+  const bodyBytes = message.cosmos.tx.v1beta1.TxBody.encode(txBody).finish()
+  const authInfoBytes = message.cosmos.tx.v1beta1.AuthInfo.encode(authInfo).finish()
+  const signDoc = new message.cosmos.tx.v1beta1.SignDoc({
+      body_bytes: bodyBytes,
+      auth_info_bytes: authInfoBytes,
+      chain_id,
+      account_number,
+    })
+  let signMessage = message.cosmos.tx.v1beta1.SignDoc.encode(signDoc).finish()
+
+  const sigHash = Buffer.from(signMessage).toString('hex')
+
+  const transactionJson = {
+      coinType: dcent.coinType.COSMOS,
+      sigHash: sigHash,
+      path: `m/44'/118'/0'/0/0`,
+      decimals, // 6
+      fee: BigNumber(String(fee)).toString(16).padStart(16, '0'),
+      symbol: 'ATOM',
+  }
+
+  var result
+  try {
+      result = await dcent.getCosmomsSignedTransaction(transactionJson);  
+  } catch (e) {
+      console.log(e)
+      result = e
+  }
+  ```
+- Returned response object:
+
+  ```json
+  {
+      "header": {
+          "version": "1.0",
+          "response_from": "cosmos",
+          "status": "success"
+      },
+      "body": {
+          "command": "transaction",
+          "parameter": {
+              "signed_tx": "0x31aa13b5e04cb6fc6381ea0520bf7f6727ebdb6e96cd7ca8625bb3e3dd36cf0e2cee4ece13aa9f7ddc09ee10c74aa00af954201829d8016317f10f5a921dcc0d"
+          }
+      }
+  }
+  ```
+
+
+**getTezosSignedTransaction()**
+
+- This fuction for :
+
+  - TEZOS(XTZ)
+  - TEZOS Token(XTZ_FA)
+- Parameters :
+
+  - unsignedTx: unsigned hexadecimal tx [Tezos Docs](https://tezostaquito.io/docs/quick_start)
+  - path: key path, wallet sign with that private key with a given key path (BIP32 ex) "m/44'/144'/0'").
+  - fee: fee, It is fee that wallet displays on the screen.
+  - symbol: symbol, It is a symbol that the wallet displays on the screen.
+  - decimals: hedera or hts token's decimals.
+- Requirements:
+
+  - `D'CENT Bridge` version 1.4.1 or higher is required.
+  - D'CENT Biometric Wallet version 2.23.1 or higher is required.
+    - testnet: version 2.24.1 or higher is required.
+- Useage:
+
+  ```js
+  import { TezosToolkit, Estimate } from '@taquito/taquito'
+  import * as tezosUtils from '@taquito/utils'
+  import { Tzip12Module, tzip12 } from '@taquito/tzip12'
+  import BigNumber from 'bignumber.js'
+
+  const Tezos = new TezosToolkit('https://YOUR_PREFERRED_RPC_URL');
+  const TezosContext = Tezos._context
+
+  // https://github.com/ecadlabs/taquito/blob/3640373e5acd160767234e10bab4fe18ac3cb586/packages/taquito/src/prepare/prepare-provider.ts#L868
+
+  const BlockHash = await TezosContext.readProvider.getBlockHash('head~2')
+  const BlockProto = await TezosContext.readProvider.getNextProtocol('head')
+  const counter = Number(await TezosContext.readProvider.getCounter(account.recvAddress, 'head'))
+
+  let ops = []
+  ops.push({
+      kind: 'transaction',
+      fee,
+      amount: convertToWei(amount, decimals).toString(),
+      gas_limit,
+      storage_limit,
+      destination: toAddr,
+      counter: (counter + 1 + index).toString(),
+      source: recvAddress,
+  })
+
+  const prepared = {
+      opOb: {
+        branch: BlockHash,
+        contents: ops,
+        protocol: BlockProto
+      },
+      counter: counter
+    }
+  const forgedBytes = await Tezos.estimate.forge(prepared)
+
+  const sigHash = '03' + forgedBytes.opbytes
+
+  const transactionJson = {
+      coinType: dcent.coinType.TEZOS,
+      sigHash: sigHash,
+      path: `m/44'/1729'/0'/0/0`,
+      decimals, // 6,
+      fee: BigNumber(convertToWei(fee, decimals)).toString(16).padStart(16, '0'),
+      symbol: 'XTZ',
+  }
+
+  var result
+  try {
+      result = await dcent.getTezosSignedTransaction(transactionJson);  
+  } catch (e) {
+      console.log(e)
+      result = e
+  }
+  ```
+- Returned response object:
+
+  ```json
+  {
+      "header": {
+          "version": "1.0",
+          "response_from": "cosmos",
+          "status": "success"
+      },
+      "body": {
+          "command": "transaction",
+          "parameter": {
+              "signed_tx": "0x31aa13b5e04cb6fc6381ea0520bf7f6727ebdb6e96cd7ca8625bb3e3dd36cf0e2cee4ece13aa9f7ddc09ee10c74aa00af954201829d8016317f10f5a921dcc0d"
+          }
+      }
+  }
+  ```
+
+
+**getVechainSignedTransaction()**
+
+- This fuction for :
+
+  - VECHAIN(VET)
+  - VECHAIN Token(VECHAIN_ERC20)
+- Parameters :
+
+  - unsignedTx: unsigned hexadecimal tx [Vechain Docs](https://thorify.vecha.in/#/)
+  - path: key path, wallet sign with that private key with a given key path (BIP32 ex) "m/44'/818'/0'/0/0").
+  - fee: fee, It is fee that wallet displays on the screen.
+  - symbol: symbol, It is a symbol that the wallet displays on the screen.
+  - decimals: hedera or hts token's decimals.
+- Requirements:
+
+  - `D'CENT Bridge` version 1.4.1 or higher is required.
+  - D'CENT Biometric Wallet version 2.23.2. or higher is required.
+- Useage:
+
+  ```js
+  import { thorify } from 'thorify'
+  import BigNumber from 'bignumber.js'
+  const Web3 = require("web3");		// Recommend using require() instead of import here
+  const web3 = thorify(new Web3(), 'http://localhost:8669')
+
+  //https://github.com/vechain/thorify/blob/72988996cead74f9c73e38860c2e055ca35a108e/src/extend/accounts.ts#L12
+
+  let clauses = {
+      from: recvAddress,
+      to: toAddr,
+      value: convertToWei(amount, decimals).toString(),
+      gas
+  }
+  let rawData = await web3.eth.accounts.signTransaction(clauses, VechainConfig.DummyKey)
+  rawData = rawData.rawTransaction.substr(0, rawData.rawTransaction.length - 134).slice(2)
+
+  let rawBuf = Buffer.from(rawData, 'hex')
+  let length  = rawData.length / 2
+  let adjustedRaw = ''  
+  let size = 0
+
+  if (rawBuf[0] < 0xc0) {
+    adjustedRaw = null
+  }
+
+  if (rawBuf[0] <= 0xf7) {
+    adjustedRaw = rawData.slice(2)
+  } else if (rawBuf[0] <= 0xff) {
+    switch (rawBuf[0] - 0xf7) {
+      case 1: 
+        size = 1
+        break
+      case 2:
+        size = 2
+        break
+      default:
+        adjustedRaw = null
+    }
+    adjustedRaw = rawData.slice(2 + (size * 2))
+  } else {
+    adjustedRaw = null  
+  }
+
+  length = adjustedRaw.length / 2
+  if (length < 56) {
+    adjustedRaw = (0xc0 + length).toString(16) + adjustedRaw
+  } else if (length < 256) {  
+    adjustedRaw = '0xf8' + (length).toString(16) + adjustedRaw
+  } else {
+    adjustedRaw = '0xf9' + (length).toString(16) + adjustedRaw
+  }
+
+  const transactionJson = {
+      coinType: dcent.coinType.VECHAIN,
+      sigHash: adjustedRaw.slice(2),
+      path: `m/44'/818'/0'/0/0`,
+      decimals, // 18
+      fee: BigNumber(convertToWei(fee, decimals)).toString(16).padStart(16, '0'), 
+      symbol: 'VET',
+  }
+
+  var result
+  try {
+      result = await dcent.getHavahSignedTransaction(transactionJson);  
+  } catch (e) {
+      console.log(e)
+      result = e
+  }
+  ```
+- Returned response object:
+
+  ```json
+  {
+      "header": {
+          "version": "1.0",
+          "response_from": "vechain",
+          "status": "success"
+      },
+      "body": {
+          "command": "transaction",
+          "parameter": {
+              "signed_tx": "0x31aa13b5e04cb6fc6381ea0520bf7f6727ebdb6e96cd7ca8625bb3e3dd36cf0e2cee4ece13aa9f7ddc09ee10c74aa00af954201829d8016317f10f5a921dcc0d"
+          }
+      }
+  }
+  ```
+
+
+**getNearSignedTransaction()**
+
+- This fuction for :
+
+  - NEAR(NEAR)
+- Parameters :
+
+  - unsignedTx: unsigned hexadecimal tx [Near Docs](https://docs.near.org/ko/tools/near-api-js/reference/modules/transaction#signtransaction)
+  - path: key path, wallet sign with that private key with a given key path (BIP32 ex) "m/44'/397'/0'").
+  - fee: fee, It is fee that wallet displays on the screen.
+  - symbol: symbol, It is a symbol that the wallet displays on the screen.
+  - decimals: hedera or hts token's decimals.
+- Requirements:
+
+  - `D'CENT Bridge` version 1.4.1 or higher is required.
+  - D'CENT Biometric Wallet version 2.24.0. or higher is required.
+- Useage:
+
+  ```js
+  const {connect, utils, providers} = require('near-api-js')
+  const nearTransaction = require('near-api-js/lib/transaction')
+  const nearSerialize = require('borsh')
+
+  const connectionConfig = {
+    networkId: "mainnet",
+    nodeUrl: "https://rpc.mainnet.near.org",
+  };
+  const nearConnection = await connect(connectionConfig);
+
+  let nonceOfAccessKey = await nearConnection.connection.provider.query({
+      request_type: 'view_access_key_list',
+      account_id: address,
+      finality: 'final'
+    })
+
+  const blockHash = await nearConnection.connection.provider.block({ finality: 'final' }).then(block => {
+      const encodedBlockHash = block.header.hash
+      return Buffer.from(bs58Lib.decode(encodedBlockHash))
+    })
+  const nonce = ++nonceOfAccessKey;
+  const publicKey = utils.PublicKey.from(bs58Lib.encode(Buffer.from(address, 'hex')))
+  var actions = [nearTransaction.transfer(Convert.convertNearToYoctoNear(amount))];
+
+  let transaction = new nearTransaction.SignedTransaction({
+      transaction: {
+        signerId: address,
+        publicKey: publicKey,
+        nonce: nonce,
+        receiverId: toAddr,
+        actions: actions,
+        blockHash: blockHash 
+      },
+      signature: new nearTransaction.Signature({ 
+        keyType: transaction.publicKey.keyType,
+      })
+    })
+  let unsignedTx = nearSerialize.serialize(nearTransaction.SCHEMA, transaction)
+
+  let nearFee = utils.parseNearAmount(BigNumber(fee).toString(10)).replace(',', '')
+
+  const transactionJson = {
+      coinType: dcent.coinType.NEAR,
+      sigHash: unsignedTx.toString('hex'),
+      path: `m/44'/397'/0'`,
+      decimals, // 24
+      fee: BigNumber(nearFee).toString(16).padStart(32, '0'), 
+      symbol: 'NEAR',
+      }
+
+  var result
+  try {
+      result = await dcent.getHavahSignedTransaction(transactionJson);  
+  } catch (e) {
+      console.log(e)
+      result = e
+  }
+  ```
+- Returned response object:
+
+  ```json
+  {
+      "header": {
+          "version": "1.0",
+          "response_from": "vechain",
+          "status": "success"
+      },
+      "body": {
+          "command": "transaction",
+          "parameter": {
+              "signed_tx": "0x31aa13b5e04cb6fc6381ea0520bf7f6727ebdb6e96cd7ca8625bb3e3dd36cf0e2cee4ece13aa9f7ddc09ee10c74aa00af954201829d8016317f10f5a921dcc0d"
+          }
+      }
+  }
+  ```
+
+
+
 **getHavahSignedTransaction()**
 
 - This fuction for :
 
   - HAVAH(HTS)
+  - HAVAH Token(HSP20)
 - Parameters :
 
   - unsignedTx: unsigned hexadecimal tx [Hevah(ICON) Docs](https://docs.icon.community/getting-started/how-to-run-a-local-network/decentralizing-a-local-network)
   - path: key path, wallet sign with that private key with a given key path (BIP32 ex) "m/44'/144'/0'").
+  - fee: fee, It is fee that wallet displays on the screen.
   - symbol: symbol, It is a symbol that the wallet displays on the screen.
   - decimals: hedera or hts token's decimals.
 - Requirements:
@@ -1327,6 +1812,7 @@ For broadcast the sign transaction, you must reconstruct transaction include `Tx
   const sigHash = rawData
 
   const transactionJson = {
+      coinType: dcent.coinType.HAVAH,
       sigHash: sigHash,
       path: `m/44'/858'/0'/0/0`,
       decimals: 18,
@@ -1359,5 +1845,6 @@ For broadcast the sign transaction, you must reconstruct transaction include `Tx
       }
   }
   ```
+
 
 Please Refer to the `index.html` to learn more about how to use the SDK APIs. There is an Web project using our Web SDK.

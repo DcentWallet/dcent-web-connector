@@ -1204,7 +1204,6 @@ dcent.getPolkadotSignedTransaction = async function ({
   symbol,
   optionParam,
 }) {
-  console.log('polcadot sign2')
   return await dcent.call({
     method: 'getPolkadotSignedTransaction',
     params: {
@@ -1305,6 +1304,7 @@ dcent.getNearSignedTransaction = async function ({
   symbol,
   optionParam,
 }) {
+  const nearFee = '000000ef' + '00000010' + fee
   return await dcent.call({
     method: 'getNearSignedTransaction',
     params: {
@@ -1315,7 +1315,7 @@ dcent.getNearSignedTransaction = async function ({
       fee,
       path,
       symbol,
-      optionParam,
+      optionParam: nearFee,
     }
   })
 }

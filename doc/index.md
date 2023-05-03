@@ -20,6 +20,7 @@
 | v0.11.0 | 2022. 03. 08 | add interface for Hedera transaction |
 | v0.11.2 | 2022. 04. 21 | modify getEthereumSignedTransaction interface for EIP-2718 |
 | v0.12.0 | 2023. 02. 15 | add Tron & Stellar transaction transaction functions |
+| v0.12.1 | 2023. 05. 03 | add support coin group for syncAccount |
 <br><br><br>
 
 ## 1. INTRODUCTION

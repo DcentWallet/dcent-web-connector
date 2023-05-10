@@ -153,6 +153,9 @@
         <button id="get_address_cosmos" type="button" class="btn btn-primary">Get Cosmos Mainnet
           Address("m/44'/118'/0'/0/0")</button>
         <br />
+        <button id="get_address_czone" type="button" class="btn btn-primary">Get Czone(osmo)
+          Address("m/44'/118'/0'/0/0")</button>
+        <br />
         <button id="get_address_tezos" type="button" class="btn btn-primary">Get Tezos Mainnet
           Address("m/44'/1729'/0'/0/0")</button>
         <br />
@@ -229,6 +232,7 @@
 
         $('#get_address_polkadot').click(get_address_polkadot_clicked);
         $('#get_address_cosmos').click(get_address_cosmos_clicked);
+        $('#get_address_czone').click(get_address_czone_clicked);
         $('#get_address_tezos').click(get_address_tezos_clicked);
         $('#get_address_vechain').click(get_address_vechain_clicked);
         $('#get_address_near').click(get_address_near_clicked);
@@ -445,7 +449,7 @@
 
         var result = await getAddress(dcent.coinType.POLKADOT, "m/44'/354'/0'/0/0")
 
-        set_command_name("get_address tron")        
+        set_command_name("get_address polkadot")        
         resp_editor.load(result)
       }
 
@@ -455,6 +459,14 @@
         var result = await getAddress(dcent.coinType.COSMOS, "m/44'/118'/0'/0/0")
 
         set_command_name("get_address cosmos")        
+        resp_editor.load(result)
+      }
+
+      async function get_address_czone_clicked() {
+        set_command_name("Processing...");
+        var result = await getAddress(dcent.coinType.CZONE, "m/44'/118'/0'/0/0", '6f736d6f'/*Buffer.from('osmo', 'utf8').toString('hex')*/)
+
+        set_command_name("get_address czone")        
         resp_editor.load(result)
       }
 
@@ -975,8 +987,9 @@
           sigHash: '4000000033666164666339326631633631643261303138626166333738383566376633363331313439616331356163303438613263303137316566316661356139633366003fadfc92f1c61d2a018baf37885f7f3631149ac15ac048a2c0171ef1fa5a9c3f41b15753844300004000000033666164666339326631633631643261303138626166333738383566376633363331313439616331356163303438613263303137316566316661356139633366d5e91d9515257370e4763c0da089ca544c1292bd188ad3fee466e17024e941f40100000003000000a1edccce1bc2d3000000000000',
           path: `m/44'/397'/0'`,
           decimals: 24,
-          fee: '000000000000002e9f711d342edd9a00',
+          fee: '00',
           symbol: 'NEAR',
+          optionParam: '000000ef' + '00000010' + '000000000000002e9f711d342edd9a00'
         }
         var result  = await getNearSignedTransaction(transactionJson);
       
@@ -1166,10 +1179,10 @@
         return result 
       }
 
-      async function getAddress(coinType, key) {
+      async function getAddress(coinType, key, optionParam = undefined) {
         var result 
         try { 
-          result = await dcent.getAddress(coinType, key)
+          result = await dcent.getAddress(coinType, key, optionParam)
         } catch (e) {
           result = e
         }

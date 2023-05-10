@@ -7,6 +7,14 @@ const puppeteer = require('puppeteer')
 /* */
 /* //////////////////////////////////////////////////////////////////////// */
 
+const TezosLib = require('@taquito/utils')
+
+function verify (xtzTx, signature, pubkey) {
+    const sig = TezosLib.b58cencode(signature.substr(2, signature.length - 2).toString(), TezosLib.prefix['edsig'])
+    const enPubkey = TezosLib.b58cencode(pubkey.substr(2, pubkey.length - 2).toString(), TezosLib.prefix['edpk'])
+    return TezosLib.verifySignature(xtzTx, enPubkey, sig)
+}
+
 describe('[dcent-web-connector] Bridge - init', () => {
     let bowser
     let page
@@ -41,22 +49,60 @@ describe('[dcent-web-connector] Bridge - init', () => {
         done()
     })
 
-    it('getHavahSignedTransaction() - success ', async (done) => {
-        // To address: hx58321d171c8394ea440687ebb4b582b075795fc5
-        // amount: 0.017088174982...
-        // From address: hx1e13...b2bd
+    it('getTezosSignedTransaction() - success ', async (done) => {
+        var rawData = '032923211dc76b05a644c88df7507c6f2fd5100cb6ed11c236a270d97dbd53937c6c0021298384724bff62370492fbb56f408bf6f77bcfb905b8d6f804f51219a0e7010000678a5cb8807767a9d900311890526ad77bffbb3900'
         var transactionJson = {
-            coinType: DcentWebConnector.coinType.HAVAH,
-            signHash: '6963785f73656e645472616e73616374696f6e2e66726f6d2e6878316531333433353935303532383335613064396137643064396533353839633433323831623262642e6e69642e30783130302e6e6f6e63652e3078312e737465704c696d69742e307831616462302e74696d657374616d702e3078356661316631343633666161302e746f2e6878353833323164313731633833393465613434303638376562623462353832623037353739356663352e76616c75652e307833636235396163376237353734652e76657273696f6e2e307833',
-            path: `m/44'/858'/0'/0/0`,
-            decimals: 18,
-            fee: '0004e28e2290f000', // 0.001375
-            symbol: 'HVH',
+            coinType: DcentWebConnector.coinType.TEZOS,
+            sigHash: rawData,
+            path: `m/44'/1729'/0'/0/0`,
+            decimals: 6,
+            fee: '00000000000002B9', // 0.000697
+            symbol: 'XTZ',
         }
         var response = await page.evaluate((transactionJson) => {
             // eslint-disable-next-line no-undef
-            return getHavahSignedTransaction(transactionJson)
+            return getTezosSignedTransaction(transactionJson)
         }, transactionJson)
+
+        var responseAddress = await page.evaluate(() => {
+            // eslint-disable-next-line no-undef
+            return getAddress(DcentWebConnector.coinType.TEZOS, `m/44'/1729'/0'/0/0`)
+        })
+
+        console.log('response ', response)
+        console.log('responseAddress ', responseAddress)
+        expect(response.header.status).toBe(Values.RESP_STATUS.SUCCESS)
+        expect(response.body.command).toBe(Values.CMD.TRANSACTION)
+        expect(response.body.parameter).toBeDefined()
+        // TODO: address, sign value format check !!
+        expect(response.body.parameter.signed_tx).toBeDefined()
+        // expect(response.body.parameter.pubkey).toBeDefined()
+        const res = verify(rawData, response.body.parameter.signed_tx, responseAddress.body.parameter.pubkey)
+        expect(res).toEqual(true)
+
+        done()
+    })
+
+    it('getTezosSignedTransaction() - XTZ-FA(QUIPU) transaction success ', async (done) => {
+
+        var rawData = '037b0bce53263cfa2b03f67f1aad1dc7db987ddf08c827f53bc653a66655e7dc5d6c0028fd10a42cf0adc6b49ed933a2d4aa22c4d540fbac08e9c98a059d286c000104fa3daf796c50d3feefd1d6065f7b5d1b6a77a100ffff087472616e736665720000004b020000004607070a00000016000028fd10a42cf0adc6b49ed933a2d4aa22c4d540fb020000002407070a0000001600003292d9c24f93f3c815f831d033581551010fda120707000000a401'
+        var transactionJson = {
+            coinType: DcentWebConnector.coinType.XTZ_FA,
+            sigHash: rawData,
+            path: `m/44'/1729'/0'/0'`,
+            decimals: 6,
+            fee: '000000000000042C', // 0.001068
+            symbol: 'QUIPU',
+        }
+        var response = await page.evaluate((transactionJson) => {
+            // eslint-disable-next-line no-undef
+            return getTezosSignedTransaction(transactionJson)
+        }, transactionJson)
+
+        var responseAddress = await page.evaluate(() => {
+            // eslint-disable-next-line no-undef
+            return getAddress(DcentWebConnector.coinType.TEZOS, `m/44'/1729'/0'/0'`)
+        })
 
         console.log('response ', response)
         expect(response.header.status).toBe(Values.RESP_STATUS.SUCCESS)
@@ -65,31 +111,9 @@ describe('[dcent-web-connector] Bridge - init', () => {
         // TODO: address, sign value format check !!
         expect(response.body.parameter.signed_tx).toBeDefined()
         // expect(response.body.parameter.pubkey).toBeDefined()
-        done()
-    })
+        const res = verify(rawData, response.body.parameter.signed_tx, responseAddress.body.parameter.pubkey)
+        expect(res).toEqual(true)
 
-    it('getHavahSignedTransaction() - HSP20 transaction success ', async (done) => {
-
-        var transactionJson = {
-            coinType: DcentWebConnector.coinType.HAVAH_HSP20,
-                sigHash: '6963785f73656e645472616e73616374696f6e2e646174612e7b6d6574686f642e7472616e736665722e706172616d732e7b5f746f2e6878656337623030666563623033393132333037306334633330383130636438636439666465623662392e5f76616c75652e30786465306236623361373634303030307d7d2e64617461547970652e63616c6c2e66726f6d2e6878653165396634626466623461316562363332323266366535653338396237386461663533323639612e6e69642e30783130312e6e6f6e63652e3078312e737465704c696d69742e30786534653163302e74696d657374616d702e3078356638663564303562623763382e746f2e6378333235313963366331316234373166663632396138656661333665633764303439393630616639382e76657273696f6e2e307833',
-                path: `m/44'/858'/0'/0/0`,
-                decimals: 18,
-                fee: '0354a6ba7a180000',
-                symbol: 'HVH',
-                optionParam: '01' // Token Transfer
-        }
-        var response = await page.evaluate((transactionJson) => {
-            // eslint-disable-next-line no-undef
-            return getHavahSignedTransaction(transactionJson)
-        }, transactionJson)
-
-        expect(response.header.status).toBe(Values.RESP_STATUS.SUCCESS)
-        expect(response.body.command).toBe(Values.CMD.TRANSACTION)
-        expect(response.body.parameter).toBeDefined()
-        // TODO: address, sign value format check !!
-        expect(response.body.parameter.signed_tx).toBeDefined()
-        // expect(response.body.parameter.pubkey).toBeDefined()
         done()
     })
 

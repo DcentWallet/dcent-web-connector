@@ -237,7 +237,7 @@ Set listener for device connection state. Before processing a functions request,
 // device connection listener ( callback )
 function connectionListener(state) {
     if (state === DcentWebConnector.state.CONNECTED) {
-        console.log('DCENT is Connected');    
+        console.log('DCENT is Connected');  
     } else if (state === DcentWebConnector.state.DISCONNECTED) {
         console.log('DCENT is Disconnected');  
     }
@@ -1354,18 +1354,16 @@ For broadcast the sign transaction, you must reconstruct transaction include `Tx
   }
   ```
 
-
-
-
 **getCosmosSignedTransaction()**
 
 - This fuction for :
 
   - COSMOS(ATOM)
+  - CZONE
 - Parameters :
 
   - unsignedTx: unsigned hexadecimal tx [Cosmos Docs](https://github.com/cosmostation/cosmosjs)
-  - path: key path, wallet sign with that private key with a given key path (BIP32 ex) "m/44'/144'/0'").
+  - path: key path, wallet sign with that private key with a given key path (BIP32 ex) "m/44'/118'/0'/0/0").
   - fee: fee, It is fee that wallet displays on the screen.
   - symbol: symbol, It is a symbol that the wallet displays on the screen.
   - decimals: hedera or hts token's decimals.
@@ -1448,12 +1446,12 @@ For broadcast the sign transaction, you must reconstruct transaction include `Tx
       "body": {
           "command": "transaction",
           "parameter": {
-              "signed_tx": "0x31aa13b5e04cb6fc6381ea0520bf7f6727ebdb6e96cd7ca8625bb3e3dd36cf0e2cee4ece13aa9f7ddc09ee10c74aa00af954201829d8016317f10f5a921dcc0d"
+              "signed_tx": "0x31aa13b5e04cb6fc6381ea0520bf7f6727ebdb6e96cd7ca8625bb3e3dd36cf0e2cee4ece13aa9f7ddc09ee10c74aa00af954201829d8016317f10f5a921dcc0d",
+              "pubkey": "0x0202903dcb31139bf92e096c3ec85fb9a94ab7dbf02d6234ded604d15ee9650480"
           }
       }
   }
   ```
-
 
 **getTezosSignedTransaction()**
 
@@ -1464,7 +1462,7 @@ For broadcast the sign transaction, you must reconstruct transaction include `Tx
 - Parameters :
 
   - unsignedTx: unsigned hexadecimal tx [Tezos Docs](https://tezostaquito.io/docs/quick_start)
-  - path: key path, wallet sign with that private key with a given key path (BIP32 ex) "m/44'/144'/0'").
+  - path: key path, wallet sign with that private key with a given key path (BIP32 ex) "m/44'/1729'/0'/0/0").
   - fee: fee, It is fee that wallet displays on the screen.
   - symbol: symbol, It is a symbol that the wallet displays on the screen.
   - decimals: hedera or hts token's decimals.
@@ -1537,7 +1535,7 @@ For broadcast the sign transaction, you must reconstruct transaction include `Tx
   {
       "header": {
           "version": "1.0",
-          "response_from": "cosmos",
+          "response_from": "tezos",
           "status": "success"
       },
       "body": {
@@ -1548,7 +1546,6 @@ For broadcast the sign transaction, you must reconstruct transaction include `Tx
       }
   }
   ```
-
 
 **getVechainSignedTransaction()**
 
@@ -1657,7 +1654,6 @@ For broadcast the sign transaction, you must reconstruct transaction include `Tx
   }
   ```
 
-
 **getNearSignedTransaction()**
 
 - This fuction for :
@@ -1741,7 +1737,7 @@ For broadcast the sign transaction, you must reconstruct transaction include `Tx
   {
       "header": {
           "version": "1.0",
-          "response_from": "vechain",
+          "response_from": "near",
           "status": "success"
       },
       "body": {
@@ -1753,8 +1749,6 @@ For broadcast the sign transaction, you must reconstruct transaction include `Tx
   }
   ```
 
-
-
 **getHavahSignedTransaction()**
 
 - This fuction for :
@@ -1764,7 +1758,7 @@ For broadcast the sign transaction, you must reconstruct transaction include `Tx
 - Parameters :
 
   - unsignedTx: unsigned hexadecimal tx [Hevah(ICON) Docs](https://docs.icon.community/getting-started/how-to-run-a-local-network/decentralizing-a-local-network)
-  - path: key path, wallet sign with that private key with a given key path (BIP32 ex) "m/44'/144'/0'").
+  - path: key path, wallet sign with that private key with a given key path (BIP32 ex) "m/44'/858'/0'/0/0").
   - fee: fee, It is fee that wallet displays on the screen.
   - symbol: symbol, It is a symbol that the wallet displays on the screen.
   - decimals: hedera or hts token's decimals.
@@ -1845,6 +1839,5 @@ For broadcast the sign transaction, you must reconstruct transaction include `Tx
       }
   }
   ```
-
 
 Please Refer to the `index.html` to learn more about how to use the SDK APIs. There is an Web project using our Web SDK.

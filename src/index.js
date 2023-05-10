@@ -586,6 +586,15 @@ function isBitcoinTxCoinType (coinType) {
   }
 }
 
+function isAvailaleOptionParamCoinType (coinType) {
+  switch (coinType.toLowerCase()) {
+    case dcentCoinType.CZONE.toLowerCase():
+      return true
+    default:
+      return false
+  }
+}
+
 /**
  * Set your label name to the D'CENT biometric Wallet. If you reboot your D'CENT, you can see the label name.
  * 
@@ -667,18 +676,27 @@ dcent.selectAddress = async function (addresses) {
  * @param {string} path string value of key path to get address
  * @returns {Object} address.
  */
-dcent.getAddress = async function (coinType, path) {
+dcent.getAddress = async function (coinType, path, optionParam) {
 
   if (!isAvaliableCoinType(coinType)) {
     throw dcent.dcentException('coin_type_error', 'not supported coin type')
   }
+  if (optionParam && !isAvailaleOptionParamCoinType(coinType)) {
+    throw dcent.dcentException('invalid parameter', 'optionParam is invalid parameter')
+  }
+
+  const params = {
+    coinType: coinType,
+    path: path,
+  }
+
+  if (optionParam) {
+    params.optionParam = optionParam
+  }
 
   return await dcent.call({
     method: 'getAddress',
-    params: {
-      coinType: coinType,
-      path: path
-    }
+    params
   })
 }
 
@@ -1204,18 +1222,19 @@ dcent.getPolkadotSignedTransaction = async function ({
   symbol,
   optionParam,
 }) {
+  const params = {
+    coinType,
+    decimals,
+    sig_hash: sigHash,
+    fee,
+    path,
+    symbol,
+  }
+  if (nonce) params.nonce = nonce
+  if (optionParam) params.optionParam = optionParam
   return await dcent.call({
-    method: 'getPolkadotSignedTransaction',
-    params: {
-      coinType,
-      nonce,
-      decimals,
-      sig_hash: sigHash,
-      fee,
-      path,
-      symbol,
-      optionParam,
-    }
+    method: 'getUnionSignedTransaction',
+    params
   })
 }
 
@@ -1229,18 +1248,19 @@ dcent.getCosmosSignedTransaction = async function ({
   symbol,
   optionParam,
 }) {
+  const params = {
+    coinType,
+    decimals,
+    sig_hash: sigHash,
+    fee,
+    path,
+    symbol,
+  }
+  if (nonce) params.nonce = nonce
+  if (optionParam) params.optionParam = optionParam
   return await dcent.call({
-    method: 'getCosmosSignedTransaction',
-    params: {
-      coinType,
-      nonce,
-      decimals,
-      sig_hash: sigHash,
-      fee,
-      path,
-      symbol,
-      optionParam,
-    }
+    method: 'getUnionSignedTransaction',
+    params
   })
 }
 
@@ -1254,18 +1274,20 @@ dcent.getTezosSignedTransaction = async function ({
   symbol,
   optionParam,
 }) {
+  const params = {
+    coinType,
+    decimals,
+    sig_hash: sigHash,
+    fee,
+    path,
+    symbol,
+  }
+  if (nonce) params.nonce = nonce
+  if (optionParam) params.optionParam = optionParam
+
   return await dcent.call({
-    method: 'getTezosSignedTransaction',
-    params: {
-      coinType,
-      nonce,
-      decimals,
-      sig_hash: sigHash,
-      fee,
-      path,
-      symbol,
-      optionParam,
-    }
+    method: 'getUnionSignedTransaction',
+    params
   })
 }
 
@@ -1279,18 +1301,19 @@ dcent.getVechainSignedTransaction = async function ({
   symbol,
   optionParam,
 }) {
+  const params = {
+    coinType,
+    decimals,
+    sig_hash: sigHash,
+    fee,
+    path,
+    symbol,
+  }
+  if (nonce) params.nonce = nonce
+  if (optionParam) params.optionParam = optionParam
   return await dcent.call({
-    method: 'getVechainSignedTransaction',
-    params: {
-      coinType,
-      nonce,
-      decimals,
-      sig_hash: sigHash,
-      fee,
-      path,
-      symbol,
-      optionParam,
-    }
+    method: 'getUnionSignedTransaction',
+    params
   })
 }
 
@@ -1304,19 +1327,21 @@ dcent.getNearSignedTransaction = async function ({
   symbol,
   optionParam,
 }) {
-  const nearFee = '000000ef' + '00000010' + fee
+  // const nearFee = '000000ef' + '00000010' + fee
+  const params = {
+    coinType,
+    decimals,
+    sig_hash: sigHash,
+    fee,
+    path,
+    symbol,
+  }
+  if (nonce) params.nonce = nonce
+  if (optionParam) params.optionParam = optionParam
+  
   return await dcent.call({
-    method: 'getNearSignedTransaction',
-    params: {
-      coinType,
-      nonce,
-      decimals,
-      sig_hash: sigHash,
-      fee,
-      path,
-      symbol,
-      optionParam: nearFee,
-    }
+    method: 'getUnionSignedTransaction',
+    params
   })
 }
 
@@ -1330,18 +1355,20 @@ dcent.getHavahSignedTransaction = async function ({
   symbol,
   optionParam,
 }) {
+  const params = {
+    coinType,
+    decimals,
+    sig_hash: sigHash,
+    fee,
+    path,
+    symbol,
+  }
+  if (nonce) params.nonce = nonce
+  if (optionParam) params.optionParam = optionParam
+
   return await dcent.call({
-    method: 'getHavahSignedTransaction',
-    params: {
-      coinType,
-      nonce,
-      decimals,
-      sig_hash: sigHash,
-      fee,
-      path,
-      symbol,
-      optionParam,
-    }
+    method: 'getUnionSignedTransaction',
+    params
   })
 }
 

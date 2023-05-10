@@ -21,8 +21,6 @@ module.exports = {
     GET_STELLAR_SIGN_TX: 'getStellarSignedTransaction',
     GET_TRON_SIGN_TX: 'getTronSignedTransaction',
     GET_TRC_TOKEN_SIGN_TX: 'getTrcTokenSignedTransaction',
-    GET_POLKADOT_SIGN_TX: 'getPolkadotSignedTransaction',
-    GET_COSMOS_SIGN_TX: 'getCosmosSignedTransaction',
     GET_TEZOS_SIGN_TX: 'getTezosSignedTransaction',
     GET_VECHAIN_SIGN_TX: 'getVechainSignedTransaction',
     GET_NEAR_SIGN_TX: 'getNearSignedTransaction',

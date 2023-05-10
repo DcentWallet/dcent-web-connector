@@ -76,12 +76,6 @@ const requestToBridge = (payload) => {
     case Method.GET_HEDERA_SIGN_TX:
         response = defaultDeviceResponse.getHederaTransaction
         break
-    case Method.GET_POLKADOT_SIGN_TX:
-        response = defaultDeviceResponse.getPolkadotSignedTransaction
-        break
-    case Method.GET_COSMOS_SIGN_TX:
-        response = defaultDeviceResponse.getCosmosSignedTransaction
-        break
     case Method.GET_TEZOS_SIGN_TX:
         response = defaultDeviceResponse.getTezosSignedTransaction
         break

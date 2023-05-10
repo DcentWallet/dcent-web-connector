@@ -1255,17 +1255,18 @@ dcent.getNearSignedTransaction = async function ({
   symbol,
   optionParam,
 }) {
-  // const nearFee = '000000ef' + '00000010' + fee
+  const nearFee = '000000ef' + '00000010' + fee
   const params = {
     coinType,
     decimals,
     sig_hash: sigHash,
-    fee,
+    fee: '00',
     path,
     symbol,
+    optionParam: nearFee
   }
   if (nonce) params.nonce = nonce
-  if (optionParam) params.optionParam = optionParam
+  if (optionParam) params.optionParam += optionParam
   
   return await dcent.call({
     method: 'getUnionSignedTransaction',

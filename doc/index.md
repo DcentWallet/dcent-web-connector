@@ -909,7 +909,7 @@ Klaytn provides 'caver-js' library. You can make raw transaction for broadcastin
           DcentWebConnector.bitcoinTxType.p2pkh, // transaction type or this field can indicate output as a “change”
           '10000', // amount of coin to spend. Satoshi unit.
           ['1traqiFvydVk2hWdCj3WGRJbe4CGtfyHA']) // Base58Check encoded address of the receiver.
-      result = await DcentWebConnecto.getBitcoinSignedTransaction(transaction)
+      result = await DcentWebConnector.getBitcoinSignedTransaction(transaction)
   ```
 - Returned response object:
 
@@ -1246,7 +1246,7 @@ For broadcast the sign transaction, you must reconstruct transaction include `Tx
 
   var result
   try {
-      result = await DcentWebConnecto.getTronSignedTransaction(transactionJson);  
+      result = await DcentWebConnector.getTronSignedTransaction(transactionJson);  
   } catch (e) {
       console.log(e)
       result = e

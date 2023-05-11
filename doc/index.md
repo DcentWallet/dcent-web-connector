@@ -3,7 +3,6 @@
 
 # DCENT Web SDK Integration Guide
 
-`<br><br>`
 
 ### VERSION HISTORY
 
@@ -27,7 +26,7 @@
 
 ## 1. INTRODUCTION
 
-D'CENT Web SDK allows your web application to quickly create an wallet application using D'CENT dongle.`<br>`
+D'CENT Web SDK allows your web application to quickly create an wallet application using D'CENT dongle.
 This guide explains how to install DCENT Web SDK and use the SDK for your web wallet application.
 
 ## 2. Architecture
@@ -66,9 +65,9 @@ Developer can access api through `window.DcentWebConnector` object or `DcentWebC
 
 ### Functions
 
-All API functions return a `Promise`. `<br>`
-When function processing is completed, it is resolved. If an error occurs, it is rejected.`<br>`
-In either case, respond with a JSON object.`<br>`
+All API functions return a `Promise`.
+When function processing is completed, it is resolved. If an error occurs, it is rejected.
+In either case, respond with a JSON object.
 
 ### Returned JSON object type
 
@@ -190,7 +189,7 @@ You can set the timeout time by calling `setTimeOutMs ()` as shown below.
 
 ```js
   try {
-    await dcent.setTimeOutMs(60000) // 60 sec, The default value is 60 seconds.
+    await DcentWebConnector.setTimeOutMs(60000) // 60 sec, The default value is 60 seconds.
   } catch (e) {
     console.log(e)  
   }
@@ -551,7 +550,7 @@ try{
             path: `m'/44'/8217'/0'/0/0`
         }
     ]
-    result = await dcent.selectAddress(addresses)
+    result = await DcentWebConnector.selectAddress(addresses)
 }catch(e){
     result = e
 }
@@ -590,7 +589,7 @@ The input message is prefixed with 'Ethereum sign message' and then hashed and s
 var message = 'This is a message!'
 var result
 try {
-    result = await dcent.getEthereumSignedMessage(message, "m/44'/60'/0'/0/0");
+    result = await DcentWebConnector.getEthereumSignedMessage(message, "m/44'/60'/0'/0/0");
 } catch (e) {
     console.log(e)
     result = e
@@ -636,7 +635,7 @@ var message = {
 var key =  "m/44'/60'/0'/0/0"
 var result
 try {
-    result = await dcent.getSignedData(key, message);
+    result = await DcentWebConnector.getSignedData(key, message);
 } catch (e) {
     console.log(e)
     result = e
@@ -672,7 +671,7 @@ var message = 'This is a message!'
 var key =  "m/44'/60'/0'/0/0"
 var result
 try {
-    result = await dcent.getSignedMessage( DcentWebConnector.coinType.ETHEREUM, key, message);
+    result = await DcentWebConnector.getSignedMessage( DcentWebConnector.coinType.ETHEREUM, key, message);
 } catch (e) {
     console.log(e)
     result = e
@@ -707,7 +706,7 @@ var data = '0x10111213141516171819'
 var key =  "m/44'/60'/0'/0/0"
 var result
 try {
-    result = await dcent.getSignedData( key, data);
+    result = await DcentWebConnector.getSignedData( key, data);
 } catch (e) {
     console.log(e)
     result = e
@@ -893,24 +892,24 @@ Klaytn provides 'caver-js' library. You can make raw transaction for broadcastin
 
   ```js
   // generate Bitcoin Transaction object
-  let transaction = dcent.getBitcoinTransactionObject(dcent.coinType.BITCOIN)
+  let transaction = DcentWebConnector.getBitcoinTransactionObject(DcentWebConnector.coinType.BITCOIN)
   // Set input parameter(previous tx) in Bitcoin Transaction object
-  transaction = dcent.addBitcoinTransactionInput(transaction,
+  transaction = DcentWebConnector.addBitcoinTransactionInput(transaction,
       '0100000001e297417c46........293fce63b88ac00000000', //  full of previous tx data
       1, // index of previous tx output to be sent
-      dcent.bitcoinTxType.p2pkh, // bitcoin tx type for this UTXO
+      DcentWebConnector.bitcoinTxType.p2pkh, // bitcoin tx type for this UTXO
       "m/44'/0'/0'/1/0") // signing key path
-  transaction = dcent.addBitcoinTransactionInput(transaction,
+  transaction = DcentWebConnector.addBitcoinTransactionInput(transaction,
       '0100000001e297417c46.........93fce63b88ac00000000',
       0,
-      dcent.bitcoinTxType.p2pkh,
+      DcentWebConnector.bitcoinTxType.p2pkh,
       "m/44'/0'/0'/0/7")
   // Set output parameter(spending information) in Bitcoin Transaction object
-  transaction = dcent.addBitcoinTransactionOutput(transaction,
-          dcent.bitcoinTxType.p2pkh, // transaction type or this field can indicate output as a “change”
+  transaction = DcentWebConnector.addBitcoinTransactionOutput(transaction,
+          DcentWebConnector.bitcoinTxType.p2pkh, // transaction type or this field can indicate output as a “change”
           '10000', // amount of coin to spend. Satoshi unit.
           ['1traqiFvydVk2hWdCj3WGRJbe4CGtfyHA']) // Base58Check encoded address of the receiver.
-      result = await dcent.getBitcoinSignedTransaction(transaction)
+      result = await DcentWebConnecto.getBitcoinSignedTransaction(transaction)
   ```
 - Returned response object:
 
@@ -947,7 +946,7 @@ Klaytn provides 'caver-js' library. You can make raw transaction for broadcastin
 
   ```js
   const transactionJson = {
-      "TransactionType": "AccountSet", // or use defined value `dcent.xrpTxType.AccountSet`
+      "TransactionType": "AccountSet", // or use defined value `DcentWebConnector.xrpTxType.AccountSet`
       "Account": "rfQrsnD8ywrgSX457qshpBTDru7EDnM2Lb",
       "Fee": "10",
       "Sequence": 34,
@@ -957,7 +956,7 @@ Klaytn provides 'caver-js' library. You can make raw transaction for broadcastin
 
   var result
   try {
-      result = await dcent.getXrpSignedTransaction(transactionJson, "m/44'/144'/0'/0/0");  
+      result = await DcentWebConnector.getXrpSignedTransaction(transactionJson, "m/44'/144'/0'/0/0");  
   } catch (e) {
       console.log(e)
       result = e
@@ -1009,7 +1008,7 @@ Klaytn provides 'caver-js' library. You can make raw transaction for broadcastin
   var signer = {}
   try {
       // Keypath is SignerEntry's key path
-      result = await dcent.getXrpSignedTransaction(transactionJson, "m/44'/144'/1'/0/0");
+      result = await DcentWebConnector.getXrpSignedTransaction(transactionJson, "m/44'/144'/1'/0/0");
       signer = {
           "Account": "rBV2LGGm5XAc5KbL7hBaPnLnUJ5aTQzVj9", // addrs.encodeAccountID(Buffer.from(result.accountId,'hex'))
           "SigningPubKey": result.pubkey,
@@ -1079,7 +1078,7 @@ For broadcast the sign transaction, you must reconstruct transaction include `Tx
 
   var result
   try {
-      result = await dcent.getHederaSignedTransaction(transactionJson);  
+      result = await DcentWebConnector.getHederaSignedTransaction(transactionJson);  
   } catch (e) {
       console.log(e)
       result = e
@@ -1150,7 +1149,7 @@ For broadcast the sign transaction, you must reconstruct transaction include `Tx
 
   var result
   try {
-      result = await dcent.getStellarSignedTransaction(transactionJson);  
+      result = await DcentWebConnector.getStellarSignedTransaction(transactionJson);  
   } catch (e) {
       console.log(e)
       result = e
@@ -1247,7 +1246,7 @@ For broadcast the sign transaction, you must reconstruct transaction include `Tx
 
   var result
   try {
-      result = await dcent.getTronSignedTransaction(transactionJson);  
+      result = await DcentWebConnecto.getTronSignedTransaction(transactionJson);  
   } catch (e) {
       console.log(e)
       result = e
@@ -1313,7 +1312,7 @@ For broadcast the sign transaction, you must reconstruct transaction include `Tx
   ops.push({
       kind: 'transaction',
       fee,
-      amount: dcent.unitConverter(amount, decimals).num.toString(),
+      amount: DcentWebConnector.unitConverter(amount, decimals).num.toString(),
       gas_limit,
       storage_limit,
       destination: toAddr,
@@ -1334,7 +1333,7 @@ For broadcast the sign transaction, you must reconstruct transaction include `Tx
   const sigHash = '03' + forgedBytes.opbytes
 
   const transactionJson = {
-      coinType: dcent.coinType.TEZOS,
+      coinType: DcentWebConnector.coinType.TEZOS,
       sigHash: sigHash,
       path: `m/44'/1729'/0'/0/0`,
       decimals, // 6,
@@ -1344,7 +1343,7 @@ For broadcast the sign transaction, you must reconstruct transaction include `Tx
 
   var result
   try {
-      result = await dcent.getTezosSignedTransaction(transactionJson);  
+      result = await DcentWebConnector.getTezosSignedTransaction(transactionJson);  
   } catch (e) {
       console.log(e)
       result = e
@@ -1398,7 +1397,7 @@ For broadcast the sign transaction, you must reconstruct transaction include `Tx
   let clauses = {
       from: recvAddress,
       to: toAddr,
-      value: dcent.unitConverter(amount, decimals).num.toString(),
+      value: DcentWebConnector.unitConverter(amount, decimals).num.toString(),
       gas
   }
   let rawData = await web3.eth.accounts.signTransaction(clauses, VechainConfig.DummyKey)
@@ -1441,7 +1440,7 @@ For broadcast the sign transaction, you must reconstruct transaction include `Tx
   }
 
   const transactionJson = {
-      coinType: dcent.coinType.VECHAIN,
+      coinType: DcentWebConnector.coinType.VECHAIN,
       sigHash: adjustedRaw.slice(2),
       path: `m/44'/818'/0'/0/0`,
       decimals, // 18
@@ -1451,7 +1450,7 @@ For broadcast the sign transaction, you must reconstruct transaction include `Tx
 
   var result
   try {
-      result = await dcent.getVechainSignedTransaction(transactionJson);  
+      result = await DcentWebConnector.getVechainSignedTransaction(transactionJson);  
   } catch (e) {
       console.log(e)
       result = e
@@ -1534,7 +1533,7 @@ For broadcast the sign transaction, you must reconstruct transaction include `Tx
   let unsignedTx = nearSerialize.serialize(nearTransaction.SCHEMA, transaction)
 
   const transactionJson = {
-      coinType: dcent.coinType.NEAR,
+      coinType: DcentWebConnector.coinType.NEAR,
       sigHash: unsignedTx.toString('hex'),
       path: `m/44'/397'/0'`,
       decimals, // 24
@@ -1544,7 +1543,7 @@ For broadcast the sign transaction, you must reconstruct transaction include `Tx
 
   var result
   try {
-      result = await dcent.getNearSignedTransaction(transactionJson);  
+      result = await DcentWebConnector.getNearSignedTransaction(transactionJson);  
   } catch (e) {
       console.log(e)
       result = e
@@ -1625,7 +1624,7 @@ For broadcast the sign transaction, you must reconstruct transaction include `Tx
   const sigHash = rawData
 
   const transactionJson = {
-      coinType: dcent.coinType.HAVAH,
+      coinType: DcentWebConnector.coinType.HAVAH,
       sigHash: sigHash,
       path: `m/44'/858'/0'/0/0`,
       decimals: IconAmount.Unit.ICX,
@@ -1635,7 +1634,7 @@ For broadcast the sign transaction, you must reconstruct transaction include `Tx
 
   var result
   try {
-      result = await dcent.getHavahSignedTransaction(transactionJson);  
+      result = await DcentWebConnector.getHavahSignedTransaction(transactionJson);  
   } catch (e) {
       console.log(e)
       result = e

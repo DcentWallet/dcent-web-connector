@@ -488,6 +488,12 @@ function isAvaliableCoinGroup (coinGroup) {
     case dcentCoinGroup.XDC_APOTHEM.toLowerCase():
     case dcentCoinGroup.XRC20.toLowerCase():
     case dcentCoinGroup.XRC20_APOTHEM.toLowerCase():
+    case dcentCoinGroup.HEDERA.toLowerCase():
+    case dcentCoinGroup.HEDERA_HTS.toLowerCase():
+    case dcentCoinGroup.HEDERA_TESTNET.toLowerCase():
+    case dcentCoinGroup.HTS_TESTNET.toLowerCase():
+    case dcentCoinGroup.STELLAR.toLowerCase():
+    case dcentCoinGroup.TRON.toLowerCase():
       return true
     default:
       return false

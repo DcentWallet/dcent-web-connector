@@ -21,8 +21,8 @@
 | v0.11.2 | 2022. 04. 21 | modify getEthereumSignedTransaction interface for EIP-2718 |
 | v0.12.0 | 2023. 02. 15 | add Tron & Stellar transaction transaction functions |
 | v0.12.1 | 2023. 05. 03 | add support coin group for syncAccount |
-<br><br><br>
 
+<br><br><br>
 ## 1. INTRODUCTION
 D'CENT Web SDK allows your web application to quickly create an wallet application using D'CENT dongle.<br>
 This guide explains how to install DCENT Web SDK and use the SDK for your web wallet application.

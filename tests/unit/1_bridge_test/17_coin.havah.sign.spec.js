@@ -42,7 +42,7 @@ function verify (message, signature, addr) {
     const vals = AccountLib.decodeSignature(signature)
     const vrs = { v: parseInt(vals[0].slice(2), 16), r: vals[1].slice(2), s: vals[2].slice(2) }
     const hash = message.length === (78 * 2) ? message.slice(42 * 2, (42 * 2) + 64) : sha3.sha3_256(Buffer.from(message, 'hex'))
-    const recoverPubkey = ec.recoverPubKey(new Buffer(hash, 'hex'), vrs, vrs.v < 2 ? vrs.v : 1 - vrs.v % 2, 'hex') 
+    const recoverPubkey = ec.recoverPubKey(Buffer.from(hash, 'hex'), vrs, vrs.v < 2 ? vrs.v : 1 - vrs.v % 2, 'hex') 
     const recoverAddress = getAddress(recoverPubkey.encode('hex', false).slice(2))
     return addr.toLowerCase() === recoverAddress.toLowerCase()
 }
@@ -91,7 +91,7 @@ describe('[dcent-web-connector] Bridge - init', () => {
             sigHash: rawData,
             path: `m/44'/858'/0'/0/0`,
             decimals: 18,
-            fee: '0004e28e2290f000', // 0.001375 
+            fee: '0.001375', // '0004e28e2290f000', // 
             symbol: 'HVH',
         }
         var response = await page.evaluate((transactionJson) => {
@@ -124,7 +124,7 @@ describe('[dcent-web-connector] Bridge - init', () => {
             sigHash: rawData,
             path: `m/44'/858'/0'/0/0`,
             decimals: 18,
-            fee: '0354a6ba7a180000', // 0.24
+            fee: '0.24', // '0354a6ba7a180000', // 
             symbol: 'HVH',
             optionParam: '01' // Token Transfer
         }
@@ -158,7 +158,7 @@ describe('[dcent-web-connector] Bridge - init', () => {
             sigHash: rawData,
             path: `m/44'/858'/0'/0/0`,
             decimals: 18,
-            fee: '0354a6ba7a180000', // 0.24 
+            fee: '0.24', // '0354a6ba7a180000', // 
             symbol: 'ST',
             optionParam: '04' // Token Deploy
         }

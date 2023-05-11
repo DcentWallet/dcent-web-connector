@@ -61,9 +61,8 @@ describe('[dcent-web-connector] Bridge - init', () => {
             sigHash: rawData,
             path: `m/44'/397'/0'`,
             decimals: 24,
-            fee: '00',
+            fee: '0.000860039223625', // '000000000000002e9f711d342edd9a00', // 
             symbol: 'NEAR',
-            optionParam: '000000ef' + '00000010' + '000000000000002e9f711d342edd9a00'
         }
         var response = await page.evaluate((transactionJson) => {
             // eslint-disable-next-line no-undef

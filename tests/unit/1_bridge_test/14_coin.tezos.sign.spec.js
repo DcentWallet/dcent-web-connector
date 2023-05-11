@@ -6,14 +6,13 @@ const puppeteer = require('puppeteer')
 /* //////////////////////////////////////////////////////////////////////// */
 /* */
 /* //////////////////////////////////////////////////////////////////////// */
-const { secp256k1, blake2b256, address } = require('thor-devkit')
 
-function verify (message, signature, addr) {
-    const sig = (signature.substr(2, signature.length - 2)).toString()
-    const recoverPubkey = secp256k1.recover(blake2b256(Buffer.from(message, 'hex')), Buffer.from(sig, 'hex'))
-    const recoverAddress = address.fromPublicKey(recoverPubkey)
-    
-    return addr.toLowerCase() === recoverAddress.toLowerCase()
+const TezosLib = require('@taquito/utils')
+
+function verify (xtzTx, signature, pubkey) {
+    const sig = TezosLib.b58cencode(signature.substr(2, signature.length - 2).toString(), TezosLib.prefix['edsig'])
+    const enPubkey = TezosLib.b58cencode(pubkey.substr(2, pubkey.length - 2).toString(), TezosLib.prefix['edpk'])
+    return TezosLib.verifySignature(xtzTx, enPubkey, sig)
 }
 
 describe('[dcent-web-connector] Bridge - init', () => {
@@ -50,24 +49,24 @@ describe('[dcent-web-connector] Bridge - init', () => {
         done()
     })
 
-    it('getVechainSignedTransaction() - success ', async (done) => {
-        const rawData = 'f83b2787c6143a04c08fe18202d0e1e094a57105e43efa47e787d84bb6dfedb19bdcaa8a908908e3f50b173c100001808082520880860152671166bdc0'
+    it('getTezosSignedTransaction() - success ', async (done) => {
+        var rawData = '032923211dc76b05a644c88df7507c6f2fd5100cb6ed11c236a270d97dbd53937c6c0021298384724bff62370492fbb56f408bf6f77bcfb905b8d6f804f51219a0e7010000678a5cb8807767a9d900311890526ad77bffbb3900'
         var transactionJson = {
-            coinType: DcentWebConnector.coinType.VECHAIN,
+            coinType: DcentWebConnector.coinType.TEZOS,
             sigHash: rawData,
-            path: `m/44'/818'/0'/0/0`,
-            decimals: 18,
-            fee: '02ea11e32ad50000', 
-            symbol: 'VET',
+            path: `m/44'/1729'/0'/0/0`,
+            decimals: 6,
+            fee: '0.000697', // '00000000000002B9', // 0.000697
+            symbol: 'XTZ',
         }
         var response = await page.evaluate((transactionJson) => {
             // eslint-disable-next-line no-undef
-            return getVechainSignedTransaction(transactionJson)
+            return getTezosSignedTransaction(transactionJson)
         }, transactionJson)
 
         var responseAddress = await page.evaluate(() => {
             // eslint-disable-next-line no-undef
-            return getAddress(DcentWebConnector.coinType.VECHAIN, `m/44'/818'/0'/0/0`)
+            return getAddress(DcentWebConnector.coinType.TEZOS, `m/44'/1729'/0'/0/0`)
         })
 
         console.log('response ', response)
@@ -78,31 +77,32 @@ describe('[dcent-web-connector] Bridge - init', () => {
         // TODO: address, sign value format check !!
         expect(response.body.parameter.signed_tx).toBeDefined()
         // expect(response.body.parameter.pubkey).toBeDefined()
-        expect(responseAddress.body.parameter).toBeDefined()
-        const res = verify(rawData, response.body.parameter.signed_tx, responseAddress.body.parameter.address)
+        const res = verify(rawData, response.body.parameter.signed_tx, responseAddress.body.parameter.pubkey)
         expect(res).toEqual(true)
 
         done()
     })
 
-    it('getVechainSignedTransaction() - vechain erc20 transaction success ', async (done) => {
-        const rawData = 'f8762787c4c9aecf5782e910f85ef85c940000000000000000000000000000456e6572677980b844a9059cbb0000000000000000000000001f6a5679de62414e4e6f2d7ea7a68d577687480a0000000000000000000000000000000000000000000000000de0b6b3a764000080825a988085a87ddd6b7bc0'
+    it('getTezosSignedTransaction() - XTZ-FA(QUIPU) transaction success ', async (done) => {
+
+        var rawData = '037b0bce53263cfa2b03f67f1aad1dc7db987ddf08c827f53bc653a66655e7dc5d6c0028fd10a42cf0adc6b49ed933a2d4aa22c4d540fbac08e9c98a059d286c000104fa3daf796c50d3feefd1d6065f7b5d1b6a77a100ffff087472616e736665720000004b020000004607070a00000016000028fd10a42cf0adc6b49ed933a2d4aa22c4d540fb020000002407070a0000001600003292d9c24f93f3c815f831d033581551010fda120707000000a401'
         var transactionJson = {
-            coinType: DcentWebConnector.coinType.VECHAIN_ERC20,
+            coinType: DcentWebConnector.coinType.XTZ_FA,
             sigHash: rawData,
-            path: `m/44'/818'/0'/0/0`,
-            decimals: 18,
-            fee: '0354a6ba7a180000',
-            symbol: 'VTHO',
+            path: `m/44'/1729'/0'/0'`,
+            decimals: 6,
+            fee: '0.001068', // '000000000000042C', //  0.001068
+            symbol: 'QUIPU',
         }
+
         var response = await page.evaluate((transactionJson) => {
             // eslint-disable-next-line no-undef
-            return getVechainSignedTransaction(transactionJson)
+            return getTezosSignedTransaction(transactionJson)
         }, transactionJson)
 
         var responseAddress = await page.evaluate(() => {
             // eslint-disable-next-line no-undef
-            return getAddress(DcentWebConnector.coinType.VECHAIN, `m/44'/818'/0'/0/0`)
+            return getAddress(DcentWebConnector.coinType.TEZOS, `m/44'/1729'/0'/0'`)
         })
 
         console.log('response ', response)
@@ -111,13 +111,12 @@ describe('[dcent-web-connector] Bridge - init', () => {
         expect(response.body.parameter).toBeDefined()
         // TODO: address, sign value format check !!
         expect(response.body.parameter.signed_tx).toBeDefined()
-
-        const res = verify(rawData, response.body.parameter.signed_tx, responseAddress.body.parameter.address)
+        // expect(response.body.parameter.pubkey).toBeDefined()
+        const res = verify(rawData, response.body.parameter.signed_tx, responseAddress.body.parameter.pubkey)
         expect(res).toEqual(true)
 
         done()
     })
-
 
 })
 

@@ -23,7 +23,7 @@
 | v0.12.0            | 2023. 02. 15 | add Tron & Stellar transaction transaction functions       |
 | v0.12.1            | 2023. 05. 03 | add support coin group for syncAccount                     |
 | v0.13.0            | 2023. 05.    | add Tezos & Vechain & Near & Havah transaction function    |
-| `<br><br>``<br>` |              |                                                            |
+| <br /><br /><br /> |              |                                                            |
 
 ## 1. INTRODUCTION
 
@@ -1289,7 +1289,7 @@ For broadcast the sign transaction, you must reconstruct transaction include `Tx
   - decimals: tezos or tezos token's decimals.
 - Requirements:
 
-  - `D'CENT Bridge` version 1.4.1 or higher is required.
+  - `D'CENT Bridge` version 1.5.0 or higher is required.
   - D'CENT Biometric Wallet version 2.23.1 or higher is required.
     - testnet: version 2.24.1 or higher is required.
 - Useage:
@@ -1383,7 +1383,7 @@ For broadcast the sign transaction, you must reconstruct transaction include `Tx
   - decimals: vechain or vechain token's decimals.
 - Requirements:
 
-  - `D'CENT Bridge` version 1.4.1 or higher is required.
+  - `D'CENT Bridge` version 1.5.0 or higher is required.
   - D'CENT Biometric Wallet version 2.23.2. or higher is required.
 - Useage:
 
@@ -1489,7 +1489,7 @@ For broadcast the sign transaction, you must reconstruct transaction include `Tx
   - decimals: near's decimals.
 - Requirements:
 
-  - `D'CENT Bridge` version 1.4.1 or higher is required.
+  - `D'CENT Bridge` version 1.5.0 or higher is required.
   - D'CENT Biometric Wallet version 2.24.0. or higher is required.
 - Useage:
 
@@ -1583,7 +1583,7 @@ For broadcast the sign transaction, you must reconstruct transaction include `Tx
   - decimals: havah or havah token's decimals.
 - Requirements:
 
-  - `D'CENT Bridge` version 1.4.1 or higher is required.
+  - `D'CENT Bridge` version 1.5.0 or higher is required.
   - D'CENT Biometric Wallet version 2.26.0. or higher is required.
 - Useage:
 

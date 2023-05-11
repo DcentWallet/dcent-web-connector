@@ -85,6 +85,7 @@
     "webpack-dev-server": "^3.11.0"
   },
   "dependencies": {
+    "bignumber.js": "^9.1.1",
     "events": "^3.0.0"
   },
   "license": "MIT"

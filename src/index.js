@@ -19,8 +19,10 @@ const { config: dcentConfig } = require('./conf/dcent-web-conf')
 const LOG = require('./utils/log')
 const XDCPrefixConverter = require('./utils/xdc-prefix-converter')
 const Event = require('events')
+const UnitConverter = require('./utils/unit-converter')
 
 const dcent = {}
+
 // TimeOut Default Time 
 var dcentCallTimeOutMs = dcentConfig.timeOutMs
 
@@ -1206,7 +1208,7 @@ dcent.getTezosSignedTransaction = async function ({
     coinType,
     decimals,
     sig_hash: sigHash,
-    fee,
+    fee: UnitConverter(fee, decimals).bignum.toString(16).padStart(16, '0'),
     path,
     symbol,
   }
@@ -1233,7 +1235,7 @@ dcent.getVechainSignedTransaction = async function ({
     coinType,
     decimals,
     sig_hash: sigHash,
-    fee,
+    fee: UnitConverter(fee, decimals).bignum.toString(16).padStart(16, '0'),
     path,
     symbol,
   }
@@ -1255,7 +1257,7 @@ dcent.getNearSignedTransaction = async function ({
   symbol,
   optionParam,
 }) {
-  const nearFee = '000000ef' + '00000010' + fee
+  const nearFee = '000000ef' + '00000010' + UnitConverter(fee, decimals).bignum.toString(16).padStart(32, '0')
   const params = {
     coinType,
     decimals,
@@ -1288,7 +1290,7 @@ dcent.getHavahSignedTransaction = async function ({
     coinType,
     decimals,
     sig_hash: sigHash,
-    fee,
+    fee: UnitConverter(fee, decimals).bignum.toString(16).padStart(16, '0'),
     path,
     symbol,
   }
@@ -1308,6 +1310,8 @@ dcent.coinName = dcentCoinName
 dcent.bitcoinTxType = dcentBitcoinTxType
 dcent.klaytnTxType = dcentKlaytnTxType
 dcent.xrpTxType = dcentXrpTxType
+
+dcent.unitConverter = UnitConverter
 // # 
 // Now, Bitcoin Transaction not support 
 // dcent.bitcoinTxType = dcentBitcoinTxType

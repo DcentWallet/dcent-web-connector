@@ -1312,7 +1312,7 @@ For broadcast the sign transaction, you must reconstruct transaction include `Tx
   ops.push({
       kind: 'transaction',
       fee,
-      amount: convertToWei(amount, decimals).toString(),
+      amount: dcent.unitConverter(amount, decimals).num.toString(),
       gas_limit,
       storage_limit,
       destination: toAddr,
@@ -1337,7 +1337,7 @@ For broadcast the sign transaction, you must reconstruct transaction include `Tx
       sigHash: sigHash,
       path: `m/44'/1729'/0'/0/0`,
       decimals, // 6,
-      fee: BigNumber(convertToWei(fee, decimals)).toString(16).padStart(16, '0'),
+      fee: fee,
       symbol: 'XTZ',
   }
 
@@ -1397,7 +1397,7 @@ For broadcast the sign transaction, you must reconstruct transaction include `Tx
   let clauses = {
       from: recvAddress,
       to: toAddr,
-      value: convertToWei(amount, decimals).toString(),
+      value: dcent.unitConverter(amount, decimals).num.toString(),
       gas
   }
   let rawData = await web3.eth.accounts.signTransaction(clauses, VechainConfig.DummyKey)
@@ -1444,7 +1444,7 @@ For broadcast the sign transaction, you must reconstruct transaction include `Tx
       sigHash: adjustedRaw.slice(2),
       path: `m/44'/818'/0'/0/0`,
       decimals, // 18
-      fee: BigNumber(convertToWei(fee, decimals)).toString(16).padStart(16, '0'), 
+      fee: fee, 
       symbol: 'VET',
   }
 
@@ -1515,7 +1515,7 @@ For broadcast the sign transaction, you must reconstruct transaction include `Tx
     })
   const nonce = ++nonceOfAccessKey;
   const publicKey = utils.PublicKey.from(bs58Lib.encode(Buffer.from(address, 'hex')))
-  var actions = [nearTransaction.transfer(Convert.convertNearToYoctoNear(amount))];
+  var actions = [nearTransaction.transfer(utils.parseNearAmount(BigNumber(amount).toString(10)).replace(',', ''))];
 
   let transaction = new nearTransaction.SignedTransaction({
       transaction: {
@@ -1532,14 +1532,12 @@ For broadcast the sign transaction, you must reconstruct transaction include `Tx
     })
   let unsignedTx = nearSerialize.serialize(nearTransaction.SCHEMA, transaction)
 
-  let nearFee = utils.parseNearAmount(BigNumber(fee).toString(10)).replace(',', '')
-
   const transactionJson = {
       coinType: dcent.coinType.NEAR,
       sigHash: unsignedTx.toString('hex'),
       path: `m/44'/397'/0'`,
       decimals, // 24
-      fee: BigNumber(nearFee).toString(16).padStart(32, '0'), 
+      fee, 
       symbol: 'NEAR',
       }
 
@@ -1629,8 +1627,8 @@ For broadcast the sign transaction, you must reconstruct transaction include `Tx
       coinType: dcent.coinType.HAVAH,
       sigHash: sigHash,
       path: `m/44'/858'/0'/0/0`,
-      decimals: 18,
-      fee: '0004e28e2290f000', // 0.001375
+      decimals: IconAmount.Unit.ICX,
+      fee,
       symbol: 'HVH',
   }
 

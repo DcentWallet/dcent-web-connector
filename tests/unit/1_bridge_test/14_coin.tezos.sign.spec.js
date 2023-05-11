@@ -56,7 +56,7 @@ describe('[dcent-web-connector] Bridge - init', () => {
             sigHash: rawData,
             path: `m/44'/1729'/0'/0/0`,
             decimals: 6,
-            fee: '00000000000002B9', // 0.000697
+            fee: '0.000697', // '00000000000002B9', // 0.000697
             symbol: 'XTZ',
         }
         var response = await page.evaluate((transactionJson) => {
@@ -91,9 +91,10 @@ describe('[dcent-web-connector] Bridge - init', () => {
             sigHash: rawData,
             path: `m/44'/1729'/0'/0'`,
             decimals: 6,
-            fee: '000000000000042C', // 0.001068
+            fee: '0.001068', // '000000000000042C', //  0.001068
             symbol: 'QUIPU',
         }
+
         var response = await page.evaluate((transactionJson) => {
             // eslint-disable-next-line no-undef
             return getTezosSignedTransaction(transactionJson)

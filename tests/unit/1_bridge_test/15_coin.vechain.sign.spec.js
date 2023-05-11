@@ -57,7 +57,7 @@ describe('[dcent-web-connector] Bridge - init', () => {
             sigHash: rawData,
             path: `m/44'/818'/0'/0/0`,
             decimals: 18,
-            fee: '02ea11e32ad50000', 
+            fee: '0.21', // '02ea11e32ad50000', // 0.21
             symbol: 'VET',
         }
         var response = await page.evaluate((transactionJson) => {
@@ -92,7 +92,7 @@ describe('[dcent-web-connector] Bridge - init', () => {
             sigHash: rawData,
             path: `m/44'/818'/0'/0/0`,
             decimals: 18,
-            fee: '0354a6ba7a180000',
+            fee: '0.24', // '0354a6ba7a180000', // 0.24
             symbol: 'VTHO',
         }
         var response = await page.evaluate((transactionJson) => {

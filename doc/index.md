@@ -488,13 +488,16 @@ Returned response object has:
     "body": {
         "command": "get_address",
         "parameter": {
-            "address": "0x354609C4c9a15d4265cF6D94010568D5Cf4d0c1B"
+            "address": "0x354609C4c9a15d4265cF6D94010568D5Cf4d0c1B",
+            "pubkey": "0x"
         }
     }
 }
 ```
 
 The address string format is depend on the coin type.
+
+For some coin type(ex. TEZOS), include pubkey as a property of the response parameter.
 
 ### Get XPUB
 

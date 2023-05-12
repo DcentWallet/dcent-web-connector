@@ -9,19 +9,21 @@
 // const elliptic = require('elliptic')
 const { sha256 } = require('js-sha256')
 const AccountLib = require('eth-lib/lib/account')
-const CosmosApi = require('@cosmjs/crypto') // node version 14
+const CosmosApi = require('@cosmjs/crypto') // node version 14+
 
 async function verify (rawMessage, signature, pubkey) {
     const vals = AccountLib.decodeSignature(signature)
     const vrs = { r: vals[1].slice(2), s: vals[2].slice(2) }
     const hash = new Uint8Array(sha256.array(Buffer.from(rawMessage, 'hex')))
-    const exSig = new CosmosApi.ExtendedSecp256k1Signature(new Uint8Array(Buffer.from(vrs.r, 'hex')), new Uint8Array(Buffer.from(vrs.s, 'hex')), 0)
+    // const exSig = new CosmosApi.ExtendedSecp256k1Signature(new Uint8Array(Buffer.from(vrs.r, 'hex')), new Uint8Array(Buffer.from(vrs.s, 'hex')), 0)
     const cosSig = new CosmosApi.Secp256k1Signature(new Uint8Array(Buffer.from(vrs.r, 'hex')), new Uint8Array(Buffer.from(vrs.s, 'hex')))
-    const recPub = CosmosApi.Secp256k1.recoverPubkey(exSig, hash)    
-    console.log('recPub ', recPub)
-    console.log('recPub comp ', CosmosApi.Secp256k1.compressPubkey(recPub).toString())
+    // const recPub = CosmosApi.Secp256k1.recoverPubkey(exSig, hash)    
+    // console.log('recPub ', recPub)
+    // console.log('recPub comp ', CosmosApi.Secp256k1.compressPubkey(recPub).toString())
+    const decPubKey = CosmosApi.Secp256k1.uncompressPubkey(new Uint8Array(Buffer.from(pubkey.substr(2, signature.length - 2).toString(), 'hex')))
+    console.log('decPubKey ', decPubKey)
 
-    return await CosmosApi.Secp256k1.verifySignature(cosSig, hash, recPub)
+    return await CosmosApi.Secp256k1.verifySignature(cosSig, hash, decPubKey)
 }
 
 describe('[dcent-web-connector] Bridge - init', () => {

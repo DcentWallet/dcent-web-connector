@@ -494,6 +494,18 @@ function isAvaliableCoinGroup (coinGroup) {
     case dcentCoinGroup.HTS_TESTNET.toLowerCase():
     case dcentCoinGroup.STELLAR.toLowerCase():
     case dcentCoinGroup.TRON.toLowerCase():
+    case dcentCoinGroup.TEZOS.toLowerCase():
+    case dcentCoinGroup.TEZOS_TESTNET.toLowerCase():
+    case dcentCoinGroup.XTZ_FA.toLowerCase():
+    case dcentCoinGroup.XTZ_FA_TESTNET.toLowerCase():
+    case dcentCoinGroup.NEAR.toLowerCase():
+    case dcentCoinGroup.NEAR_TESTNET.toLowerCase():
+    case dcentCoinGroup.VECHAIN.toLowerCase():
+    case dcentCoinGroup.VECHAIN_ERC20.toLowerCase():
+    case dcentCoinGroup.HAVAH.toLowerCase():
+    case dcentCoinGroup.HAVAH_TESTNET.toLowerCase():
+    case dcentCoinGroup.HAVAH_HSP20.toLowerCase():
+    case dcentCoinGroup.HAVAH_HSP20_TESTNET.toLowerCase():
       return true
     default:
       return false

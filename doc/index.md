@@ -5,24 +5,26 @@
 
 ### VERSION HISTORY
 
-| version            | date         | modification                                               |
-| ------------------ | ------------ | ---------------------------------------------------------- |
-| v0.6.2-beta        | 2019. 04. 07 | First version of D'CENT Web SDK connector release          |
-| v0.7.0-beta        | 2019. 05. 07 | add KLAYTN transaction function                            |
-| v0.8.0             | 2020. 06. 05 | add 'getSignedMessage' function                            |
-| v0.9.0             | 2020. 06. 22 | add interface for BITCOIN transaction                      |
-| v0.10.0            | 2020. 09. 28 | add interface for Ripple full transaction                  |
-| v0.10.1            | 2020. 11. 30 | modify description for Ripple full transaction             |
-| v0.10.3            | 2021. 03. 15 | add XDC transaction function                               |
-| v0.10.4            | 2021. 05. 06 | add Select address function                                |
-| v0.10.5            | 2021. 12. 23 | support sign data function                                 |
-| v0.11.0            | 2022. 03. 08 | add interface for Hedera transaction                       |
-| v0.11.2            | 2022. 04. 21 | modify getEthereumSignedTransaction interface for EIP-2718 |
-| v0.12.0            | 2023. 02. 15 | add Tron & Stellar transaction transaction functions       |
-| v0.12.1            | 2023. 05. 03 | add support coin group for syncAccount                     |
-| v0.13.0            | 2023. 05.    | add Tezos & Vechain & Near & Havah transaction function    |
-| v0.13.1            | 2023.05      | add Polkadot & Comsmos(Czone)                              |
-| <br /><br /><br /> |              |                                                            |
+| version     | date         | modification                                               |
+| ----------- | ------------ | ---------------------------------------------------------- |
+| v0.6.2-beta | 2019. 04. 07 | First version of D'CENT Web SDK connector release          |
+| v0.7.0-beta | 2019. 05. 07 | add KLAYTN transaction function                            |
+| v0.8.0      | 2020. 06. 05 | add 'getSignedMessage' function                            |
+| v0.9.0      | 2020. 06. 22 | add interface for BITCOIN transaction                      |
+| v0.10.0     | 2020. 09. 28 | add interface for Ripple full transaction                  |
+| v0.10.1     | 2020. 11. 30 | modify description for Ripple full transaction             |
+| v0.10.3     | 2021. 03. 15 | add XDC transaction function                               |
+| v0.10.4     | 2021. 05. 06 | add Select address function                                |
+| v0.10.5     | 2021. 12. 23 | support sign data function                                 |
+| v0.11.0     | 2022. 03. 08 | add interface for Hedera transaction                       |
+| v0.11.2     | 2022. 04. 21 | modify getEthereumSignedTransaction interface for EIP-2718 |
+| v0.12.0     | 2023. 02. 15 | add Tron & Stellar transaction transaction functions       |
+| v0.12.1     | 2023. 05. 03 | add support coin group for syncAccount                     |
+| v0.13.0     | 2023. 05.    | add Tezos & Vechain & Near & Havah transaction function    |
+| v0.13.1     | 2023. 05     | add Polkadot & Comsmos(Czone)                              |
+
+
+
 
 
 ## 1. INTRODUCTION

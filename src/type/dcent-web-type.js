@@ -45,6 +45,9 @@ const coinType = {
   HAVAH_TESTNET: 'havah-testnet',
   HAVAH_HSP20: 'havah-hsp20',
   HAVAH_HSP20_TESTNET: 'havah-hsp20-testnet',
+  POLKADOT: 'polkadot',
+  COSMOS: 'cosmos',
+  CZONE: 'czone',
 }
 
 const coinGroup = {
@@ -92,6 +95,9 @@ const coinGroup = {
   HAVAH_TESTNET: 'HAVAH-TESTNET',
   HAVAH_HSP20: 'HAVAH-HSP20',
   HAVAH_HSP20_TESTNET: 'HAVAH-HSP20-TESTNET',
+  POLKADOT: 'POLKADOT',
+  COSMOS: 'COSMOS',
+  CZONE: 'CZONE',
 }
 
 const coinName = {
@@ -139,6 +145,9 @@ const coinName = {
   HAVAH_TESTNET: 'HAVAH-TESTNET',
   HAVAH_HSP20: 'HAVAH-HSP20',
   HAVAH_HSP20_TESTNET: 'HAVAH-HSP20-TESTNET',
+  POLKADOT: 'POLKADOT',
+  COSMOS: 'COSMOS',
+  CZONE: 'CZONE',
 }
 
 const bitcoinTxType = {

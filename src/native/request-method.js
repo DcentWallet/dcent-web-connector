@@ -25,6 +25,8 @@ module.exports = {
     GET_VECHAIN_SIGN_TX: 'getVechainSignedTransaction',
     GET_NEAR_SIGN_TX: 'getNearSignedTransaction',
     GET_HAVAH_SIGN_TX: 'getHavahSignedTransaction',
+    GET_POLKADOT_SIGN_TX: 'getPolkadotSignedTransaction',
+    GET_COSMOS_SIGN_TX: 'getCosmosSignedTransaction',
 }
 
 /* //////////////////////////////////////////////////////////////////////// */

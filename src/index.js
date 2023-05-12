@@ -507,6 +507,9 @@ function isAvaliableCoinGroup (coinGroup) {
     case dcentCoinGroup.HAVAH_TESTNET.toLowerCase():
     case dcentCoinGroup.HAVAH_HSP20.toLowerCase():
     case dcentCoinGroup.HAVAH_HSP20_TESTNET.toLowerCase():
+    case dcentCoinGroup.POLKADOT.toLowerCase():
+    case dcentCoinGroup.COSMOS.toLowerCase():
+    case dcentCoinGroup.CZONE.toLowerCase():
       return true
     default:
       return false

@@ -107,6 +107,9 @@
         <button id="getHavahHsp20SignedTransaction-deposit" type="button" class="btn btn-primary">getHavahHsp20SignedTransaction-deposit</button>
         <button id="getHavahHsp20SignedTransaction-message" type="button" class="btn btn-primary">getHavahHsp20SignedTransaction-message</button>
         <button id="getHavahHsp20SignedTransaction-deploy" type="button" class="btn btn-primary">getHavahHsp20SignedTransaction-deploy</button>
+        <button id="getPolkadotSignedTransaction" type="button" class="btn btn-primary">getPolkadotSignedTransaction</button>
+        <button id="getCosmosSignedTransaction" type="button" class="btn btn-primary">getCosmosSignedTransaction</button>
+        <button id="getCzoneSignedTransaction" type="button" class="btn btn-primary">getCzoneSignedTransaction</button>
         
         <br /><br />
 
@@ -154,6 +157,15 @@
         <br />
         <button id="get_address_havah" type="button" class="btn btn-primary">Get Havah Mainnet
           Address("m/44'/858'/0'/0/0")</button>
+        <br />
+        <button id="get_address_polkadot" type="button" class="btn btn-primary">Get Polkadot Mainnet
+          Address("m/44'/354'/0'/0/0")</button>
+        <br />
+        <button id="get_address_cosmos" type="button" class="btn btn-primary">Get Cosmos Mainnet
+          Address("m/44'/118'/0'/0/0")</button>
+        <br />
+        <button id="get_address_czone" type="button" class="btn btn-primary">Get Czone(osmo) Mainnet
+          Address("m/44'/118'/0'/0/0")</button>
         <br />
 
       </div>
@@ -221,6 +233,9 @@
         $('#get_address_vechain').click(get_address_vechain_clicked);
         $('#get_address_near').click(get_address_near_clicked);
         $('#get_address_havah').click(get_address_havah_clicked);
+        $('#get_address_polkadot').click(get_address_polkadot_clicked);
+        $('#get_address_cosomos').click(get_address_cosmos_clicked);
+        $('#get_address_czone').click(get_address_czone_clicked);
 
         $('#getBitcoinSignedTransaction').click(getBitcoinSignedTransaction_clicked);
         
@@ -257,6 +272,9 @@
         $('#getHavahHsp20SignedTransaction-deposit').click(getHavahHsp20SignedTransaction_deposit_clicked);
         $('#getHavahHsp20SignedTransaction-message').click(getHavahHsp20SignedTransaction_message_clicked);
         $('#getHavahHsp20SignedTransaction-deploy').click(getHavahHsp20SignedTransaction_deploy_clicked);
+        $('#getPolkadotSignedTransaction').click(getPolkadotSignedTransaction_clicked);
+        $('#getCosmosSignedTransaction').click(getCosmosSignedTransaction_clicked);
+        $('#getCzoneSignedTransaction').click(getCzoneSignedTransaction_clicked);
       });
 
       async function info_clicked() {
@@ -460,6 +478,34 @@
         set_command_name("get_address havah")        
         resp_editor.load(result)
       }
+
+      async function get_address_polkadot_clicked() {
+         set_command_name("Processing...");
+ 
+         var result = await getAddress(dcent.coinType.POLKADOT, "m/44'/354'/0'/0/0")
+ 
+         set_command_name("get_address polkadot")        
+         resp_editor.load(result)
+      }
+  
+       async function get_address_cosmos_clicked() {
+         set_command_name("Processing...");
+ 
+         var result = await getAddress(dcent.coinType.COSMOS, "m/44'/118'/0'/0/0")
+ 
+         set_command_name("get_address cosmos")        
+         resp_editor.load(result)
+      }
+ 
+       async function get_address_czone_clicked() {
+         set_command_name("Processing...");
+         var result = await getAddress(dcent.coinType.CZONE, "m/44'/118'/0'/0/0", '6f736d6f'/*Buffer.from('osmo', 'utf8').toString('hex')*/)
+ 
+         set_command_name("get_address czone")        
+         resp_editor.load(result)
+      }
+ 
+
 
       async function getBitcoinSignedTransaction_clicked() {
         set_command_name("Processing...");
@@ -1003,6 +1049,54 @@
         set_command_name("getHavahHsp20SignedTransaction_deploy")
         resp_editor.load(result)
       }
+      async function getPolkadotSignedTransaction_clicked() {
+         set_command_name("Processing...");
+         var transactionJson = {
+           coinType: dcent.coinType.POLKADOT,
+           sigHash: '040000163a5ee36b1243ce5241c0a45010dd1717869e9918c040bf5d305be4a5af9e7a0b00407a10f35a003400a223000007000000e143f23803ac50e8f6f8e62695d1ce9e4e1d68aa36c1cd2cfd15340213f3423ee143f23803ac50e8f6f8e62695d1ce9e4e1d68aa36c1cd2cfd15340213f3423e',
+           path: `m/44'/354'/0'/0/0`,
+           decimals: 12,
+           fee: '00000000000001F4',
+           symbol: 'DOT',
+         }
+         var result  = await getPolkadotSignedTransaction(transactionJson);
+       
+         set_command_name("getPolkadotSignedTransaction")
+         resp_editor.load(result)
+       }
+ 
+       async function getCosmosSignedTransaction_clicked() {
+         set_command_name("Processing...");
+         var transactionJson = {
+           coinType: dcent.coinType.COSMOS,
+           sigHash: '0a94010a8f010a1c2f636f736d6f732e62616e6b2e763162657461312e4d736753656e64126f0a2d636f736d6f73317235763573726461377866746833686e327332367478767263726e746c646a756d74386d686c122d636f736d6f733138766864637a6a7574343467707379383034637266686e64356e713030336e7a306e663230761a0f0a057561746f6d1206313030303030120012670a500a460a1f2f636f736d6f732e63727970746f2e736563703235366b312e5075624b657912230a21ffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffff12040a020801180a12130a0d0a057561746f6d12043530303010c09a0c1a0b636f736d6f736875622d34208f3a',
+           path: `m/44'/118'/0'/0/0`,
+           decimals: 6,
+           fee: '00000000000000FA',
+           symbol: 'ATOM',
+         }
+         var result  = await getCosmosSignedTransaction(transactionJson);
+       
+         set_command_name("getCosmosSignedTransaction")
+         resp_editor.load(result)
+       }
+ 
+       async function getCzoneSignedTransaction_clicked() {
+         set_command_name("Processing...");
+         var transactionJson = {
+           coinType: dcent.coinType.CZONE,
+           sigHash: '0a8d010a88010a1c2f636f736d6f732e62616e6b2e763162657461312e4d736753656e6412680a2b6f736d6f316e63796c757736636d75686635677868796a6d746c326e7064746a6a6864617465346533356d122b6f736d6f317875367a656a797978776c703675386438746a33767468336c6a746e306c396c37686a7039751a0c0a05756f736d6f1203313030120012670a500a460a1f2f636f736d6f732e63727970746f2e736563703235366b312e5075624b657912230a21ffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffff12040a020801181a12130a0d0a05756f736d6f12043230303010c09a0c1a096f736d6f7369732d31209fc720',
+           path: `m/44'/118'/0'/0/0`,
+           decimals: 6,
+           fee: '00000000000000FB',
+           symbol: 'OSMO',
+         }
+         var result  = await getCosmosSignedTransaction(transactionJson);
+       
+         set_command_name("getCzoneSignedTransaction")
+         resp_editor.load(result)
+       }
+
 
       /////// DCENT WEB-SDK call
 
@@ -1086,10 +1180,10 @@
         return result 
       }
 
-      async function getAddress(coinType, key) {
+      async function getAddress(coinType, key, optionParam = undefined) {
         var result 
         try { 
-          result = await dcent.getAddress(coinType, key)
+          result = await dcent.getAddress(coinType, key, optionParam)
         } catch (e) {
           result = e
         }
@@ -1278,6 +1372,28 @@
         }
         return result 
       }
+
+       async function getPolkadotSignedTransaction(transaction) {
+         var result 
+         try { 
+           result = await dcent.getPolkadotSignedTransaction(transaction)      
+         } catch (e) {
+           result = e
+         }
+         return result 
+       }
+ 
+       async function getCosmosSignedTransaction(transaction) {
+         var result 
+         try { 
+           result = await dcent.getCosmosSignedTransaction(transaction)      
+         } catch (e) {
+           result = e
+         }
+         return result 
+       }
+ 
+
     </script>
 
 </body>

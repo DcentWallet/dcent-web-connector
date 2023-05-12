@@ -1673,7 +1673,7 @@ For broadcast the sign transaction, you must reconstruct transaction include `Tx
   - decimals: polkadot's decimals.
 - Requirements:
 
-  - `D'CENT Bridge` version 1.4.1 or higher is required.
+  - `D'CENT Bridge` version 1.5.0 or higher is required.
   - D'CENT Biometric Wallet version 2.19.1 or higher is required.
 - Useage:
 
@@ -1706,17 +1706,17 @@ For broadcast the sign transaction, you must reconstruct transaction include `Tx
   const sigHash = signerPayload.toRaw().data
 
   const transactionJson = {
-    coinType: dcent.coinType.POLKADOT,
+    coinType: DcentWebConnector.coinType.POLKADOT,
     sigHash: sigHash,
     path: `m/44'/354'/0'/0/0`,
     decimals, // 12
-    fee: BigNumber(convertToWei(fee, decimals)).toString(16).padStart(16, '0'),
+    fee,
     symbol: 'DOT',
   }
 
   var result
   try {
-    result = await dcent.getPolKadotSignedTransaction(transactionJson);
+    result = await DcentWebConnector.getPolKadotSignedTransaction(transactionJson);
   } catch (e) {
     console.log(e)
     result = e
@@ -1755,7 +1755,7 @@ For broadcast the sign transaction, you must reconstruct transaction include `Tx
   - decimals: cosmos or czone's decimals.
 - Requirements:
 
-  - `D'CENT Bridge` version 1.4.1 or higher is required.
+  - `D'CENT Bridge` version 1.5.0 or higher is required.
   - D'CENT Biometric Wallet version 2.21.0 or higher is required.
   - czone: 2.25.0 or higher is required.
 - Useage:
@@ -1804,17 +1804,17 @@ For broadcast the sign transaction, you must reconstruct transaction include `Tx
   const sigHash = Buffer.from(signMessage).toString('hex')
 
   const transactionJson = {
-    coinType: dcent.coinType.COSMOS,
+    coinType: DcentWebConnector.coinType.COSMOS,
     sigHash: sigHash,
     path: `m/44'/118'/0'/0/0`,
     decimals, // 6
-    fee: BigNumber(String(fee)).toString(16).padStart(16, '0'),
+    fee,
     symbol: 'ATOM',
   }
 
   var result
   try {
-    result = await dcent.getCosmomsSignedTransaction(transactionJson);
+    result = await DcentWebConnector.getCosmomsSignedTransaction(transactionJson);
   } catch (e) {
     console.log(e)
     result = e

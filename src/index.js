@@ -14,7 +14,8 @@ const {
 } = require('./type/dcent-state')
 
 
-const { config: dcentConfig } = require('./conf/dcent-web-conf')
+const { config: dcentConfig } = require('./conf/dcent-web-conf-dev')
+// const { config: dcentConfig } = require('./conf/dcent-web-conf')
 
 const LOG = require('./utils/log')
 const XDCPrefixConverter = require('./utils/xdc-prefix-converter')
@@ -549,6 +550,9 @@ function isAvaliableCoinType (coinType) {
     case dcentCoinType.HAVAH_TESTNET.toLowerCase():
     case dcentCoinType.HAVAH_HSP20.toLowerCase():
     case dcentCoinType.HAVAH_HSP20_TESTNET.toLowerCase():
+    case dcentCoinType.POLKADOT.toLowerCase():
+    case dcentCoinType.COSMOS.toLowerCase():
+    case dcentCoinType.CZONE.toLowerCase():
       return true
     default:
       return false
@@ -585,6 +589,15 @@ function isBitcoinTxCoinType (coinType) {
     case dcentCoinType.BITCOIN_TESTNET.toLowerCase():
     case dcentCoinType.MONACOIN.toLowerCase():
     case dcentCoinType.MONACOIN_TESTNET.toLowerCase():
+      return true
+    default:
+      return false
+  }
+}
+   
+function isAvailaleOptionParamCoinType (coinType) {
+  switch (coinType.toLowerCase()) {
+    case dcentCoinType.CZONE.toLowerCase():
       return true
     default:
       return false
@@ -670,18 +683,28 @@ dcent.selectAddress = async function (addresses) {
  * 
  * @param {string} coinType coin type. 
  * @param {string} path string value of key path to get address
+ * @param {string} optionParam string value of prefix to get address (for czone)
  * @returns {Object} address.
  */
-dcent.getAddress = async function (coinType, path) {
+dcent.getAddress = async function (coinType, path, optionParam) {
 
   if (!isAvaliableCoinType(coinType)) {
     throw dcent.dcentException('coin_type_error', 'not supported coin type')
   }
+
+  if (optionParam && !isAvailaleOptionParamCoinType(coinType)) {
+    throw dcent.dcentException('invalid parameter', 'optionParam is invalid parameter')
+  } 
+
   const params = {
     coinType: coinType,
     path: path,
   }
 
+  if (optionParam) {
+    params.optionParam = optionParam
+  }
+   
   return await dcent.call({
     method: 'getAddress',
     params
@@ -1303,6 +1326,58 @@ dcent.getHavahSignedTransaction = async function ({
   if (nonce) params.nonce = nonce
   if (optionParam) params.optionParam = optionParam
 
+  return await dcent.call({
+    method: 'getUnionSignedTransaction',
+    params
+  })
+}
+
+dcent.getPolkadotSignedTransaction = async function ({
+  coinType,
+  sigHash,
+  fee,
+  decimals,
+  nonce,
+  path,
+  symbol,
+  optionParam,
+}) {
+  const params = {
+    coinType,
+    decimals,
+    sig_hash: sigHash,
+    fee,
+    path,
+    symbol,
+  }
+  if (nonce) params.nonce = nonce
+  if (optionParam) params.optionParam = optionParam
+  return await dcent.call({
+    method: 'getUnionSignedTransaction',
+    params
+  })
+}
+ 
+dcent.getCosmosSignedTransaction = async function ({
+  coinType,
+  sigHash,
+  fee,
+  decimals,
+  nonce,
+  path,
+  symbol,
+  optionParam,
+}) {
+  const params = {
+    coinType,
+    decimals,
+    sig_hash: sigHash,
+    fee,
+    path,
+    symbol,
+  }
+  if (nonce) params.nonce = nonce
+  if (optionParam) params.optionParam = optionParam
   return await dcent.call({
     method: 'getUnionSignedTransaction',
     params

@@ -8,12 +8,29 @@ const puppeteer = require('puppeteer')
 /* //////////////////////////////////////////////////////////////////////// */
 
 // const toU8a = require('@polkadot/util')
-const Signature = require('@polkadot/util-crypto')
+// const {signatureVerify} = require('@polkadot/util-crypto/signature/verify')
+import { base58 } from '@scure/base'
+// const bs58 = require('@polkadot/util-crypto/base58/bs58')
+const {checkAddressChecksum} = require('@polkadot/util-crypto/address/checksum')
+
+const elliptic = require('elliptic')
+// eslint-disable-next-line new-cap
+const ec = new elliptic.ec('ed25519')
+
+function getPubKey (address) {  
+    
+    const decoded = base58.decode(address) // bs58.base58Decode(address)
+    const [endPos, ss58Length] = checkAddressChecksum(decoded)
+
+    return decoded.slice(ss58Length, endPos)
+}
 
 function verify (message, signature, address) {
-    const { isValid } = Signature.signatureVerify(message, signature.substr(2, signature.length - 2).toString(), address)
+    const recPub = getPubKey(address)
+    
+    // const { isValid } = signatureVerify(message, signature.substr(2, signature.length - 2).toString(), address)
     // const { isValid } = signatureVerify(toU8a.stringToU8a(message), toU8a.stringToU8a(signature.substr(2, signature.length - 2).toString()), address)
-    return isValid
+    return ec.verify(message, signature.substr(2, signature.length - 2).toString(), recPub)
 }
 
 describe('[dcent-web-connector] Bridge - init', () => {

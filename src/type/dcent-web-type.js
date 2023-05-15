@@ -33,6 +33,18 @@ const coinType = {
   TRON_TESTNET: 'tron-testnet',
   TRON_TRC_TOKEN: 'trc-token',
   TRON_TRC_TESTNET: 'trc-testnet',
+  TEZOS: 'tezos',
+  TEZOS_TESTNET: 'tezos-testnet',
+  XTZ_FA: 'xtz-fa',
+  XTZ_FA_TESTNET: 'xtz-fa-testnet',
+  VECHAIN: 'vechain',
+  VECHAIN_ERC20: 'vechain-erc20',
+  NEAR: 'near',
+  NEAR_TESTNET: 'near-testnet',
+  HAVAH: 'havah',
+  HAVAH_TESTNET: 'havah-testnet',
+  HAVAH_HSP20: 'havah-hsp20',
+  HAVAH_HSP20_TESTNET: 'havah-hsp20-testnet',
 }
 
 const coinGroup = {
@@ -68,6 +80,18 @@ const coinGroup = {
   TRX_TESTNET: 'TRX-TESTNET',
   TRC_TOKEN: 'TRC-TOKEN',
   TRC_TESTNET: 'TRC-TESTNET',
+  TEZOS: 'TEZOS',
+  TEZOS_TESTNET: 'TEZOS-TESTNET',
+  XTZ_FA: 'XTZ-FA',
+  XTZ_FA_TESTNET: 'XTZ-FA-TESTNET',
+  VECHAIN: 'VECHAIN',
+  VECHAIN_ERC20: 'VECHAIN-ERC20',
+  NEAR: 'NEAR',
+  NEAR_TESTNET: 'NEAR-TESTNET',
+  HAVAH: 'HAVAH',
+  HAVAH_TESTNET: 'HAVAH-TESTNET',
+  HAVAH_HSP20: 'HAVAH-HSP20',
+  HAVAH_HSP20_TESTNET: 'HAVAH-HSP20-TESTNET',
 }
 
 const coinName = {
@@ -103,6 +127,18 @@ const coinName = {
   TRX_TESTNET: 'TRX-TESTNET',
   TRC_TOKEN: 'TRC-TOKEN',
   TRC_TESTNET: 'TRC-TESTNET',
+  TEZOS: 'TEZOS',
+  TEZOS_TESTNET: 'TEZOS-TESTNET',
+  XTZ_FA: 'XTZ-FA',
+  XTZ_FA_TESTNET: 'XTZ-FA-TESTNET',
+  VECHAIN: 'VECHAIN',
+  VECHAIN_ERC20: 'VECHAIN-ERC20',
+  NEAR: 'NEAR',
+  NEAR_TESTNET: 'NEAR-TESTNET',
+  HAVAH: 'HAVAH',
+  HAVAH_TESTNET: 'HAVAH-TESTNET',
+  HAVAH_HSP20: 'HAVAH-HSP20',
+  HAVAH_HSP20_TESTNET: 'HAVAH-HSP20-TESTNET',
 }
 
 const bitcoinTxType = {

@@ -19,8 +19,10 @@ const { config: dcentConfig } = require('./conf/dcent-web-conf')
 const LOG = require('./utils/log')
 const XDCPrefixConverter = require('./utils/xdc-prefix-converter')
 const Event = require('events')
+const UnitConverter = require('./utils/unit-converter')
 
 const dcent = {}
+
 // TimeOut Default Time 
 var dcentCallTimeOutMs = dcentConfig.timeOutMs
 
@@ -492,6 +494,18 @@ function isAvaliableCoinGroup (coinGroup) {
     case dcentCoinGroup.HTS_TESTNET.toLowerCase():
     case dcentCoinGroup.STELLAR.toLowerCase():
     case dcentCoinGroup.TRON.toLowerCase():
+    case dcentCoinGroup.TEZOS.toLowerCase():
+    case dcentCoinGroup.TEZOS_TESTNET.toLowerCase():
+    case dcentCoinGroup.XTZ_FA.toLowerCase():
+    case dcentCoinGroup.XTZ_FA_TESTNET.toLowerCase():
+    case dcentCoinGroup.NEAR.toLowerCase():
+    case dcentCoinGroup.NEAR_TESTNET.toLowerCase():
+    case dcentCoinGroup.VECHAIN.toLowerCase():
+    case dcentCoinGroup.VECHAIN_ERC20.toLowerCase():
+    case dcentCoinGroup.HAVAH.toLowerCase():
+    case dcentCoinGroup.HAVAH_TESTNET.toLowerCase():
+    case dcentCoinGroup.HAVAH_HSP20.toLowerCase():
+    case dcentCoinGroup.HAVAH_HSP20_TESTNET.toLowerCase():
       return true
     default:
       return false
@@ -535,6 +549,18 @@ function isAvaliableCoinType (coinType) {
     case dcentCoinType.TRON_TESTNET.toLowerCase():
     case dcentCoinType.TRON_TRC_TOKEN.toLowerCase():
     case dcentCoinType.TRON_TRC_TESTNET.toLowerCase():
+    case dcentCoinType.TEZOS.toLowerCase():
+    case dcentCoinType.TEZOS_TESTNET.toLowerCase():
+    case dcentCoinType.XTZ_FA.toLowerCase():
+    case dcentCoinType.XTZ_FA_TESTNET.toLowerCase():
+    case dcentCoinType.VECHAIN.toLowerCase():
+    case dcentCoinType.VECHAIN_ERC20.toLowerCase():
+    case dcentCoinType.NEAR.toLowerCase():
+    case dcentCoinType.NEAR_TESTNET.toLowerCase():
+    case dcentCoinType.HAVAH.toLowerCase():
+    case dcentCoinType.HAVAH_TESTNET.toLowerCase():
+    case dcentCoinType.HAVAH_HSP20.toLowerCase():
+    case dcentCoinType.HAVAH_HSP20_TESTNET.toLowerCase():
       return true
     default:
       return false
@@ -554,6 +580,11 @@ function isTokenType (coinGroup) {
     case dcentCoinType.KCT_BAOBAB.toLowerCase():
     case dcentCoinGroup.XRC20.toLowerCase():
     case dcentCoinGroup.XRC20_APOTHEM.toLowerCase():
+    case dcentCoinGroup.XTZ_FA.toLowerCase():
+    case dcentCoinGroup.XTZ_FA_TESTNET.toLowerCase():
+    case dcentCoinGroup.VECHAIN_ERC20.toLowerCase():
+    case dcentCoinGroup.HAVAH_HSP20.toLowerCase():
+    case dcentCoinGroup.HAVAH_HSP20_TESTNET.toLowerCase():
       return true
     default:
       return false
@@ -658,13 +689,14 @@ dcent.getAddress = async function (coinType, path) {
   if (!isAvaliableCoinType(coinType)) {
     throw dcent.dcentException('coin_type_error', 'not supported coin type')
   }
+  const params = {
+    coinType: coinType,
+    path: path,
+  }
 
   return await dcent.call({
     method: 'getAddress',
-    params: {
-      coinType: coinType,
-      path: path
-    }
+    params
   })
 }
 
@@ -1180,6 +1212,115 @@ dcent.getTrcTokenSignedTransaction = async function ({
   })
 }
 
+dcent.getTezosSignedTransaction = async function ({
+  coinType,
+  sigHash,
+  fee,
+  decimals,
+  nonce,
+  path,
+  symbol,
+  optionParam,
+}) {
+  const params = {
+    coinType,
+    decimals,
+    sig_hash: sigHash,
+    fee: UnitConverter(fee, decimals).bignum.toString(16).padStart(16, '0'),
+    path,
+    symbol,
+  }
+  if (nonce) params.nonce = nonce
+  if (optionParam) params.optionParam = optionParam
+
+  return await dcent.call({
+    method: 'getUnionSignedTransaction',
+    params
+  })
+}
+
+dcent.getVechainSignedTransaction = async function ({
+  coinType,
+  sigHash,
+  fee,
+  decimals,
+  nonce,
+  path,
+  symbol,
+  optionParam,
+}) {
+  const params = {
+    coinType,
+    decimals,
+    sig_hash: sigHash,
+    fee: UnitConverter(fee, decimals).bignum.toString(16).padStart(16, '0'),
+    path,
+    symbol,
+  }
+  if (nonce) params.nonce = nonce
+  if (optionParam) params.optionParam = optionParam
+  return await dcent.call({
+    method: 'getUnionSignedTransaction',
+    params
+  })
+}
+
+dcent.getNearSignedTransaction = async function ({
+  coinType,
+  sigHash,
+  fee,
+  decimals,
+  nonce,
+  path,
+  symbol,
+  optionParam,
+}) {
+  const nearFee = '000000ef' + '00000010' + UnitConverter(fee, decimals).bignum.toString(16).padStart(32, '0')
+  const params = {
+    coinType,
+    decimals,
+    sig_hash: sigHash,
+    fee: '00',
+    path,
+    symbol,
+    optionParam: nearFee
+  }
+  if (nonce) params.nonce = nonce
+  if (optionParam) params.optionParam += optionParam
+  
+  return await dcent.call({
+    method: 'getUnionSignedTransaction',
+    params
+  })
+}
+
+dcent.getHavahSignedTransaction = async function ({
+  coinType,
+  sigHash,
+  fee,
+  decimals,
+  nonce,
+  path,
+  symbol,
+  optionParam,
+}) {
+  const params = {
+    coinType,
+    decimals,
+    sig_hash: sigHash,
+    fee: UnitConverter(fee, decimals).bignum.toString(16).padStart(16, '0'),
+    path,
+    symbol,
+  }
+  if (nonce) params.nonce = nonce
+  if (optionParam) params.optionParam = optionParam
+
+  return await dcent.call({
+    method: 'getUnionSignedTransaction',
+    params
+  })
+}
+
 dcent.state = dcentState
 dcent.coinType = dcentCoinType
 dcent.coinGroup = dcentCoinGroup
@@ -1187,6 +1328,8 @@ dcent.coinName = dcentCoinName
 dcent.bitcoinTxType = dcentBitcoinTxType
 dcent.klaytnTxType = dcentKlaytnTxType
 dcent.xrpTxType = dcentXrpTxType
+
+dcent.unitConverter = UnitConverter
 // # 
 // Now, Bitcoin Transaction not support 
 // dcent.bitcoinTxType = dcentBitcoinTxType

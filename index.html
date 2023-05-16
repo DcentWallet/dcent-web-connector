@@ -729,10 +729,10 @@
 
       async function getEthereumSignedMessage_clicked() {
         set_command_name("Processing...");
-        var data = '0x313233343536373839'// 'This is a message!'
+        var data = 'This is a message!' //'0x313233343536373839'// 'This is a message!'
         var key = "m/44'/60'/0'/0/0"
-        var message = ethUtil.keccak256(data)
-        var result = await getEthereumSignedMessage(message, key)         
+        // var message = ethUtil.keccak256(data)
+        var result = await getEthereumSignedMessage(data, key)         
         
         set_command_name("getEthereumSignedMessage");
         resp_editor.load(result)

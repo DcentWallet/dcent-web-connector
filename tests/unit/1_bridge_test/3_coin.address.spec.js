@@ -145,6 +145,19 @@ describe('[dcent-web-connector] Bridge - init', () => {
         expect(response.body.parameter.address).toBeDefined()
         done()
     })
+    
+    it('getAddress() - success TEZOS', async (done) => {
+        const coinType = DcentWebConnector.coinType.TEZOS
+        const keyPath = "m/44'/1729'/0'/0/0"
+        var response = await page.evaluate((coinType, keyPath) => {
+            // eslint-disable-next-line no-undef
+            return getAddress(coinType, keyPath)
+        }, coinType, keyPath)
+        expect(response.header.status).toBe(Values.RESP_STATUS.SUCCESS)
+        expect(response.body.parameter.address).toBeDefined()
+        expect(response.body.parameter.pubkey).toBeDefined()
+        done()
+    })
 
     it('getAddress() - success CZONE', async (done) => {
         const coinType = DcentWebConnector.coinType.CZONE
@@ -158,7 +171,7 @@ describe('[dcent-web-connector] Bridge - init', () => {
         expect(response.body.parameter.address).toBeDefined()
         expect(response.body.parameter.address.startsWith('osmo')).toBeTruthy()
         done()
-    })     
+    }) 
 
 })
 

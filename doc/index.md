@@ -20,11 +20,8 @@
 | v0.11.2     | 2022. 04. 21 | modify getEthereumSignedTransaction interface for EIP-2718 |
 | v0.12.0     | 2023. 02. 15 | add Tron & Stellar transaction transaction functions       |
 | v0.12.1     | 2023. 05. 03 | add support coin group for syncAccount                     |
-| v0.13.0     | 2023. 05.    | add Tezos & Vechain & Near & Havah transaction function    |
-| v0.13.1     | 2023. 05     | add Polkadot & Comsmos(Czone)                              |
-
-
-
+| v0.13.0     | 2023. 05. 16 | add Tezos & Vechain & Near & Havah transaction function    |
+| v0.13.1     | 2023. 05.    | add Polkadot & Comsmos(Czone) & Near Token                 |
 
 
 ## 1. INTRODUCTION
@@ -490,13 +487,16 @@ Returned response object has:
     "body": {
         "command": "get_address",
         "parameter": {
-            "address": "0x354609C4c9a15d4265cF6D94010568D5Cf4d0c1B"
+            "address": "0x354609C4c9a15d4265cF6D94010568D5Cf4d0c1B",
+            "pubkey": "0x"
         }
     }
 }
 ```
 
 The address string format is depend on the coin type.
+
+For some coin type(ex. TEZOS), include pubkey as a property of the response parameter.
 
 ### Get XPUB
 

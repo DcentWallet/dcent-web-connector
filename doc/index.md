@@ -1794,9 +1794,13 @@ For broadcast the sign transaction, you must reconstruct transaction include `Tx
 
   // signDoc = (1)txBody + (2)authInfo
   // ---------------------------------- (1)txBody ----------------------------------
+  const pubKeyAny = new message.google.protobuf.Any({
+        type_url: '/cosmos.crypto.secp256k1.PubKey',
+        value: Buffer.from('0a21ffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffff', 'hex') //temp value
+  })
   const msgSend = new message.cosmos.bank.v1beta1.MsgSend({
-    from_address: address,
-    to_address: "cosmos1jf874x5vr6wkza6ahvamck4sy4w76aq4w9c4s5",
+    from_address: recAddress,
+    to_address: toAddress,
     amount: [{ denom: "uatom", amount: String(100000) }]        // 6 decimal places (1000000 uatom = 1 ATOM)
   });
 

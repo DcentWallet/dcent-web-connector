@@ -21,8 +21,8 @@
 | v0.12.0     | 2023. 02. 15 | add Tron & Stellar transaction transaction functions       |
 | v0.12.1     | 2023. 05. 03 | add support coin group for syncAccount                     |
 | v0.13.0     | 2023. 05. 16 | add Tezos & Vechain & Near & Havah transaction function    |
-| v0.13.1     | 2023. 05.    | add Polkadot & Comsmos(Czone) & Near Token                 |
-
+| v0.13.1     | 2023. 05. 17 | Fixed fee display issue                                    |
+| v0.14.0     | 2023. 05     | add Polkadot & Comsmos(Czone) & Near Token                 |
 
 ## 1. INTRODUCTION
 
@@ -512,7 +512,6 @@ try{
     result = e
 }
 ```
-
 
 ### Get XPUB
 

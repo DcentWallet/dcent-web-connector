@@ -7,7 +7,7 @@ const {
   bitcoinTxType: dcentBitcoinTxType,
   klaytnTxType: dcentKlaytnTxType,
   xrpTxType: dcentXrpTxType,
-  unionDecimals
+  coinDecimals
 } = require('./type/dcent-web-type')
 
 const {
@@ -1255,7 +1255,7 @@ dcent.getTezosSignedTransaction = async function ({
     coinType,
     decimals,
     sig_hash: sigHash,
-    fee: UnitConverter(fee, unionDecimals.TEZOS).bignum.toString(16).padStart(16, '0'),
+    fee: UnitConverter(fee, coinDecimals.TEZOS).bignum.toString(16).padStart(16, '0'),
     path,
     symbol,
   }
@@ -1282,7 +1282,7 @@ dcent.getVechainSignedTransaction = async function ({
     coinType,
     decimals,
     sig_hash: sigHash,
-    fee: UnitConverter(fee, unionDecimals.VECHAIN).bignum.toString(16).padStart(16, '0'),
+    fee: UnitConverter(fee, coinDecimals.VECHAIN).bignum.toString(16).padStart(16, '0'),
     path,
     symbol,
   }
@@ -1304,8 +1304,7 @@ dcent.getNearSignedTransaction = async function ({
   symbol,
   optionParam,
 }) {
-  // converts NEAR amount into yoctoNEAR (10^-24)
-  const nearFee = '000000ef' + '00000010' + UnitConverter(fee, unionDecimals.NEAR).bignum.toString(16).padStart(32, '0')
+  const nearFee = '000000ef' + '00000010' + UnitConverter(fee, coinDecimals.NEAR).bignum.toString(16).padStart(32, '0')
   const params = {
     coinType,
     decimals,
@@ -1338,7 +1337,7 @@ dcent.getHavahSignedTransaction = async function ({
     coinType,
     decimals,
     sig_hash: sigHash,
-    fee: UnitConverter(fee, unionDecimals.HAVAH).bignum.toString(16).padStart(16, '0'),
+    fee: UnitConverter(fee, coinDecimals.HAVAH).bignum.toString(16).padStart(16, '0'),
     path,
     symbol,
   }
@@ -1365,7 +1364,7 @@ dcent.getPolkadotSignedTransaction = async function ({
     coinType,
     decimals,
     sig_hash: sigHash,
-    fee: UnitConverter(fee, unionDecimals.POLKADOT).bignum.toString(16).padStart(16, '0'),
+    fee: UnitConverter(fee, coinDecimals.POLKADOT).bignum.toString(16).padStart(16, '0'),
     path,
     symbol,
   }
@@ -1387,7 +1386,7 @@ dcent.getCosmosSignedTransaction = async function ({
   symbol,
   optionParam,
 }) {
-  const decimal = (coinType === dcentCoinType.COSMOS) ? unionDecimals.COSMOS : decimals
+  const decimal = (coinType === dcentCoinType.COSMOS) ? coinDecimals.COSMOS : decimals
   const params = {
     coinType,
     decimals,

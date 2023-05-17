@@ -97,7 +97,7 @@ describe('[dcent-web-connector] Bridge - init', () => {
             decimals: 2,
             fee: '0.000860039223625', // '000000000000002ea3e4bd9e0b140000', // 
             symbol: 'USDC',
-            optionParm: '02'
+            optionParam: '02'
         }
         var response = await page.evaluate((transactionJson) => {
             // eslint-disable-next-line no-undef

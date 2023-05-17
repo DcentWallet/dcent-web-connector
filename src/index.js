@@ -6,7 +6,8 @@ const {
   coinName: dcentCoinName,
   bitcoinTxType: dcentBitcoinTxType,
   klaytnTxType: dcentKlaytnTxType,
-  xrpTxType: dcentXrpTxType
+  xrpTxType: dcentXrpTxType,
+  unionDecimals
 } = require('./type/dcent-web-type')
 
 const {
@@ -1226,7 +1227,7 @@ dcent.getTezosSignedTransaction = async function ({
     coinType,
     decimals,
     sig_hash: sigHash,
-    fee: UnitConverter(fee, decimals).bignum.toString(16).padStart(16, '0'),
+    fee: UnitConverter(fee, unionDecimals.TEZOS).bignum.toString(16).padStart(16, '0'),
     path,
     symbol,
   }
@@ -1253,7 +1254,7 @@ dcent.getVechainSignedTransaction = async function ({
     coinType,
     decimals,
     sig_hash: sigHash,
-    fee: UnitConverter(fee, decimals).bignum.toString(16).padStart(16, '0'),
+    fee: UnitConverter(fee, unionDecimals.VECHAIN).bignum.toString(16).padStart(16, '0'),
     path,
     symbol,
   }
@@ -1275,7 +1276,7 @@ dcent.getNearSignedTransaction = async function ({
   symbol,
   optionParam,
 }) {
-  const nearFee = '000000ef' + '00000010' + UnitConverter(fee, decimals).bignum.toString(16).padStart(32, '0')
+  const nearFee = '000000ef' + '00000010' + UnitConverter(fee, unionDecimals.NEAR).bignum.toString(16).padStart(32, '0')
   const params = {
     coinType,
     decimals,
@@ -1308,7 +1309,7 @@ dcent.getHavahSignedTransaction = async function ({
     coinType,
     decimals,
     sig_hash: sigHash,
-    fee: UnitConverter(fee, decimals).bignum.toString(16).padStart(16, '0'),
+    fee: UnitConverter(fee, unionDecimals.HAVAH).bignum.toString(16).padStart(16, '0'),
     path,
     symbol,
   }

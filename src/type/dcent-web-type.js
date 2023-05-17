@@ -197,6 +197,15 @@ const xrpTxType = {
   TrustSet: 'TrustSet'
 }
 
+const unionDecimals = {
+  TEZOS: 6,
+  VECHAIN: 18,
+  NEAR: 24,
+  HAVAH: 18,
+  POLKADOT: 12,
+  COSMOS: 6,
+}
+
 module.exports = {
   coinType,
   coinGroup,
@@ -204,4 +213,5 @@ module.exports = {
   bitcoinTxType,
   klaytnTxType,
   xrpTxType,
+  unionDecimals,
 }

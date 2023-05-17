@@ -1505,7 +1505,11 @@ For broadcast the sign transaction, you must reconstruct transaction include `Tx
   - path: key path, wallet sign with that private key with a given key path (BIP32 ex) "m/44'/397'/0'").
   - fee: fee, It is fee that wallet displays on the screen.
   - symbol: symbol, It is a symbol that the wallet displays on the screen.
-  - decimals: near's decimals.
+  - decimals: near or near token's decimals.
+  - optionParam: hexadecimal value of the token method type is used only in near token.
+    - '02' : Function call(ft_transfer)
+    - '~~04' : Stake~~ (**The method will be supported later.)**
+    - ~~'08' : Delegate~~ (**The method will be supported later)**
 - Requirements:
 
   - `D'CENT Bridge` version 1.5.0 or higher is required.
@@ -1602,6 +1606,11 @@ For broadcast the sign transaction, you must reconstruct transaction include `Tx
   - fee: fee, It is fee that wallet displays on the screen.
   - symbol: symbol, It is a symbol that the wallet displays on the screen.
   - decimals: havah or havah token's decimals.
+  - optionParam: hexadecimal value of the havah method type is used only in havah token.
+    - '01' : Token Transfer
+    - '02' : Token Deposit
+    - '03' : Token Message
+    - ~~'04': Token Deploy~~ (**The method will be supported later)**
 - Requirements:
 
   - `D'CENT Bridge` version 1.5.0 or higher is required.

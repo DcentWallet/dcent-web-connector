@@ -63,7 +63,7 @@ describe('[dcent-web-connector] Bridge - init', () => {
             sigHash: rawData,
             path: `m/44'/354'/0'/0/0`,
             decimals: 12,
-            fee: '00000000000001F4', // 0.0000000005
+            fee: '0.0000000005', // '00000000000001F4', // 0.0000000005
             symbol: 'DOT',
         }
         var response = await page.evaluate((transactionJson) => {

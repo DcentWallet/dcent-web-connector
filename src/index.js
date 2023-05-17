@@ -1360,7 +1360,7 @@ dcent.getPolkadotSignedTransaction = async function ({
     coinType,
     decimals,
     sig_hash: sigHash,
-    fee,
+    fee: UnitConverter(fee, decimals).bignum.toString(16).padStart(16, '0'),
     path,
     symbol,
   }
@@ -1386,7 +1386,7 @@ dcent.getCosmosSignedTransaction = async function ({
     coinType,
     decimals,
     sig_hash: sigHash,
-    fee,
+    fee: UnitConverter(fee, decimals).bignum.toString(16).padStart(16, '0'),
     path,
     symbol,
   }

@@ -498,6 +498,22 @@ The address string format is depend on the coin type.
 
 For some coin type(ex. TEZOS), include pubkey as a property of the response parameter.
 
+In case of CZONE, change the prefix value of the address by adding optionParam to the function `getAddress()`.
+
+```js
+var coinType = DcentWebConnector.coinType.CZONE
+var keyPath = "m/44'/118'/0'/0/0" // key path of the account
+var optionParam = Buffer.from('osmo', 'utf8').toString('hex')
+var result
+try{
+    // Get Czone(osmo) Address corresponding to keyPath
+    result = await DcentWebConnector.getAddress(coinType, keyPath, optionParam )
+}catch(e){
+    result = e
+}
+```
+
+
 ### Get XPUB
 
 You can get xpub using `getXPUB()` function.
@@ -1482,6 +1498,7 @@ For broadcast the sign transaction, you must reconstruct transaction include `Tx
 - This fuction for :
 
   - NEAR(NEAR)
+  - NEAR Token
 - Parameters :
 
   - unsignedTx: unsigned hexadecimal tx [Near Docs](https://docs.near.org/ko/tools/near-api-js/reference/modules/transaction#signtransaction)
@@ -1492,7 +1509,9 @@ For broadcast the sign transaction, you must reconstruct transaction include `Tx
 - Requirements:
 
   - `D'CENT Bridge` version 1.5.0 or higher is required.
+    - near token: version 1.5.1 or higher is required.
   - D'CENT Biometric Wallet version 2.24.0. or higher is required.
+    - near token: version 2.27.1 or higher is required.
 - Useage:
 
   ```js

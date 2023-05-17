@@ -40,6 +40,10 @@
         "supportVersion": "2.24.0"
     },
     {
+        "name": "near-token",
+        "supportVersion": "2.27.1"
+    },
+    {
         "name": "czone",
         "supportVersion": "2.25.0"
     },

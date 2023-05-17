@@ -6,7 +6,8 @@ const {
   coinName: dcentCoinName,
   bitcoinTxType: dcentBitcoinTxType,
   klaytnTxType: dcentKlaytnTxType,
-  xrpTxType: dcentXrpTxType
+  xrpTxType: dcentXrpTxType,
+  unionDecimals
 } = require('./type/dcent-web-type')
 
 const {
@@ -500,6 +501,7 @@ function isAvaliableCoinGroup (coinGroup) {
     case dcentCoinGroup.XTZ_FA_TESTNET.toLowerCase():
     case dcentCoinGroup.NEAR.toLowerCase():
     case dcentCoinGroup.NEAR_TESTNET.toLowerCase():
+    case dcentCoinGroup.NEAR_TOKEN.toLowerCase():
     case dcentCoinGroup.VECHAIN.toLowerCase():
     case dcentCoinGroup.VECHAIN_ERC20.toLowerCase():
     case dcentCoinGroup.HAVAH.toLowerCase():
@@ -560,6 +562,7 @@ function isAvaliableCoinType (coinType) {
     case dcentCoinType.VECHAIN_ERC20.toLowerCase():
     case dcentCoinType.NEAR.toLowerCase():
     case dcentCoinType.NEAR_TESTNET.toLowerCase():
+    case dcentCoinType.NEAR_TOKEN.toLowerCase():
     case dcentCoinType.HAVAH.toLowerCase():
     case dcentCoinType.HAVAH_TESTNET.toLowerCase():
     case dcentCoinType.HAVAH_HSP20.toLowerCase():
@@ -591,6 +594,7 @@ function isTokenType (coinGroup) {
     case dcentCoinGroup.VECHAIN_ERC20.toLowerCase():
     case dcentCoinGroup.HAVAH_HSP20.toLowerCase():
     case dcentCoinGroup.HAVAH_HSP20_TESTNET.toLowerCase():
+    case dcentCoinGroup.NEAR_TOKEN.toLowerCase():
       return true
     default:
       return false
@@ -1251,7 +1255,7 @@ dcent.getTezosSignedTransaction = async function ({
     coinType,
     decimals,
     sig_hash: sigHash,
-    fee: UnitConverter(fee, decimals).bignum.toString(16).padStart(16, '0'),
+    fee: UnitConverter(fee, unionDecimals.TEZOS).bignum.toString(16).padStart(16, '0'),
     path,
     symbol,
   }
@@ -1278,7 +1282,7 @@ dcent.getVechainSignedTransaction = async function ({
     coinType,
     decimals,
     sig_hash: sigHash,
-    fee: UnitConverter(fee, decimals).bignum.toString(16).padStart(16, '0'),
+    fee: UnitConverter(fee, unionDecimals.VECHAIN).bignum.toString(16).padStart(16, '0'),
     path,
     symbol,
   }
@@ -1300,7 +1304,8 @@ dcent.getNearSignedTransaction = async function ({
   symbol,
   optionParam,
 }) {
-  const nearFee = '000000ef' + '00000010' + UnitConverter(fee, decimals).bignum.toString(16).padStart(32, '0')
+  // converts NEAR amount into yoctoNEAR (10^-24)
+  const nearFee = '000000ef' + '00000010' + UnitConverter(fee, unionDecimals.NEAR).bignum.toString(16).padStart(32, '0')
   const params = {
     coinType,
     decimals,
@@ -1333,7 +1338,7 @@ dcent.getHavahSignedTransaction = async function ({
     coinType,
     decimals,
     sig_hash: sigHash,
-    fee: UnitConverter(fee, decimals).bignum.toString(16).padStart(16, '0'),
+    fee: UnitConverter(fee, unionDecimals.HAVAH).bignum.toString(16).padStart(16, '0'),
     path,
     symbol,
   }
@@ -1360,7 +1365,7 @@ dcent.getPolkadotSignedTransaction = async function ({
     coinType,
     decimals,
     sig_hash: sigHash,
-    fee: UnitConverter(fee, decimals).bignum.toString(16).padStart(16, '0'),
+    fee: UnitConverter(fee, unionDecimals.POLKADOT).bignum.toString(16).padStart(16, '0'),
     path,
     symbol,
   }
@@ -1382,11 +1387,12 @@ dcent.getCosmosSignedTransaction = async function ({
   symbol,
   optionParam,
 }) {
+  const decimal = (coinType === dcentCoinType.COSMOS) ? unionDecimals.COSMOS : decimals
   const params = {
     coinType,
     decimals,
     sig_hash: sigHash,
-    fee: UnitConverter(fee, decimals).bignum.toString(16).padStart(16, '0'),
+    fee: UnitConverter(fee, decimal).bignum.toString(16).padStart(16, '0'),
     path,
     symbol,
   }

@@ -41,6 +41,7 @@ const coinType = {
   VECHAIN_ERC20: 'vechain-erc20',
   NEAR: 'near',
   NEAR_TESTNET: 'near-testnet',
+  NEAR_TOKEN: 'near-token',
   HAVAH: 'havah',
   HAVAH_TESTNET: 'havah-testnet',
   HAVAH_HSP20: 'havah-hsp20',
@@ -91,6 +92,7 @@ const coinGroup = {
   VECHAIN_ERC20: 'VECHAIN-ERC20',
   NEAR: 'NEAR',
   NEAR_TESTNET: 'NEAR-TESTNET',
+  NEAR_TOKEN: 'NEAR-TOKEN',
   HAVAH: 'HAVAH',
   HAVAH_TESTNET: 'HAVAH-TESTNET',
   HAVAH_HSP20: 'HAVAH-HSP20',
@@ -141,6 +143,7 @@ const coinName = {
   VECHAIN_ERC20: 'VECHAIN-ERC20',
   NEAR: 'NEAR',
   NEAR_TESTNET: 'NEAR-TESTNET',
+  NEAR_TOKEN: 'NEAR-TOKEN',
   HAVAH: 'HAVAH',
   HAVAH_TESTNET: 'HAVAH-TESTNET',
   HAVAH_HSP20: 'HAVAH-HSP20',
@@ -206,6 +209,15 @@ const xrpTxType = {
   TrustSet: 'TrustSet'
 }
 
+const unionDecimals = {
+  TEZOS: 6,
+  VECHAIN: 18,
+  NEAR: 24,
+  HAVAH: 18,
+  POLKADOT: 12,
+  COSMOS: 6,
+}
+
 module.exports = {
   coinType,
   coinGroup,
@@ -213,4 +225,5 @@ module.exports = {
   bitcoinTxType,
   klaytnTxType,
   xrpTxType,
+  unionDecimals,
 }

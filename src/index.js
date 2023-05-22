@@ -531,10 +531,7 @@ const _contractNotStartWith0x = (coinGroup) => {
   return false
 }
 
-function isAvailableSyncAccountParam (account) {
-  if (!isAvaliableCoinGroup(account.coin_group)) {
-      throw dcent.dcentException('coin_group_error', 'not supported coin group')
-    }
+function isAvailableSyncAccountCoinName (account) {
     if (isTokenType(account.coin_group)) {
       if (account.coin_group === dcentCoinGroup.XTZ_FA.toLowerCase() || account.coin_group === dcentCoinGroup.XTZ_FA_TESTNET.toLowerCase()) {
         if (!account.coin_name.toLowerCase().startsWith('kt1')) {
@@ -690,8 +687,11 @@ dcent.syncAccount = async function (accountInfos) {
   for (var i = 0; i < accountInfos.length; i = i + 1) {
     const account = accountInfos[i]
     
-    if (!isAvailableSyncAccountParam(account)) {
-      throw dcent.dcentException('coin_group_name_error', 'not supported coin group or name')
+    if (!isAvaliableCoinGroup(account.coin_group)) {
+      throw dcent.dcentException('coin_group_error', 'not supported coin group')
+    }
+    if (!isAvailableSyncAccountCoinName(account)) {
+      throw dcent.dcentException('coin_name_error', 'not supported coin name')
     }
     if (!isAvaliableLabel(account.label)) {
       throw dcent.dcentException('param_error', 'Invalid Label - ' + account.label)

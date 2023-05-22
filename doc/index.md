@@ -343,6 +343,8 @@ After execute above code, you can see the modified label on your device when reb
 
 ### Add & Sync Account
 
+> As of firmware version 2.9.2 or later, the D'CENT biometric wallet device does not support updating the balance.
+
 You can add account using `syncAccount()` function. You can create an account by specifying the coin type and key path of the account you want to add.
 If you want to add token type coin account, you must specify the coin name as the first 14 digits of contract address.
 
@@ -380,6 +382,27 @@ let account_infos = [{
 var result
 try{
     // Ethereum account will be updated.
+    result = await DcentWebConnector.syncAccount(account_infos)
+}catch(e){
+    result = e
+}
+```
+
+When performing the ``syncAccount`` method of the CZONE coin group, `coin_name` must be used the full name of coin, and the `coin_group` must be used in the form 'CZONE: Prefix' containing the prefix.
+
+```js
+let account_infos = [{
+    coin_group: DcentWebConnector.coinGroup.CZONE + ':core',
+    coin_name: 'COREUM',
+    label: 'CORE-01', // account label
+    balance: '0',
+    address_path: "m/44'/990'/0'/0/0" // key path of the account. This address_path is displayed on the device with the corresponding address and QR code.
+}]
+// This Coreum account is already created.
+// So the Coreum account label and balance will be just modified.
+var result
+try{
+    // Coreum account will be updated.
     result = await DcentWebConnector.syncAccount(account_infos)
 }catch(e){
     result = e

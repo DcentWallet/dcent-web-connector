@@ -513,8 +513,46 @@ function isAvaliableCoinGroup (coinGroup) {
     case dcentCoinGroup.CZONE.toLowerCase():
       return true
     default:
+      if (coinGroup.split(':')[0].toLowerCase() === dcentCoinGroup.CZONE.toLowerCase()) {
+          return true
+      }
       return false
   }
+}
+
+const _contractNotStartWith0x = (coinGroup) => {
+  if (coinGroup === dcentCoinGroup.TRC_TOKEN.toLowerCase() || coinGroup === dcentCoinGroup.TRC_TESTNET.toLowerCase() ||
+      coinGroup === dcentCoinGroup.XRC20.toLowerCase() || coinGroup === dcentCoinGroup.XRC20_APOTHEM.toLowerCase() ||
+      coinGroup === dcentCoinGroup.HTS_TESTNET.toLowerCase() || coinGroup === dcentCoinGroup.HEDERA_HTS.toLowerCase() ||
+      coinGroup === dcentCoinGroup.HAVAH_HSP20.toLowerCase() || coinGroup === dcentCoinGroup.HAVAH_HSP20_TESTNET.toLowerCase() ||
+      coinGroup === dcentCoinGroup.NEAR_TOKEN.toLowerCase()) {
+          return true
+  }
+  return false
+}
+
+function isAvailableSyncAccountParam (account) {
+  if (!isAvaliableCoinGroup(account.coin_group)) {
+      throw dcent.dcentException('coin_group_error', 'not supported coin group')
+    }
+    if (isTokenType(account.coin_group)) {
+      if (account.coin_group === dcentCoinGroup.XTZ_FA.toLowerCase() || account.coin_group === dcentCoinGroup.XTZ_FA_TESTNET.toLowerCase()) {
+        if (!account.coin_name.toLowerCase().startsWith('kt1')) {
+            return false
+        } else {
+            return true
+        }
+      }
+      if (!account.coin_name.startsWith('0x') && !account.coin_name.startsWith('0X') &&
+          _contractNotStartWith0x(account.coin_group.toLowerCase()) !== true) {
+          return false
+      }
+    } else {
+      if (!isAvaliableCoinGroup(account.coin_name) && account.coin_group.split(':')[0].toLowerCase() !== dcentCoinGroup.CZONE.toLowerCase()) {
+        return false
+      }
+    }
+    return true
 }
 
 function isAvaliableCoinType (coinType) {
@@ -651,11 +689,9 @@ dcent.syncAccount = async function (accountInfos) {
   // check account info parameter 
   for (var i = 0; i < accountInfos.length; i = i + 1) {
     const account = accountInfos[i]
-    if (!isAvaliableCoinGroup(account.coin_group)) {
-      throw dcent.dcentException('coin_group_error', 'not supported coin group')
-    }
-    if (!isTokenType(account.coin_group) && !isAvaliableCoinGroup(account.coin_name)) {
-      throw dcent.dcentException('coin_name_error', 'not supported coin name')
+    
+    if (!isAvailableSyncAccountParam(account)) {
+      throw dcent.dcentException('coin_group_name_error', 'not supported coin group or name')
     }
     if (!isAvaliableLabel(account.label)) {
       throw dcent.dcentException('param_error', 'Invalid Label - ' + account.label)

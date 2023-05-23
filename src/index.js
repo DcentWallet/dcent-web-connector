@@ -495,27 +495,27 @@ function isAvaliableCoinGroup (coinGroup) {
     case dcentCoinGroup.HTS_TESTNET.toLowerCase():
     case dcentCoinGroup.STELLAR.toLowerCase():
     case dcentCoinGroup.TRON.toLowerCase():
-    case dcentCoinGroup.TEZOS.toLowerCase():
-    case dcentCoinGroup.TEZOS_TESTNET.toLowerCase():
-    case dcentCoinGroup.XTZ_FA.toLowerCase():
-    case dcentCoinGroup.XTZ_FA_TESTNET.toLowerCase():
-    case dcentCoinGroup.NEAR.toLowerCase():
-    case dcentCoinGroup.NEAR_TESTNET.toLowerCase():
-    case dcentCoinGroup.NEAR_TOKEN.toLowerCase():
-    case dcentCoinGroup.VECHAIN.toLowerCase():
-    case dcentCoinGroup.VECHAIN_ERC20.toLowerCase():
-    case dcentCoinGroup.HAVAH.toLowerCase():
-    case dcentCoinGroup.HAVAH_TESTNET.toLowerCase():
-    case dcentCoinGroup.HAVAH_HSP20.toLowerCase():
-    case dcentCoinGroup.HAVAH_HSP20_TESTNET.toLowerCase():
-    case dcentCoinGroup.POLKADOT.toLowerCase():
-    case dcentCoinGroup.COSMOS.toLowerCase():
-    case dcentCoinGroup.CZONE.toLowerCase():
+    // case dcentCoinGroup.TEZOS.toLowerCase():
+    // case dcentCoinGroup.TEZOS_TESTNET.toLowerCase():
+    // case dcentCoinGroup.XTZ_FA.toLowerCase():
+    // case dcentCoinGroup.XTZ_FA_TESTNET.toLowerCase():
+    // case dcentCoinGroup.NEAR.toLowerCase():
+    // case dcentCoinGroup.NEAR_TESTNET.toLowerCase():
+    // case dcentCoinGroup.NEAR_TOKEN.toLowerCase():
+    // case dcentCoinGroup.VECHAIN.toLowerCase():
+    // case dcentCoinGroup.VECHAIN_ERC20.toLowerCase():
+    // case dcentCoinGroup.HAVAH.toLowerCase():
+    // case dcentCoinGroup.HAVAH_TESTNET.toLowerCase():
+    // case dcentCoinGroup.HAVAH_HSP20.toLowerCase():
+    // case dcentCoinGroup.HAVAH_HSP20_TESTNET.toLowerCase():
+    // case dcentCoinGroup.POLKADOT.toLowerCase():
+    // case dcentCoinGroup.COSMOS.toLowerCase():
+    // case dcentCoinGroup.CZONE.toLowerCase():
       return true
     default:
-      if (coinGroup.split(':')[0].toLowerCase() === dcentCoinGroup.CZONE.toLowerCase()) {
-          return true
-      }
+      // if (coinGroup.split(':')[0].toLowerCase() === dcentCoinGroup.CZONE.toLowerCase()) {
+      //     return true
+      // }
       return false
   }
 }

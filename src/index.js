@@ -510,7 +510,7 @@ function isAvaliableCoinGroup (coinGroup) {
     // case dcentCoinGroup.HAVAH_HSP20_TESTNET.toLowerCase():
     // case dcentCoinGroup.POLKADOT.toLowerCase():
     // case dcentCoinGroup.COSMOS.toLowerCase():
-    // case dcentCoinGroup.CZONE.toLowerCase():
+    // case dcentCoinGroup.COREUM.toLowerCase():
       return true
     default:
       // if (coinGroup.split(':')[0].toLowerCase() === dcentCoinGroup.CZONE.toLowerCase()) {
@@ -605,7 +605,7 @@ function isAvaliableCoinType (coinType) {
     case dcentCoinType.HAVAH_HSP20_TESTNET.toLowerCase():
     case dcentCoinType.POLKADOT.toLowerCase():
     case dcentCoinType.COSMOS.toLowerCase():
-    case dcentCoinType.CZONE.toLowerCase():
+    case dcentCoinType.COREUM.toLowerCase():
       return true
     default:
       return false
@@ -649,12 +649,30 @@ function isBitcoinTxCoinType (coinType) {
   }
 }
    
-function isAvailaleOptionParamCoinType (coinType) {
+function isCzoneCoinType (coinType) {
   switch (coinType.toLowerCase()) {
-    case dcentCoinType.CZONE.toLowerCase():
+    case dcentCoinType.COREUM.toLowerCase():
       return true
     default:
       return false
+  }
+}
+
+function getCzonePrifix (coinType) {
+  switch (coinType.toLowerCase()) {
+    case dcentCoinType.COREUM.toLowerCase():
+      return Buffer.from('core', 'utf8').toString('hex')
+    default:
+      return undefined
+  }
+}
+
+function getCzonDecimal (coinType) {
+  switch (coinType.toLowerCase()) {
+    case dcentCoinType.COREUM.toLowerCase():
+      return coinDecimals.COREUM
+    default:
+      return undefined
   }
 }
 
@@ -738,32 +756,33 @@ dcent.selectAddress = async function (addresses) {
  * 
  * @param {string} coinType coin type. 
  * @param {string} path string value of key path to get address
- * @param {string} optionParam string value of prefix to get address (for czone)
  * @returns {Object} address.
  */
-dcent.getAddress = async function (coinType, path, optionParam) {
+dcent.getAddress = async function (coinType, path) {
 
   if (!isAvaliableCoinType(coinType)) {
     throw dcent.dcentException('coin_type_error', 'not supported coin type')
   }
 
-  if (optionParam && !isAvailaleOptionParamCoinType(coinType)) {
-    throw dcent.dcentException('invalid parameter', 'optionParam is invalid parameter')
-  } 
-
   const params = {
-    coinType: coinType,
+    coinType: isCzoneCoinType(coinType) ? 'czone' : coinType,
     path: path,
   }
 
-  if (optionParam) {
-    params.optionParam = optionParam
-  }
+  if (isCzoneCoinType(coinType)) {
+    params.optionParam = getCzonePrifix(coinType)
+} 
    
-  return await dcent.call({
+  const res = await dcent.call({
     method: 'getAddress',
     params
   })
+
+  if (res.header.response_from === 'czone') {
+    res.header.response_from = coinType
+  }
+  
+  return res
 }
 
 /**
@@ -1423,9 +1442,10 @@ dcent.getCosmosSignedTransaction = async function ({
   symbol,
   optionParam,
 }) {
-  const decimal = (coinType === dcentCoinType.COSMOS) ? coinDecimals.COSMOS : decimals
+  const decimal = (coinType.toLowerCase() === dcentCoinType.COSMOS.toLowerCase()) ? coinDecimals.COSMOS : getCzonDecimal(coinType)
+
   const params = {
-    coinType,
+    coinType: isCzoneCoinType(coinType) ? 'czone' : coinType,
     decimals,
     sig_hash: sigHash,
     fee: UnitConverter(fee, decimal).bignum.toString(16).padStart(16, '0'),
@@ -1434,10 +1454,16 @@ dcent.getCosmosSignedTransaction = async function ({
   }
   if (nonce) params.nonce = nonce
   if (optionParam) params.optionParam = optionParam
-  return await dcent.call({
+
+  const res = await dcent.call({
     method: 'getUnionSignedTransaction',
     params
   })
+
+  if (res.header.response_from === 'czone') {
+    res.header.response_from = coinType
+  }
+  return res
 }
 
 dcent.state = dcentState

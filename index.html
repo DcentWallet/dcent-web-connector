@@ -57,7 +57,7 @@
         <br />
         <button id="get_account_info" type="button" class="btn btn-primary">Get Account Info</button>
         <button id="sync_account" type="button" class="btn btn-primary">Set Sync Account </button>
-        <button id="sync_account_czone" type="button" class="btn btn-primary">Set Sync Account (czone)</button>
+        <!-- <button id="sync_account_czone" type="button" class="btn btn-primary">Set Sync Account (czone)</button> -->
         <br />
 
         <button id="get_xpub" type="button" class="btn btn-primary">Get XPUB </button>
@@ -111,7 +111,7 @@
         <button id="getHavahHsp20SignedTransaction-deploy" type="button" class="btn btn-primary">getHavahHsp20SignedTransaction-deploy</button>
         <button id="getPolkadotSignedTransaction" type="button" class="btn btn-primary">getPolkadotSignedTransaction</button>
         <button id="getCosmosSignedTransaction" type="button" class="btn btn-primary">getCosmosSignedTransaction</button>
-        <button id="getCzoneSignedTransaction" type="button" class="btn btn-primary">getCzoneSignedTransaction</button>
+        <button id="getCoreumSignedTransaction" type="button" class="btn btn-primary">getCoreumSignedTransaction</button>
         
         <br /><br />
 
@@ -166,8 +166,8 @@
         <button id="get_address_cosmos" type="button" class="btn btn-primary">Get Cosmos Mainnet
           Address("m/44'/118'/0'/0/0")</button>
         <br />
-        <button id="get_address_czone" type="button" class="btn btn-primary">Get Czone(osmo) Mainnet
-          Address("m/44'/118'/0'/0/0")</button>
+        <button id="get_address_coreum" type="button" class="btn btn-primary">Get Coreum Mainnet
+          Address("m/44'/990'/0'/0/0")</button>
         <br />
 
       </div>
@@ -210,7 +210,7 @@
         $('#select_address').click(select_address_clicked);
         $('#get_account_info').click(get_account_info_clicked);
         $('#sync_account').click(sync_account_info_clicked);
-        $('#sync_account_czone').click(sync_account_info_czone_clicked);
+        // $('#sync_account_czone').click(sync_account_info_czone_clicked);
 
         $('#get_xpub').click(get_xpub_clicked);
 
@@ -237,8 +237,8 @@
         $('#get_address_near').click(get_address_near_clicked);
         $('#get_address_havah').click(get_address_havah_clicked);
         $('#get_address_polkadot').click(get_address_polkadot_clicked);
-        $('#get_address_cosomos').click(get_address_cosmos_clicked);
-        $('#get_address_czone').click(get_address_czone_clicked);
+        $('#get_address_cosmos').click(get_address_cosmos_clicked);
+        $('#get_address_coreum').click(get_address_coreum_clicked);
 
         $('#getBitcoinSignedTransaction').click(getBitcoinSignedTransaction_clicked);
         
@@ -278,7 +278,7 @@
         $('#getHavahHsp20SignedTransaction-deploy').click(getHavahHsp20SignedTransaction_deploy_clicked);
         $('#getPolkadotSignedTransaction').click(getPolkadotSignedTransaction_clicked);
         $('#getCosmosSignedTransaction').click(getCosmosSignedTransaction_clicked);
-        $('#getCzoneSignedTransaction').click(getCzoneSignedTransaction_clicked);
+        $('#getCoreumSignedTransaction').click(getCoreumSignedTransaction_clicked);
       });
 
       async function info_clicked() {
@@ -342,23 +342,23 @@
         resp_editor.load(result)
       };
 
-      async function sync_account_info_czone_clicked() {
-        set_command_name("Processing...")
+      // async function sync_account_info_czone_clicked() {
+      //   set_command_name("Processing...")
 
-        let account_infos = [
-            {
-                coin_group: DcentWebConnector.coinGroup.CZONE + ':core',
-                coin_name: 'COREUM',
-                label: 'CORE-01',
-                address_path: "m/44'/990'/0'/0/0",
-                balance: '0',
-            },
-        ]
-        var result = await syncAccount(account_infos)
+      //   let account_infos = [
+      //       {
+      //           coin_group: DcentWebConnector.coinGroup.CZONE + ':core',
+      //           coin_name: 'COREUM',
+      //           label: 'CORE-01',
+      //           address_path: "m/44'/990'/0'/0/0",
+      //           balance: '0',
+      //       },
+      //   ]
+      //   var result = await syncAccount(account_infos)
 
-        set_command_name("coin sync_account_info");
-        resp_editor.load(result)
-      };
+      //   set_command_name("coin sync_account_info");
+      //   resp_editor.load(result)
+      // };
 
       async function get_xpub_clicked() {
         set_command_name("Processing...");
@@ -519,11 +519,11 @@
          resp_editor.load(result)
       }
  
-       async function get_address_czone_clicked() {
+       async function get_address_coreum_clicked() {
          set_command_name("Processing...");
-         var result = await getAddress(dcent.coinType.CZONE, "m/44'/118'/0'/0/0", '6f736d6f'/*Buffer.from('osmo', 'utf8').toString('hex')*/)
+         var result = await getAddress(dcent.coinType.COREUM, "m/44'/990'/0'/0/0")
  
-         set_command_name("get_address czone")        
+         set_command_name("get_address coreum")        
          resp_editor.load(result)
       }
  
@@ -1120,15 +1120,15 @@
          resp_editor.load(result)
        }
  
-       async function getCzoneSignedTransaction_clicked() {
+       async function getCoreumSignedTransaction_clicked() {
          set_command_name("Processing...");
          var transactionJson = {
-           coinType: dcent.coinType.CZONE,
+           coinType: dcent.coinType.COREUM,
            sigHash: '0a8d010a88010a1c2f636f736d6f732e62616e6b2e763162657461312e4d736753656e6412680a2b6f736d6f316e63796c757736636d75686635677868796a6d746c326e7064746a6a6864617465346533356d122b6f736d6f317875367a656a797978776c703675386438746a33767468336c6a746e306c396c37686a7039751a0c0a05756f736d6f1203313030120012670a500a460a1f2f636f736d6f732e63727970746f2e736563703235366b312e5075624b657912230a21ffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffff12040a020801181a12130a0d0a05756f736d6f12043230303010c09a0c1a096f736d6f7369732d31209fc720',
-           path: `m/44'/118'/0'/0/0`,
+           path: `m/44'/990'/0'/0/0`,
            decimals: 6,
            fee: '0.12',
-           symbol: 'OSMO',
+           symbol: 'CORE',
          }
          var result  = await getCosmosSignedTransaction(transactionJson);
        
@@ -1219,10 +1219,10 @@
         return result 
       }
 
-      async function getAddress(coinType, key, optionParam = undefined) {
+      async function getAddress(coinType, key) {
         var result 
         try { 
-          result = await dcent.getAddress(coinType, key, optionParam)
+          result = await dcent.getAddress(coinType, key)
         } catch (e) {
           result = e
         }

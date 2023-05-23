@@ -22,7 +22,7 @@
 | v0.12.1     | 2023. 05. 03 | add support coin group for syncAccount                     |
 | v0.13.0     | 2023. 05. 16 | add Tezos & Vechain & Near & Havah transaction function    |
 | v0.13.1     | 2023. 05. 17 | Fixed fee display issue                                    |
-| v0.14.0     | 2023. 05     | add Polkadot & Comsmos(Czone) & Near Token                 |
+| v0.14.0     | 2023. 05     | add Polkadot & Comsmos & Coreum & Near Token              |
 
 ## 1. INTRODUCTION
 
@@ -388,26 +388,6 @@ try{
 }
 ```
 
-When performing the ``syncAccount`` method of the CZONE coin group, `coin_name` must be used the full name of coin, and the `coin_group` must be used in the form 'CZONE: Prefix' containing the prefix.
-
-```js
-let account_infos = [{
-    coin_group: DcentWebConnector.coinGroup.CZONE + ':core',
-    coin_name: 'COREUM',
-    label: 'CORE-01', // account label
-    balance: '0',
-    address_path: "m/44'/990'/0'/0/0" // key path of the account. This address_path is displayed on the device with the corresponding address and QR code.
-}]
-// This Coreum account is already created.
-// So the Coreum account label and balance will be just modified.
-var result
-try{
-    // Coreum account will be updated.
-    result = await DcentWebConnector.syncAccount(account_infos)
-}catch(e){
-    result = e
-}
-```
 
 ### address_path
 
@@ -521,20 +501,6 @@ The address string format is depend on the coin type.
 
 For some coin type(ex. TEZOS), include pubkey as a property of the response parameter.
 
-In case of CZONE, change the prefix value of the address by adding optionParam to the function `getAddress()`.
-
-```js
-var coinType = DcentWebConnector.coinType.CZONE
-var keyPath = "m/44'/118'/0'/0/0" // key path of the account
-var optionParam = Buffer.from('osmo', 'utf8').toString('hex')
-var result
-try{
-    // Get Czone(osmo) Address corresponding to keyPath
-    result = await DcentWebConnector.getAddress(coinType, keyPath, optionParam )
-}catch(e){
-    result = e
-}
-```
 
 ### Get XPUB
 
@@ -1797,19 +1763,19 @@ For broadcast the sign transaction, you must reconstruct transaction include `Tx
 - This fuction for :
 
   - COSMOS(ATOM)
-  - CZONE
+  - COREUM(CORE)
 - Parameters :
 
   - unsignedTx: unsigned hexadecimal tx [Cosmos Docs](https://github.com/cosmostation/cosmosjs)
   - path: key path, wallet sign with that private key with a given key path (BIP32 ex) "m/44'/118'/0'/0/0").
   - fee: fee, It is fee that wallet displays on the screen.
   - symbol: symbol, It is a symbol that the wallet displays on the screen.
-  - decimals: cosmos or czone's decimals.
+  - decimals: cosmos or coreum's decimals.
 - Requirements:
 
   - `D'CENT Bridge` version 1.5.0 or higher is required.
   - D'CENT Biometric Wallet version 2.21.0 or higher is required.
-  - czone: 2.25.0 or higher is required.
+    - COREUM: 2.25.0 or higher is required.
 - Useage:
 
   ```js

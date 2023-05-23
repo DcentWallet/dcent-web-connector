@@ -80,17 +80,17 @@ describe('[dcent-web-connector] Bridge - init', () => {
         done()
     })
 
-    it('getCosmosSignedTransaction() - czone transaction success ', async (done) => {
+    it('getCosmosSignedTransaction() - coreum transaction success ', async (done) => {
         const rawDataStd = '0a8d010a88010a1c2f636f736d6f732e62616e6b2e763162657461312e4d736753656e6412680a2b6f736d6f316e63796c757736636d75686635677868796a6d746c326e7064746a6a6864617465346533356d122b6f736d6f317875367a656a797978776c703675386438746a33767468336c6a746e306c396c37686a7039751a0c0a05756f736d6f1203313030120012670a500a460a1f2f636f736d6f732e63727970746f2e736563703235366b312e5075624b657912230a21'
         const rawDataPubkeyTmp = 'ffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffff'
         const rawDataEnd = '12040a020801181a12130a0d0a05756f736d6f12043230303010c09a0c1a096f736d6f7369732d31209fc720'
         var transactionJson = {
-            coinType: DcentWebConnector.coinType.CZONE,
+            coinType: DcentWebConnector.coinType.COREUM,
             sigHash: rawDataStd + rawDataPubkeyTmp + rawDataEnd,
-            path: `m/44'/118'/0'/0/0`,
+            path: `m/44'/990'/0'/0/0`,
             decimals: 6,
             fee: '0.000251', // 00000000000000FB', // '0.000251'
-            symbol: 'OSMO',
+            symbol: 'CORE',
         }
         var response = await page.evaluate((transactionJson) => {
             // eslint-disable-next-line no-undef

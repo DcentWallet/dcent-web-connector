@@ -523,9 +523,10 @@ function isAvaliableCoinGroup (coinGroup) {
 const _contractNotStartWith0x = (coinGroup) => {
   if (coinGroup === dcentCoinGroup.TRC_TOKEN.toLowerCase() || coinGroup === dcentCoinGroup.TRC_TESTNET.toLowerCase() ||
       coinGroup === dcentCoinGroup.XRC20.toLowerCase() || coinGroup === dcentCoinGroup.XRC20_APOTHEM.toLowerCase() ||
-      coinGroup === dcentCoinGroup.HTS_TESTNET.toLowerCase() || coinGroup === dcentCoinGroup.HEDERA_HTS.toLowerCase() ||
-      coinGroup === dcentCoinGroup.HAVAH_HSP20.toLowerCase() || coinGroup === dcentCoinGroup.HAVAH_HSP20_TESTNET.toLowerCase() ||
-      coinGroup === dcentCoinGroup.NEAR_TOKEN.toLowerCase()) {
+      coinGroup === dcentCoinGroup.HTS_TESTNET.toLowerCase() || coinGroup === dcentCoinGroup.HEDERA_HTS.toLowerCase() // ||
+      // coinGroup === dcentCoinGroup.HAVAH_HSP20.toLowerCase() || coinGroup === dcentCoinGroup.HAVAH_HSP20_TESTNET.toLowerCase() ||
+      // coinGroup === dcentCoinGroup.NEAR_TOKEN.toLowerCase()
+      ) {
           return true
   }
   return false

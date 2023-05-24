@@ -1804,7 +1804,7 @@ For broadcast the sign transaction, you must reconstruct transaction include `Tx
   const signerInfo = new message.cosmos.tx.v1beta1.SignerInfo({
     public_key: pubKeyAny,
     mode_info: { single: { mode: message.cosmos.tx.signing.v1beta1.SignMode.SIGN_MODE_DIRECT } },
-    sequence: data.account.sequence
+    sequence // nonce
   });
 
   const feeValue = new message.cosmos.tx.v1beta1.Fee({
@@ -1826,12 +1826,12 @@ For broadcast the sign transaction, you must reconstruct transaction include `Tx
   const sigHash = Buffer.from(signMessage).toString('hex')
 
   const transactionJson = {
-    coinType: DcentWebConnector.coinType.COSMOS,
+    coinType: DcentWebConnector.coinType.COSMOS, // or COREUM
     sigHash: sigHash,
-    path: `m/44'/118'/0'/0/0`,
+    path: `m/44'/118'/0'/0/0`, // (COREUM -> m/44'/990'/0'/0/0)
     decimals, // 6
     fee,
-    symbol: 'ATOM',
+    symbol: 'ATOM', // (COREUM -> CORE)
   }
 
   var result

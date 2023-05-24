@@ -159,7 +159,7 @@ describe('[dcent-web-connector] Bridge - init', () => {
         done()
     })
 
-    it('getAddress() - success CZONE', async (done) => {
+    it('getAddress() - success COREAUM', async (done) => {
         const coinType = DcentWebConnector.coinType.COREUM
         const keyPath = "m/44'/990'/0'/0/0"
         // const optionParam = Buffer.from('osmo', 'utf8').toString('hex')

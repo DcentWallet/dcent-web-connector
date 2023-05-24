@@ -546,7 +546,7 @@ function isAvailableSyncAccountCoinName (account) {
           return false
       }
     } else {
-      if (!isAvaliableCoinGroup(account.coin_name) && account.coin_group.split(':')[0].toLowerCase() !== dcentCoinGroup.CZONE.toLowerCase()) {
+      if (!isAvaliableCoinGroup(account.coin_name)) {
         return false
       }
     }
@@ -781,7 +781,7 @@ dcent.getAddress = async function (coinType, path) {
   if (res.header.response_from === 'czone') {
     res.header.response_from = coinType
   }
-  
+
   return res
 }
 

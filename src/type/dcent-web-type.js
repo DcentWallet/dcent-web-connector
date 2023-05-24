@@ -49,7 +49,6 @@ const coinType = {
   POLKADOT: 'polkadot',
   COSMOS: 'cosmos',
   COREUM: 'coreum'
-  // CZONE: 'czone',
 }
 
 const coinGroup = {
@@ -101,7 +100,6 @@ const coinGroup = {
   POLKADOT: 'POLKADOT',
   COSMOS: 'COSMOS',
   COREUM: 'coreum'
-  // CZONE: 'CZONE',
 }
 
 const coinName = {
@@ -153,7 +151,6 @@ const coinName = {
   POLKADOT: 'POLKADOT',
   COSMOS: 'COSMOS',
   COREUM: 'COREUM'
-  // CZONE: 'CZONE',
 }
 
 const bitcoinTxType = {

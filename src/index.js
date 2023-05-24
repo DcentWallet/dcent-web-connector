@@ -495,27 +495,8 @@ function isAvaliableCoinGroup (coinGroup) {
     case dcentCoinGroup.HTS_TESTNET.toLowerCase():
     case dcentCoinGroup.STELLAR.toLowerCase():
     case dcentCoinGroup.TRON.toLowerCase():
-    // case dcentCoinGroup.TEZOS.toLowerCase():
-    // case dcentCoinGroup.TEZOS_TESTNET.toLowerCase():
-    // case dcentCoinGroup.XTZ_FA.toLowerCase():
-    // case dcentCoinGroup.XTZ_FA_TESTNET.toLowerCase():
-    // case dcentCoinGroup.NEAR.toLowerCase():
-    // case dcentCoinGroup.NEAR_TESTNET.toLowerCase():
-    // case dcentCoinGroup.NEAR_TOKEN.toLowerCase():
-    // case dcentCoinGroup.VECHAIN.toLowerCase():
-    // case dcentCoinGroup.VECHAIN_ERC20.toLowerCase():
-    // case dcentCoinGroup.HAVAH.toLowerCase():
-    // case dcentCoinGroup.HAVAH_TESTNET.toLowerCase():
-    // case dcentCoinGroup.HAVAH_HSP20.toLowerCase():
-    // case dcentCoinGroup.HAVAH_HSP20_TESTNET.toLowerCase():
-    // case dcentCoinGroup.POLKADOT.toLowerCase():
-    // case dcentCoinGroup.COSMOS.toLowerCase():
-    // case dcentCoinGroup.COREUM.toLowerCase():
       return true
     default:
-      // if (coinGroup.split(':')[0].toLowerCase() === dcentCoinGroup.CZONE.toLowerCase()) {
-      //     return true
-      // }
       return false
   }
 }
@@ -523,9 +504,7 @@ function isAvaliableCoinGroup (coinGroup) {
 const _contractNotStartWith0x = (coinGroup) => {
   if (coinGroup === dcentCoinGroup.TRC_TOKEN.toLowerCase() || coinGroup === dcentCoinGroup.TRC_TESTNET.toLowerCase() ||
       coinGroup === dcentCoinGroup.XRC20.toLowerCase() || coinGroup === dcentCoinGroup.XRC20_APOTHEM.toLowerCase() ||
-      coinGroup === dcentCoinGroup.HTS_TESTNET.toLowerCase() || coinGroup === dcentCoinGroup.HEDERA_HTS.toLowerCase() // ||
-      // coinGroup === dcentCoinGroup.HAVAH_HSP20.toLowerCase() || coinGroup === dcentCoinGroup.HAVAH_HSP20_TESTNET.toLowerCase() ||
-      // coinGroup === dcentCoinGroup.NEAR_TOKEN.toLowerCase()
+      coinGroup === dcentCoinGroup.HTS_TESTNET.toLowerCase() || coinGroup === dcentCoinGroup.HEDERA_HTS.toLowerCase()
       ) {
           return true
   }
@@ -534,13 +513,6 @@ const _contractNotStartWith0x = (coinGroup) => {
 
 function isAvailableSyncAccountCoinName (account) {
     if (isTokenType(account.coin_group)) {
-      if (account.coin_group === dcentCoinGroup.XTZ_FA.toLowerCase() || account.coin_group === dcentCoinGroup.XTZ_FA_TESTNET.toLowerCase()) {
-        if (!account.coin_name.toLowerCase().startsWith('kt1')) {
-            return false
-        } else {
-            return true
-        }
-      }
       if (!account.coin_name.startsWith('0x') && !account.coin_name.startsWith('0X') &&
           _contractNotStartWith0x(account.coin_group.toLowerCase()) !== true) {
           return false
@@ -672,7 +644,7 @@ function getCzonDecimal (coinType) {
     case dcentCoinType.COREUM.toLowerCase():
       return coinDecimals.COREUM
     default:
-      return undefined
+      throw dcent.dcentException('coin_type_error', 'not supported coin type --- ' + coinType)
   }
 }
 
@@ -1442,8 +1414,12 @@ dcent.getCosmosSignedTransaction = async function ({
   symbol,
   optionParam,
 }) {
-  const decimal = (coinType.toLowerCase() === dcentCoinType.COSMOS.toLowerCase()) ? coinDecimals.COSMOS : getCzonDecimal(coinType)
-
+  let decimal
+  try {
+    decimal = (coinType.toLowerCase() === dcentCoinType.COSMOS.toLowerCase()) ? coinDecimals.COSMOS : getCzonDecimal(coinType)
+  } catch (error) {
+    throw error
+  }
   const params = {
     coinType: isCzoneCoinType(coinType) ? 'czone' : coinType,
     decimals,
@@ -1454,7 +1430,7 @@ dcent.getCosmosSignedTransaction = async function ({
   }
   if (nonce) params.nonce = nonce
   if (optionParam) params.optionParam = optionParam
-
+  
   const res = await dcent.call({
     method: 'getUnionSignedTransaction',
     params

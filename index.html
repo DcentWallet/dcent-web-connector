@@ -57,7 +57,6 @@
         <br />
         <button id="get_account_info" type="button" class="btn btn-primary">Get Account Info</button>
         <button id="sync_account" type="button" class="btn btn-primary">Set Sync Account </button>
-        <!-- <button id="sync_account_czone" type="button" class="btn btn-primary">Set Sync Account (czone)</button> -->
         <br />
 
         <button id="get_xpub" type="button" class="btn btn-primary">Get XPUB </button>
@@ -210,7 +209,6 @@
         $('#select_address').click(select_address_clicked);
         $('#get_account_info').click(get_account_info_clicked);
         $('#sync_account').click(sync_account_info_clicked);
-        // $('#sync_account_czone').click(sync_account_info_czone_clicked);
 
         $('#get_xpub').click(get_xpub_clicked);
 
@@ -341,24 +339,6 @@
         set_command_name("coin sync_account_info");
         resp_editor.load(result)
       };
-
-      // async function sync_account_info_czone_clicked() {
-      //   set_command_name("Processing...")
-
-      //   let account_infos = [
-      //       {
-      //           coin_group: DcentWebConnector.coinGroup.CZONE + ':core',
-      //           coin_name: 'COREUM',
-      //           label: 'CORE-01',
-      //           address_path: "m/44'/990'/0'/0/0",
-      //           balance: '0',
-      //       },
-      //   ]
-      //   var result = await syncAccount(account_infos)
-
-      //   set_command_name("coin sync_account_info");
-      //   resp_editor.load(result)
-      // };
 
       async function get_xpub_clicked() {
         set_command_name("Processing...");
@@ -1132,7 +1112,7 @@
          }
          var result  = await getCosmosSignedTransaction(transactionJson);
        
-         set_command_name("getCzoneSignedTransaction")
+         set_command_name("getCoreumSignedTransaction")
          resp_editor.load(result)
        }
 

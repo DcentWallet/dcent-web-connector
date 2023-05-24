@@ -443,58 +443,6 @@ describe('[dcent-web-connector] Bridge - init', () => {
         expect(result).toBeTruthy()
         done()
     })
-
-    // it('syncAccount() - success CZONE', async (done) => {
-    //     const accountInfos = [
-    //         {
-    //             coin_group: DcentWebConnector.coinGroup.CZONE + ':core',
-    //             coin_name: 'COREUM',
-    //             label: 'CORE-01',
-    //             address_path: "m/44'/990'/0'/0/0",
-    //             balance: '0',
-    //         },
-    //     ]
-    //     console.log()
-    //     var response = await page.evaluate((accountInfos) => {
-    //         // eslint-disable-next-line no-undef
-    //         return syncAccount(accountInfos)
-    //     }, accountInfos)
-    //     expect(response.header.status).toBe(Values.RESP_STATUS.SUCCESS)
-    //     done()
-    // })
-    // it('getAccountInfo() - success, CZONE Check ', async (done) => {
-    //     const accountInfos = [
-    //         {
-    //             coin_group: DcentWebConnector.coinGroup.CZONE + ':core',
-    //             coin_name: 'COREUM',
-    //             label: 'CORE-01',
-    //             address_path: "m/44'/990'/0'/0/0",
-    //         },
-    //     ]
-
-    //     var response = await page.evaluate(() => {
-    //         // eslint-disable-next-line no-undef
-    //         return getAccountInfo()
-    //     })
-
-    //     expect(response.header.status).toBe(Values.RESP_STATUS.SUCCESS)
-    //     expect(response.body.command).toBe(Values.CMD.GET_ACCOUNT_INFO)
-    //     expect(response.body.parameter).toBeDefined()
-    //     expect(response.body.parameter.account).toBeDefined()
-    //     const respAccounts = response.body.parameter.account
-    //     var result = false
-    //     for (let i = 0; i < respAccounts.length; i++) {
-    //         if (respAccounts[i].coin_group === accountInfos[0].coin_group &&
-    //             respAccounts[i].coin_name === accountInfos[0].coin_name &&
-    //             respAccounts[i].address_path === accountInfos[0].address_path
-    //        ) {
-    //             expect(respAccounts[i].label).toEqual(accountInfos[0].label)
-    //             result = true
-    //         }
-    //     }
-    //     expect(result).toBeTruthy()
-    //     done()
-    // })
 })
 
 /* //////////////////////////////////////////////////////////////////////// */

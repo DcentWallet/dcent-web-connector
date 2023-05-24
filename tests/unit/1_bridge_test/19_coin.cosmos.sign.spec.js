@@ -111,6 +111,29 @@ describe('[dcent-web-connector] Bridge - init', () => {
         done()
     })
 
+    it('getCosmosSignedTransaction() - transaction fail - invalid cointype', async (done) => {
+        const rawDataStd = '0a90010a8b010a1c2f636f736d6f732e62616e6b2e763162657461312e4d736753656e64126b0a2b636f7265317432656d347a6b77346161716d7139373939656e756b66366538343577656671776e63667a78122b636f726531666c343876736e6d73647a637638357135643271347a35616a646861387975337834333537761a0f0a057561746f6d1206313030303030120012670a500a460a1f2f636f736d6f732e63727970746f2e736563703235366b312e5075624b657912230a21'
+        const rawDataPubkeyTmp = 'ffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffff'
+        const rawDataEnd = '12040a020801180012130a0d0a057561746f6d12043530303010c09a0c1a0b636f736d6f736875622d342000'
+        var transactionJson = {
+            coinType: 'czone',
+            sigHash: rawDataStd + rawDataPubkeyTmp + rawDataEnd,
+            path: `m/44'/990'/0'/0/0`,
+            decimals: 6,
+            fee: '0.000251', 
+            symbol: 'CZONE',
+        }
+        var response = await page.evaluate((transactionJson) => {
+            // eslint-disable-next-line no-undef
+            return getCosmosSignedTransaction(transactionJson)
+        }, transactionJson)
+
+        console.log('response ', response)
+        expect(response.header.status).toBe(Values.RESP_STATUS.ERROR)
+
+        done()
+    })
+
 
 })
 

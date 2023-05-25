@@ -48,10 +48,10 @@
   "author": "IoTrust Co. Ltd.,",
   "devDependencies": {
     "@babel/core": "^7.5.5",
-    "@babel/plugin-transform-modules-commonjs": "^7.21.5",
-    "@babel/plugin-transform-runtime": "^7.21.4",
     "@babel/preset-env": "^7.5.5",
     "@babel/preset-react": "^7.9.4",
+    "@noble/curves": "^1.0.0",
+    "@scure/base": "^1.1.1",
     "@taquito/utils": "^16.1.2",
     "babel-core": "^7.0.0-bridge.0",
     "babel-eslint": "^10.1.0",

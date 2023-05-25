@@ -495,22 +495,34 @@ function isAvaliableCoinGroup (coinGroup) {
     case dcentCoinGroup.HTS_TESTNET.toLowerCase():
     case dcentCoinGroup.STELLAR.toLowerCase():
     case dcentCoinGroup.TRON.toLowerCase():
-    case dcentCoinGroup.TEZOS.toLowerCase():
-    case dcentCoinGroup.TEZOS_TESTNET.toLowerCase():
-    case dcentCoinGroup.XTZ_FA.toLowerCase():
-    case dcentCoinGroup.XTZ_FA_TESTNET.toLowerCase():
-    case dcentCoinGroup.NEAR.toLowerCase():
-    case dcentCoinGroup.NEAR_TESTNET.toLowerCase():
-    case dcentCoinGroup.VECHAIN.toLowerCase():
-    case dcentCoinGroup.VECHAIN_ERC20.toLowerCase():
-    case dcentCoinGroup.HAVAH.toLowerCase():
-    case dcentCoinGroup.HAVAH_TESTNET.toLowerCase():
-    case dcentCoinGroup.HAVAH_HSP20.toLowerCase():
-    case dcentCoinGroup.HAVAH_HSP20_TESTNET.toLowerCase():
       return true
     default:
       return false
   }
+}
+
+const _contractNotStartWith0x = (coinGroup) => {
+  if (coinGroup === dcentCoinGroup.TRC_TOKEN.toLowerCase() || coinGroup === dcentCoinGroup.TRC_TESTNET.toLowerCase() ||
+      coinGroup === dcentCoinGroup.XRC20.toLowerCase() || coinGroup === dcentCoinGroup.XRC20_APOTHEM.toLowerCase() ||
+      coinGroup === dcentCoinGroup.HTS_TESTNET.toLowerCase() || coinGroup === dcentCoinGroup.HEDERA_HTS.toLowerCase()
+      ) {
+          return true
+  }
+  return false
+}
+
+function isAvailableSyncAccountCoinName (account) {
+    if (isTokenType(account.coin_group)) {
+      if (!account.coin_name.startsWith('0x') && !account.coin_name.startsWith('0X') &&
+          _contractNotStartWith0x(account.coin_group.toLowerCase()) !== true) {
+          return false
+      }
+    } else {
+      if (!isAvaliableCoinGroup(account.coin_name)) {
+        return false
+      }
+    }
+    return true
 }
 
 function isAvaliableCoinType (coinType) {
@@ -558,10 +570,14 @@ function isAvaliableCoinType (coinType) {
     case dcentCoinType.VECHAIN_ERC20.toLowerCase():
     case dcentCoinType.NEAR.toLowerCase():
     case dcentCoinType.NEAR_TESTNET.toLowerCase():
+    case dcentCoinType.NEAR_TOKEN.toLowerCase():
     case dcentCoinType.HAVAH.toLowerCase():
     case dcentCoinType.HAVAH_TESTNET.toLowerCase():
     case dcentCoinType.HAVAH_HSP20.toLowerCase():
     case dcentCoinType.HAVAH_HSP20_TESTNET.toLowerCase():
+    case dcentCoinType.POLKADOT.toLowerCase():
+    case dcentCoinType.COSMOS.toLowerCase():
+    case dcentCoinType.COREUM.toLowerCase():
       return true
     default:
       return false
@@ -586,6 +602,7 @@ function isTokenType (coinGroup) {
     case dcentCoinGroup.VECHAIN_ERC20.toLowerCase():
     case dcentCoinGroup.HAVAH_HSP20.toLowerCase():
     case dcentCoinGroup.HAVAH_HSP20_TESTNET.toLowerCase():
+    case dcentCoinGroup.NEAR_TOKEN.toLowerCase():
       return true
     default:
       return false
@@ -601,6 +618,33 @@ function isBitcoinTxCoinType (coinType) {
       return true
     default:
       return false
+  }
+}
+   
+function isCzoneCoinType (coinType) {
+  switch (coinType.toLowerCase()) {
+    case dcentCoinType.COREUM.toLowerCase():
+      return true
+    default:
+      return false
+  }
+}
+
+function getCzonePrifix (coinType) {
+  switch (coinType.toLowerCase()) {
+    case dcentCoinType.COREUM.toLowerCase():
+      return Buffer.from('core', 'utf8').toString('hex')
+    default:
+      return undefined
+  }
+}
+
+function getCzonDecimal (coinType) {
+  switch (coinType.toLowerCase()) {
+    case dcentCoinType.COREUM.toLowerCase():
+      return coinDecimals.COREUM
+    default:
+      throw dcent.dcentException('coin_type_error', 'not supported coin type --- ' + coinType)
   }
 }
 
@@ -633,10 +677,11 @@ dcent.syncAccount = async function (accountInfos) {
   // check account info parameter 
   for (var i = 0; i < accountInfos.length; i = i + 1) {
     const account = accountInfos[i]
+    
     if (!isAvaliableCoinGroup(account.coin_group)) {
       throw dcent.dcentException('coin_group_error', 'not supported coin group')
     }
-    if (!isTokenType(account.coin_group) && !isAvaliableCoinGroup(account.coin_name)) {
+    if (!isAvailableSyncAccountCoinName(account)) {
       throw dcent.dcentException('coin_name_error', 'not supported coin name')
     }
     if (!isAvaliableLabel(account.label)) {
@@ -690,15 +735,26 @@ dcent.getAddress = async function (coinType, path) {
   if (!isAvaliableCoinType(coinType)) {
     throw dcent.dcentException('coin_type_error', 'not supported coin type')
   }
+
   const params = {
-    coinType: coinType,
+    coinType: isCzoneCoinType(coinType) ? 'czone' : coinType,
     path: path,
   }
 
-  return await dcent.call({
+  if (isCzoneCoinType(coinType)) {
+    params.optionParam = getCzonePrifix(coinType)
+} 
+   
+  const res = await dcent.call({
     method: 'getAddress',
     params
   })
+
+  if (res.header.response_from === 'czone') {
+    res.header.response_from = coinType
+  }
+
+  return res
 }
 
 /**
@@ -1320,6 +1376,70 @@ dcent.getHavahSignedTransaction = async function ({
     method: 'getUnionSignedTransaction',
     params
   })
+}
+
+dcent.getPolkadotSignedTransaction = async function ({
+  coinType,
+  sigHash,
+  fee,
+  decimals,
+  nonce,
+  path,
+  symbol,
+  optionParam,
+}) {
+  const params = {
+    coinType,
+    decimals,
+    sig_hash: sigHash,
+    fee: UnitConverter(fee, coinDecimals.POLKADOT).bignum.toString(16).padStart(16, '0'),
+    path,
+    symbol,
+  }
+  if (nonce) params.nonce = nonce
+  if (optionParam) params.optionParam = optionParam
+  return await dcent.call({
+    method: 'getUnionSignedTransaction',
+    params
+  })
+}
+ 
+dcent.getCosmosSignedTransaction = async function ({
+  coinType,
+  sigHash,
+  fee,
+  decimals,
+  nonce,
+  path,
+  symbol,
+  optionParam,
+}) {
+  let decimal
+  try {
+    decimal = (coinType.toLowerCase() === dcentCoinType.COSMOS.toLowerCase()) ? coinDecimals.COSMOS : getCzonDecimal(coinType)
+  } catch (error) {
+    throw error
+  }
+  const params = {
+    coinType: isCzoneCoinType(coinType) ? 'czone' : coinType,
+    decimals,
+    sig_hash: sigHash,
+    fee: UnitConverter(fee, decimal).bignum.toString(16).padStart(16, '0'),
+    path,
+    symbol,
+  }
+  if (nonce) params.nonce = nonce
+  if (optionParam) params.optionParam = optionParam
+  
+  const res = await dcent.call({
+    method: 'getUnionSignedTransaction',
+    params
+  })
+
+  if (res.header.response_from === 'czone') {
+    res.header.response_from = coinType
+  }
+  return res
 }
 
 dcent.state = dcentState

@@ -102,11 +102,15 @@
         <button id="getTezosSignedTransaction" type="button" class="btn btn-primary">getTezosSignedTransaction</button>
         <button id="getVechainSignedTransaction" type="button" class="btn btn-primary">getVechainSignedTransaction</button>
         <button id="getNearSignedTransaction" type="button" class="btn btn-primary">getNearSignedTransaction</button>
+        <button id="getNearTokenSignedTransaction" type="button" class="btn btn-primary">getNearTokenSignedTransaction</button>
         <button id="getHavahSignedTransaction" type="button" class="btn btn-primary">getHavahSignedTransaction</button>
         <button id="getHavahHsp20SignedTransaction-transfer" type="button" class="btn btn-primary">getHavahHsp20SignedTransaction-transfer</button>
         <button id="getHavahHsp20SignedTransaction-deposit" type="button" class="btn btn-primary">getHavahHsp20SignedTransaction-deposit</button>
         <button id="getHavahHsp20SignedTransaction-message" type="button" class="btn btn-primary">getHavahHsp20SignedTransaction-message</button>
         <button id="getHavahHsp20SignedTransaction-deploy" type="button" class="btn btn-primary">getHavahHsp20SignedTransaction-deploy</button>
+        <button id="getPolkadotSignedTransaction" type="button" class="btn btn-primary">getPolkadotSignedTransaction</button>
+        <button id="getCosmosSignedTransaction" type="button" class="btn btn-primary">getCosmosSignedTransaction</button>
+        <button id="getCoreumSignedTransaction" type="button" class="btn btn-primary">getCosmosSignedTransaction - for coreum</button>
         
         <br /><br />
 
@@ -154,6 +158,15 @@
         <br />
         <button id="get_address_havah" type="button" class="btn btn-primary">Get Havah Mainnet
           Address("m/44'/858'/0'/0/0")</button>
+        <br />
+        <button id="get_address_polkadot" type="button" class="btn btn-primary">Get Polkadot Mainnet
+          Address("m/44'/354'/0'/0/0")</button>
+        <br />
+        <button id="get_address_cosmos" type="button" class="btn btn-primary">Get Cosmos Mainnet
+          Address("m/44'/118'/0'/0/0")</button>
+        <br />
+        <button id="get_address_coreum" type="button" class="btn btn-primary">Get Coreum Mainnet
+          Address("m/44'/990'/0'/0/0")</button>
         <br />
 
       </div>
@@ -221,6 +234,9 @@
         $('#get_address_vechain').click(get_address_vechain_clicked);
         $('#get_address_near').click(get_address_near_clicked);
         $('#get_address_havah').click(get_address_havah_clicked);
+        $('#get_address_polkadot').click(get_address_polkadot_clicked);
+        $('#get_address_cosmos').click(get_address_cosmos_clicked);
+        $('#get_address_coreum').click(get_address_coreum_clicked);
 
         $('#getBitcoinSignedTransaction').click(getBitcoinSignedTransaction_clicked);
         
@@ -252,11 +268,15 @@
         $('#getTezosSignedTransaction').click(getTezosSignedTransaction_clicked);
         $('#getVechainSignedTransaction').click(getVechainSignedTransaction_clicked);
         $('#getNearSignedTransaction').click(getNearSignedTransaction_clicked);
+        $('#getNearTokenSignedTransaction').click(getNearTokenSignedTransaction_clicked);
         $('#getHavahSignedTransaction').click(getHavahSignedTransaction_clicked);
         $('#getHavahHsp20SignedTransaction-transfer').click(getHavahHsp20SignedTransaction_transfer_clicked);
         $('#getHavahHsp20SignedTransaction-deposit').click(getHavahHsp20SignedTransaction_deposit_clicked);
         $('#getHavahHsp20SignedTransaction-message').click(getHavahHsp20SignedTransaction_message_clicked);
         $('#getHavahHsp20SignedTransaction-deploy').click(getHavahHsp20SignedTransaction_deploy_clicked);
+        $('#getPolkadotSignedTransaction').click(getPolkadotSignedTransaction_clicked);
+        $('#getCosmosSignedTransaction').click(getCosmosSignedTransaction_clicked);
+        $('#getCoreumSignedTransaction').click(getCoreumSignedTransaction_clicked);
       });
 
       async function info_clicked() {
@@ -311,7 +331,7 @@
           coin_name: dcent.coinName.ETHEREUM,
           label: "ethereum_001",
           balance: '0 ETH',
-          address_path: "m/44'/60/0'/0/0"
+          address_path: "m/44'/60'/0'/"
         }
         ]
         var result = await syncAccount(account_infos)
@@ -460,6 +480,34 @@
         set_command_name("get_address havah")        
         resp_editor.load(result)
       }
+
+      async function get_address_polkadot_clicked() {
+         set_command_name("Processing...");
+ 
+         var result = await getAddress(dcent.coinType.POLKADOT, "m/44'/354'/0'/0/0")
+ 
+         set_command_name("get_address polkadot")        
+         resp_editor.load(result)
+      }
+  
+       async function get_address_cosmos_clicked() {
+         set_command_name("Processing...");
+ 
+         var result = await getAddress(dcent.coinType.COSMOS, "m/44'/118'/0'/0/0")
+ 
+         set_command_name("get_address cosmos")        
+         resp_editor.load(result)
+      }
+ 
+       async function get_address_coreum_clicked() {
+         set_command_name("Processing...");
+         var result = await getAddress(dcent.coinType.COREUM, "m/44'/990'/0'/0/0")
+ 
+         set_command_name("get_address coreum")        
+         resp_editor.load(result)
+      }
+ 
+
 
       async function getBitcoinSignedTransaction_clicked() {
         set_command_name("Processing...");
@@ -919,6 +967,23 @@
         resp_editor.load(result)
       }
 
+      async function getNearTokenSignedTransaction_clicked() {
+        set_command_name("Processing...");
+        var transactionJson = {
+          coinType: dcent.coinType.NEAR_TOKEN,
+          sigHash: '400000006364663837313939386530343164333037383432383063636530313362666435633764653339643264333236373262623239666163636530363333373066333200cdf871998e041d30784280cce013bfd5c7de39d2d32672bb29facce063370f32c25215a29572000014000000757364632e7370696e2d66692e746573746e6574a37a00484ecbde6e6c436dece0ce845369657857deff857a2acb645e0a20799e02000000020f00000073746f726167655f6465706f7369746a0000007b226163636f756e745f6964223a2230626238343733363130336633336265623330356432316262333235396464653666646437313764616432656562336366356137666232323730666362353866222c22726567697374726174696f6e5f6f6e6c79223a747275657d00e057eb481b00000000485637193cc34300000000000000020b00000066745f7472616e73666572610000007b2272656365697665725f6964223a2230626238343733363130336633336265623330356432316262333235396464653666646437313764616432656562336366356137666232323730666362353866222c22616d6f756e74223a22313530227d00f0ab75a40d000001000000000000000000000000000000',
+          path: `m/44'/397'/0'`,
+          decimals: 2,
+          fee: '0.000860039223625', // '000000000000002ea3e4bd9e0b140000',
+          symbol: 'USDC',
+          optionParam: '02'
+        }
+        var result  = await getNearSignedTransaction(transactionJson);
+      
+        set_command_name("getNearTokenSignedTransaction")
+        resp_editor.load(result)
+      }
+
 
       async function getHavahSignedTransaction_clicked() {
         set_command_name("Processing...");
@@ -1003,6 +1068,54 @@
         set_command_name("getHavahHsp20SignedTransaction_deploy")
         resp_editor.load(result)
       }
+      async function getPolkadotSignedTransaction_clicked() {
+         set_command_name("Processing...");
+         var transactionJson = {
+           coinType: dcent.coinType.POLKADOT,
+           sigHash: '040000163a5ee36b1243ce5241c0a45010dd1717869e9918c040bf5d305be4a5af9e7a0b00407a10f35a003400a223000007000000e143f23803ac50e8f6f8e62695d1ce9e4e1d68aa36c1cd2cfd15340213f3423ee143f23803ac50e8f6f8e62695d1ce9e4e1d68aa36c1cd2cfd15340213f3423e',
+           path: `m/44'/354'/0'/0/0`,
+           decimals: 12,
+           fee: '0.00021',
+           symbol: 'DOT',
+         }
+         var result  = await getPolkadotSignedTransaction(transactionJson);
+       
+         set_command_name("getPolkadotSignedTransaction")
+         resp_editor.load(result)
+       }
+ 
+       async function getCosmosSignedTransaction_clicked() {
+         set_command_name("Processing...");
+         var transactionJson = {
+           coinType: dcent.coinType.COSMOS,
+           sigHash: '0a94010a8f010a1c2f636f736d6f732e62616e6b2e763162657461312e4d736753656e64126f0a2d636f736d6f73317235763573726461377866746833686e327332367478767263726e746c646a756d74386d686c122d636f736d6f733138766864637a6a7574343467707379383034637266686e64356e713030336e7a306e663230761a0f0a057561746f6d1206313030303030120012670a500a460a1f2f636f736d6f732e63727970746f2e736563703235366b312e5075624b657912230a21ffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffff12040a020801180a12130a0d0a057561746f6d12043530303010c09a0c1a0b636f736d6f736875622d34208f3a',
+           path: `m/44'/118'/0'/0/0`,
+           decimals: 6,
+           fee: '0.023',
+           symbol: 'ATOM',
+         }
+         var result  = await getCosmosSignedTransaction(transactionJson);
+       
+         set_command_name("getCosmosSignedTransaction")
+         resp_editor.load(result)
+       }
+ 
+       async function getCoreumSignedTransaction_clicked() {
+         set_command_name("Processing...");
+         var transactionJson = {
+           coinType: dcent.coinType.COREUM,
+           sigHash: '0a90010a8b010a1c2f636f736d6f732e62616e6b2e763162657461312e4d736753656e64126b0a2b636f7265317432656d347a6b77346161716d7139373939656e756b66366538343577656671776e63667a78122b636f726531666c343876736e6d73647a637638357135643271347a35616a646861387975337834333537761a0f0a057561746f6d1206313030303030120012670a500a460a1f2f636f736d6f732e63727970746f2e736563703235366b312e5075624b657912230a21ffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffff12040a020801180012130a0d0a057561746f6d12043530303010c09a0c1a0b636f736d6f736875622d342000',
+           path: `m/44'/990'/0'/0/0`,
+           decimals: 6,
+           fee: '0.12',
+           symbol: 'CORE',
+         }
+         var result  = await getCosmosSignedTransaction(transactionJson);
+       
+         set_command_name("getCoreumSignedTransaction")
+         resp_editor.load(result)
+       }
+
 
       /////// DCENT WEB-SDK call
 
@@ -1278,6 +1391,28 @@
         }
         return result 
       }
+
+       async function getPolkadotSignedTransaction(transaction) {
+         var result 
+         try { 
+           result = await dcent.getPolkadotSignedTransaction(transaction)      
+         } catch (e) {
+           result = e
+         }
+         return result 
+       }
+ 
+       async function getCosmosSignedTransaction(transaction) {
+         var result 
+         try { 
+           result = await dcent.getCosmosSignedTransaction(transaction)      
+         } catch (e) {
+           result = e
+         }
+         return result 
+       }
+ 
+
     </script>
 
 </body>

@@ -3,29 +3,27 @@
 
 # DCENT Web SDK Integration Guide
 
-
 ### VERSION HISTORY
 
-| version            | date         | modification                                               |
-| ------------------ | ------------ | ---------------------------------------------------------- |
-| v0.6.2-beta        | 2019. 04. 07 | First version of D'CENT Web SDK connector release          |
-| v0.7.0-beta        | 2019. 05. 07 | add KLAYTN transaction function                            |
-| v0.8.0             | 2020. 06. 05 | add 'getSignedMessage' function                            |
-| v0.9.0             | 2020. 06. 22 | add interface for BITCOIN transaction                      |
-| v0.10.0            | 2020. 09. 28 | add interface for Ripple full transaction                  |
-| v0.10.1            | 2020. 11. 30 | modify description for Ripple full transaction             |
-| v0.10.3            | 2021. 03. 15 | add XDC transaction function                               |
-| v0.10.4            | 2021. 05. 06 | add Select address function                                |
-| v0.10.5            | 2021. 12. 23 | support sign data function                                 |
-| v0.11.0            | 2022. 03. 08 | add interface for Hedera transaction                       |
-| v0.11.2            | 2022. 04. 21 | modify getEthereumSignedTransaction interface for EIP-2718 |
-| v0.12.0            | 2023. 02. 15 | add Tron & Stellar transaction transaction functions       |
-| v0.12.1            | 2023. 05. 03 | add support coin group for syncAccount                     |
-| v0.13.0            | 2023. 05. 16 | add Tezos & Vechain & Near & Havah transaction function    |
-| v0.13.1            | 2023. 05. 17 | Fixed fee display issue                                    |
+| version     | date         | modification                                               |
+| ----------- | ------------ | ---------------------------------------------------------- |
+| v0.6.2-beta | 2019. 04. 07 | First version of D'CENT Web SDK connector release          |
+| v0.7.0-beta | 2019. 05. 07 | add KLAYTN transaction function                            |
+| v0.8.0      | 2020. 06. 05 | add 'getSignedMessage' function                            |
+| v0.9.0      | 2020. 06. 22 | add interface for BITCOIN transaction                      |
+| v0.10.0     | 2020. 09. 28 | add interface for Ripple full transaction                  |
+| v0.10.1     | 2020. 11. 30 | modify description for Ripple full transaction             |
+| v0.10.3     | 2021. 03. 15 | add XDC transaction function                               |
+| v0.10.4     | 2021. 05. 06 | add Select address function                                |
+| v0.10.5     | 2021. 12. 23 | support sign data function                                 |
+| v0.11.0     | 2022. 03. 08 | add interface for Hedera transaction                       |
+| v0.11.2     | 2022. 04. 21 | modify getEthereumSignedTransaction interface for EIP-2718 |
+| v0.12.0     | 2023. 02. 15 | add Tron & Stellar transaction transaction functions       |
+| v0.12.1     | 2023. 05. 03 | add support coin group for syncAccount                     |
+| v0.13.0     | 2023. 05. 16 | add Tezos & Vechain & Near & Havah transaction function    |
+| v0.13.1     | 2023. 05. 17 | Fixed fee display issue                                    |
+| v0.14.0     | 2023. 05     | add Polkadot & Comsmos & Coreum & Near Token              |
 
-
-<br /><br /><br />
 ## 1. INTRODUCTION
 
 D'CENT Web SDK allows your web application to quickly create an wallet application using D'CENT dongle.
@@ -345,6 +343,8 @@ After execute above code, you can see the modified label on your device when reb
 
 ### Add & Sync Account
 
+> As of firmware version 2.9.2 or later, the D'CENT biometric wallet device does not support updating the balance.
+
 You can add account using `syncAccount()` function. You can create an account by specifying the coin type and key path of the account you want to add.
 If you want to add token type coin account, you must specify the coin name as the first 14 digits of contract address.
 
@@ -387,6 +387,7 @@ try{
     result = e
 }
 ```
+
 
 ### address_path
 
@@ -499,6 +500,7 @@ Returned response object has:
 The address string format is depend on the coin type.
 
 For some coin type(ex. TEZOS), include pubkey as a property of the response parameter.
+
 
 ### Get XPUB
 
@@ -1484,17 +1486,24 @@ For broadcast the sign transaction, you must reconstruct transaction include `Tx
 - This fuction for :
 
   - NEAR(NEAR)
+  - NEAR Token
 - Parameters :
 
   - unsignedTx: unsigned hexadecimal tx [Near Docs](https://docs.near.org/ko/tools/near-api-js/reference/modules/transaction#signtransaction)
   - path: key path, wallet sign with that private key with a given key path (BIP32 ex) "m/44'/397'/0'").
   - fee: fee, It is fee that wallet displays on the screen.
   - symbol: symbol, It is a symbol that the wallet displays on the screen.
-  - decimals: near's decimals.
+  - decimals: near or near token's decimals.
+  - optionParam: hexadecimal value of the token method type is used only in near token.
+    - '02' : Function call(ft_transfer)
+    - '~~04' : Stake~~ (**The method will be supported later.)**
+    - ~~'08' : Delegate~~ (**The method will be supported later)**
 - Requirements:
 
   - `D'CENT Bridge` version 1.5.0 or higher is required.
+    - near token: version 1.5.1 or higher is required.
   - D'CENT Biometric Wallet version 2.24.0. or higher is required.
+    - near token: version 2.27.1 or higher is required.
 - Useage:
 
   ```js
@@ -1585,6 +1594,11 @@ For broadcast the sign transaction, you must reconstruct transaction include `Tx
   - fee: fee, It is fee that wallet displays on the screen.
   - symbol: symbol, It is a symbol that the wallet displays on the screen.
   - decimals: havah or havah token's decimals.
+  - optionParam: hexadecimal value of the havah method type is used only in havah token.
+    - '01' : Token Transfer
+    - '02' : Token Deposit
+    - '03' : Token Message
+    - ~~'04': Token Deploy~~ (**The method will be supported later)**
 - Requirements:
 
   - `D'CENT Bridge` version 1.5.0 or higher is required.
@@ -1660,6 +1674,190 @@ For broadcast the sign transaction, you must reconstruct transaction include `Tx
               "signed_tx": "0x31aa13b5e04cb6fc6381ea0520bf7f6727ebdb6e96cd7ca8625bb3e3dd36cf0e2cee4ece13aa9f7ddc09ee10c74aa00af954201829d8016317f10f5a921dcc0d"
           }
       }
+  }
+  ```
+
+**getPolkadotSignedTransaction()**
+
+- This fuction for :
+
+  - POLCKADOT(DOT)
+- Parameters :
+
+  - unsignedTx: unsigned hexadecimal tx [Polkadot Docs](https://wiki.polkadot.network/docs/build-transaction-construction)
+  - path: key path, wallet sign with that private key with a given key path (BIP32 ex) "m/44'/354'/0'/0/0").
+  - fee: fee, It is fee that wallet displays on the screen.
+  - symbol: symbol, It is a symbol that the wallet displays on the screen.
+  - decimals: polkadot's decimals.
+- Requirements:
+
+  - `D'CENT Bridge` version 1.5.0 or higher is required.
+  - D'CENT Biometric Wallet version 2.19.1 or higher is required.
+- Useage:
+
+  ```js
+  import { ApiPromise, HttpProvider } from '@polkadot/api'
+
+  const httpProvider = new HttpProvider('https://rpc.polkadot.io');
+  const api = await ApiPromise({ provider: httpProvider });
+  // Wait until we are ready and connected
+  await api.isReady;
+
+  const blockNumber = await api.rpc.chain.getHeader()
+  const blockHash = await api.rpc.chain.getBlockHash(blockNumber.number.toHex())
+  // create SignerPayload
+  const signerPayload = api.createType('SignerPayload', {
+    genesisHash: api.genesisHash,
+    runtimeVersion: api.runtimeVersion,
+    version: api.extrinsicVersion,
+    blockHash: blockHash,
+    blockNumber: blockNumber.number,
+    era: api.createType('ExtrinsicEra', {
+      current: blockNumber.number,
+      period: 50
+    }),
+    nonce,
+    address: to,
+    method: api.tx.balances.transfer(to, amount).method,
+  });
+
+  const sigHash = signerPayload.toRaw().data
+
+  const transactionJson = {
+    coinType: DcentWebConnector.coinType.POLKADOT,
+    sigHash: sigHash,
+    path: `m/44'/354'/0'/0/0`,
+    decimals, // 12
+    fee,
+    symbol: 'DOT',
+  }
+
+  var result
+  try {
+    result = await DcentWebConnector.getPolKadotSignedTransaction(transactionJson);
+  } catch (e) {
+    console.log(e)
+    result = e
+  }
+  ```
+- Returned response object:
+
+  ```json
+  {
+    "header": {
+      "version": "1.0",
+      "response_from": "polkadot",
+      "status": "success"
+    },
+    "body": {
+      "command": "transaction",
+      "parameter": {
+      "signed_tx": "0x31aa13b5e04cb6fc6381ea0520bf7f6727ebdb6e96cd7ca8625bb3e3dd36cf0e2cee4ece13aa9f7ddc09ee10c74aa00af954201829d8016317f10f5a921dcc0d"
+      }
+    }
+  }
+  ```
+
+**getCosmosSignedTransaction()**
+
+- This fuction for :
+
+  - COSMOS(ATOM)
+  - COREUM(CORE)
+- Parameters :
+
+  - unsignedTx: unsigned hexadecimal tx [Cosmos Docs](https://github.com/cosmostation/cosmosjs)
+  - path: key path, wallet sign with that private key with a given key path (BIP32 ex) "m/44'/118'/0'/0/0").
+  - fee: fee, It is fee that wallet displays on the screen.
+  - symbol: symbol, It is a symbol that the wallet displays on the screen.
+  - decimals: cosmos or coreum's decimals.
+- Requirements:
+
+  - `D'CENT Bridge` version 1.5.0 or higher is required.
+  - D'CENT Biometric Wallet version 2.21.0 or higher is required.
+    - COREUM: 2.25.0 or higher is required.
+- Useage:
+
+  ```js
+  import message from "@cosmostation/cosmosjs/src/messages/proto";
+
+  // signDoc = (1)txBody + (2)authInfo
+  // ---------------------------------- (1)txBody ----------------------------------
+  const pubKeyAny = new message.google.protobuf.Any({
+        type_url: '/cosmos.crypto.secp256k1.PubKey',
+        value: Buffer.from('0a21ffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffff', 'hex') //temp value
+  })
+  const msgSend = new message.cosmos.bank.v1beta1.MsgSend({
+    from_address: recAddress,
+    to_address: toAddress,
+    amount: [{ denom: "uatom", amount: String(100000) }]        // 6 decimal places (1000000 uatom = 1 ATOM)
+  });
+
+  const msgSendAny = new message.google.protobuf.Any({
+    type_url: "/cosmos.bank.v1beta1.MsgSend",
+    value: message.cosmos.bank.v1beta1.MsgSend.encode(msgSend).finish()
+  });
+
+  const txBody = new message.cosmos.tx.v1beta1.TxBody({ messages: [msgSendAny], memo: "" });
+
+  // --------------------------------- (2)authInfo ---------------------------------
+  const signerInfo = new message.cosmos.tx.v1beta1.SignerInfo({
+    public_key: pubKeyAny,
+    mode_info: { single: { mode: message.cosmos.tx.signing.v1beta1.SignMode.SIGN_MODE_DIRECT } },
+    sequence // nonce
+  });
+
+  const feeValue = new message.cosmos.tx.v1beta1.Fee({
+    amount: [{ denom: "uatom", amount: String(5000) }],
+    gas_limit: 200000
+  });
+
+  const authInfo = new message.cosmos.tx.v1beta1.AuthInfo({ signer_infos: [signerInfo], fee: feeValue });
+  const bodyBytes = message.cosmos.tx.v1beta1.TxBody.encode(txBody).finish()
+  const authInfoBytes = message.cosmos.tx.v1beta1.AuthInfo.encode(authInfo).finish()
+  const signDoc = new message.cosmos.tx.v1beta1.SignDoc({
+    body_bytes: bodyBytes,
+    auth_info_bytes: authInfoBytes,
+    chain_id,
+    account_number,
+  })
+  let signMessage = message.cosmos.tx.v1beta1.SignDoc.encode(signDoc).finish()
+
+  const sigHash = Buffer.from(signMessage).toString('hex')
+
+  const transactionJson = {
+    coinType: DcentWebConnector.coinType.COSMOS, // or COREUM
+    sigHash: sigHash,
+    path: `m/44'/118'/0'/0/0`, // (COREUM -> m/44'/990'/0'/0/0)
+    decimals, // 6
+    fee,
+    symbol: 'ATOM', // (COREUM -> CORE)
+  }
+
+  var result
+  try {
+    result = await DcentWebConnector.getCosmomsSignedTransaction(transactionJson);
+  } catch (e) {
+    console.log(e)
+    result = e
+  }
+  ```
+- Returned response object:
+
+  ```json
+  {
+    "header": {
+      "version": "1.0",
+      "response_from": "cosmos",
+      "status": "success"
+    },
+    "body": {
+      "command": "transaction",
+      "parameter": {
+      "signed_tx": "0x31aa13b5e04cb6fc6381ea0520bf7f6727ebdb6e96cd7ca8625bb3e3dd36cf0e2cee4ece13aa9f7ddc09ee10c74aa00af954201829d8016317f10f5a921dcc0d",
+      "pubkey": "0x0202903dcb31139bf92e096c3ec85fb9a94ab7dbf02d6234ded604d15ee9650480"
+      }
+    }
   }
   ```
 

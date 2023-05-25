@@ -41,10 +41,14 @@ const coinType = {
   VECHAIN_ERC20: 'vechain-erc20',
   NEAR: 'near',
   NEAR_TESTNET: 'near-testnet',
+  NEAR_TOKEN: 'near-token',
   HAVAH: 'havah',
   HAVAH_TESTNET: 'havah-testnet',
   HAVAH_HSP20: 'havah-hsp20',
   HAVAH_HSP20_TESTNET: 'havah-hsp20-testnet',
+  POLKADOT: 'polkadot',
+  COSMOS: 'cosmos',
+  COREUM: 'coreum'
 }
 
 const coinGroup = {
@@ -88,10 +92,14 @@ const coinGroup = {
   VECHAIN_ERC20: 'VECHAIN-ERC20',
   NEAR: 'NEAR',
   NEAR_TESTNET: 'NEAR-TESTNET',
+  NEAR_TOKEN: 'NEAR-TOKEN',
   HAVAH: 'HAVAH',
   HAVAH_TESTNET: 'HAVAH-TESTNET',
   HAVAH_HSP20: 'HAVAH-HSP20',
   HAVAH_HSP20_TESTNET: 'HAVAH-HSP20-TESTNET',
+  POLKADOT: 'POLKADOT',
+  COSMOS: 'COSMOS',
+  COREUM: 'coreum'
 }
 
 const coinName = {
@@ -135,10 +143,14 @@ const coinName = {
   VECHAIN_ERC20: 'VECHAIN-ERC20',
   NEAR: 'NEAR',
   NEAR_TESTNET: 'NEAR-TESTNET',
+  NEAR_TOKEN: 'NEAR-TOKEN',
   HAVAH: 'HAVAH',
   HAVAH_TESTNET: 'HAVAH-TESTNET',
   HAVAH_HSP20: 'HAVAH-HSP20',
   HAVAH_HSP20_TESTNET: 'HAVAH-HSP20-TESTNET',
+  POLKADOT: 'POLKADOT',
+  COSMOS: 'COSMOS',
+  COREUM: 'COREUM'
 }
 
 const bitcoinTxType = {
@@ -204,6 +216,7 @@ const coinDecimals = {
   HAVAH: 18,
   POLKADOT: 12,
   COSMOS: 6,
+  COREUM: 6,
 }
 
 module.exports = {

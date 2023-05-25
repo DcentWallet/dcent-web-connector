@@ -88,6 +88,12 @@ const requestToBridge = (payload) => {
     case Method.GET_HAVAH_SIGN_TX:
         response = defaultDeviceResponse.getHavahSignedTransaction
         break
+    case Method.GET_POLKADOT_SIGN_TX:
+        response = defaultDeviceResponse.getPolkadotSignedTransaction
+        break
+    case Method.GET_COSMOS_SIGN_TX:
+        response = defaultDeviceResponse.getCosmosSignedTransaction
+        break
     default:
         response = 'error'
       throw new Error('Not implemented Method in Mock : ' + method)

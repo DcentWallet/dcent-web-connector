@@ -214,7 +214,7 @@ const coinDecimals = {
   VECHAIN: 18,
   NEAR: 24,
   HAVAH: 18,
-  POLKADOT: 12,
+  POLKADOT: 10,
   COSMOS: 6,
   COREUM: 6,
 }

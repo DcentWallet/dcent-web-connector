@@ -219,44 +219,54 @@ dcent.call = async function (params) {
   })
 }
 
-const createDcentTab = async () => {
+const createDcentTab = () => new Promise((resolve) => {
   LOG.debug('createDcentTab')
-  if (typeof chrome === 'undefined') return
+  if (typeof chrome === 'undefined') return resolve()
 
-  if (dcent.popupTab !== undefined && dcent.popupTab !== null) return
+  if (dcent.popupTab !== undefined && dcent.popupTab !== null) return resolve()
 
   // eslint-disable-next-line no-undef
   const url = isManifestV3 ? dcentConfig.popUpUrl + '?_from_extension_mv3=true&_extId=' + chrome.runtime.id : dcentConfig.popUpUrl + '?_from_extension=true'
+ 
   // eslint-disable-next-line no-undef
-  const currentWindow = await chrome.windows.getCurrent(null)
-  if (currentWindow.type !== 'normal') {
-    // eslint-disable-next-line no-undef
-    const newWindow = await chrome.windows.create({ url: url })
-    // eslint-disable-next-line no-undef
-    const tabs = await chrome.tabs.query({
-      windowId: newWindow.id,
-      active: true
-    })
-    LOG.debug('create window and tab 1 - ', tabs[0].id)
-    dcent.popupTab = tabs[0]
-  } else {
-    // eslint-disable-next-line no-undef
-    const tabs = await chrome.tabs.query({
-      currentWindow: true,
-      active: true
-    })
-    let index = 0
-    if (tabs.length > 0) {
-      index = tabs[0].index + 1
+  chrome.windows.getCurrent({}, (currentWindow) => {
+    if (currentWindow.type !== 'normal') {
+      // eslint-disable-next-line no-undef
+      chrome.windows.create({ url: url }, (newWindow) => {
+        // eslint-disable-next-line no-undef
+        chrome.tabs.query({
+          windowId: newWindow.id,
+          active: true
+        }, (tabs) => {
+          LOG.debug('create window and tab 1 - ', tabs[0].id)
+          dcent.popupTab = tabs[0]
+          resolve()
+        })
+      })
+      
+    } else {
+      // eslint-disable-next-line no-undef
+      chrome.tabs.query({
+        currentWindow: true,
+        active: true
+      }, (tabs) => {
+        let index = 0
+        if (tabs.length > 0) {
+          index = tabs[0].index + 1
+        }
+        // eslint-disable-next-line no-undef
+        chrome.tabs.create({
+          url: url,
+          index: index
+        }, (tab) => {
+          dcent.popupTab = tab
+          resolve()
+        })
+      })
     }
-    // eslint-disable-next-line no-undef
-    const tab = await chrome.tabs.create({
-      url: url,
-      index: index
-    })
-    dcent.popupTab = tab
-  }
-}
+  })
+ 
+}) 
 
 dcent.messageReceive = function (messageEvent) {
   // LOG.debug("messageReceive", messageEvent)

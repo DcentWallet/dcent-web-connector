@@ -23,6 +23,7 @@
 | v0.13.0     | 2023. 05. 16 | add Tezos & Vechain & Near & Havah transaction function    |
 | v0.13.1     | 2023. 05. 17 | Fixed fee display issue                                    |
 | v0.14.0     | 2023. 05. 25 | add Polkadot & Comsmos & Coreum & Near Token              |
+| v0.14.1     | 2023. 05. 25 | Fix Polkadot decimals                                    |
 
 ## 1. INTRODUCTION
 
@@ -1727,7 +1728,7 @@ For broadcast the sign transaction, you must reconstruct transaction include `Tx
     coinType: DcentWebConnector.coinType.POLKADOT,
     sigHash: sigHash,
     path: `m/44'/354'/0'/0/0`,
-    decimals, // 12
+    decimals, // 10
     fee,
     symbol: 'DOT',
   }

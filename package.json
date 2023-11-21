@@ -10,7 +10,6 @@
     "test": "npm run lint && jest --detectOpenHandles --coverage --forceExit --runInBand",
     "unit-mock": "jest --coverage --runInBand 0_mock_test",
     "unit-bridge": "jest --coverage --runInBand 1_bridge_test",
-    "unit20": "jest --coverage --runInBand 1_bridge_test/20_coin.algorand.sign.spec",
     "lint": "eslint --ext .js index.js src tests",
     "lint:fix": "eslint --ext .js index.js src tests --fix"
   },

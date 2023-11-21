@@ -11,20 +11,17 @@ const puppeteer = require('puppeteer')
 /* //////////////////////////////////////////////////////////////////////// */
 
 import pkg from 'hi-base32'
-import { nacl } from 'tweetnacl'
-
 const { decode } = pkg
+const nacl = require('tweetnacl')
 
 function getPubKey (address) {  
     const decoded = decode.asBytes(address)
-    const pubKey = decoded.slice(0, 32)
-    console.log('## pubKey = ', pubKey)
-    return pubKey
+    return decoded.slice(0, 32)
 }
 
 function verify (message, signature, address) {
     const recPub = getPubKey(address)
-    return nacl.verify(new Uint8Array(Buffer.from(message, 'hex')), new Uint8Array(Buffer.from(signature, 'hex')), recPub) 
+    return nacl.sign.detached.verify(new Uint8Array(Buffer.from(message, 'hex')), new Uint8Array(Buffer.from(signature.substr(2, signature.length - 2), 'hex')), new Uint8Array(recPub))
 }
 
 describe('[dcent-web-connector] Bridge - init', () => {
@@ -172,7 +169,7 @@ describe('[dcent-web-connector] Bridge - init', () => {
             decimals: 2,
             fee: '0.001', // '0354a6ba7a180000', // 
             symbol: 'DTN',
-            optionParam: '03' // Token Deploy
+            optionParam: '03' // Contract call
         }
         var response = await page.evaluate((transactionJson) => {
             // eslint-disable-next-line no-undef
@@ -240,7 +237,7 @@ describe('[dcent-web-connector] Bridge - init', () => {
             decimals: 2,
             fee: '0.001', // '0354a6ba7a180000', // 
             symbol: 'dcent',
-            optionParam: '05' // Token Deploy
+            optionParam: '05'
         }
         var response = await page.evaluate((transactionJson) => {
             // eslint-disable-next-line no-undef
@@ -274,7 +271,7 @@ describe('[dcent-web-connector] Bridge - init', () => {
             decimals: 0,
             fee: '0.001', // '0354a6ba7a180000', // 
             symbol: 'DCA',
-            optionParam: '06' // Token Deploy
+            optionParam: '06' // 
         }
         var response = await page.evaluate((transactionJson) => {
             // eslint-disable-next-line no-undef

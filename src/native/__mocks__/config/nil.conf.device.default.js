@@ -344,10 +344,25 @@ const defaultDeviceResponse = {
             }
         }
     },
+    getAlgorandSignedTransaction: {
+        header: {
+            version: '1.0',
+            response_from: 'algorand',
+            status: 'success'
+        },
+        body: {
+            command: 'get_sign',
+            parameter: {
+                signed: '3045022100fb4b7a28d3419651420ed6745601b72ec4e8a3ffbcbf3052ebb39b76fba1e0ba0220570ba64c9fd6f63982efb500857b29742d578e54e7c776c2b1230da23ebe238e',
+            }
+        }
+    },
 }
+
 /* //////////////////////////////////////////////////////////////////////// */
 /* */
 /* //////////////////////////////////////////////////////////////////////// */
+
 export default {
     defaultDeviceResponse,
 }

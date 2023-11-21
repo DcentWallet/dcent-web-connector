@@ -24,6 +24,7 @@
 | v0.13.1     | 2023. 05. 17 | Fixed fee display issue                                    |
 | v0.14.0     | 2023. 05. 25 | add Polkadot & Comsmos & Coreum & Near Token              |
 | v0.14.1     | 2023. 05. 25 | Fix Polkadot decimals                                    |
+| v0.14.2     | 2023. 11. 20 | add Algorand transaction function                          |
 
 ## 1. INTRODUCTION
 
@@ -1859,6 +1860,96 @@ For broadcast the sign transaction, you must reconstruct transaction include `Tx
       "pubkey": "0x0202903dcb31139bf92e096c3ec85fb9a94ab7dbf02d6234ded604d15ee9650480"
       }
     }
+  }
+  ```
+
+**getAlgorandSignedTransaction()**
+
+- This fuction for :
+
+  - ALGORAND(ALGO)
+  - ALGORAND ASSET(ALGO-ASSET)
+  - ALGORAND APP(ALGO-APP)
+- Parameters :
+
+  - unsignedTx: unsigned hexadecimal tx [Algorand Developer Transaction Reference Docs](https://developer.algorand.org/docs/get-details/transactions/transactions/)
+  - path: key path, wallet sign with that private key with a given key path (BIP32 ex) "m/44'/283'/0'/0/0").
+  - fee: fee, It is fee that wallet displays on the screen.
+  - symbol: symbol, It is a symbol that the wallet displays on the screen.
+  - decimals: havah or havah token's decimals.
+  - optionParam: hexadecimal value of the havah method type is used only in havah token.
+    - '00' : ALGORAND Transfer
+    - '01' : ALGORAND ASSET Transfer
+    - '02' : ALGORAND ASSET OPTIN
+    - '03' : ALGORAND APP Contract call
+    - '04' : ALGORAND APP OPTIN
+    - '05' : ALGORAND ASSET FT Create
+    - '06' : ALGORAND ASSET NFT Create
+- Requirements:
+
+  - `D'CENT Bridge` version 1.5.0 or higher is required.
+  - D'CENT Biometric Wallet version 2.29.1. or higher is required.
+- Useage:
+
+  ```js
+  import algosdk from 'algosdk'
+
+  const algodClient = new algosdk.Algodv2('', 'https://mainnet-api.algonode.cloud', '')
+  const indexerClient = new algosdk.Indexer('', 'https://mainnet-idx.algonode.cloud', '')
+
+  // An account for Algorand should keep cost for maintaining the account.
+  const balanceInfo = await algodClient.accountInformation(walletAddress).do()
+  const blanace = balanceInfo.amount.toString()
+  const maintenance = balaceInfo['min-balance'].toString()
+
+  // Make a transaction
+  const suggestedParams = await algodClient.getTransactionParams().do()
+  const tx = algosdk.makePaymentTxnWithSuggestedParamsFromObject({
+    suggestedParams,
+    from: walletAddress,
+    to: someWhere,
+    amount: value,  // Unit is microAlgos
+    memo: new Uint8Array(Buffer.from('Something what you want', 'hex')) || undefined
+  })
+  
+  // Create JSON-formatted data for getting a signature
+  const unsignedRawData = Uint8ArrayToHex(tx.bytesToSign())
+  const sigHash = rawData
+
+  const transactionJson = {
+      coinType: DcentWebConnector.coinType.ALGORAND,
+      sigHash: unsignedRawData,
+      path: `m/44'/283'/0'/0/0`,
+      decimals: 6,  // for ALGORAND
+      fee: tx.fee,
+      symbol: 'ALGO',
+      optionParams: '00'
+  }
+
+  var result
+  try {
+      result = await DcentWebConnector.getAlgorandSignedTransaction(transactionJson);  
+  } catch (e) {
+      console.log(e)
+      result = e
+  }
+  ```
+
+- Returned response object:
+
+  ```json
+  {
+      "header": {
+          "version": "1.0",
+          "response_from": "algorand",
+          "status": "success"
+      },
+      "body": {
+          "command": "transaction",
+          "parameter": {
+              "signed_tx": "31aa13b5e04cb6fc6381ea0520bf7f6727ebdb6e96cd7ca8625bb3e3dd36cf0e2cee4ece13aa9f7ddc09ee10c74aa00af954201829d8016317f10f5a921dcc0d"
+          }
+      }
   }
   ```
 

@@ -514,7 +514,9 @@ function isAvaliableCoinGroup (coinGroup) {
 const _contractNotStartWith0x = (coinGroup) => {
   if (coinGroup === dcentCoinGroup.TRC_TOKEN.toLowerCase() || coinGroup === dcentCoinGroup.TRC_TESTNET.toLowerCase() ||
       coinGroup === dcentCoinGroup.XRC20.toLowerCase() || coinGroup === dcentCoinGroup.XRC20_APOTHEM.toLowerCase() ||
-      coinGroup === dcentCoinGroup.HTS_TESTNET.toLowerCase() || coinGroup === dcentCoinGroup.HEDERA_HTS.toLowerCase()
+      coinGroup === dcentCoinGroup.HTS_TESTNET.toLowerCase() || coinGroup === dcentCoinGroup.HEDERA_HTS.toLowerCase() ||
+      coinGroup === dcentCoinGroup.ALGORAND_ASSET.toLowerCase() || coinGroup === dcentCoinGroup.ALGORAND_ASSET_TESTNET.toLowerCase() ||
+      coinGroup === dcentCoinGroup.ALGORAND_APP.toLowerCase() || coinGroup === dcentCoinGroup.ALGORAND_APP_TESTNET.toLowerCase()
       ) {
           return true
   }
@@ -588,6 +590,12 @@ function isAvaliableCoinType (coinType) {
     case dcentCoinType.POLKADOT.toLowerCase():
     case dcentCoinType.COSMOS.toLowerCase():
     case dcentCoinType.COREUM.toLowerCase():
+    case dcentCoinType.ALGORAND.toLowerCase():
+    case dcentCoinType.ALGORAND_TESTNET.toLowerCase():
+    case dcentCoinType.ALGORAND_ASSET.toLowerCase():
+    case dcentCoinType.ALGORAND_ASSET_TESTNET.toLowerCase():
+    case dcentCoinType.ALGORAND_APP.toLowerCase():
+    case dcentCoinType.ALGORAND_APP_TESTNET.toLowerCase():
       return true
     default:
       return false
@@ -613,6 +621,10 @@ function isTokenType (coinGroup) {
     case dcentCoinGroup.HAVAH_HSP20.toLowerCase():
     case dcentCoinGroup.HAVAH_HSP20_TESTNET.toLowerCase():
     case dcentCoinGroup.NEAR_TOKEN.toLowerCase():
+    case dcentCoinType.ALGORAND_ASSET.toLowerCase():
+    case dcentCoinType.ALGORAND_ASSET_TESTNET.toLowerCase():
+    case dcentCoinType.ALGORAND_APP.toLowerCase():
+    case dcentCoinType.ALGORAND_APP_TESTNET.toLowerCase():
       return true
     default:
       return false
@@ -1450,6 +1462,33 @@ dcent.getCosmosSignedTransaction = async function ({
     res.header.response_from = coinType
   }
   return res
+}
+
+dcent.getAlgorandSignedTransaction = async function ({
+  coinType,
+  sigHash,
+  fee,
+  decimals,
+  nonce,
+  path,
+  symbol,
+  optionParam,
+}) {
+  const params = {
+    coinType,
+    decimals,
+    sig_hash: sigHash,
+    fee: UnitConverter(fee, coinDecimals.ALGORAND).bignum.toString(16).padStart(16, '0'),
+    path,
+    symbol,
+  }
+  if (nonce) params.nonce = nonce
+  if (optionParam) params.optionParam = optionParam
+
+  return await dcent.call({
+    method: 'getUnionSignedTransaction',
+    params
+  })
 }
 
 dcent.state = dcentState

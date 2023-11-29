@@ -27,6 +27,7 @@ module.exports = {
     GET_HAVAH_SIGN_TX: 'getHavahSignedTransaction',
     GET_POLKADOT_SIGN_TX: 'getPolkadotSignedTransaction',
     GET_COSMOS_SIGN_TX: 'getCosmosSignedTransaction',
+    GET_ALGORAND_SIGN_TX: 'getAlgorandSignedTransaction',
 }
 
 /* //////////////////////////////////////////////////////////////////////// */

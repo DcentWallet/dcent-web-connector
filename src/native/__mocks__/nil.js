@@ -94,6 +94,9 @@ const requestToBridge = (payload) => {
     case Method.GET_COSMOS_SIGN_TX:
         response = defaultDeviceResponse.getCosmosSignedTransaction
         break
+    case Method.GET_ALGORAND_SIGN_TX:
+        response = defaultDeviceResponse.getAlgorandSignedTransaction
+        break
     default:
         response = 'error'
       throw new Error('Not implemented Method in Mock : ' + method)

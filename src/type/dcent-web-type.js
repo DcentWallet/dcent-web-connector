@@ -48,7 +48,13 @@ const coinType = {
   HAVAH_HSP20_TESTNET: 'havah-hsp20-testnet',
   POLKADOT: 'polkadot',
   COSMOS: 'cosmos',
-  COREUM: 'coreum'
+  COREUM: 'coreum',
+  ALGORAND: 'algorand',
+  ALGORAND_TESTNET: 'algo-testnet',
+  ALGORAND_ASSET: 'algo-asset',
+  ALGORAND_ASSET_TESTNET: 'algo-asset-test',
+  ALGORAND_APP: 'algo-app',
+  ALGORAND_APP_TESTNET: 'algo-app-test',
 }
 
 const coinGroup = {
@@ -99,7 +105,13 @@ const coinGroup = {
   HAVAH_HSP20_TESTNET: 'HAVAH-HSP20-TESTNET',
   POLKADOT: 'POLKADOT',
   COSMOS: 'COSMOS',
-  COREUM: 'coreum'
+  COREUM: 'coreum',
+  ALGORAND: 'ALGORAND',
+  ALGORAND_TESTNET: 'ALGO-TESTNET',
+  ALGORAND_ASSET: 'ALGO-ASSET',
+  ALGORAND_ASSET_TESTNET: 'ALGO-ASSET-TEST',
+  ALGORAND_APP: 'ALGO-APP',
+  ALGORAND_APP_TESTNET: 'ALGO-APP-TEST',
 }
 
 const coinName = {
@@ -150,7 +162,13 @@ const coinName = {
   HAVAH_HSP20_TESTNET: 'HAVAH-HSP20-TESTNET',
   POLKADOT: 'POLKADOT',
   COSMOS: 'COSMOS',
-  COREUM: 'COREUM'
+  COREUM: 'COREUM',
+  ALGORAND: 'ALGORAND',
+  ALGORAND_TESTNET: 'ALGO-TESTNET',
+  ALGORAND_ASSET: 'ALGO-ASSET',
+  ALGORAND_ASSET_TESTNET: 'ALGO-ASSET-TEST',
+  ALGORAND_APP: 'ALGO-APP',
+  ALGORAND_APP_TESTNET: 'ALGO-APP-TEST',
 }
 
 const bitcoinTxType = {
@@ -217,6 +235,7 @@ const coinDecimals = {
   POLKADOT: 10,
   COSMOS: 6,
   COREUM: 6,
+  ALGORAND: 6,
 }
 
 module.exports = {

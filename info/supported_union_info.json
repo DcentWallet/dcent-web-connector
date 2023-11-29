@@ -62,5 +62,29 @@
     {
         "name": "havah-hsp20-testnet",
         "supportVersion": "2.26.0"
+    },
+    {
+        "name": "algorand",
+        "supportVersion": "2.29.1"
+    },
+    {
+        "name": "algo-testnet",
+        "supportVersion": "2.29.1"
+    },
+    {
+        "name": "algo-asset",
+        "supportVersion": "2.29.1"
+    },
+    {
+        "name": "algo-asset-test",
+        "supportVersion": "2.29.1"
+    },
+    {
+        "name": "algo-app",
+        "supportVersion": "2.29.1"
+    },
+    {
+        "name": "algo-app-test",
+        "supportVersion": "2.29.1"
     }
 ]

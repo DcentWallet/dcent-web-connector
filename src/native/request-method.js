@@ -28,6 +28,7 @@ module.exports = {
     GET_POLKADOT_SIGN_TX: 'getPolkadotSignedTransaction',
     GET_COSMOS_SIGN_TX: 'getCosmosSignedTransaction',
     GET_ALGORAND_SIGN_TX: 'getAlgorandSignedTransaction',
+    GET_PARA_SIGN_TX: 'getParachainSignedTransaction',
 }
 
 /* //////////////////////////////////////////////////////////////////////// */

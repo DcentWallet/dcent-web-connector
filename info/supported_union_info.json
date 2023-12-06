@@ -86,5 +86,21 @@
     {
         "name": "algo-app-test",
         "supportVersion": "2.29.1"
+    },
+    {
+        "name": "para",
+        "supportVersion": "2.30.0"
+    },
+    {
+        "name": "para-testnet",
+        "supportVersion": "2.30.0"
+    },
+    {
+        "name": "para-xc20",
+        "supportVersion": "2.30.0"
+    },
+    {
+        "name": "para-xc20-tesetnet",
+        "supportVersion": "2.30.0"
     }
 ]

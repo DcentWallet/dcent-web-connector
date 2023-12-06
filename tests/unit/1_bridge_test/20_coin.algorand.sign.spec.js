@@ -71,7 +71,7 @@ describe('[dcent-web-connector] Bridge - init', () => {
         }
         var response = await page.evaluate((transactionJson) => {
             // eslint-disable-next-line no-undef
-            return getHavahSignedTransaction(transactionJson)
+            return getAlgoSignedTransaction(transactionJson)
         }, transactionJson)
 
         var responseAddress = await page.evaluate(() => {
@@ -105,7 +105,7 @@ describe('[dcent-web-connector] Bridge - init', () => {
         }
         var response = await page.evaluate((transactionJson) => {
             // eslint-disable-next-line no-undef
-            return getHavahSignedTransaction(transactionJson)
+            return getAlgoSignedTransaction(transactionJson)
         }, transactionJson)
 
         var responseAddress = await page.evaluate(() => {
@@ -139,7 +139,7 @@ describe('[dcent-web-connector] Bridge - init', () => {
         }
         var response = await page.evaluate((transactionJson) => {
             // eslint-disable-next-line no-undef
-            return getHavahSignedTransaction(transactionJson)
+            return getAlgoSignedTransaction(transactionJson)
         }, transactionJson)
 
         var responseAddress = await page.evaluate(() => {
@@ -173,7 +173,7 @@ describe('[dcent-web-connector] Bridge - init', () => {
         }
         var response = await page.evaluate((transactionJson) => {
             // eslint-disable-next-line no-undef
-            return getHavahSignedTransaction(transactionJson)
+            return getAlgoSignedTransaction(transactionJson)
         }, transactionJson)
 
         var responseAddress = await page.evaluate(() => {
@@ -207,7 +207,7 @@ describe('[dcent-web-connector] Bridge - init', () => {
         }
         var response = await page.evaluate((transactionJson) => {
             // eslint-disable-next-line no-undef
-            return getHavahSignedTransaction(transactionJson)
+            return getAlgoSignedTransaction(transactionJson)
         }, transactionJson)
 
         var responseAddress = await page.evaluate(() => {
@@ -241,7 +241,7 @@ describe('[dcent-web-connector] Bridge - init', () => {
         }
         var response = await page.evaluate((transactionJson) => {
             // eslint-disable-next-line no-undef
-            return getHavahSignedTransaction(transactionJson)
+            return getAlgoSignedTransaction(transactionJson)
         }, transactionJson)
 
         var responseAddress = await page.evaluate(() => {
@@ -275,7 +275,7 @@ describe('[dcent-web-connector] Bridge - init', () => {
         }
         var response = await page.evaluate((transactionJson) => {
             // eslint-disable-next-line no-undef
-            return getHavahSignedTransaction(transactionJson)
+            return getAlgoSignedTransaction(transactionJson)
         }, transactionJson)
 
         var responseAddress = await page.evaluate(() => {

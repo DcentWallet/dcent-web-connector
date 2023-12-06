@@ -55,6 +55,10 @@ const coinType = {
   ALGORAND_ASSET_TESTNET: 'algo-asset-test',
   ALGORAND_APP: 'algo-app',
   ALGORAND_APP_TESTNET: 'algo-app-test',
+  PARA: 'para',
+  PARA_TESTNET: 'para-testnet',
+  PARA_XC20: 'para-xc20',
+  PARA_XC20_TESTNET: 'para-xc20-testnet',
 }
 
 const coinGroup = {
@@ -112,6 +116,10 @@ const coinGroup = {
   ALGORAND_ASSET_TESTNET: 'ALGO-ASSET-TEST',
   ALGORAND_APP: 'ALGO-APP',
   ALGORAND_APP_TESTNET: 'ALGO-APP-TEST',
+  PARA: 'PARA',
+  PARA_TESTNET: 'PARAT',
+  PARA_XC20: 'XC20',
+  PARA_XC20_TESTNET: 'XC20T',
 }
 
 const coinName = {
@@ -169,6 +177,10 @@ const coinName = {
   ALGORAND_ASSET_TESTNET: 'ALGO-ASSET-TEST',
   ALGORAND_APP: 'ALGO-APP',
   ALGORAND_APP_TESTNET: 'ALGO-APP-TEST',
+  PARA: 'PARA',
+  PARA_TESTNET: 'PARAT',
+  PARA_XC20: 'XC20',
+  PARA_XC20_TESTNET: 'XC20T',
 }
 
 const bitcoinTxType = {

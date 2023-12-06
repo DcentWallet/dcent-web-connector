@@ -503,6 +503,40 @@ The address string format is depend on the coin type.
 
 For some coin type(ex. TEZOS), include pubkey as a property of the response parameter.
 
+For ss58 addresses used by the Substrate ecosystems such as Astar, a parameter called optionParam is added.
+The value of optionParam is the prefix for each network defined in [ss58-registry](https://github.com/paritytech/ss58-registry).
+
+```js
+var coinType = DcentWebConnector.coinType.PARA
+var keyPath = "m/44'/810'/0'/0/0" // key path of the Astar's account
+var optionParam = 5 // The address prefix
+
+var result
+try{
+    // Get the address corresponding to keyPath & prefix
+    result = await DcentWebConnector.getAddress(coinType, keyPath, optionParam)
+}catch(e){
+    result = e
+}
+```
+
+Returned response object has:
+
+```json
+{
+    "header": {
+        "version": "1.0",
+        "response_from": "para",
+        "status": "success"
+    },
+    "body": {
+        "command": "get_address",
+        "parameter": {
+            "address": "YzsEz5dG8TDqG49pGaejLrFoD4oeNTEX7yWt4qcCV4TA9LB"
+        }
+    }
+}
+```
 
 ### Get XPUB
 
@@ -1683,7 +1717,7 @@ For broadcast the sign transaction, you must reconstruct transaction include `Tx
 
 - This fuction for :
 
-  - POLCKADOT(DOT)
+  - POLKADOT(DOT)
 - Parameters :
 
   - unsignedTx: unsigned hexadecimal tx [Polkadot Docs](https://wiki.polkadot.network/docs/build-transaction-construction)
@@ -1950,6 +1984,94 @@ For broadcast the sign transaction, you must reconstruct transaction include `Tx
               "signed_tx": "31aa13b5e04cb6fc6381ea0520bf7f6727ebdb6e96cd7ca8625bb3e3dd36cf0e2cee4ece13aa9f7ddc09ee10c74aa00af954201829d8016317f10f5a921dcc0d"
           }
       }
+  }
+  ```
+
+**getParachainSignedTransaction()**
+
+- This fuction for :
+
+  - Parachain - Astar(ASTR)
+  - Parachain Asset- Astar Asset(XC20)
+- Parameters :
+
+  - unsignedTx: unsigned hexadecimal tx [Polkadot Docs](https://wiki.polkadot.network/docs/build-transaction-construction)
+  - path: key path, wallet sign with that private key with a given key path (BIP32 ex) "m/44'/810'/0'/0/0").
+  - fee: fee, It is fee that wallet displays on the screen.
+  - symbol: symbol, It is a symbol that the wallet displays on the screen.
+  - decimals: Parachain's decimals.
+  - RPCUrl: Network RPC endpoints.
+  - fee symbol: fee's symbol, It is a symbol that the wallet displays on the screen.
+  - fee decimals: fee's decimals.
+- Requirements:
+
+  - `D'CENT Bridge` version 1.5.3 or higher is required.
+  - D'CENT Biometric Wallet version 2.30.0 or higher is required.
+- Useage:
+
+  ```js
+  import { ApiPromise, HttpProvider } from '@polkadot/api'
+
+  const httpProvider = new HttpProvider('https://evm.astar.network');
+  const api = await ApiPromise({ provider: httpProvider });
+  // Wait until we are ready and connected
+  await api.isReady;
+
+  const blockNumber = await api.rpc.chain.getHeader();
+  const blockHash = await api.rpc.chain.getBlockHash(blockNumber.number.toHex());
+  // create SignerPayload
+  const signerPayload = api.createType('SignerPayload', {
+    genesisHash: api.genesisHash,
+    runtimeVersion: api.runtimeVersion,
+    version: api.extrinsicVersion,
+    blockHash: blockHash,
+    blockNumber: blockNumber.number,
+    era: api.createType('ExtrinsicEra', {
+      current: blockNumber.number,
+      period: 50
+    }),
+    nonce,
+    address: to,
+    method: api.tx.balances.transfer(to, amount).method, // For tokens, method: api.tx.assets.transfer(contract, to, amount).method,
+  });
+
+  const sigHash = signerPayload.toRaw().data;
+
+  const transactionJson = {
+    coinType: DcentWebConnector.coinType.PARA,
+    sigHash: sigHash,
+    path: `m/44'/810'/0'/0/0`,
+    decimals, // 18
+    fee,
+    symbol: 'ASTR',
+    RPCUrl: 'https://evm.astar.network',
+    feeSymbol: 'ASTR',
+    feeDecimals, // 18
+  };
+
+  var result;
+  try {
+    result = await DcentWebConnector.getParachainSignedTransaction(transactionJson);
+  } catch (e) {
+    console.log(e);
+    result = e;
+  }
+  ```
+- Returned response object:
+
+  ```json
+  {
+    "header": {
+      "version": "1.0",
+      "response_from": "para",
+      "status": "success"
+    },
+    "body": {
+      "command": "transaction",
+      "parameter": {
+        "signed_tx": "0x263b3ed036c74d15d875c7246abe73404c82763f3300316eb782cafdf5bd93f4f47f0fe34d823f9d07f8db7b2cb81051e58a1e58993c70888916c0ef6c3c910f"
+      }
+    }
   }
   ```
 

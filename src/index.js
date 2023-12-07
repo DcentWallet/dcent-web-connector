@@ -774,7 +774,7 @@ dcent.selectAddress = async function (addresses) {
  * @param {string} path string value of key path to get address
  * @returns {Object} address.
  */
-dcent.getAddress = async function (coinType, path, optionParam = null) {
+dcent.getAddress = async function (coinType, path, prefix = null) {
 
   if (!isAvaliableCoinType(coinType)) {
     throw dcent.dcentException('coin_type_error', 'not supported coin type')
@@ -790,10 +790,10 @@ dcent.getAddress = async function (coinType, path, optionParam = null) {
   }
 
   if (isParachainCoinType(coinType)) {
-    if (!Number(optionParam)) {
+    if (!Number(prefix)) {
       throw dcent.dcentException('param_error', 'Invaild Parameter')
     }
-    params.optionParam = Number(optionParam)
+    params.optionParam = Number(prefix)
   }
 
   const res = await dcent.call({
@@ -1546,10 +1546,14 @@ dcent.getParachainSignedTransaction = async function ({
   }
   if (nonce) params.nonce = nonce
   if (optionParam) params.optionParam = optionParam
-  return await dcent.call({
+
+  const res = await dcent.call({
     method: 'getUnionSignedTransaction',
     params
   })
+
+  res.body.parameter.signed_tx = '0x00' + (res.body.parameter.signed_tx.startsWith('0x') ? res.body.parameter.signed_tx.substr(2) : res.body.parameter.signed_tx)
+  return res
 }
 
 dcent.state = dcentState

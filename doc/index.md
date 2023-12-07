@@ -503,18 +503,18 @@ The address string format is depend on the coin type.
 
 For some coin type(ex. TEZOS), include pubkey as a property of the response parameter.
 
-For ss58 addresses used by the Substrate ecosystems such as Astar, a parameter called optionParam is added.
-The value of optionParam is the prefix for each network defined in [ss58-registry](https://github.com/paritytech/ss58-registry).
+For ss58 addresses used by the Substrate ecosystems such as Astar, prefix is added.
+The value of prefix is the prefix for each network defined in [ss58-registry](https://github.com/paritytech/ss58-registry).
 
 ```js
 var coinType = DcentWebConnector.coinType.PARA
 var keyPath = "m/44'/810'/0'/0/0" // key path of the Astar's account
-var optionParam = 5 // The address prefix
+var prefix = 5 // The address prefix of Astar
 
 var result
 try{
     // Get the address corresponding to keyPath & prefix
-    result = await DcentWebConnector.getAddress(coinType, keyPath, optionParam)
+    result = await DcentWebConnector.getAddress(coinType, keyPath, prefix)
 }catch(e){
     result = e
 }
@@ -2069,7 +2069,7 @@ For broadcast the sign transaction, you must reconstruct transaction include `Tx
     "body": {
       "command": "transaction",
       "parameter": {
-        "signed_tx": "0x263b3ed036c74d15d875c7246abe73404c82763f3300316eb782cafdf5bd93f4f47f0fe34d823f9d07f8db7b2cb81051e58a1e58993c70888916c0ef6c3c910f"
+        "signed_tx": "0x00263b3ed036c74d15d875c7246abe73404c82763f3300316eb782cafdf5bd93f4f47f0fe34d823f9d07f8db7b2cb81051e58a1e58993c70888916c0ef6c3c910f"
       }
     }
   }

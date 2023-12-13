@@ -22,9 +22,10 @@
 | v0.12.1     | 2023. 05. 03 | add support coin group for syncAccount                     |
 | v0.13.0     | 2023. 05. 16 | add Tezos & Vechain & Near & Havah transaction function    |
 | v0.13.1     | 2023. 05. 17 | Fixed fee display issue                                    |
-| v0.14.0     | 2023. 05. 25 | add Polkadot & Comsmos & Coreum & Near Token              |
-| v0.14.1     | 2023. 05. 25 | Fix Polkadot decimals                                    |
+| v0.14.0     | 2023. 05. 25 | add Polkadot & Comsmos & Coreum & Near Token               |
+| v0.14.1     | 2023. 05. 25 | Fix Polkadot decimals                                      |
 | v0.14.2     | 2023. 11. 20 | add Algorand transaction function                          |
+| v0.14.3     | 2023. 12. 13 | add Parachain(Astar) transaction function                  |
 
 ## 1. INTRODUCTION
 
@@ -520,6 +521,8 @@ try{
 }
 ```
 
+Please note that `Astar EVM` features an EVM (Ethereum Virtual Machine) compatible runtime environment, so it is the same as getting the address of ETHEREUM account.
+
 Returned response object has:
 
 ```json
@@ -831,7 +834,6 @@ The D'CENT Web SDK provides functions for signing transaction of coins.
   - nonce
   - gasPrice
   - gasLimit
-  - value
   - key path for signing
   - chain ID
   - contract information :
@@ -2006,7 +2008,7 @@ For broadcast the sign transaction, you must reconstruct transaction include `Tx
 - Requirements:
 
   - `D'CENT Bridge` version 1.5.3 or higher is required.
-  - D'CENT Biometric Wallet version 2.30.0 or higher is required.
+  - D'CENT Biometric Wallet version 2.30.1 or higher is required.
 - Useage:
 
   ```js
@@ -2074,5 +2076,7 @@ For broadcast the sign transaction, you must reconstruct transaction include `Tx
     }
   }
   ```
+
+  Please note that for `Astar EVM` transactions, you can use the getEthereumSignedTransaction() and getTokenSignedTransaction() methods with the chain ID set to 592.
 
 Please Refer to the `index.html` to learn more about how to use the SDK APIs. There is an Web project using our Web SDK.

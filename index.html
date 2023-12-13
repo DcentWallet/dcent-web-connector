@@ -111,9 +111,12 @@
         <button id="getPolkadotSignedTransaction" type="button" class="btn btn-primary">getPolkadotSignedTransaction</button>
         <button id="getCosmosSignedTransaction" type="button" class="btn btn-primary">getCosmosSignedTransaction</button>
         <button id="getCoreumSignedTransaction" type="button" class="btn btn-primary">getCosmosSignedTransaction - for coreum</button>
+        <br />
+
         <button id="getParachainSignedTransaction" type="button" class="btn btn-primary">getParachainSignedTransaction - for Astar</button>
         <button id="getParachainXc20SignedTransaction" type="button" class="btn btn-primary">getParachainXc20SignedTransaction - for Astar</button>
-        
+        <button id="getEthereumSignedTransactionForAstarEVM" type="button" class="btn btn-primary">getEthereumSignedTransaction - for Astar EVM</button>
+        <button id="getTokenSignedTransactionForAstarEVM" type="button" class="btn btn-primary">getTokenSignedTransaction - for Astar EVM</button>
         <br /><br />
 
         <button id="get_address_bitcoin" type="button" class="btn btn-primary">Get Bitcoin
@@ -172,6 +175,9 @@
         <br />
         <button id="get_address_parachain" type="button" class="btn btn-primary">Get Parachain(Astar) Mainnet
           Address("m/44'/810'/0'/0/0")</button>
+        <br />
+        <button id="get_address_astarevm" type="button" class="btn btn-primary">Get Astar EVM Mainnet
+          Address("m/44'/60'/0'/0/0")</button>
         <br />
 
       </div>
@@ -243,6 +249,7 @@
         $('#get_address_cosmos').click(get_address_cosmos_clicked);
         $('#get_address_coreum').click(get_address_coreum_clicked);
         $('#get_address_parachain').click(get_address_parachain_clicked);
+        $('#get_address_astarevm').click(get_address_astarevm_clicked);
 
         $('#getBitcoinSignedTransaction').click(getBitcoinSignedTransaction_clicked);
         
@@ -285,6 +292,8 @@
         $('#getCoreumSignedTransaction').click(getCoreumSignedTransaction_clicked);
         $('#getParachainSignedTransaction').click(getParachainSignedTransaction_clicked);
         $('#getParachainXc20SignedTransaction').click(getParachainXc20SignedTransaction_clicked);
+        $('#getEthereumSignedTransactionForAstarEVM').click(getEthereumSignedTransactionForAstarEVM_clicked);
+        $('#getTokenSignedTransactionForAstarEVM').click(getTokenSignedTransactionForAstarEVM_clicked);
       });
 
       async function info_clicked() {
@@ -523,6 +532,13 @@
         resp_editor.load(result)
       }
 
+      async function get_address_astarevm_clicked() {
+        set_command_name("Processing...");
+        var result = await getAddress(dcent.coinType.ETHEREUM, "m/44'/60'/0'/0/0")
+
+        set_command_name("get_address for Astar EVM")        
+        resp_editor.load(result)
+      }
 
 
       async function getBitcoinSignedTransaction_clicked() {
@@ -1134,7 +1150,8 @@
       }
 
       async function getParachainSignedTransaction_clicked() {
-        set_command_name("Processing...");
+        set_command_name("Processing...")
+
         var transactionJson = {
           coinType: dcent.coinType.PARA,
           sigHash: '0x1f03003ec746fb0d6d9d66245d6dc6c02d23b1b290821d8674865f96c03ef86d9d690d025a62020917000042000000020000009eb76c5184c4ab8679d2d5d819fdf90b9c001403e9e17da2e14b6d8aec4029c6b3436f97b6760bddf33e816da9c746b0cf17a80307f7a8485732044c8c20284d',
@@ -1146,14 +1163,15 @@
           feeSymbol: 'ASTR',
           feeDecimals: 18,
         }
-        var result  = await getParachainSignedTransaction(transactionJson);
-      
+        var result  = await getParachainSignedTransaction(transactionJson)
+
         set_command_name("getParachainSignedTransaction")
         resp_editor.load(result)
       }
 
       async function getParachainXc20SignedTransaction_clicked() {
-        set_command_name("Processing...");
+        set_command_name("Processing...")
+
         var transactionJson = {
           coinType: dcent.coinType.PARA_XC20,
           sigHash: '0x240817030000000000000001003ec746fb0d6d9d66245d6dc6c02d23b1b290821d8674865f96c03ef86d9d690d1733c42f5578e4495b038923000048000000020000009eb76c5184c4ab8679d2d5d819fdf90b9c001403e9e17da2e14b6d8aec4029c697111d520df41d8ff1801aa6532c0c3b80ff986adf37476846b0e7e09993b7af',
@@ -1165,9 +1183,45 @@
           feeSymbol: 'ASTR',
           feeDecimals: 18,
         }
-        var result  = await getParachainSignedTransaction(transactionJson);
-      
+        var result  = await getParachainSignedTransaction(transactionJson)
+
         set_command_name("getParachainXc20SignedTransaction")
+        resp_editor.load(result)
+      }
+
+      async function getEthereumSignedTransactionForAstarEVM_clicked() {
+        set_command_name("Processing...")
+
+        var result  = await getEthereumSignedTransaction(
+          dcent.coinType.ETHEREUM,
+          '8',
+          '2400000000',
+          '210000',
+          '0x354609C4c9a15d4265cF6D94010568D5Cf4d0c1B',
+          '100000000000000000',
+          '0x',
+          "m/44'/60'/0'/0/0",
+          592,
+        )
+
+        set_command_name("getEthereumSignedTransaction for Astar EVM")
+        resp_editor.load(result)
+      }
+
+      async function getTokenSignedTransactionForAstarEVM_clicked() {
+        set_command_name("Processing...")
+
+        var contract = {
+          name: 'Wrapped Astar',
+          address: '0xAeaaf0e2c81Af264101B9129C00F4440cCF0F720',
+          to: '0x354609C4c9a15d4265cF6D94010568D5Cf4d0c1B',
+          decimals: 18,
+          value: '100000000000000000',
+          symbol: 'WASTR',
+        }
+        var result = await getTokenSignedTransaction( dcent.coinType.ERC20, '21', '2400000000', '1000000', "m/44'/60'/0'/0/0", 592, contract )
+
+        set_command_name("getTokenSignedTransaction for Astar EVM")
         resp_editor.load(result)
       }
 

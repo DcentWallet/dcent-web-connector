@@ -89,18 +89,18 @@
     },
     {
         "name": "para",
-        "supportVersion": "2.30.0"
+        "supportVersion": "2.30.1"
     },
     {
         "name": "para-testnet",
-        "supportVersion": "2.30.0"
+        "supportVersion": "2.30.1"
     },
     {
         "name": "para-xc20",
-        "supportVersion": "2.30.0"
+        "supportVersion": "2.30.1"
     },
     {
         "name": "para-xc20-tesetnet",
-        "supportVersion": "2.30.0"
+        "supportVersion": "2.30.1"
     }
 ]

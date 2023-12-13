@@ -1552,7 +1552,9 @@ dcent.getParachainSignedTransaction = async function ({
     params
   })
 
-  res.body.parameter.signed_tx = '0x00' + (res.body.parameter.signed_tx.startsWith('0x') ? res.body.parameter.signed_tx.substr(2) : res.body.parameter.signed_tx)
+  if (res.header.status === 'success') {
+    res.body.parameter.signed_tx = '0x00' + (res.body.parameter.signed_tx.startsWith('0x') ? res.body.parameter.signed_tx.substr(2) : res.body.parameter.signed_tx)
+  }
   return res
 }
 

@@ -25,7 +25,7 @@
 | v0.14.0     | 2023. 05. 25 | add Polkadot & Comsmos & Coreum & Near Token               |
 | v0.14.1     | 2023. 05. 25 | Fix Polkadot decimals                                      |
 | v0.14.2     | 2023. 11. 20 | add Algorand transaction function                          |
-| v0.14.3     | 2023. 12. 13 | add Parachain(Astar) transaction function                  |
+| v0.15.0     | 2023. 12. 18 | add Parachain(Astar) transaction function                  |
 
 ## 1. INTRODUCTION
 

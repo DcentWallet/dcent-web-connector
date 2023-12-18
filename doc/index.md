@@ -22,9 +22,10 @@
 | v0.12.1     | 2023. 05. 03 | add support coin group for syncAccount                     |
 | v0.13.0     | 2023. 05. 16 | add Tezos & Vechain & Near & Havah transaction function    |
 | v0.13.1     | 2023. 05. 17 | Fixed fee display issue                                    |
-| v0.14.0     | 2023. 05. 25 | add Polkadot & Comsmos & Coreum & Near Token              |
-| v0.14.1     | 2023. 05. 25 | Fix Polkadot decimals                                    |
+| v0.14.0     | 2023. 05. 25 | add Polkadot & Comsmos & Coreum & Near Token               |
+| v0.14.1     | 2023. 05. 25 | Fix Polkadot decimals                                      |
 | v0.14.2     | 2023. 11. 20 | add Algorand transaction function                          |
+| v0.14.3     | 2023. 12. 13 | add Parachain(Astar) transaction function                  |
 
 ## 1. INTRODUCTION
 
@@ -503,6 +504,42 @@ The address string format is depend on the coin type.
 
 For some coin type(ex. TEZOS), include pubkey as a property of the response parameter.
 
+For ss58 addresses used by the Substrate ecosystems such as Astar, prefix is added.
+The value of prefix is the prefix for each network defined in [ss58-registry](https://github.com/paritytech/ss58-registry).
+
+```js
+var coinType = DcentWebConnector.coinType.PARA
+var keyPath = "m/44'/810'/0'/0/0" // key path of the Astar's account
+var prefix = 5 // The address prefix of Astar
+
+var result
+try{
+    // Get the address corresponding to keyPath & prefix
+    result = await DcentWebConnector.getAddress(coinType, keyPath, prefix)
+}catch(e){
+    result = e
+}
+```
+
+Please note that `Astar EVM` features an EVM (Ethereum Virtual Machine) compatible runtime environment, so it is the same as getting the address of ETHEREUM account.
+
+Returned response object has:
+
+```json
+{
+    "header": {
+        "version": "1.0",
+        "response_from": "para",
+        "status": "success"
+    },
+    "body": {
+        "command": "get_address",
+        "parameter": {
+            "address": "YzsEz5dG8TDqG49pGaejLrFoD4oeNTEX7yWt4qcCV4TA9LB"
+        }
+    }
+}
+```
 
 ### Get XPUB
 
@@ -797,7 +834,6 @@ The D'CENT Web SDK provides functions for signing transaction of coins.
   - nonce
   - gasPrice
   - gasLimit
-  - value
   - key path for signing
   - chain ID
   - contract information :
@@ -1683,7 +1719,7 @@ For broadcast the sign transaction, you must reconstruct transaction include `Tx
 
 - This fuction for :
 
-  - POLCKADOT(DOT)
+  - POLKADOT(DOT)
 - Parameters :
 
   - unsignedTx: unsigned hexadecimal tx [Polkadot Docs](https://wiki.polkadot.network/docs/build-transaction-construction)
@@ -1952,5 +1988,95 @@ For broadcast the sign transaction, you must reconstruct transaction include `Tx
       }
   }
   ```
+
+**getParachainSignedTransaction()**
+
+- This fuction for :
+
+  - Parachain - Astar(ASTR)
+  - Parachain Asset- Astar Asset(XC20)
+- Parameters :
+
+  - unsignedTx: unsigned hexadecimal tx [Polkadot Docs](https://wiki.polkadot.network/docs/build-transaction-construction)
+  - path: key path, wallet sign with that private key with a given key path (BIP32 ex) "m/44'/810'/0'/0/0").
+  - fee: fee, It is fee that wallet displays on the screen.
+  - symbol: symbol, It is a symbol that the wallet displays on the screen.
+  - decimals: Parachain's decimals.
+  - RPCUrl: Network RPC endpoints.
+  - fee symbol: fee's symbol, It is a symbol that the wallet displays on the screen.
+  - fee decimals: fee's decimals.
+- Requirements:
+
+  - `D'CENT Bridge` version 1.5.3 or higher is required.
+  - D'CENT Biometric Wallet version 2.30.1 or higher is required.
+- Useage:
+
+  ```js
+  import { ApiPromise, HttpProvider } from '@polkadot/api'
+
+  const httpProvider = new HttpProvider('https://evm.astar.network');
+  const api = await ApiPromise({ provider: httpProvider });
+  // Wait until we are ready and connected
+  await api.isReady;
+
+  const blockNumber = await api.rpc.chain.getHeader();
+  const blockHash = await api.rpc.chain.getBlockHash(blockNumber.number.toHex());
+  // create SignerPayload
+  const signerPayload = api.createType('SignerPayload', {
+    genesisHash: api.genesisHash,
+    runtimeVersion: api.runtimeVersion,
+    version: api.extrinsicVersion,
+    blockHash: blockHash,
+    blockNumber: blockNumber.number,
+    era: api.createType('ExtrinsicEra', {
+      current: blockNumber.number,
+      period: 50
+    }),
+    nonce,
+    address: to,
+    method: api.tx.balances.transfer(to, amount).method, // For tokens, method: api.tx.assets.transfer(contract, to, amount).method,
+  });
+
+  const sigHash = signerPayload.toRaw().data;
+
+  const transactionJson = {
+    coinType: DcentWebConnector.coinType.PARA,
+    sigHash: sigHash,
+    path: `m/44'/810'/0'/0/0`,
+    decimals, // 18
+    fee,
+    symbol: 'ASTR',
+    RPCUrl: 'https://evm.astar.network',
+    feeSymbol: 'ASTR',
+    feeDecimals, // 18
+  };
+
+  var result;
+  try {
+    result = await DcentWebConnector.getParachainSignedTransaction(transactionJson);
+  } catch (e) {
+    console.log(e);
+    result = e;
+  }
+  ```
+- Returned response object:
+
+  ```json
+  {
+    "header": {
+      "version": "1.0",
+      "response_from": "para",
+      "status": "success"
+    },
+    "body": {
+      "command": "transaction",
+      "parameter": {
+        "signed_tx": "0x00263b3ed036c74d15d875c7246abe73404c82763f3300316eb782cafdf5bd93f4f47f0fe34d823f9d07f8db7b2cb81051e58a1e58993c70888916c0ef6c3c910f"
+      }
+    }
+  }
+  ```
+
+  Please note that for `Astar EVM` transactions, you can use the getEthereumSignedTransaction() and getTokenSignedTransaction() methods with the chain ID set to 592.
 
 Please Refer to the `index.html` to learn more about how to use the SDK APIs. There is an Web project using our Web SDK.

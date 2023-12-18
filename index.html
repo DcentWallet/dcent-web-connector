@@ -111,7 +111,12 @@
         <button id="getPolkadotSignedTransaction" type="button" class="btn btn-primary">getPolkadotSignedTransaction</button>
         <button id="getCosmosSignedTransaction" type="button" class="btn btn-primary">getCosmosSignedTransaction</button>
         <button id="getCoreumSignedTransaction" type="button" class="btn btn-primary">getCosmosSignedTransaction - for coreum</button>
-        
+        <br />
+
+        <button id="getParachainSignedTransaction" type="button" class="btn btn-primary">getParachainSignedTransaction - for Astar</button>
+        <button id="getParachainXc20SignedTransaction" type="button" class="btn btn-primary">getParachainXc20SignedTransaction - for Astar</button>
+        <button id="getEthereumSignedTransactionForAstarEVM" type="button" class="btn btn-primary">getEthereumSignedTransaction - for Astar EVM</button>
+        <button id="getTokenSignedTransactionForAstarEVM" type="button" class="btn btn-primary">getTokenSignedTransaction - for Astar EVM</button>
         <br /><br />
 
         <button id="get_address_bitcoin" type="button" class="btn btn-primary">Get Bitcoin
@@ -167,6 +172,12 @@
         <br />
         <button id="get_address_coreum" type="button" class="btn btn-primary">Get Coreum Mainnet
           Address("m/44'/990'/0'/0/0")</button>
+        <br />
+        <button id="get_address_parachain" type="button" class="btn btn-primary">Get Parachain(Astar) Mainnet
+          Address("m/44'/810'/0'/0/0")</button>
+        <br />
+        <button id="get_address_astarevm" type="button" class="btn btn-primary">Get Astar EVM Mainnet
+          Address("m/44'/60'/0'/0/0")</button>
         <br />
 
       </div>
@@ -237,6 +248,8 @@
         $('#get_address_polkadot').click(get_address_polkadot_clicked);
         $('#get_address_cosmos').click(get_address_cosmos_clicked);
         $('#get_address_coreum').click(get_address_coreum_clicked);
+        $('#get_address_parachain').click(get_address_parachain_clicked);
+        $('#get_address_astarevm').click(get_address_astarevm_clicked);
 
         $('#getBitcoinSignedTransaction').click(getBitcoinSignedTransaction_clicked);
         
@@ -277,6 +290,10 @@
         $('#getPolkadotSignedTransaction').click(getPolkadotSignedTransaction_clicked);
         $('#getCosmosSignedTransaction').click(getCosmosSignedTransaction_clicked);
         $('#getCoreumSignedTransaction').click(getCoreumSignedTransaction_clicked);
+        $('#getParachainSignedTransaction').click(getParachainSignedTransaction_clicked);
+        $('#getParachainXc20SignedTransaction').click(getParachainXc20SignedTransaction_clicked);
+        $('#getEthereumSignedTransactionForAstarEVM').click(getEthereumSignedTransactionForAstarEVM_clicked);
+        $('#getTokenSignedTransactionForAstarEVM').click(getTokenSignedTransactionForAstarEVM_clicked);
       });
 
       async function info_clicked() {
@@ -482,31 +499,46 @@
       }
 
       async function get_address_polkadot_clicked() {
-         set_command_name("Processing...");
- 
-         var result = await getAddress(dcent.coinType.POLKADOT, "m/44'/354'/0'/0/0")
- 
-         set_command_name("get_address polkadot")        
-         resp_editor.load(result)
+        set_command_name("Processing...");
+
+        var result = await getAddress(dcent.coinType.POLKADOT, "m/44'/354'/0'/0/0")
+
+        set_command_name("get_address polkadot")        
+        resp_editor.load(result)
       }
-  
-       async function get_address_cosmos_clicked() {
-         set_command_name("Processing...");
- 
-         var result = await getAddress(dcent.coinType.COSMOS, "m/44'/118'/0'/0/0")
- 
-         set_command_name("get_address cosmos")        
-         resp_editor.load(result)
+
+      async function get_address_cosmos_clicked() {
+        set_command_name("Processing...");
+
+        var result = await getAddress(dcent.coinType.COSMOS, "m/44'/118'/0'/0/0")
+
+        set_command_name("get_address cosmos")        
+        resp_editor.load(result)
       }
- 
-       async function get_address_coreum_clicked() {
-         set_command_name("Processing...");
-         var result = await getAddress(dcent.coinType.COREUM, "m/44'/990'/0'/0/0")
- 
-         set_command_name("get_address coreum")        
-         resp_editor.load(result)
+
+      async function get_address_coreum_clicked() {
+        set_command_name("Processing...");
+        var result = await getAddress(dcent.coinType.COREUM, "m/44'/990'/0'/0/0")
+
+        set_command_name("get_address coreum")        
+        resp_editor.load(result)
       }
- 
+
+      async function get_address_parachain_clicked() {
+        set_command_name("Processing...");
+        var result = await getAddress(dcent.coinType.PARA, "m/44'/810'/0'/0/0", 5)
+
+        set_command_name("get_address parachain")        
+        resp_editor.load(result)
+      }
+
+      async function get_address_astarevm_clicked() {
+        set_command_name("Processing...");
+        var result = await getAddress(dcent.coinType.ETHEREUM, "m/44'/60'/0'/0/0")
+
+        set_command_name("get_address for Astar EVM")        
+        resp_editor.load(result)
+      }
 
 
       async function getBitcoinSignedTransaction_clicked() {
@@ -1068,54 +1100,130 @@
         set_command_name("getHavahHsp20SignedTransaction_deploy")
         resp_editor.load(result)
       }
-      async function getPolkadotSignedTransaction_clicked() {
-         set_command_name("Processing...");
-         var transactionJson = {
-           coinType: dcent.coinType.POLKADOT,
-           sigHash: '040000163a5ee36b1243ce5241c0a45010dd1717869e9918c040bf5d305be4a5af9e7a0b00407a10f35a003400a223000007000000e143f23803ac50e8f6f8e62695d1ce9e4e1d68aa36c1cd2cfd15340213f3423ee143f23803ac50e8f6f8e62695d1ce9e4e1d68aa36c1cd2cfd15340213f3423e',
-           path: `m/44'/354'/0'/0/0`,
-           decimals: 12,
-           fee: '0.00021',
-           symbol: 'DOT',
-         }
-         var result  = await getPolkadotSignedTransaction(transactionJson);
-       
-         set_command_name("getPolkadotSignedTransaction")
-         resp_editor.load(result)
-       }
- 
-       async function getCosmosSignedTransaction_clicked() {
-         set_command_name("Processing...");
-         var transactionJson = {
-           coinType: dcent.coinType.COSMOS,
-           sigHash: '0a94010a8f010a1c2f636f736d6f732e62616e6b2e763162657461312e4d736753656e64126f0a2d636f736d6f73317235763573726461377866746833686e327332367478767263726e746c646a756d74386d686c122d636f736d6f733138766864637a6a7574343467707379383034637266686e64356e713030336e7a306e663230761a0f0a057561746f6d1206313030303030120012670a500a460a1f2f636f736d6f732e63727970746f2e736563703235366b312e5075624b657912230a21ffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffff12040a020801180a12130a0d0a057561746f6d12043530303010c09a0c1a0b636f736d6f736875622d34208f3a',
-           path: `m/44'/118'/0'/0/0`,
-           decimals: 6,
-           fee: '0.023',
-           symbol: 'ATOM',
-         }
-         var result  = await getCosmosSignedTransaction(transactionJson);
-       
-         set_command_name("getCosmosSignedTransaction")
-         resp_editor.load(result)
-       }
- 
-       async function getCoreumSignedTransaction_clicked() {
-         set_command_name("Processing...");
-         var transactionJson = {
-           coinType: dcent.coinType.COREUM,
-           sigHash: '0a90010a8b010a1c2f636f736d6f732e62616e6b2e763162657461312e4d736753656e64126b0a2b636f7265317432656d347a6b77346161716d7139373939656e756b66366538343577656671776e63667a78122b636f726531666c343876736e6d73647a637638357135643271347a35616a646861387975337834333537761a0f0a057561746f6d1206313030303030120012670a500a460a1f2f636f736d6f732e63727970746f2e736563703235366b312e5075624b657912230a21ffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffff12040a020801180012130a0d0a057561746f6d12043530303010c09a0c1a0b636f736d6f736875622d342000',
-           path: `m/44'/990'/0'/0/0`,
-           decimals: 6,
-           fee: '0.12',
-           symbol: 'CORE',
-         }
-         var result  = await getCosmosSignedTransaction(transactionJson);
-       
-         set_command_name("getCoreumSignedTransaction")
-         resp_editor.load(result)
-       }
 
+      async function getPolkadotSignedTransaction_clicked() {
+        set_command_name("Processing...");
+        var transactionJson = {
+          coinType: dcent.coinType.POLKADOT,
+          sigHash: '040000163a5ee36b1243ce5241c0a45010dd1717869e9918c040bf5d305be4a5af9e7a0b00407a10f35a003400a223000007000000e143f23803ac50e8f6f8e62695d1ce9e4e1d68aa36c1cd2cfd15340213f3423ee143f23803ac50e8f6f8e62695d1ce9e4e1d68aa36c1cd2cfd15340213f3423e',
+          path: `m/44'/354'/0'/0/0`,
+          decimals: 12,
+          fee: '0.00021',
+          symbol: 'DOT',
+        }
+        var result  = await getPolkadotSignedTransaction(transactionJson);
+      
+        set_command_name("getPolkadotSignedTransaction")
+        resp_editor.load(result)
+      }
+
+      async function getCosmosSignedTransaction_clicked() {
+        set_command_name("Processing...");
+        var transactionJson = {
+          coinType: dcent.coinType.COSMOS,
+          sigHash: '0a94010a8f010a1c2f636f736d6f732e62616e6b2e763162657461312e4d736753656e64126f0a2d636f736d6f73317235763573726461377866746833686e327332367478767263726e746c646a756d74386d686c122d636f736d6f733138766864637a6a7574343467707379383034637266686e64356e713030336e7a306e663230761a0f0a057561746f6d1206313030303030120012670a500a460a1f2f636f736d6f732e63727970746f2e736563703235366b312e5075624b657912230a21ffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffff12040a020801180a12130a0d0a057561746f6d12043530303010c09a0c1a0b636f736d6f736875622d34208f3a',
+          path: `m/44'/118'/0'/0/0`,
+          decimals: 6,
+          fee: '0.023',
+          symbol: 'ATOM',
+        }
+        var result  = await getCosmosSignedTransaction(transactionJson);
+      
+        set_command_name("getCosmosSignedTransaction")
+        resp_editor.load(result)
+      }
+
+      async function getCoreumSignedTransaction_clicked() {
+        set_command_name("Processing...");
+        var transactionJson = {
+          coinType: dcent.coinType.COREUM,
+          sigHash: '0a90010a8b010a1c2f636f736d6f732e62616e6b2e763162657461312e4d736753656e64126b0a2b636f7265317432656d347a6b77346161716d7139373939656e756b66366538343577656671776e63667a78122b636f726531666c343876736e6d73647a637638357135643271347a35616a646861387975337834333537761a0f0a057561746f6d1206313030303030120012670a500a460a1f2f636f736d6f732e63727970746f2e736563703235366b312e5075624b657912230a21ffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffff12040a020801180012130a0d0a057561746f6d12043530303010c09a0c1a0b636f736d6f736875622d342000',
+          path: `m/44'/990'/0'/0/0`,
+          decimals: 6,
+          fee: '0.12',
+          symbol: 'CORE',
+        }
+        var result  = await getCosmosSignedTransaction(transactionJson);
+      
+        set_command_name("getCoreumSignedTransaction")
+        resp_editor.load(result)
+      }
+
+      async function getParachainSignedTransaction_clicked() {
+        set_command_name("Processing...")
+
+        var transactionJson = {
+          coinType: dcent.coinType.PARA,
+          sigHash: '0x1f03003ec746fb0d6d9d66245d6dc6c02d23b1b290821d8674865f96c03ef86d9d690d025a62020917000042000000020000009eb76c5184c4ab8679d2d5d819fdf90b9c001403e9e17da2e14b6d8aec4029c6b3436f97b6760bddf33e816da9c746b0cf17a80307f7a8485732044c8c20284d',
+          path: `m/44'/810'/0'/0/0`,
+          decimals: 18,
+          fee: '0.038966870338267128',
+          symbol: 'ASTR',
+          RPCUrl: 'https://astar-rpc.dwellir.com',
+          feeSymbol: 'ASTR',
+          feeDecimals: 18,
+        }
+        var result  = await getParachainSignedTransaction(transactionJson)
+
+        set_command_name("getParachainSignedTransaction")
+        resp_editor.load(result)
+      }
+
+      async function getParachainXc20SignedTransaction_clicked() {
+        set_command_name("Processing...")
+
+        var transactionJson = {
+          coinType: dcent.coinType.PARA_XC20,
+          sigHash: '0x240817030000000000000001003ec746fb0d6d9d66245d6dc6c02d23b1b290821d8674865f96c03ef86d9d690d1733c42f5578e4495b038923000048000000020000009eb76c5184c4ab8679d2d5d819fdf90b9c001403e9e17da2e14b6d8aec4029c697111d520df41d8ff1801aa6532c0c3b80ff986adf37476846b0e7e09993b7af',
+          path: `m/44'/810'/0'/0/0`,
+          decimals: 18,
+          fee: '0.049131930863795561',
+          symbol: 'GLMR',
+          RPCUrl: 'https://astar-rpc.dwellir.com',
+          feeSymbol: 'ASTR',
+          feeDecimals: 18,
+        }
+        var result  = await getParachainSignedTransaction(transactionJson)
+
+        set_command_name("getParachainXc20SignedTransaction")
+        resp_editor.load(result)
+      }
+
+      async function getEthereumSignedTransactionForAstarEVM_clicked() {
+        set_command_name("Processing...")
+
+        var result  = await getEthereumSignedTransaction(
+          dcent.coinType.ETHEREUM,
+          '8',
+          '2400000000',
+          '210000',
+          '0x354609C4c9a15d4265cF6D94010568D5Cf4d0c1B',
+          '100000000000000000',
+          '0x',
+          "m/44'/60'/0'/0/0",
+          592,
+        )
+
+        set_command_name("getEthereumSignedTransaction for Astar EVM")
+        resp_editor.load(result)
+      }
+
+      async function getTokenSignedTransactionForAstarEVM_clicked() {
+        set_command_name("Processing...")
+
+        var contract = {
+          name: 'Wrapped Astar',
+          address: '0xAeaaf0e2c81Af264101B9129C00F4440cCF0F720',
+          to: '0x354609C4c9a15d4265cF6D94010568D5Cf4d0c1B',
+          decimals: 18,
+          value: '100000000000000000',
+          symbol: 'WASTR',
+        }
+        var result = await getTokenSignedTransaction( dcent.coinType.ERC20, '21', '2400000000', '1000000', "m/44'/60'/0'/0/0", 592, contract )
+
+        set_command_name("getTokenSignedTransaction for Astar EVM")
+        resp_editor.load(result)
+      }
 
       /////// DCENT WEB-SDK call
 
@@ -1199,10 +1307,10 @@
         return result 
       }
 
-      async function getAddress(coinType, key) {
+      async function getAddress(coinType, key, optionParam) {
         var result 
         try { 
-          result = await dcent.getAddress(coinType, key)
+          result = await dcent.getAddress(coinType, key, optionParam)
         } catch (e) {
           result = e
         }
@@ -1392,26 +1500,35 @@
         return result 
       }
 
-       async function getPolkadotSignedTransaction(transaction) {
-         var result 
-         try { 
-           result = await dcent.getPolkadotSignedTransaction(transaction)      
-         } catch (e) {
-           result = e
-         }
-         return result 
-       }
- 
-       async function getCosmosSignedTransaction(transaction) {
-         var result 
-         try { 
-           result = await dcent.getCosmosSignedTransaction(transaction)      
-         } catch (e) {
-           result = e
-         }
-         return result 
-       }
- 
+      async function getPolkadotSignedTransaction(transaction) {
+        var result 
+        try { 
+          result = await dcent.getPolkadotSignedTransaction(transaction)      
+        } catch (e) {
+          result = e
+        }
+        return result 
+      }
+
+      async function getCosmosSignedTransaction(transaction) {
+        var result 
+        try { 
+          result = await dcent.getCosmosSignedTransaction(transaction)
+        } catch (e) {
+          result = e
+        }
+        return result 
+      }
+
+      async function getParachainSignedTransaction(transaction) {
+        var result 
+        try { 
+          result = await dcent.getParachainSignedTransaction(transaction)
+        } catch (e) {
+          result = e
+        }
+        return result 
+      }
 
     </script>
 

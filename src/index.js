@@ -516,7 +516,8 @@ const _contractNotStartWith0x = (coinGroup) => {
       coinGroup === dcentCoinGroup.XRC20.toLowerCase() || coinGroup === dcentCoinGroup.XRC20_APOTHEM.toLowerCase() ||
       coinGroup === dcentCoinGroup.HTS_TESTNET.toLowerCase() || coinGroup === dcentCoinGroup.HEDERA_HTS.toLowerCase() ||
       coinGroup === dcentCoinGroup.ALGORAND_ASSET.toLowerCase() || coinGroup === dcentCoinGroup.ALGORAND_ASSET_TESTNET.toLowerCase() ||
-      coinGroup === dcentCoinGroup.ALGORAND_APP.toLowerCase() || coinGroup === dcentCoinGroup.ALGORAND_APP_TESTNET.toLowerCase()
+      coinGroup === dcentCoinGroup.ALGORAND_APP.toLowerCase() || coinGroup === dcentCoinGroup.ALGORAND_APP_TESTNET.toLowerCase() ||
+      coinGroup === dcentCoinGroup.PARA_XC20.toLowerCase() || coinGroup === dcentCoinGroup.PARA_XC20_TESTNET.toLowerCase()
       ) {
           return true
   }
@@ -596,6 +597,10 @@ function isAvaliableCoinType (coinType) {
     case dcentCoinType.ALGORAND_ASSET_TESTNET.toLowerCase():
     case dcentCoinType.ALGORAND_APP.toLowerCase():
     case dcentCoinType.ALGORAND_APP_TESTNET.toLowerCase():
+    case dcentCoinType.PARA.toLowerCase():
+    case dcentCoinType.PARA_TESTNET.toLowerCase():
+    case dcentCoinType.PARA_XC20.toLowerCase():
+    case dcentCoinType.PARA_XC20_TESTNET.toLowerCase():
       return true
     default:
       return false
@@ -625,6 +630,8 @@ function isTokenType (coinGroup) {
     case dcentCoinType.ALGORAND_ASSET_TESTNET.toLowerCase():
     case dcentCoinType.ALGORAND_APP.toLowerCase():
     case dcentCoinType.ALGORAND_APP_TESTNET.toLowerCase():
+    case dcentCoinGroup.PARA_XC20.toLowerCase():
+    case dcentCoinGroup.PARA_XC20_TESTNET.toLowerCase():
       return true
     default:
       return false
@@ -642,10 +649,25 @@ function isBitcoinTxCoinType (coinType) {
       return false
   }
 }
-   
+
 function isCzoneCoinType (coinType) {
   switch (coinType.toLowerCase()) {
     case dcentCoinType.COREUM.toLowerCase():
+      return true
+    default:
+      return false
+  }
+}
+
+function isParachainCoinType (coinType) {
+  if (!coinType) {
+    return false
+  }
+  switch (coinType.toLowerCase()) {
+    case dcentCoinType.PARA.toLowerCase():
+    case dcentCoinType.PARA_TESTNET.toLowerCase():
+    case dcentCoinType.PARA_XC20.toLowerCase():
+    case dcentCoinType.PARA_XC20_TESTNET.toLowerCase():
       return true
     default:
       return false
@@ -752,7 +774,7 @@ dcent.selectAddress = async function (addresses) {
  * @param {string} path string value of key path to get address
  * @returns {Object} address.
  */
-dcent.getAddress = async function (coinType, path) {
+dcent.getAddress = async function (coinType, path, prefix = null) {
 
   if (!isAvaliableCoinType(coinType)) {
     throw dcent.dcentException('coin_type_error', 'not supported coin type')
@@ -765,8 +787,15 @@ dcent.getAddress = async function (coinType, path) {
 
   if (isCzoneCoinType(coinType)) {
     params.optionParam = getCzonePrifix(coinType)
-} 
-   
+  }
+
+  if (isParachainCoinType(coinType)) {
+    if (!Number(prefix)) {
+      throw dcent.dcentException('param_error', 'Invaild Parameter')
+    }
+    params.optionParam = Number(prefix)
+  }
+
   const res = await dcent.call({
     method: 'getAddress',
     params
@@ -1425,7 +1454,7 @@ dcent.getPolkadotSignedTransaction = async function ({
     params
   })
 }
- 
+
 dcent.getCosmosSignedTransaction = async function ({
   coinType,
   sigHash,
@@ -1489,6 +1518,44 @@ dcent.getAlgorandSignedTransaction = async function ({
     method: 'getUnionSignedTransaction',
     params
   })
+}
+
+dcent.getParachainSignedTransaction = async function ({
+  coinType,
+  sigHash,
+  fee,
+  decimals,
+  nonce,
+  path,
+  symbol,
+  RPCUrl,
+  feeSymbol,
+  feeDecimals,
+  optionParam,
+}) {
+  const params = {
+    coinType,
+    sig_hash: sigHash,
+    fee: UnitConverter(fee, feeDecimals).bignum.toString(16).padStart(16, '0'),
+    decimals,
+    path,
+    symbol,
+    RPCUrl,
+    feeSymbol,
+    feeDecimals,
+  }
+  if (nonce) params.nonce = nonce
+  if (optionParam) params.optionParam = optionParam
+
+  const res = await dcent.call({
+    method: 'getUnionSignedTransaction',
+    params
+  })
+
+  if (res.header.status === 'success') {
+    res.body.parameter.signed_tx = '0x00' + (res.body.parameter.signed_tx.startsWith('0x') ? res.body.parameter.signed_tx.substr(2) : res.body.parameter.signed_tx)
+  }
+  return res
 }
 
 dcent.state = dcentState

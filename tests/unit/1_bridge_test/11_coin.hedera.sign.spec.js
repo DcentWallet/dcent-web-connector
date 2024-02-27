@@ -86,6 +86,27 @@ describe('[dcent-web-connector] Bridge - init', () => {
         done()
     })
 
+    it('getHederaSignedMessage() - success ', async (done) => {
+
+        var transactionJson = {
+            unsignedMsg: '19486564657261205369676e6564204d6573736167653a0a333654686973206973206865646572615f7369676e4d6573736167652773206d657373616765',
+            path: `m/44'/3030'/0'`,
+        }
+        var response = await page.evaluate((transactionJson) => {
+            // eslint-disable-next-line no-undef
+            return getHederaSignedMessage(transactionJson)
+        }, transactionJson)
+
+        console.log('response ', response)
+        expect(response.header.status).toBe(Values.RESP_STATUS.SUCCESS)
+        expect(response.body.command).toBe(Values.CMD.SIGN_MSG)
+        expect(response.body.parameter).toBeDefined()
+        // TODO: address, sign value format check !!
+        expect(response.body.parameter.signed_msg).toBeDefined()
+        expect(response.body.parameter.pubkey).toBeDefined()
+        done()
+    })
+
 })
 
 /* //////////////////////////////////////////////////////////////////////// */

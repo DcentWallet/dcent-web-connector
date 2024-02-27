@@ -16,6 +16,7 @@ const commands = {
     TRANSACTION: 'transaction',
     TYPED_TRANSACTION: 'typed_transaction',
     GET_SIGN: 'get_sign',
+    SIGN_MSG: 'sign_msg',
 }
 
 module.exports = {

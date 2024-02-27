@@ -1275,6 +1275,19 @@ dcent.getHederaSignedTransaction = async function ({
   })
 }
 
+dcent.getHederaSignedMessage = async function ({
+  unsignedMsg,
+  path,
+}) {
+  return await dcent.call({
+    method: 'getHederaSignedMessage',
+    params: {
+      message: unsignedMsg,
+      path,
+    }
+  })
+}
+
 dcent.getStellarSignedTransaction = async function ({
   unsignedTx,
   fee,

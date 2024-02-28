@@ -1162,8 +1162,13 @@ You can get a signature value to sign a user message with that private key With 
 - Useage:
 
   ```js
+  function stringToHexString (str) {
+    const buf = Buffer.from(str.toString(), 'utf8')
+    return buf.toString('hex')
+  }
+
   var message = `This is hedera_signMessage's message`
-  var unsignedMsg = convertToHex("\x19Hedera Signed Message:\n" + message.length + message)
+  var unsignedMsg = stringToHexString("\x19Hedera Signed Message:\n" + message.length + message)
   const transactionJson = {
       unsignedMsg: unsignedMsg,
       path: `m/44'/3030'/0'`

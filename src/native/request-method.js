@@ -18,6 +18,7 @@ module.exports = {
     GET_BTC_SIGN_TX: 'getBitcoinSignedTransaction',
     GET_XRP_SIGN_TX: 'getXrpSignedTransaction',
     GET_HEDERA_SIGN_TX: 'getHederaSignedTransaction',
+    GET_HEDERA_SIGN_MSG: 'getHederaSignedMessage',
     GET_STELLAR_SIGN_TX: 'getStellarSignedTransaction',
     GET_TRON_SIGN_TX: 'getTronSignedTransaction',
     GET_TRC_TOKEN_SIGN_TX: 'getTrcTokenSignedTransaction',
@@ -25,6 +26,10 @@ module.exports = {
     GET_VECHAIN_SIGN_TX: 'getVechainSignedTransaction',
     GET_NEAR_SIGN_TX: 'getNearSignedTransaction',
     GET_HAVAH_SIGN_TX: 'getHavahSignedTransaction',
+    GET_POLKADOT_SIGN_TX: 'getPolkadotSignedTransaction',
+    GET_COSMOS_SIGN_TX: 'getCosmosSignedTransaction',
+    GET_ALGORAND_SIGN_TX: 'getAlgorandSignedTransaction',
+    GET_PARA_SIGN_TX: 'getParachainSignedTransaction',
 }
 
 /* //////////////////////////////////////////////////////////////////////// */

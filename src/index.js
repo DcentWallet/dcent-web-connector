@@ -6,7 +6,8 @@ const {
   coinName: dcentCoinName,
   bitcoinTxType: dcentBitcoinTxType,
   klaytnTxType: dcentKlaytnTxType,
-  xrpTxType: dcentXrpTxType
+  xrpTxType: dcentXrpTxType,
+  coinDecimals
 } = require('./type/dcent-web-type')
 
 const {
@@ -218,44 +219,54 @@ dcent.call = async function (params) {
   })
 }
 
-const createDcentTab = async () => {
+const createDcentTab = () => new Promise((resolve) => {
   LOG.debug('createDcentTab')
-  if (typeof chrome === 'undefined') return
+  if (typeof chrome === 'undefined') return resolve()
 
-  if (dcent.popupTab !== undefined && dcent.popupTab !== null) return
+  if (dcent.popupTab !== undefined && dcent.popupTab !== null) return resolve()
 
   // eslint-disable-next-line no-undef
   const url = isManifestV3 ? dcentConfig.popUpUrl + '?_from_extension_mv3=true&_extId=' + chrome.runtime.id : dcentConfig.popUpUrl + '?_from_extension=true'
+ 
   // eslint-disable-next-line no-undef
-  const currentWindow = await chrome.windows.getCurrent(null)
-  if (currentWindow.type !== 'normal') {
-    // eslint-disable-next-line no-undef
-    const newWindow = await chrome.windows.create({ url: url })
-    // eslint-disable-next-line no-undef
-    const tabs = await chrome.tabs.query({
-      windowId: newWindow.id,
-      active: true
-    })
-    LOG.debug('create window and tab 1 - ', tabs[0].id)
-    dcent.popupTab = tabs[0]
-  } else {
-    // eslint-disable-next-line no-undef
-    const tabs = await chrome.tabs.query({
-      currentWindow: true,
-      active: true
-    })
-    let index = 0
-    if (tabs.length > 0) {
-      index = tabs[0].index + 1
+  chrome.windows.getCurrent({}, (currentWindow) => {
+    if (currentWindow.type !== 'normal') {
+      // eslint-disable-next-line no-undef
+      chrome.windows.create({ url: url }, (newWindow) => {
+        // eslint-disable-next-line no-undef
+        chrome.tabs.query({
+          windowId: newWindow.id,
+          active: true
+        }, (tabs) => {
+          LOG.debug('create window and tab 1 - ', tabs[0].id)
+          dcent.popupTab = tabs[0]
+          resolve()
+        })
+      })
+      
+    } else {
+      // eslint-disable-next-line no-undef
+      chrome.tabs.query({
+        currentWindow: true,
+        active: true
+      }, (tabs) => {
+        let index = 0
+        if (tabs.length > 0) {
+          index = tabs[0].index + 1
+        }
+        // eslint-disable-next-line no-undef
+        chrome.tabs.create({
+          url: url,
+          index: index
+        }, (tab) => {
+          dcent.popupTab = tab
+          resolve()
+        })
+      })
     }
-    // eslint-disable-next-line no-undef
-    const tab = await chrome.tabs.create({
-      url: url,
-      index: index
-    })
-    dcent.popupTab = tab
-  }
-}
+  })
+ 
+}) 
 
 dcent.messageReceive = function (messageEvent) {
   // LOG.debug("messageReceive", messageEvent)
@@ -494,22 +505,37 @@ function isAvaliableCoinGroup (coinGroup) {
     case dcentCoinGroup.HTS_TESTNET.toLowerCase():
     case dcentCoinGroup.STELLAR.toLowerCase():
     case dcentCoinGroup.TRON.toLowerCase():
-    case dcentCoinGroup.TEZOS.toLowerCase():
-    case dcentCoinGroup.TEZOS_TESTNET.toLowerCase():
-    case dcentCoinGroup.XTZ_FA.toLowerCase():
-    case dcentCoinGroup.XTZ_FA_TESTNET.toLowerCase():
-    case dcentCoinGroup.NEAR.toLowerCase():
-    case dcentCoinGroup.NEAR_TESTNET.toLowerCase():
-    case dcentCoinGroup.VECHAIN.toLowerCase():
-    case dcentCoinGroup.VECHAIN_ERC20.toLowerCase():
-    case dcentCoinGroup.HAVAH.toLowerCase():
-    case dcentCoinGroup.HAVAH_TESTNET.toLowerCase():
-    case dcentCoinGroup.HAVAH_HSP20.toLowerCase():
-    case dcentCoinGroup.HAVAH_HSP20_TESTNET.toLowerCase():
       return true
     default:
       return false
   }
+}
+
+const _contractNotStartWith0x = (coinGroup) => {
+  if (coinGroup === dcentCoinGroup.TRC_TOKEN.toLowerCase() || coinGroup === dcentCoinGroup.TRC_TESTNET.toLowerCase() ||
+      coinGroup === dcentCoinGroup.XRC20.toLowerCase() || coinGroup === dcentCoinGroup.XRC20_APOTHEM.toLowerCase() ||
+      coinGroup === dcentCoinGroup.HTS_TESTNET.toLowerCase() || coinGroup === dcentCoinGroup.HEDERA_HTS.toLowerCase() ||
+      coinGroup === dcentCoinGroup.ALGORAND_ASSET.toLowerCase() || coinGroup === dcentCoinGroup.ALGORAND_ASSET_TESTNET.toLowerCase() ||
+      coinGroup === dcentCoinGroup.ALGORAND_APP.toLowerCase() || coinGroup === dcentCoinGroup.ALGORAND_APP_TESTNET.toLowerCase() ||
+      coinGroup === dcentCoinGroup.PARA_XC20.toLowerCase() || coinGroup === dcentCoinGroup.PARA_XC20_TESTNET.toLowerCase()
+      ) {
+          return true
+  }
+  return false
+}
+
+function isAvailableSyncAccountCoinName (account) {
+    if (isTokenType(account.coin_group)) {
+      if (!account.coin_name.startsWith('0x') && !account.coin_name.startsWith('0X') &&
+          _contractNotStartWith0x(account.coin_group.toLowerCase()) !== true) {
+          return false
+      }
+    } else {
+      if (!isAvaliableCoinGroup(account.coin_name)) {
+        return false
+      }
+    }
+    return true
 }
 
 function isAvaliableCoinType (coinType) {
@@ -557,10 +583,24 @@ function isAvaliableCoinType (coinType) {
     case dcentCoinType.VECHAIN_ERC20.toLowerCase():
     case dcentCoinType.NEAR.toLowerCase():
     case dcentCoinType.NEAR_TESTNET.toLowerCase():
+    case dcentCoinType.NEAR_TOKEN.toLowerCase():
     case dcentCoinType.HAVAH.toLowerCase():
     case dcentCoinType.HAVAH_TESTNET.toLowerCase():
     case dcentCoinType.HAVAH_HSP20.toLowerCase():
     case dcentCoinType.HAVAH_HSP20_TESTNET.toLowerCase():
+    case dcentCoinType.POLKADOT.toLowerCase():
+    case dcentCoinType.COSMOS.toLowerCase():
+    case dcentCoinType.COREUM.toLowerCase():
+    case dcentCoinType.ALGORAND.toLowerCase():
+    case dcentCoinType.ALGORAND_TESTNET.toLowerCase():
+    case dcentCoinType.ALGORAND_ASSET.toLowerCase():
+    case dcentCoinType.ALGORAND_ASSET_TESTNET.toLowerCase():
+    case dcentCoinType.ALGORAND_APP.toLowerCase():
+    case dcentCoinType.ALGORAND_APP_TESTNET.toLowerCase():
+    case dcentCoinType.PARA.toLowerCase():
+    case dcentCoinType.PARA_TESTNET.toLowerCase():
+    case dcentCoinType.PARA_XC20.toLowerCase():
+    case dcentCoinType.PARA_XC20_TESTNET.toLowerCase():
       return true
     default:
       return false
@@ -585,6 +625,13 @@ function isTokenType (coinGroup) {
     case dcentCoinGroup.VECHAIN_ERC20.toLowerCase():
     case dcentCoinGroup.HAVAH_HSP20.toLowerCase():
     case dcentCoinGroup.HAVAH_HSP20_TESTNET.toLowerCase():
+    case dcentCoinGroup.NEAR_TOKEN.toLowerCase():
+    case dcentCoinType.ALGORAND_ASSET.toLowerCase():
+    case dcentCoinType.ALGORAND_ASSET_TESTNET.toLowerCase():
+    case dcentCoinType.ALGORAND_APP.toLowerCase():
+    case dcentCoinType.ALGORAND_APP_TESTNET.toLowerCase():
+    case dcentCoinGroup.PARA_XC20.toLowerCase():
+    case dcentCoinGroup.PARA_XC20_TESTNET.toLowerCase():
       return true
     default:
       return false
@@ -600,6 +647,48 @@ function isBitcoinTxCoinType (coinType) {
       return true
     default:
       return false
+  }
+}
+
+function isCzoneCoinType (coinType) {
+  switch (coinType.toLowerCase()) {
+    case dcentCoinType.COREUM.toLowerCase():
+      return true
+    default:
+      return false
+  }
+}
+
+function isParachainCoinType (coinType) {
+  if (!coinType) {
+    return false
+  }
+  switch (coinType.toLowerCase()) {
+    case dcentCoinType.PARA.toLowerCase():
+    case dcentCoinType.PARA_TESTNET.toLowerCase():
+    case dcentCoinType.PARA_XC20.toLowerCase():
+    case dcentCoinType.PARA_XC20_TESTNET.toLowerCase():
+      return true
+    default:
+      return false
+  }
+}
+
+function getCzonePrifix (coinType) {
+  switch (coinType.toLowerCase()) {
+    case dcentCoinType.COREUM.toLowerCase():
+      return Buffer.from('core', 'utf8').toString('hex')
+    default:
+      return undefined
+  }
+}
+
+function getCzonDecimal (coinType) {
+  switch (coinType.toLowerCase()) {
+    case dcentCoinType.COREUM.toLowerCase():
+      return coinDecimals.COREUM
+    default:
+      throw dcent.dcentException('coin_type_error', 'not supported coin type --- ' + coinType)
   }
 }
 
@@ -632,10 +721,11 @@ dcent.syncAccount = async function (accountInfos) {
   // check account info parameter 
   for (var i = 0; i < accountInfos.length; i = i + 1) {
     const account = accountInfos[i]
+    
     if (!isAvaliableCoinGroup(account.coin_group)) {
       throw dcent.dcentException('coin_group_error', 'not supported coin group')
     }
-    if (!isTokenType(account.coin_group) && !isAvaliableCoinGroup(account.coin_name)) {
+    if (!isAvailableSyncAccountCoinName(account)) {
       throw dcent.dcentException('coin_name_error', 'not supported coin name')
     }
     if (!isAvaliableLabel(account.label)) {
@@ -684,20 +774,38 @@ dcent.selectAddress = async function (addresses) {
  * @param {string} path string value of key path to get address
  * @returns {Object} address.
  */
-dcent.getAddress = async function (coinType, path) {
+dcent.getAddress = async function (coinType, path, prefix = null) {
 
   if (!isAvaliableCoinType(coinType)) {
     throw dcent.dcentException('coin_type_error', 'not supported coin type')
   }
+
   const params = {
-    coinType: coinType,
+    coinType: isCzoneCoinType(coinType) ? 'czone' : coinType,
     path: path,
   }
 
-  return await dcent.call({
+  if (isCzoneCoinType(coinType)) {
+    params.optionParam = getCzonePrifix(coinType)
+  }
+
+  if (isParachainCoinType(coinType)) {
+    if (!Number(prefix)) {
+      throw dcent.dcentException('param_error', 'Invaild Parameter')
+    }
+    params.optionParam = Number(prefix)
+  }
+
+  const res = await dcent.call({
     method: 'getAddress',
     params
   })
+
+  if (res.header.response_from === 'czone') {
+    res.header.response_from = coinType
+  }
+
+  return res
 }
 
 /**
@@ -1167,6 +1275,19 @@ dcent.getHederaSignedTransaction = async function ({
   })
 }
 
+dcent.getHederaSignedMessage = async function ({
+  unsignedMsg,
+  path,
+}) {
+  return await dcent.call({
+    method: 'getHederaSignedMessage',
+    params: {
+      message: unsignedMsg,
+      path,
+    }
+  })
+}
+
 dcent.getStellarSignedTransaction = async function ({
   unsignedTx,
   fee,
@@ -1226,7 +1347,7 @@ dcent.getTezosSignedTransaction = async function ({
     coinType,
     decimals,
     sig_hash: sigHash,
-    fee: UnitConverter(fee, decimals).bignum.toString(16).padStart(16, '0'),
+    fee: UnitConverter(fee, coinDecimals.TEZOS).bignum.toString(16).padStart(16, '0'),
     path,
     symbol,
   }
@@ -1253,7 +1374,7 @@ dcent.getVechainSignedTransaction = async function ({
     coinType,
     decimals,
     sig_hash: sigHash,
-    fee: UnitConverter(fee, decimals).bignum.toString(16).padStart(16, '0'),
+    fee: UnitConverter(fee, coinDecimals.VECHAIN).bignum.toString(16).padStart(16, '0'),
     path,
     symbol,
   }
@@ -1275,7 +1396,7 @@ dcent.getNearSignedTransaction = async function ({
   symbol,
   optionParam,
 }) {
-  const nearFee = '000000ef' + '00000010' + UnitConverter(fee, decimals).bignum.toString(16).padStart(32, '0')
+  const nearFee = '000000ef' + '00000010' + UnitConverter(fee, coinDecimals.NEAR).bignum.toString(16).padStart(32, '0')
   const params = {
     coinType,
     decimals,
@@ -1308,7 +1429,7 @@ dcent.getHavahSignedTransaction = async function ({
     coinType,
     decimals,
     sig_hash: sigHash,
-    fee: UnitConverter(fee, decimals).bignum.toString(16).padStart(16, '0'),
+    fee: UnitConverter(fee, coinDecimals.HAVAH).bignum.toString(16).padStart(16, '0'),
     path,
     symbol,
   }
@@ -1319,6 +1440,135 @@ dcent.getHavahSignedTransaction = async function ({
     method: 'getUnionSignedTransaction',
     params
   })
+}
+
+dcent.getPolkadotSignedTransaction = async function ({
+  coinType,
+  sigHash,
+  fee,
+  decimals,
+  nonce,
+  path,
+  symbol,
+  optionParam,
+}) {
+  const params = {
+    coinType,
+    decimals,
+    sig_hash: sigHash,
+    fee: UnitConverter(fee, coinDecimals.POLKADOT).bignum.toString(16).padStart(16, '0'),
+    path,
+    symbol,
+  }
+  if (nonce) params.nonce = nonce
+  if (optionParam) params.optionParam = optionParam
+  return await dcent.call({
+    method: 'getUnionSignedTransaction',
+    params
+  })
+}
+
+dcent.getCosmosSignedTransaction = async function ({
+  coinType,
+  sigHash,
+  fee,
+  decimals,
+  nonce,
+  path,
+  symbol,
+  optionParam,
+}) {
+  let decimal
+  try {
+    decimal = (coinType.toLowerCase() === dcentCoinType.COSMOS.toLowerCase()) ? coinDecimals.COSMOS : getCzonDecimal(coinType)
+  } catch (error) {
+    throw error
+  }
+  const params = {
+    coinType: isCzoneCoinType(coinType) ? 'czone' : coinType,
+    decimals,
+    sig_hash: sigHash,
+    fee: UnitConverter(fee, decimal).bignum.toString(16).padStart(16, '0'),
+    path,
+    symbol,
+  }
+  if (nonce) params.nonce = nonce
+  if (optionParam) params.optionParam = optionParam
+  
+  const res = await dcent.call({
+    method: 'getUnionSignedTransaction',
+    params
+  })
+
+  if (res.header.response_from === 'czone') {
+    res.header.response_from = coinType
+  }
+  return res
+}
+
+dcent.getAlgorandSignedTransaction = async function ({
+  coinType,
+  sigHash,
+  fee,
+  decimals,
+  nonce,
+  path,
+  symbol,
+  optionParam,
+}) {
+  const params = {
+    coinType,
+    decimals,
+    sig_hash: sigHash,
+    fee: UnitConverter(fee, coinDecimals.ALGORAND).bignum.toString(16).padStart(16, '0'),
+    path,
+    symbol,
+  }
+  if (nonce) params.nonce = nonce
+  if (optionParam) params.optionParam = optionParam
+
+  return await dcent.call({
+    method: 'getUnionSignedTransaction',
+    params
+  })
+}
+
+dcent.getParachainSignedTransaction = async function ({
+  coinType,
+  sigHash,
+  fee,
+  decimals,
+  nonce,
+  path,
+  symbol,
+  RPCUrl,
+  feeSymbol,
+  feeDecimals,
+  optionParam,
+}) {
+  const params = {
+    coinType,
+    sig_hash: sigHash,
+    fee: UnitConverter(fee, feeDecimals).bignum.toString(16).padStart(16, '0'),
+    decimals,
+    path,
+    symbol,
+    RPCUrl,
+    feeSymbol,
+    feeDecimals,
+  }
+  if (nonce) params.nonce = nonce
+  if (optionParam) params.optionParam = optionParam
+
+  const res = await dcent.call({
+    method: 'getUnionSignedTransaction',
+    params
+  })
+
+  if (res.header.status === 'success') {
+    res.body.parameter.signed_tx = '0x00' + (res.body.parameter.signed_tx.startsWith('0x') ? res.body.parameter.signed_tx.substr(2) : res.body.parameter.signed_tx)
+  }
+  return res
 }
 
 dcent.state = dcentState

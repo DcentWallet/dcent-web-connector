@@ -8,19 +8,19 @@ const puppeteer = require('puppeteer')
 /* //////////////////////////////////////////////////////////////////////// */
 
 describe('[dcent-web-connector] Bridge - init', () => {
-    let bowser
+    let browser
     let page
     beforeAll(async () => {
-        bowser = await puppeteer.launch({
+        browser = await puppeteer.launch({
             headless: false,
         })
-        page = await bowser.newPage()
+        page = await browser.newPage()
 
         await page.goto('http://localhost:9090')
     })
     afterAll(() => {
         DcentWebConnector.popupWindowClose()
-        bowser.close()
+        browser.close()
     })
 
     it('getDeviceInfo() - success ', async (done) => {
@@ -145,7 +145,7 @@ describe('[dcent-web-connector] Bridge - init', () => {
         expect(response.body.parameter.address).toBeDefined()
         done()
     })
-
+    
     it('getAddress() - success TEZOS', async (done) => {
         const coinType = DcentWebConnector.coinType.TEZOS
         const keyPath = "m/44'/1729'/0'/0/0"
@@ -158,6 +158,20 @@ describe('[dcent-web-connector] Bridge - init', () => {
         expect(response.body.parameter.pubkey).toBeDefined()
         done()
     })
+
+    it('getAddress() - success COREAUM', async (done) => {
+        const coinType = DcentWebConnector.coinType.COREUM
+        const keyPath = "m/44'/990'/0'/0/0"
+        // const optionParam = Buffer.from('osmo', 'utf8').toString('hex')
+        var response = await page.evaluate((coinType, keyPath) => {
+            // eslint-disable-next-line no-undef
+            return getAddress(coinType, keyPath)
+        }, coinType, keyPath)
+        expect(response.header.status).toBe(Values.RESP_STATUS.SUCCESS)
+        expect(response.body.parameter.address).toBeDefined()
+        expect(response.body.parameter.address.startsWith('core')).toBeTruthy()
+        done()
+    }) 
 
 })
 

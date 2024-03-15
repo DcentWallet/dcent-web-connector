@@ -251,7 +251,7 @@ const defaultDeviceResponse = {
             }
         }
     },
-    getHederaTransaction: {
+    getHederaSignedTransaction: {
         header: {
             version: '1.0',
             response_from: 'hedera',
@@ -261,8 +261,21 @@ const defaultDeviceResponse = {
             command: 'get_sign',
             parameter: {
                 sign: '3045022100fb4b7a28d3419651420ed6745601b72ec4e8a3ffbcbf3052ebb39b76fba1e0ba0220570ba64c9fd6f63982efb500857b29742d578e54e7c776c2b1230da23ebe238e',
-                pubkey: '02c65f2a496909123973282c47edbd0e760bb44bb0d87ec1b30115b2ce3072c766',
-                accountId: '462a5a061ebe03fb52e5bca443233bcc6d0e9699'
+                pubkey: '02c65f2a496909123973282c47edbd0e760bb44bb0d87ec1b30115b2ce3072c766'
+            }
+        }
+    },
+    getHederaSignedMessage: {
+        header: {
+            version: '1.0',
+            response_from: 'hedera',
+            status: 'success'
+        },
+        body: {
+            command: 'sign_msg',
+            parameter: {
+                signed_msg: '6fb261a69f45f58d5dc33297a7db0fd80cbbd90137a2597ff870a374ecbd2cb99d22bac9a28e91a84902a6b5b0a4316a9c7d4e7ae242f2e2172d57d2a9b7530c',
+                pubkey: '97ee5dbe1b00e35ac9674cdc9915503108acae33d9dc2aa2247e69d4e456c594',
             }
         }
     },
@@ -318,10 +331,51 @@ const defaultDeviceResponse = {
             }
         }
     },
+    getPolkadotSignedTransaction: {
+        header: {
+            version: '1.0',
+            response_from: 'polkadot',
+            status: 'success'
+        },
+        body: {
+            command: 'get_sign',
+            parameter: {
+                signed: '3045022100fb4b7a28d3419651420ed6745601b72ec4e8a3ffbcbf3052ebb39b76fba1e0ba0220570ba64c9fd6f63982efb500857b29742d578e54e7c776c2b1230da23ebe238e',
+            }
+        }
+    },
+    getCosmosSignedTransaction: {
+        header: {
+            version: '1.0',
+            response_from: 'cosmos',
+            status: 'success'
+        },
+        body: {
+            command: 'get_sign',
+            parameter: {
+                signed: '3045022100fb4b7a28d3419651420ed6745601b72ec4e8a3ffbcbf3052ebb39b76fba1e0ba0220570ba64c9fd6f63982efb500857b29742d578e54e7c776c2b1230da23ebe238e',
+            }
+        }
+    },
+    getAlgorandSignedTransaction: {
+        header: {
+            version: '1.0',
+            response_from: 'algorand',
+            status: 'success'
+        },
+        body: {
+            command: 'get_sign',
+            parameter: {
+                signed: '3045022100fb4b7a28d3419651420ed6745601b72ec4e8a3ffbcbf3052ebb39b76fba1e0ba0220570ba64c9fd6f63982efb500857b29742d578e54e7c776c2b1230da23ebe238e',
+            }
+        }
+    },
 }
+
 /* //////////////////////////////////////////////////////////////////////// */
 /* */
 /* //////////////////////////////////////////////////////////////////////// */
+
 export default {
     defaultDeviceResponse,
 }

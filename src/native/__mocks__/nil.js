@@ -15,9 +15,9 @@ const defaultBridgeResponse = NilConfBridge.defaultBridgeResponse
 const defaultDeviceResponse = NilConfDevice.defaultDeviceResponse
 
 const requestToBridge = (payload) => {
-  let response = ''
-  const method = payload.method
-  switch (method) {
+    let response = ''
+    const method = payload.method
+    switch (method) {
     case Method.INFO:
         response = defaultBridgeResponse.info
         break
@@ -74,7 +74,10 @@ const requestToBridge = (payload) => {
         response = defaultDeviceResponse.getXrpSignedTransaction
         break
     case Method.GET_HEDERA_SIGN_TX:
-        response = defaultDeviceResponse.getHederaTransaction
+        response = defaultDeviceResponse.getHederaSignedTransaction
+        break
+    case Method.GET_HEDERA_SIGN_MSG:
+        response = defaultDeviceResponse.getHederaSignedMessage
         break
     case Method.GET_TEZOS_SIGN_TX:
         response = defaultDeviceResponse.getTezosSignedTransaction
@@ -88,11 +91,20 @@ const requestToBridge = (payload) => {
     case Method.GET_HAVAH_SIGN_TX:
         response = defaultDeviceResponse.getHavahSignedTransaction
         break
+    case Method.GET_POLKADOT_SIGN_TX:
+        response = defaultDeviceResponse.getPolkadotSignedTransaction
+        break
+    case Method.GET_COSMOS_SIGN_TX:
+        response = defaultDeviceResponse.getCosmosSignedTransaction
+        break
+    case Method.GET_ALGORAND_SIGN_TX:
+        response = defaultDeviceResponse.getAlgorandSignedTransaction
+        break
     default:
         response = 'error'
-      throw new Error('Not implemented Method in Mock : ' + method)
-  }
-  return response
+        throw new Error('Not implemented Method in Mock : ' + method)
+    }
+    return response
 }
 
 
@@ -108,7 +120,7 @@ const postMessage = (message) => {
     LOG.debug('message.type = ', message.type)
     LOG.debug('message.payload = ', message.payload)
     if (message.event === 'BridgeRequest') {
-       respPayload = requestToBridge(message.payload)
+        respPayload = requestToBridge(message.payload)
     }
     LOG.debug('respPayload = ', respPayload)
 
@@ -140,7 +152,7 @@ const postMessage = (message) => {
         }
         messageReceiver(response)
     }, 1000)
-  }
+}
 
 module.exports = {
     postMessage,

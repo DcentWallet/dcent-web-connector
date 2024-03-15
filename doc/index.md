@@ -3,28 +3,30 @@
 
 # DCENT Web SDK Integration Guide
 
-
 ### VERSION HISTORY
 
-| version            | date         | modification                                               |
-| ------------------ | ------------ | ---------------------------------------------------------- |
-| v0.6.2-beta        | 2019. 04. 07 | First version of D'CENT Web SDK connector release          |
-| v0.7.0-beta        | 2019. 05. 07 | add KLAYTN transaction function                            |
-| v0.8.0             | 2020. 06. 05 | add 'getSignedMessage' function                            |
-| v0.9.0             | 2020. 06. 22 | add interface for BITCOIN transaction                      |
-| v0.10.0            | 2020. 09. 28 | add interface for Ripple full transaction                  |
-| v0.10.1            | 2020. 11. 30 | modify description for Ripple full transaction             |
-| v0.10.3            | 2021. 03. 15 | add XDC transaction function                               |
-| v0.10.4            | 2021. 05. 06 | add Select address function                                |
-| v0.10.5            | 2021. 12. 23 | support sign data function                                 |
-| v0.11.0            | 2022. 03. 08 | add interface for Hedera transaction                       |
-| v0.11.2            | 2022. 04. 21 | modify getEthereumSignedTransaction interface for EIP-2718 |
-| v0.12.0            | 2023. 02. 15 | add Tron & Stellar transaction transaction functions       |
-| v0.12.1            | 2023. 05. 03 | add support coin group for syncAccount                     |
-| v0.13.0            | 2023. 05. 15 | add Tezos & Vechain & Near & Havah transaction function    |
+| version     | date         | modification                                               |
+| ----------- | ------------ | ---------------------------------------------------------- |
+| v0.6.2-beta | 2019. 04. 07 | First version of D'CENT Web SDK connector release          |
+| v0.7.0-beta | 2019. 05. 07 | add KLAYTN transaction function                            |
+| v0.8.0      | 2020. 06. 05 | add 'getSignedMessage' function                            |
+| v0.9.0      | 2020. 06. 22 | add interface for BITCOIN transaction                      |
+| v0.10.0     | 2020. 09. 28 | add interface for Ripple full transaction                  |
+| v0.10.1     | 2020. 11. 30 | modify description for Ripple full transaction             |
+| v0.10.3     | 2021. 03. 15 | add XDC transaction function                               |
+| v0.10.4     | 2021. 05. 06 | add Select address function                                |
+| v0.10.5     | 2021. 12. 23 | support sign data function                                 |
+| v0.11.0     | 2022. 03. 08 | add interface for Hedera transaction                       |
+| v0.11.2     | 2022. 04. 21 | modify getEthereumSignedTransaction interface for EIP-2718 |
+| v0.12.0     | 2023. 02. 15 | add Tron & Stellar transaction transaction functions       |
+| v0.12.1     | 2023. 05. 03 | add support coin group for syncAccount                     |
+| v0.13.0     | 2023. 05. 16 | add Tezos & Vechain & Near & Havah transaction function    |
+| v0.13.1     | 2023. 05. 17 | Fixed fee display issue                                    |
+| v0.14.0     | 2023. 05. 25 | add Polkadot & Comsmos & Coreum & Near Token               |
+| v0.14.1     | 2023. 05. 25 | Fix Polkadot decimals                                      |
+| v0.14.2     | 2023. 11. 20 | add Algorand transaction function                          |
+| v0.15.0     | 2023. 12. 18 | add Parachain(Astar) transaction function                  |
 
-
-<br /><br /><br />
 ## 1. INTRODUCTION
 
 D'CENT Web SDK allows your web application to quickly create an wallet application using D'CENT dongle.
@@ -344,6 +346,8 @@ After execute above code, you can see the modified label on your device when reb
 
 ### Add & Sync Account
 
+> As of firmware version 2.9.2 or later, the D'CENT biometric wallet device does not support updating the balance.
+
 You can add account using `syncAccount()` function. You can create an account by specifying the coin type and key path of the account you want to add.
 If you want to add token type coin account, you must specify the coin name as the first 14 digits of contract address.
 
@@ -386,6 +390,7 @@ try{
     result = e
 }
 ```
+
 
 ### address_path
 
@@ -499,6 +504,43 @@ The address string format is depend on the coin type.
 
 For some coin type(ex. TEZOS), include pubkey as a property of the response parameter.
 
+For ss58 addresses used by the Substrate ecosystems such as Astar, prefix is added.
+The value of prefix is the prefix for each network defined in [ss58-registry](https://github.com/paritytech/ss58-registry).
+
+```js
+var coinType = DcentWebConnector.coinType.PARA
+var keyPath = "m/44'/810'/0'/0/0" // key path of the Astar's account
+var prefix = 5 // The address prefix of Astar
+
+var result
+try{
+    // Get the address corresponding to keyPath & prefix
+    result = await DcentWebConnector.getAddress(coinType, keyPath, prefix)
+}catch(e){
+    result = e
+}
+```
+
+Please note that `Astar EVM` features an EVM (Ethereum Virtual Machine) compatible runtime environment, so it is the same as getting the address of ETHEREUM account.
+
+Returned response object has:
+
+```json
+{
+    "header": {
+        "version": "1.0",
+        "response_from": "para",
+        "status": "success"
+    },
+    "body": {
+        "command": "get_address",
+        "parameter": {
+            "address": "YzsEz5dG8TDqG49pGaejLrFoD4oeNTEX7yWt4qcCV4TA9LB"
+        }
+    }
+}
+```
+
 ### Get XPUB
 
 You can get xpub using `getXPUB()` function.
@@ -584,7 +626,7 @@ Returned response object has:
 
 The 'selectedIndex' is index of addresses array.
 
-### Ethereum Signed Massage
+### Ethereum Signed Message
 
 You can get a signature value to sign a user message with that private key With a given key path (BIP32).
 The input message is prefixed with 'Ethereum sign message' and then hashed and signed.
@@ -665,7 +707,7 @@ Returned response object has:
 }
 ```
 
-### Signed Massage
+### Signed Message
 
 You can get a signature value to sign a user message with that private key With a given key path (BIP32).
 The input message is prefixed depending on the coin type and then hashed and signed.
@@ -792,7 +834,6 @@ The D'CENT Web SDK provides functions for signing transaction of coins.
   - nonce
   - gasPrice
   - gasLimit
-  - value
   - key path for signing
   - chain ID
   - contract information :
@@ -1035,7 +1076,7 @@ For broadcast the sign transaction, you must reconstruct transaction include `Tx
 - Parameters :
 
   - unsignedTx: unsigned hexadecimal tx [Hedera Docs](https://docs.hedera.com/guides/getting-started/transfer-hbar)
-  - path: key path, wallet sign with that private key with a given key path (BIP32 ex) "m/44'/144'/0'").
+  - path: key path, wallet sign with that private key with a given key path (BIP32 ex) "m/44'/3030'/0'").
   - symbol: symbol, It is a symbol that the wallet displays on the screen.
   - decimals: hedera or hts token's decimals.
 - Requirements:
@@ -1046,7 +1087,7 @@ For broadcast the sign transaction, you must reconstruct transaction include `Tx
 
   ```js
   const _buf2hex = (buffer) => { // buffer is an ArrayBuffer
-  return Array.prototype.map.call(new Uint8Array(buffer), x => ('00' + x.toString(16)).slice(-2)).join('');
+  return Array.prototype.map.call(new Uint8Array(buffer), x => ('00' + x.toString(16)).slice(-2)).join('')
   }
   const client = HederaSDK.Client.forMainnet()
   const nodeList = client._network.getNodeAccountIdsForExecute()
@@ -1068,7 +1109,7 @@ For broadcast the sign transaction, you must reconstruct transaction include `Tx
   tx.setTransactionId(txId)
   tx.setTransactionMemo('')
   tx.setMaxTransactionFee(fee)
-  tx.freezeWith(client);
+  tx.freezeWith(client)
 
   const bodyBytes = tx._signedTransactions[0].bodyBytes
   const unsignedTx = _buf2hex(bodyBytes)
@@ -1077,12 +1118,12 @@ For broadcast the sign transaction, you must reconstruct transaction include `Tx
       unsignedTx: unsignedTx,
       path: `m/44'/3030'/0'`,
       symobl: HBAR,
-      decimals: 8,
+      decimals: 8
   }
 
   var result
   try {
-      result = await DcentWebConnector.getHederaSignedTransaction(transactionJson);  
+      result = await DcentWebConnector.getHederaSignedTransaction(transactionJson)
   } catch (e) {
       console.log(e)
       result = e
@@ -1102,6 +1143,60 @@ For broadcast the sign transaction, you must reconstruct transaction include `Tx
           "parameter": {
               "signed_tx": "0x31aa13b5e04cb6fc6381ea0520bf7f6727ebdb6e96cd7ca8625bb3e3dd36cf0e2cee4ece13aa9f7ddc09ee10c74aa00af954201829d8016317f10f5a921dcc0d",
               "pubkey": "0x9a5c753d02038e512c06867556324b37181c9c1fc19c21c27752c520e8f0d822"
+          }
+      }
+  }
+  ```
+
+**getHederaSignedMessage()**
+
+This is a function used to perform the hedera_signMessage method specified in the [HIP-820](https://hips.hedera.com/hip/hip-820).  
+You can get a signature value to sign a user message with that private key With a given key path (BIP32).  
+
+- Parameters :
+  - unsignedMsg: the UTF-8 encoded message with a prefix appended to it.
+  - path: key path, wallet sign with that private key with a given key path (BIP32 ex) "m/44'/3030'/0'").
+- Requirements:
+  - `D'CENT Bridge` version 1.5.5 or higher is required.
+  - D'CENT Biometric Wallet version 2.30.3. or higher is required.
+- Useage:
+
+  ```js
+  function stringToHexString (str) {
+    const buf = Buffer.from(str.toString(), 'utf8')
+    return buf.toString('hex')
+  }
+
+  var message = `This is hedera_signMessage's message`
+  var unsignedMsg = stringToHexString("\x19Hedera Signed Message:\n" + message.length + message)
+  const transactionJson = {
+      unsignedMsg: unsignedMsg,
+      path: `m/44'/3030'/0'`
+  }
+
+  var result
+  try {
+      result = await DcentWebConnector.getHederaSignedMessage(transactionJson)
+  } catch (e) {
+      console.log(e)
+      result = e
+  }
+  ```
+
+- Returned response object has:
+
+  ```json
+  {
+      "header": {
+          "version": "1.0",
+          "response_from": "hedera",
+          "status": "success"
+      },
+      "body": {
+          "command": "sign_msg",
+          "parameter": {
+            "sign_msg": "0x6fb261a69f45f58d5dc33297a7db0fd80cbbd90137a2597ff870a374ecbd2cb99d22bac9a28e91a84902a6b5b0a4316a9c7d4e7ae242f2e2172d57d2a9b7530c",
+            "pubkey": "0x97ee5dbe1b00e35ac9674cdc9915503108acae33d9dc2aa2247e69d4e456c594"
           }
       }
   }
@@ -1483,17 +1578,24 @@ For broadcast the sign transaction, you must reconstruct transaction include `Tx
 - This fuction for :
 
   - NEAR(NEAR)
+  - NEAR Token
 - Parameters :
 
   - unsignedTx: unsigned hexadecimal tx [Near Docs](https://docs.near.org/ko/tools/near-api-js/reference/modules/transaction#signtransaction)
   - path: key path, wallet sign with that private key with a given key path (BIP32 ex) "m/44'/397'/0'").
   - fee: fee, It is fee that wallet displays on the screen.
   - symbol: symbol, It is a symbol that the wallet displays on the screen.
-  - decimals: near's decimals.
+  - decimals: near or near token's decimals.
+  - optionParam: hexadecimal value of the token method type is used only in near token.
+    - '02' : Function call(ft_transfer)
+    - '~~04' : Stake~~ (**The method will be supported later.)**
+    - ~~'08' : Delegate~~ (**The method will be supported later)**
 - Requirements:
 
   - `D'CENT Bridge` version 1.5.0 or higher is required.
+    - near token: version 1.5.1 or higher is required.
   - D'CENT Biometric Wallet version 2.24.0. or higher is required.
+    - near token: version 2.27.1 or higher is required.
 - Useage:
 
   ```js
@@ -1584,6 +1686,11 @@ For broadcast the sign transaction, you must reconstruct transaction include `Tx
   - fee: fee, It is fee that wallet displays on the screen.
   - symbol: symbol, It is a symbol that the wallet displays on the screen.
   - decimals: havah or havah token's decimals.
+  - optionParam: hexadecimal value of the havah method type is used only in havah token.
+    - '01' : Token Transfer
+    - '02' : Token Deposit
+    - '03' : Token Message
+    - ~~'04': Token Deploy~~ (**The method will be supported later)**
 - Requirements:
 
   - `D'CENT Bridge` version 1.5.0 or higher is required.
@@ -1661,5 +1768,369 @@ For broadcast the sign transaction, you must reconstruct transaction include `Tx
       }
   }
   ```
+
+**getPolkadotSignedTransaction()**
+
+- This fuction for :
+
+  - POLKADOT(DOT)
+- Parameters :
+
+  - unsignedTx: unsigned hexadecimal tx [Polkadot Docs](https://wiki.polkadot.network/docs/build-transaction-construction)
+  - path: key path, wallet sign with that private key with a given key path (BIP32 ex) "m/44'/354'/0'/0/0").
+  - fee: fee, It is fee that wallet displays on the screen.
+  - symbol: symbol, It is a symbol that the wallet displays on the screen.
+  - decimals: polkadot's decimals.
+- Requirements:
+
+  - `D'CENT Bridge` version 1.5.0 or higher is required.
+  - D'CENT Biometric Wallet version 2.19.1 or higher is required.
+- Useage:
+
+  ```js
+  import { ApiPromise, HttpProvider } from '@polkadot/api'
+
+  const httpProvider = new HttpProvider('https://rpc.polkadot.io');
+  const api = await ApiPromise({ provider: httpProvider });
+  // Wait until we are ready and connected
+  await api.isReady;
+
+  const blockNumber = await api.rpc.chain.getHeader()
+  const blockHash = await api.rpc.chain.getBlockHash(blockNumber.number.toHex())
+  // create SignerPayload
+  const signerPayload = api.createType('SignerPayload', {
+    genesisHash: api.genesisHash,
+    runtimeVersion: api.runtimeVersion,
+    version: api.extrinsicVersion,
+    blockHash: blockHash,
+    blockNumber: blockNumber.number,
+    era: api.createType('ExtrinsicEra', {
+      current: blockNumber.number,
+      period: 50
+    }),
+    nonce,
+    address: to,
+    method: api.tx.balances.transfer(to, amount).method,
+  });
+
+  const sigHash = signerPayload.toRaw().data
+
+  const transactionJson = {
+    coinType: DcentWebConnector.coinType.POLKADOT,
+    sigHash: sigHash,
+    path: `m/44'/354'/0'/0/0`,
+    decimals, // 10
+    fee,
+    symbol: 'DOT',
+  }
+
+  var result
+  try {
+    result = await DcentWebConnector.getPolKadotSignedTransaction(transactionJson);
+  } catch (e) {
+    console.log(e)
+    result = e
+  }
+  ```
+- Returned response object:
+
+  ```json
+  {
+    "header": {
+      "version": "1.0",
+      "response_from": "polkadot",
+      "status": "success"
+    },
+    "body": {
+      "command": "transaction",
+      "parameter": {
+      "signed_tx": "0x31aa13b5e04cb6fc6381ea0520bf7f6727ebdb6e96cd7ca8625bb3e3dd36cf0e2cee4ece13aa9f7ddc09ee10c74aa00af954201829d8016317f10f5a921dcc0d"
+      }
+    }
+  }
+  ```
+
+**getCosmosSignedTransaction()**
+
+- This fuction for :
+
+  - COSMOS(ATOM)
+  - COREUM(CORE)
+- Parameters :
+
+  - unsignedTx: unsigned hexadecimal tx [Cosmos Docs](https://github.com/cosmostation/cosmosjs)
+  - path: key path, wallet sign with that private key with a given key path (BIP32 ex) "m/44'/118'/0'/0/0").
+  - fee: fee, It is fee that wallet displays on the screen.
+  - symbol: symbol, It is a symbol that the wallet displays on the screen.
+  - decimals: cosmos or coreum's decimals.
+- Requirements:
+
+  - `D'CENT Bridge` version 1.5.0 or higher is required.
+  - D'CENT Biometric Wallet version 2.21.0 or higher is required.
+    - COREUM: 2.25.0 or higher is required.
+- Useage:
+
+  ```js
+  import message from "@cosmostation/cosmosjs/src/messages/proto";
+
+  // signDoc = (1)txBody + (2)authInfo
+  // ---------------------------------- (1)txBody ----------------------------------
+  const pubKeyAny = new message.google.protobuf.Any({
+        type_url: '/cosmos.crypto.secp256k1.PubKey',
+        value: Buffer.from('0a21ffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffff', 'hex') //temp value
+  })
+  const msgSend = new message.cosmos.bank.v1beta1.MsgSend({
+    from_address: recAddress,
+    to_address: toAddress,
+    amount: [{ denom: "uatom", amount: String(100000) }]        // 6 decimal places (1000000 uatom = 1 ATOM)
+  });
+
+  const msgSendAny = new message.google.protobuf.Any({
+    type_url: "/cosmos.bank.v1beta1.MsgSend",
+    value: message.cosmos.bank.v1beta1.MsgSend.encode(msgSend).finish()
+  });
+
+  const txBody = new message.cosmos.tx.v1beta1.TxBody({ messages: [msgSendAny], memo: "" });
+
+  // --------------------------------- (2)authInfo ---------------------------------
+  const signerInfo = new message.cosmos.tx.v1beta1.SignerInfo({
+    public_key: pubKeyAny,
+    mode_info: { single: { mode: message.cosmos.tx.signing.v1beta1.SignMode.SIGN_MODE_DIRECT } },
+    sequence // nonce
+  });
+
+  const feeValue = new message.cosmos.tx.v1beta1.Fee({
+    amount: [{ denom: "uatom", amount: String(5000) }],
+    gas_limit: 200000
+  });
+
+  const authInfo = new message.cosmos.tx.v1beta1.AuthInfo({ signer_infos: [signerInfo], fee: feeValue });
+  const bodyBytes = message.cosmos.tx.v1beta1.TxBody.encode(txBody).finish()
+  const authInfoBytes = message.cosmos.tx.v1beta1.AuthInfo.encode(authInfo).finish()
+  const signDoc = new message.cosmos.tx.v1beta1.SignDoc({
+    body_bytes: bodyBytes,
+    auth_info_bytes: authInfoBytes,
+    chain_id,
+    account_number,
+  })
+  let signMessage = message.cosmos.tx.v1beta1.SignDoc.encode(signDoc).finish()
+
+  const sigHash = Buffer.from(signMessage).toString('hex')
+
+  const transactionJson = {
+    coinType: DcentWebConnector.coinType.COSMOS, // or COREUM
+    sigHash: sigHash,
+    path: `m/44'/118'/0'/0/0`, // (COREUM -> m/44'/990'/0'/0/0)
+    decimals, // 6
+    fee,
+    symbol: 'ATOM', // (COREUM -> CORE)
+  }
+
+  var result
+  try {
+    result = await DcentWebConnector.getCosmomsSignedTransaction(transactionJson);
+  } catch (e) {
+    console.log(e)
+    result = e
+  }
+  ```
+- Returned response object:
+
+  ```json
+  {
+    "header": {
+      "version": "1.0",
+      "response_from": "cosmos",
+      "status": "success"
+    },
+    "body": {
+      "command": "transaction",
+      "parameter": {
+      "signed_tx": "0x31aa13b5e04cb6fc6381ea0520bf7f6727ebdb6e96cd7ca8625bb3e3dd36cf0e2cee4ece13aa9f7ddc09ee10c74aa00af954201829d8016317f10f5a921dcc0d",
+      "pubkey": "0x0202903dcb31139bf92e096c3ec85fb9a94ab7dbf02d6234ded604d15ee9650480"
+      }
+    }
+  }
+  ```
+
+**getAlgorandSignedTransaction()**
+
+- This fuction for :
+
+  - ALGORAND(ALGO)
+  - ALGORAND ASSET(ALGO-ASSET)
+  - ALGORAND APP(ALGO-APP)
+- Parameters :
+
+  - unsignedTx: unsigned hexadecimal tx [Algorand Developer Transaction Reference Docs](https://developer.algorand.org/docs/get-details/transactions/transactions/)
+  - path: key path, wallet sign with that private key with a given key path (BIP32 ex) "m/44'/283'/0'/0/0").
+  - fee: fee, It is fee that wallet displays on the screen.
+  - symbol: symbol, It is a symbol that the wallet displays on the screen.
+  - decimals: havah or havah token's decimals.
+  - optionParam: hexadecimal value of the havah method type is used only in havah token.
+    - '00' : ALGORAND Transfer
+    - '01' : ALGORAND ASSET Transfer
+    - '02' : ALGORAND ASSET OPTIN
+    - '03' : ALGORAND APP Contract call
+    - '04' : ALGORAND APP OPTIN
+    - '05' : ALGORAND ASSET FT Create
+    - '06' : ALGORAND ASSET NFT Create
+- Requirements:
+
+  - `D'CENT Bridge` version 1.5.0 or higher is required.
+  - D'CENT Biometric Wallet version 2.29.1. or higher is required.
+- Useage:
+
+  ```js
+  import algosdk from 'algosdk'
+
+  const algodClient = new algosdk.Algodv2('', 'https://mainnet-api.algonode.cloud', '')
+  const indexerClient = new algosdk.Indexer('', 'https://mainnet-idx.algonode.cloud', '')
+
+  // An account for Algorand should keep cost for maintaining the account.
+  const balanceInfo = await algodClient.accountInformation(walletAddress).do()
+  const blanace = balanceInfo.amount.toString()
+  const maintenance = balaceInfo['min-balance'].toString()
+
+  // Make a transaction
+  const suggestedParams = await algodClient.getTransactionParams().do()
+  const tx = algosdk.makePaymentTxnWithSuggestedParamsFromObject({
+    suggestedParams,
+    from: walletAddress,
+    to: someWhere,
+    amount: value,  // Unit is microAlgos
+    memo: new Uint8Array(Buffer.from('Something what you want', 'hex')) || undefined
+  })
+  
+  // Create JSON-formatted data for getting a signature
+  const unsignedRawData = Uint8ArrayToHex(tx.bytesToSign())
+  const sigHash = rawData
+
+  const transactionJson = {
+      coinType: DcentWebConnector.coinType.ALGORAND,
+      sigHash: unsignedRawData,
+      path: `m/44'/283'/0'/0/0`,
+      decimals: 6,  // for ALGORAND
+      fee: tx.fee,
+      symbol: 'ALGO',
+      optionParams: '00'
+  }
+
+  var result
+  try {
+      result = await DcentWebConnector.getAlgorandSignedTransaction(transactionJson);  
+  } catch (e) {
+      console.log(e)
+      result = e
+  }
+  ```
+
+- Returned response object:
+
+  ```json
+  {
+      "header": {
+          "version": "1.0",
+          "response_from": "algorand",
+          "status": "success"
+      },
+      "body": {
+          "command": "transaction",
+          "parameter": {
+              "signed_tx": "31aa13b5e04cb6fc6381ea0520bf7f6727ebdb6e96cd7ca8625bb3e3dd36cf0e2cee4ece13aa9f7ddc09ee10c74aa00af954201829d8016317f10f5a921dcc0d"
+          }
+      }
+  }
+  ```
+
+**getParachainSignedTransaction()**
+
+- This fuction for :
+
+  - Parachain - Astar(ASTR)
+  - Parachain Asset- Astar Asset(XC20)
+- Parameters :
+
+  - unsignedTx: unsigned hexadecimal tx [Polkadot Docs](https://wiki.polkadot.network/docs/build-transaction-construction)
+  - path: key path, wallet sign with that private key with a given key path (BIP32 ex) "m/44'/810'/0'/0/0").
+  - fee: fee, It is fee that wallet displays on the screen.
+  - symbol: symbol, It is a symbol that the wallet displays on the screen.
+  - decimals: Parachain's decimals.
+  - RPCUrl: Network RPC endpoints.
+  - fee symbol: fee's symbol, It is a symbol that the wallet displays on the screen.
+  - fee decimals: fee's decimals.
+- Requirements:
+
+  - `D'CENT Bridge` version 1.5.3 or higher is required.
+  - D'CENT Biometric Wallet version 2.30.1 or higher is required.
+- Useage:
+
+  ```js
+  import { ApiPromise, HttpProvider } from '@polkadot/api'
+
+  const httpProvider = new HttpProvider('https://evm.astar.network');
+  const api = await ApiPromise({ provider: httpProvider });
+  // Wait until we are ready and connected
+  await api.isReady;
+
+  const blockNumber = await api.rpc.chain.getHeader();
+  const blockHash = await api.rpc.chain.getBlockHash(blockNumber.number.toHex());
+  // create SignerPayload
+  const signerPayload = api.createType('SignerPayload', {
+    genesisHash: api.genesisHash,
+    runtimeVersion: api.runtimeVersion,
+    version: api.extrinsicVersion,
+    blockHash: blockHash,
+    blockNumber: blockNumber.number,
+    era: api.createType('ExtrinsicEra', {
+      current: blockNumber.number,
+      period: 50
+    }),
+    nonce,
+    address: to,
+    method: api.tx.balances.transfer(to, amount).method, // For tokens, method: api.tx.assets.transfer(contract, to, amount).method,
+  });
+
+  const sigHash = signerPayload.toRaw().data;
+
+  const transactionJson = {
+    coinType: DcentWebConnector.coinType.PARA,
+    sigHash: sigHash,
+    path: `m/44'/810'/0'/0/0`,
+    decimals, // 18
+    fee,
+    symbol: 'ASTR',
+    RPCUrl: 'https://evm.astar.network',
+    feeSymbol: 'ASTR',
+    feeDecimals, // 18
+  };
+
+  var result;
+  try {
+    result = await DcentWebConnector.getParachainSignedTransaction(transactionJson);
+  } catch (e) {
+    console.log(e);
+    result = e;
+  }
+  ```
+- Returned response object:
+
+  ```json
+  {
+    "header": {
+      "version": "1.0",
+      "response_from": "para",
+      "status": "success"
+    },
+    "body": {
+      "command": "transaction",
+      "parameter": {
+        "signed_tx": "0x00263b3ed036c74d15d875c7246abe73404c82763f3300316eb782cafdf5bd93f4f47f0fe34d823f9d07f8db7b2cb81051e58a1e58993c70888916c0ef6c3c910f"
+      }
+    }
+  }
+  ```
+
+  Please note that for `Astar EVM` transactions, you can use the getEthereumSignedTransaction() and getTokenSignedTransaction() methods with the chain ID set to 592.
 
 Please Refer to the `index.html` to learn more about how to use the SDK APIs. There is an Web project using our Web SDK.

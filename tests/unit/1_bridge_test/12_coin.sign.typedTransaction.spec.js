@@ -8,19 +8,19 @@ const puppeteer = require('puppeteer')
 /* //////////////////////////////////////////////////////////////////////// */
 
 describe('[getEthereumSignedTransaction] Typed', () => {
-    let bowser
+    let browser
     let page
     beforeAll(async () => {
-        bowser = await puppeteer.launch({
+        browser = await puppeteer.launch({
             headless: false,
         })
-        page = await bowser.newPage()
+        page = await browser.newPage()
 
         await page.goto('http://localhost:9090')
     })
     afterAll(() => {
         DcentWebConnector.popupWindowClose()
-        bowser.close()
+        browser.close()
     })
 
     it('not support type - fail ', async (done) => {

@@ -41,10 +41,24 @@ const coinType = {
   VECHAIN_ERC20: 'vechain-erc20',
   NEAR: 'near',
   NEAR_TESTNET: 'near-testnet',
+  NEAR_TOKEN: 'near-token',
   HAVAH: 'havah',
   HAVAH_TESTNET: 'havah-testnet',
   HAVAH_HSP20: 'havah-hsp20',
   HAVAH_HSP20_TESTNET: 'havah-hsp20-testnet',
+  POLKADOT: 'polkadot',
+  COSMOS: 'cosmos',
+  COREUM: 'coreum',
+  ALGORAND: 'algorand',
+  ALGORAND_TESTNET: 'algo-testnet',
+  ALGORAND_ASSET: 'algo-asset',
+  ALGORAND_ASSET_TESTNET: 'algo-asset-test',
+  ALGORAND_APP: 'algo-app',
+  ALGORAND_APP_TESTNET: 'algo-app-test',
+  PARA: 'para',
+  PARA_TESTNET: 'para-testnet',
+  PARA_XC20: 'para-xc20',
+  PARA_XC20_TESTNET: 'para-xc20-testnet',
 }
 
 const coinGroup = {
@@ -88,10 +102,24 @@ const coinGroup = {
   VECHAIN_ERC20: 'VECHAIN-ERC20',
   NEAR: 'NEAR',
   NEAR_TESTNET: 'NEAR-TESTNET',
+  NEAR_TOKEN: 'NEAR-TOKEN',
   HAVAH: 'HAVAH',
   HAVAH_TESTNET: 'HAVAH-TESTNET',
   HAVAH_HSP20: 'HAVAH-HSP20',
   HAVAH_HSP20_TESTNET: 'HAVAH-HSP20-TESTNET',
+  POLKADOT: 'POLKADOT',
+  COSMOS: 'COSMOS',
+  COREUM: 'coreum',
+  ALGORAND: 'ALGORAND',
+  ALGORAND_TESTNET: 'ALGO-TESTNET',
+  ALGORAND_ASSET: 'ALGO-ASSET',
+  ALGORAND_ASSET_TESTNET: 'ALGO-ASSET-TEST',
+  ALGORAND_APP: 'ALGO-APP',
+  ALGORAND_APP_TESTNET: 'ALGO-APP-TEST',
+  PARA: 'PARA',
+  PARA_TESTNET: 'PARAT',
+  PARA_XC20: 'XC20',
+  PARA_XC20_TESTNET: 'XC20T',
 }
 
 const coinName = {
@@ -135,10 +163,24 @@ const coinName = {
   VECHAIN_ERC20: 'VECHAIN-ERC20',
   NEAR: 'NEAR',
   NEAR_TESTNET: 'NEAR-TESTNET',
+  NEAR_TOKEN: 'NEAR-TOKEN',
   HAVAH: 'HAVAH',
   HAVAH_TESTNET: 'HAVAH-TESTNET',
   HAVAH_HSP20: 'HAVAH-HSP20',
   HAVAH_HSP20_TESTNET: 'HAVAH-HSP20-TESTNET',
+  POLKADOT: 'POLKADOT',
+  COSMOS: 'COSMOS',
+  COREUM: 'COREUM',
+  ALGORAND: 'ALGORAND',
+  ALGORAND_TESTNET: 'ALGO-TESTNET',
+  ALGORAND_ASSET: 'ALGO-ASSET',
+  ALGORAND_ASSET_TESTNET: 'ALGO-ASSET-TEST',
+  ALGORAND_APP: 'ALGO-APP',
+  ALGORAND_APP_TESTNET: 'ALGO-APP-TEST',
+  PARA: 'PARA',
+  PARA_TESTNET: 'PARAT',
+  PARA_XC20: 'XC20',
+  PARA_XC20_TESTNET: 'XC20T',
 }
 
 const bitcoinTxType = {
@@ -197,6 +239,17 @@ const xrpTxType = {
   TrustSet: 'TrustSet'
 }
 
+const coinDecimals = {
+  TEZOS: 6,
+  VECHAIN: 18,
+  NEAR: 24,
+  HAVAH: 18,
+  POLKADOT: 10,
+  COSMOS: 6,
+  COREUM: 6,
+  ALGORAND: 6,
+}
+
 module.exports = {
   coinType,
   coinGroup,
@@ -204,4 +257,5 @@ module.exports = {
   bitcoinTxType,
   klaytnTxType,
   xrpTxType,
+  coinDecimals,
 }

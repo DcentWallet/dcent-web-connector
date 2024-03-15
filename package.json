@@ -1,6 +1,6 @@
 {
   "name": "dcent-web-connector",
-  "version": "0.15.0",
+  "version": "0.16.0",
   "description": "D'CENT Web SDK Connector",
   "main": "src/index.js",
   "scripts": {
@@ -89,6 +89,10 @@
   "dependencies": {
     "bignumber.js": "^9.1.1",
     "events": "^3.0.0"
+  },  
+  "engines": {
+    "node": ">= 18.0.0",
+    "npm": ">= 10.0.0"
   },
   "license": "MIT"
 }

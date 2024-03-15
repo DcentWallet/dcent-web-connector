@@ -1,12 +1,14 @@
-const path = require('path');
+const path = require('path')
+const webpack = require('webpack')
 const {
     CleanWebpackPlugin
-} = require('clean-webpack-plugin');
-const HtmlWebpackPlugin = require('html-webpack-plugin');
-const CopyPlugin = require('copy-webpack-plugin');
+} = require('clean-webpack-plugin')
+const HtmlWebpackPlugin = require('html-webpack-plugin')
+const CopyPlugin = require('copy-webpack-plugin')
 
 module.exports = {
-    target: "web",
+    mode: 'development', // or 'production'
+    target: 'web',
     entry: {
         'dcent-web-connector': './src/index.js'
     },
@@ -24,7 +26,7 @@ module.exports = {
             test: /\.js$/,
             exclude: /node_modules/,
             use: {
-                loader: "babel-loader"
+                loader: 'babel-loader'
             }
         }]
     },
@@ -35,6 +37,9 @@ module.exports = {
             inject: false,
             template: path.resolve(__dirname, 'index.html')
         }),
+        new webpack.ProvidePlugin({
+            Buffer: ['buffer', 'Buffer'],
+        }),
         new CopyPlugin([{
             from: 'plugin',
             to: 'plugin'
@@ -44,6 +49,8 @@ module.exports = {
     devServer: {
         host: '0.0.0.0',
         port: 9090,
-        contentBase: path.join(__dirname, 'dist'),
+        static: {
+            directory: path.join(__dirname, 'dist')
+        }
     }
 }

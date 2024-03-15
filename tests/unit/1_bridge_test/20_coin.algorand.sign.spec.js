@@ -25,19 +25,19 @@ function verify (message, signature, address) {
 }
 
 describe('[dcent-web-connector] Bridge - init', () => {
-    let bowser
+    let browser
     let page
     beforeAll(async () => {
-        bowser = await puppeteer.launch({
+        browser = await puppeteer.launch({
             headless: false,
         })
-        page = await bowser.newPage()
+        page = await browser.newPage()
 
         await page.goto('http://localhost:9090')
     })
     afterAll(() => {
         DcentWebConnector.popupWindowClose()
-        bowser.close()
+        browser.close()
     })
 
     it('getDeviceInfo() - success ', async (done) => {
@@ -71,7 +71,7 @@ describe('[dcent-web-connector] Bridge - init', () => {
         }
         var response = await page.evaluate((transactionJson) => {
             // eslint-disable-next-line no-undef
-            return getAlgoSignedTransaction(transactionJson)
+            return getAlgorandSignedTransaction(transactionJson)
         }, transactionJson)
 
         var responseAddress = await page.evaluate(() => {
@@ -105,7 +105,7 @@ describe('[dcent-web-connector] Bridge - init', () => {
         }
         var response = await page.evaluate((transactionJson) => {
             // eslint-disable-next-line no-undef
-            return getAlgoSignedTransaction(transactionJson)
+            return getAlgorandSignedTransaction(transactionJson)
         }, transactionJson)
 
         var responseAddress = await page.evaluate(() => {
@@ -139,7 +139,7 @@ describe('[dcent-web-connector] Bridge - init', () => {
         }
         var response = await page.evaluate((transactionJson) => {
             // eslint-disable-next-line no-undef
-            return getAlgoSignedTransaction(transactionJson)
+            return getAlgorandSignedTransaction(transactionJson)
         }, transactionJson)
 
         var responseAddress = await page.evaluate(() => {
@@ -173,7 +173,7 @@ describe('[dcent-web-connector] Bridge - init', () => {
         }
         var response = await page.evaluate((transactionJson) => {
             // eslint-disable-next-line no-undef
-            return getAlgoSignedTransaction(transactionJson)
+            return getAlgorandSignedTransaction(transactionJson)
         }, transactionJson)
 
         var responseAddress = await page.evaluate(() => {
@@ -207,7 +207,7 @@ describe('[dcent-web-connector] Bridge - init', () => {
         }
         var response = await page.evaluate((transactionJson) => {
             // eslint-disable-next-line no-undef
-            return getAlgoSignedTransaction(transactionJson)
+            return getAlgorandSignedTransaction(transactionJson)
         }, transactionJson)
 
         var responseAddress = await page.evaluate(() => {
@@ -241,7 +241,7 @@ describe('[dcent-web-connector] Bridge - init', () => {
         }
         var response = await page.evaluate((transactionJson) => {
             // eslint-disable-next-line no-undef
-            return getAlgoSignedTransaction(transactionJson)
+            return getAlgorandSignedTransaction(transactionJson)
         }, transactionJson)
 
         var responseAddress = await page.evaluate(() => {
@@ -275,7 +275,7 @@ describe('[dcent-web-connector] Bridge - init', () => {
         }
         var response = await page.evaluate((transactionJson) => {
             // eslint-disable-next-line no-undef
-            return getAlgoSignedTransaction(transactionJson)
+            return getAlgorandSignedTransaction(transactionJson)
         }, transactionJson)
 
         var responseAddress = await page.evaluate(() => {

@@ -90,6 +90,7 @@
 
         <button id="getHederaSignedTransaction" type="button" class="btn btn-primary">getHederaSignedTransaction</button>
         <button id="getHTSSignedTransaction" type="button" class="btn btn-primary">getHTSSignedTransaction</button>
+        <button id="getHederaSignedMessage" type="button" class="btn btn-primary">getHederaSignedMessage</button>
         <br /><br />
 
         <button id="getStellarSignedTransaction" type="button" class="btn btn-primary">getStellarSignedTransaction</button>
@@ -272,6 +273,7 @@
 
         $('#getHederaSignedTransaction').click(getHederaSignedTransaction_clicked);
         $('#getHTSSignedTransaction').click(getHTSSignedTransaction_clicked);
+        $('#getHederaSignedMessage').click(getHederaSignedMessage_clicked);
 
         $('#getStellarSignedTransaction').click(getStellarSignedTransaction_clicked);
 
@@ -912,6 +914,18 @@
         resp_editor.load(result)
       }
 
+      async function getHederaSignedMessage_clicked() {
+        set_command_name("Processing...");
+        var transactionJson = {
+          unsignedMsg: '19486564657261205369676e6564204d6573736167653a0a333654686973206973206865646572615f7369676e4d6573736167652773206d657373616765',  // 
+          path: `m/44'/3030'/0'`,
+        }
+        var result  = await getHederaSignedMessage(transactionJson);
+      
+        set_command_name("getHederaSignedMessage")
+        resp_editor.load(result)
+      }
+
       async function getStellarSignedTransaction_clicked() {
         set_command_name("Processing...");
         var transactionJson = {
@@ -1414,6 +1428,16 @@
         var result 
         try { 
           result = await dcent.getHederaSignedTransaction(transaction)      
+        } catch (e) {
+          result = e
+        }
+        return result 
+      }
+
+      async function getHederaSignedMessage(transaction) {
+        var result 
+        try { 
+          result = await dcent.getHederaSignedMessage(transaction)      
         } catch (e) {
           result = e
         }

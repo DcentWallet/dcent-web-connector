@@ -626,7 +626,7 @@ Returned response object has:
 
 The 'selectedIndex' is index of addresses array.
 
-### Ethereum Signed Massage
+### Ethereum Signed Message
 
 You can get a signature value to sign a user message with that private key With a given key path (BIP32).
 The input message is prefixed with 'Ethereum sign message' and then hashed and signed.
@@ -707,7 +707,7 @@ Returned response object has:
 }
 ```
 
-### Signed Massage
+### Signed Message
 
 You can get a signature value to sign a user message with that private key With a given key path (BIP32).
 The input message is prefixed depending on the coin type and then hashed and signed.
@@ -1076,7 +1076,7 @@ For broadcast the sign transaction, you must reconstruct transaction include `Tx
 - Parameters :
 
   - unsignedTx: unsigned hexadecimal tx [Hedera Docs](https://docs.hedera.com/guides/getting-started/transfer-hbar)
-  - path: key path, wallet sign with that private key with a given key path (BIP32 ex) "m/44'/144'/0'").
+  - path: key path, wallet sign with that private key with a given key path (BIP32 ex) "m/44'/3030'/0'").
   - symbol: symbol, It is a symbol that the wallet displays on the screen.
   - decimals: hedera or hts token's decimals.
 - Requirements:
@@ -1087,7 +1087,7 @@ For broadcast the sign transaction, you must reconstruct transaction include `Tx
 
   ```js
   const _buf2hex = (buffer) => { // buffer is an ArrayBuffer
-  return Array.prototype.map.call(new Uint8Array(buffer), x => ('00' + x.toString(16)).slice(-2)).join('');
+  return Array.prototype.map.call(new Uint8Array(buffer), x => ('00' + x.toString(16)).slice(-2)).join('')
   }
   const client = HederaSDK.Client.forMainnet()
   const nodeList = client._network.getNodeAccountIdsForExecute()
@@ -1109,7 +1109,7 @@ For broadcast the sign transaction, you must reconstruct transaction include `Tx
   tx.setTransactionId(txId)
   tx.setTransactionMemo('')
   tx.setMaxTransactionFee(fee)
-  tx.freezeWith(client);
+  tx.freezeWith(client)
 
   const bodyBytes = tx._signedTransactions[0].bodyBytes
   const unsignedTx = _buf2hex(bodyBytes)
@@ -1118,12 +1118,12 @@ For broadcast the sign transaction, you must reconstruct transaction include `Tx
       unsignedTx: unsignedTx,
       path: `m/44'/3030'/0'`,
       symobl: HBAR,
-      decimals: 8,
+      decimals: 8
   }
 
   var result
   try {
-      result = await DcentWebConnector.getHederaSignedTransaction(transactionJson);  
+      result = await DcentWebConnector.getHederaSignedTransaction(transactionJson)
   } catch (e) {
       console.log(e)
       result = e
@@ -1143,6 +1143,60 @@ For broadcast the sign transaction, you must reconstruct transaction include `Tx
           "parameter": {
               "signed_tx": "0x31aa13b5e04cb6fc6381ea0520bf7f6727ebdb6e96cd7ca8625bb3e3dd36cf0e2cee4ece13aa9f7ddc09ee10c74aa00af954201829d8016317f10f5a921dcc0d",
               "pubkey": "0x9a5c753d02038e512c06867556324b37181c9c1fc19c21c27752c520e8f0d822"
+          }
+      }
+  }
+  ```
+
+**getHederaSignedMessage()**
+
+This is a function used to perform the hedera_signMessage method specified in the [HIP-820](https://hips.hedera.com/hip/hip-820).  
+You can get a signature value to sign a user message with that private key With a given key path (BIP32).  
+
+- Parameters :
+  - unsignedMsg: the UTF-8 encoded message with a prefix appended to it.
+  - path: key path, wallet sign with that private key with a given key path (BIP32 ex) "m/44'/3030'/0'").
+- Requirements:
+  - `D'CENT Bridge` version 1.5.5 or higher is required.
+  - D'CENT Biometric Wallet version 2.30.3. or higher is required.
+- Useage:
+
+  ```js
+  function stringToHexString (str) {
+    const buf = Buffer.from(str.toString(), 'utf8')
+    return buf.toString('hex')
+  }
+
+  var message = `This is hedera_signMessage's message`
+  var unsignedMsg = stringToHexString("\x19Hedera Signed Message:\n" + message.length + message)
+  const transactionJson = {
+      unsignedMsg: unsignedMsg,
+      path: `m/44'/3030'/0'`
+  }
+
+  var result
+  try {
+      result = await DcentWebConnector.getHederaSignedMessage(transactionJson)
+  } catch (e) {
+      console.log(e)
+      result = e
+  }
+  ```
+
+- Returned response object has:
+
+  ```json
+  {
+      "header": {
+          "version": "1.0",
+          "response_from": "hedera",
+          "status": "success"
+      },
+      "body": {
+          "command": "sign_msg",
+          "parameter": {
+            "sign_msg": "0x6fb261a69f45f58d5dc33297a7db0fd80cbbd90137a2597ff870a374ecbd2cb99d22bac9a28e91a84902a6b5b0a4316a9c7d4e7ae242f2e2172d57d2a9b7530c",
+            "pubkey": "0x97ee5dbe1b00e35ac9674cdc9915503108acae33d9dc2aa2247e69d4e456c594"
           }
       }
   }

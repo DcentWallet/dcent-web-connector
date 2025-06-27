@@ -34,8 +34,12 @@ dcent.popupWindow = undefined
 dcent.popupTab = undefined
 dcent.iframe = undefined
 
+let isManifestV3 = false
 // eslint-disable-next-line no-undef
-const isManifestV3 = typeof chrome !== 'undefined' && chrome.runtime && chrome.runtime.getManifest().manifest_version === 3
+if (typeof chrome !== 'undefined' && chrome.runtime && chrome.runtime.getManifest) {
+  // eslint-disable-next-line no-undef
+  isManifestV3 = chrome.runtime.getManifest().manifest_version === 3
+}
 dcent.dcentWebDeferred = function () {
   let localResolve
   let localReject

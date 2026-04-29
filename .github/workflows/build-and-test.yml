@@ -9,6 +9,9 @@ on:
   pull_request:
     branches: [ master, dev ]
 
+permissions:
+  contents: read
+
 jobs:
   lint-build-unit:
 
@@ -26,10 +29,10 @@ jobs:
       uses: actions/setup-node@v3
       with:
         node-version: ${{ matrix.node-version }}
-    - run: npm ci
-    - run: npm run lint
-    - run: npm run build
-    - run: npm run unit-mock
+    - run: yarn install --frozen-lockfile
+    - run: yarn lint
+    - run: yarn build
+    - run: yarn unit-mock
       env:
         CI: true
-        NODE_OPTIONS: --max-old-space-size=8192 
+        NODE_OPTIONS: --max-old-space-size=8192

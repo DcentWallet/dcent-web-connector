@@ -10,7 +10,10 @@ module.exports = {
     mode: 'development', // or 'production'
     target: 'web',
     entry: {
-        'dcent-web-connector': './src/index.js'
+        // v1: 기존 JS 코드 (src-v1/ — 아카이브, read-only)
+        'v1/dcent-web-connector': './src-v1/index.js',
+        // v2: TypeScript 기반 신규 진입점 (m01-03에서 실제 구현 추가)
+        'v2/dcent-web-connector': './src/index.ts'
     },
 
     devtool: process.env.NODE_ENV === 'production' ? false : 'inline-source-map',
@@ -21,14 +24,27 @@ module.exports = {
         libraryTarget: 'this'
     },
 
+    resolve: {
+        extensions: ['.ts', '.js']
+    },
+
     module: {
-        rules: [{
-            test: /\.js$/,
-            exclude: /node_modules/,
-            use: {
-                loader: 'babel-loader'
+        rules: [
+            {
+                test: /\.js$/,
+                exclude: /node_modules/,
+                use: {
+                    loader: 'babel-loader'
+                }
+            },
+            {
+                test: /\.ts$/,
+                exclude: /node_modules/,
+                use: {
+                    loader: 'ts-loader'
+                }
             }
-        }]
+        ]
     },
 
     plugins: [

@@ -11,6 +11,7 @@
     "test": "yarn lint && jest --detectOpenHandles --coverage --forceExit --runInBand",
     "unit-mock": "jest --coverage --runInBand 0_mock_test",
     "unit-bridge": "jest --coverage --runInBand 1_bridge_test",
+    "unit-v2": "jest --config jest.v2.config.js --runInBand tests/unit/v2",
     "lint": "eslint --ext .js src-v1 tests",
     "lint:fix": "eslint --ext .js src-v1 tests --fix",
     "tsc": "tsc --noEmit"
@@ -52,9 +53,12 @@
     "@babel/core": "^7.6.0",
     "@babel/preset-env": "^7.6.0",
     "@babel/preset-react": "^7.9.4",
+    "@babel/preset-typescript": "^7.28.5",
     "@noble/curves": "^1.0.0",
     "@scure/base": "^1.1.1",
     "@taquito/utils": "^16.1.2",
+    "@types/jest": "^30.0.0",
+    "@types/node": "^18.0.0",
     "babel-core": "^7.0.0-bridge.0",
     "babel-eslint": "^10.1.0",
     "babel-jest": "^24.8.0",
@@ -83,18 +87,17 @@
     "puppeteer": "^10.4.0",
     "regenerator-runtime": "^0.13.3",
     "thor-devkit": "^2.0.7",
+    "ts-loader": "^9.5.1",
     "tweetnacl": "^1.0.3",
+    "typescript": "~5.9.3",
     "webpack": "^5.72.0",
     "webpack-cli": "^4.9.2",
-    "webpack-dev-server": "^4.9.0",
-    "typescript": "~5.9.3",
-    "ts-loader": "^9.5.1",
-    "@types/node": "^18.0.0"
+    "webpack-dev-server": "^4.9.0"
   },
   "dependencies": {
     "bignumber.js": "^9.1.1",
     "events": "^3.0.0"
-  },  
+  },
   "engines": {
     "node": ">= 18.0.0",
     "npm": ">= 9.0.0"

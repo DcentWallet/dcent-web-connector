@@ -22,7 +22,10 @@ export enum ErrorCode {
   // D'CENT 디바이스 전용 (5xxx) — EIP-1193 4xxx / JSON-RPC -32xxx와 충돌 없음
   DEVICE_NOT_CONNECTED = 5001,
   DEVICE_LOCKED = 5002,
+  // DEVICE_TIMEOUT(5003)은 하드웨어(디바이스) 응답 timeout, TIMEOUT(5006)은 transport layer
+  // (브라우저 popup-postMessage) timeout — 의미상 별도
   DEVICE_TIMEOUT = 5003,
   DEVICE_USER_CANCELLED = 5004,
   DEVICE_FW_INCOMPATIBLE = 5005,
+  TIMEOUT = 5006,
 }

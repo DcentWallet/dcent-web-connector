@@ -71,4 +71,12 @@ describe('ErrorCode', () => {
       expect(ErrorCode.DEVICE_FW_INCOMPATIBLE).toBe(5005)
     })
   })
+
+  describe('Transport layer (T-U-16)', () => {
+    // m02-01에서 추가 — DEVICE_TIMEOUT(5003)은 하드웨어 timeout,
+    // TIMEOUT(5006)은 popup-postMessage transport layer timeout
+    it('TIMEOUT === 5006', () => {
+      expect(ErrorCode.TIMEOUT).toBe(5006)
+    })
+  })
 })

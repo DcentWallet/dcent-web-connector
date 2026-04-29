@@ -1,6 +1,6 @@
-const DcentWebConnector = require('../../../src/index')
+const DcentWebConnector = require('../../../src-v1/index')
 
-var NilMock = require('../../../src/native/__mocks__/nil')
+var NilMock = require('../../../src-v1/native/__mocks__/nil')
 const Values = require('../test-constants')
 
 /* //////////////////////////////////////////////////////////////////////// */

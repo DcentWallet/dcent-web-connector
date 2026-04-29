@@ -2,7 +2,7 @@
 /* */
 /* //////////////////////////////////////////////////////////////////////// */
 
-const DcentWebConnector = require('../../../src/index')
+const DcentWebConnector = require('../../../src-v1/index')
 const Values = require('../test-constants')
 const puppeteer = require('puppeteer')
 

@@ -2,16 +2,18 @@
   "name": "dcent-web-connector",
   "version": "0.16.0",
   "description": "D'CENT Web SDK Connector",
-  "main": "src/index.js",
+  "main": "src-v1/index.js",
+  "module": "src-v1/index.js",
   "scripts": {
-    "dev": "npm run build-dev && webpack-dev-server --mode development",
+    "dev": "yarn build-dev && webpack-dev-server --mode development",
     "build-dev": "webpack --mode development",
     "build": "webpack --mode production",
-    "test": "npm run lint && jest --detectOpenHandles --coverage --forceExit --runInBand",
+    "test": "yarn lint && jest --detectOpenHandles --coverage --forceExit --runInBand",
     "unit-mock": "jest --coverage --runInBand 0_mock_test",
     "unit-bridge": "jest --coverage --runInBand 1_bridge_test",
-    "lint": "eslint --ext .js src tests",
-    "lint:fix": "eslint --ext .js src tests --fix"
+    "lint": "eslint --ext .js src-v1 tests",
+    "lint:fix": "eslint --ext .js src-v1 tests --fix",
+    "tsc": "tsc --noEmit"
   },
   "jest": {
     "preset": "jest-puppeteer",
@@ -84,7 +86,10 @@
     "tweetnacl": "^1.0.3",
     "webpack": "^5.72.0",
     "webpack-cli": "^4.9.2",
-    "webpack-dev-server": "^4.9.0"
+    "webpack-dev-server": "^4.9.0",
+    "typescript": "~5.9.3",
+    "ts-loader": "^9.5.1",
+    "@types/node": "^18.0.0"
   },
   "dependencies": {
     "bignumber.js": "^9.1.1",

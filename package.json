@@ -13,6 +13,9 @@
     "unit-bridge": "jest --coverage --runInBand 1_bridge_test",
     "unit-v2": "jest --config jest.v2.config.js --runInBand tests/unit/v2",
     "unit-v2-e2e": "jest --config jest.v2-e2e.config.js --runInBand",
+    "unit-v2-e2e:visual": "E2E_HEADLESS=false jest --config jest.v2-e2e.config.js --runInBand",
+    "unit-v2-e2e:slowmo": "E2E_HEADLESS=false E2E_SLOWMO=300 jest --config jest.v2-e2e.config.js --runInBand",
+    "unit-v2-e2e:devtools": "E2E_HEADLESS=false E2E_DEVTOOLS=true jest --config jest.v2-e2e.config.js --runInBand",
     "lint": "eslint --ext .js src-v1 tests",
     "lint:fix": "eslint --ext .js src-v1 tests --fix",
     "tsc": "tsc --noEmit"

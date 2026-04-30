@@ -32,22 +32,30 @@ PR마다 자동 실행은 cycle 03+에서 검토 (현재는 manual trigger).
 
 GitHub Actions UI에서 "v2 e2e" workflow → "Run workflow" 클릭하여 실행.
 
-## 디버깅 옵션 (env var, 파일 수정 불필요)
-
-`launchBrowser` 헬퍼가 다음 env var를 읽음 — 파일 수정 없이 즉시 토글:
+## 디버깅 옵션 (yarn scripts, 파일 수정 불필요)
 
 ```bash
+# 기본 — headless (가장 빠름, ~17s)
+yarn unit-v2-e2e
+
 # 시각 디버그 — 실제 Chrome 창 띄움
-E2E_HEADLESS=false yarn unit-v2-e2e
+yarn unit-v2-e2e:visual
 
-# 한 spec만 시각 디버그
-E2E_HEADLESS=false yarn unit-v2-e2e --testPathPattern=01_handshake
+# 슬로우 모션 — popup 동작을 천천히 시각화 (가장 직관적)
+yarn unit-v2-e2e:slowmo
 
-# 슬로우 모션 (puppeteer 명령 사이 200ms delay — 가독성)
-E2E_HEADLESS=false E2E_SLOWMO=200 yarn unit-v2-e2e
+# devtools 자동 오픈 — postMessage 흐름 검사
+yarn unit-v2-e2e:devtools
 
-# devtools 자동 오픈
-E2E_HEADLESS=false E2E_DEVTOOLS=true yarn unit-v2-e2e --testPathPattern=04_popup_close
+# 한 spec만 시각 디버그 (jest --testPathPattern 그대로 통과)
+yarn unit-v2-e2e:visual --testPathPattern=01_handshake
+yarn unit-v2-e2e:slowmo --testPathPattern=04_popup_close
+```
+
+각 alias는 env var(`E2E_HEADLESS` / `E2E_DEVTOOLS` / `E2E_SLOWMO`)를 미리 세팅해 jest를 실행. `launchBrowser.js` 헬퍼가 이 env를 읽음. 직접 env var를 넘겨도 동작:
+
+```bash
+E2E_HEADLESS=false E2E_SLOWMO=500 yarn unit-v2-e2e
 ```
 
 ### dev mode HMR (sdk 실시간 변경 확인)

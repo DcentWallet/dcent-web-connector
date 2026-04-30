@@ -79,4 +79,11 @@ describe('ErrorCode', () => {
       expect(ErrorCode.TIMEOUT).toBe(5006)
     })
   })
+
+  describe('Protocol layer (T-U-EC-HS-01)', () => {
+    // m02-02에서 추가 — connector ↔ sdk handshake로 확인된 protocol version 불일치
+    it('PROTOCOL_VERSION_MISMATCH === 5007', () => {
+      expect(ErrorCode.PROTOCOL_VERSION_MISMATCH).toBe(5007)
+    })
+  })
 })

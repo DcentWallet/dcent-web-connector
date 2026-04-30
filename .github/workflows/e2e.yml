@@ -1,0 +1,52 @@
+# v2 popup transport round-trip e2e — workflow_dispatch (manual trigger)
+# self-hosted runner 사용 (IotrustGitHub Org IP allow list 우회 — sdk m02-03 패턴 mirror)
+# PR마다 자동 실행은 비스코프 (cycle 03+에서 검토)
+
+name: v2 e2e
+
+on:
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  e2e:
+    runs-on: self-hosted
+
+    strategy:
+      matrix:
+        node-version: [22.x]
+
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          persist-credentials: false
+
+      - name: Use Node.js ${{ matrix.node-version }}
+        uses: actions/setup-node@v4
+        with:
+          node-version: ${{ matrix.node-version }}
+
+      - name: chromium sanity check (T-E-SETUP-02)
+        # self-hosted runner에 chromium이 없으면 cryptic launch 에러 대신 명확한 메시지로 fail
+        run: |
+          node -e "console.log('chromium executablePath:', require('puppeteer').executablePath())"
+
+      - name: connector install + build
+        run: |
+          yarn install --frozen-lockfile
+          yarn build
+
+      - name: sdk install + build (e2e 사전 조건)
+        # sdk dist를 globalSetup이 :5174로 직접 launch — dev server 의존 0
+        run: |
+          cd ../dcent-web-sdk
+          npm install --legacy-peer-deps --ignore-scripts
+          npm run build
+
+      - name: e2e suite
+        run: yarn unit-v2-e2e
+        env:
+          CI: true
+          NODE_OPTIONS: --max-old-space-size=8192

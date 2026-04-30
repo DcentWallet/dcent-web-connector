@@ -1,0 +1,140 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <meta charset="utf-8">
+  <title>dcent-web-connector v2 e2e harness</title>
+</head>
+<body>
+  <h1>v2 e2e harness</h1>
+  <script src="/dist/v2/dcent-web-connector.min.js"></script>
+  <script>
+    // dist/v2 번들의 libraryTarget: 'this' → window에 PopupTransport / ErrorCode / ProviderError / SerialRequestQueue 노출
+    var PopupTransport = window.PopupTransport
+    var ErrorCode = window.ErrorCode
+
+    // T-E-03 handshake 카운트 spy — connector 측 PopupTransport.sendHandshake (private but runtime accessible)를 wrap
+    // popup 측 postMessage는 cross-origin이라 replace 불가하므로 connector 측에서 카운트
+    var _handshakeCount = 0
+    var _origSendHandshake = null
+    var _transport = null
+
+    function _attachHandshakeSpy(transport) {
+      if (!transport || _origSendHandshake) return
+      _origSendHandshake = transport.sendHandshake.bind(transport)
+      transport.sendHandshake = function () {
+        _handshakeCount++
+        return _origSendHandshake()
+      }
+    }
+
+    /**
+     * sdk popup의 React listener mount 전에 connector handshake가 fire되는 race를 회피.
+     * harness가 popup을 사전 open + load 대기 후 PopupTransport에 주입.
+     *
+     * 단, popup이 cross-origin이면 popup.document/readyState 직접 접근 불가 → load 이벤트 대신
+     * postMessage ping-pong + retry 패턴으로 ready 검증.
+     */
+    function _waitPopupReady(popup, timeoutMs) {
+      var deadline = Date.now() + (timeoutMs || 8000)
+      return new Promise(function (resolve, reject) {
+        function tick() {
+          if (Date.now() > deadline) {
+            return reject(new Error('Popup ready timeout'))
+          }
+          if (!popup || popup.closed) {
+            return reject(new Error('Popup closed'))
+          }
+          // sdk listener는 readyMessage를 ping으로 받지 않음(보낼 메서드 없음).
+          // 대신 단순한 sleep loop: 500ms마다 popup이 살아있는지만 확인하고 일정 시간 대기 후 ready 간주.
+          // sdk vite build 산출물 부팅(~700ms) + React useEffect mount 마진(+300ms) 가정.
+          // _waitPopupReady 호출 시점부터 1200ms sleep — 그 시점에 listener는 거의 확실히 mount됨.
+          setTimeout(resolve, 1200)
+        }
+        tick()
+      })
+    }
+
+    window.dcentTest = {
+      newTransport: function (options) {
+        _transport = new PopupTransport(options || {})
+        _handshakeCount = 0
+        _origSendHandshake = null
+        // newTransport 시점에 spy 미리 부착 — sendHandshake가 호출되기 전에 wrap 보장
+        _attachHandshakeSpy(_transport)
+        return true
+      },
+
+      // popup을 미리 open하고 sdk listener mount까지 대기 후 PopupTransport에 주입.
+      // 정상 round-trip 테스트(T-E-01/02/03/07)는 send 전에 호출해야 함.
+      preOpenAndWait: function () {
+        if (!_transport) return Promise.reject(new Error('Call newTransport first'))
+        // PopupTransport.popUpUrl을 동일 옵션으로 직접 open
+        var url = _transport.popUpUrl
+        var popup = window.open(url, '_blank')
+        if (!popup) return Promise.reject(new Error('window.open returned null'))
+        return _waitPopupReady(popup).then(function () {
+          // PopupTransport 내부 popupWindow 필드에 주입 — TS private은 runtime accessible
+          _transport.popupWindow = popup
+          // popup이 확보되었으므로 즉시 spy 부착 — send가 호출되면 postMessage가 spy를 거침
+          _attachHandshakeSpy(_transport)
+          return true
+        })
+      },
+
+      send: function (message) {
+        var self = this
+        if (!_transport) return Promise.reject(new Error('Call newTransport first'))
+        // send 직전 spy 부착 시도 — 이미 popup이 열려있으면 즉시 부착, 아니면 send가 popup 열고 나서 microtask 후 부착
+        var sendP = _transport.send(message)
+        // popup이 send 내부에서 열림 → 다음 tick에 spy 부착
+        Promise.resolve().then(function () { _attachHandshakeSpy(_transport) })
+        return sendP.then(
+          function (response) { return { ok: true, response: response } },
+          function (err) {
+            return {
+              ok: false,
+              error: { code: err && err.code, message: err && err.message, name: err && err.name },
+            }
+          }
+        )
+      },
+
+      // T-E-03: 동시 N개 send를 호출하면 handshake가 1회만 발동되는지 검증
+      // Promise.all 후 spy 카운트 반환
+      sendConcurrent: function (messages) {
+        var self = this
+        if (!_transport) return Promise.reject(new Error('Call newTransport first'))
+        var promises = messages.map(function (m) { return _transport.send(m) })
+        // 다음 tick에 spy 부착 (popup 생성 후)
+        Promise.resolve().then(function () { _attachHandshakeSpy(_transport) })
+        return Promise.allSettled(promises).then(function (results) {
+          return {
+            handshakeCount: _handshakeCount,
+            results: results.map(function (r) {
+              if (r.status === 'fulfilled') return { ok: true, response: r.value }
+              return { ok: false, error: { code: r.reason && r.reason.code, message: r.reason && r.reason.message } }
+            }),
+          }
+        })
+      },
+
+      setTimeoutMs: function (ms) {
+        if (!_transport) throw new Error('Call newTransport first')
+        try {
+          _transport.setTimeoutMs(ms)
+          return { ok: true }
+        } catch (err) {
+          return { ok: false, error: { code: err.code, message: err.message } }
+        }
+      },
+
+      close: function () {
+        var p = _transport ? _transport.close() : Promise.resolve()
+        return p.then(function () { _transport = null; return true })
+      },
+
+      ErrorCode: ErrorCode,
+    }
+  </script>
+</body>
+</html>

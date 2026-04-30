@@ -19,19 +19,21 @@ jobs:
 
     strategy:
       matrix:
-        node-version: [18.x]
+        # Node 18은 2025-04 EOL — Node 22 LTS로 갱신 (m02-02)
+        node-version: [22.x]
 
     steps:
-    - uses: actions/checkout@v3
+    - uses: actions/checkout@v4
       with:
         persist-credentials: false
     - name: Use Node.js ${{ matrix.node-version }}
-      uses: actions/setup-node@v3
+      uses: actions/setup-node@v4
       with:
         node-version: ${{ matrix.node-version }}
     - run: yarn install --frozen-lockfile
     - run: yarn lint
     - run: yarn build
+    - run: yarn unit-v2
     - run: yarn unit-mock
       env:
         CI: true

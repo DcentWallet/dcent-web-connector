@@ -9,7 +9,7 @@
  * (정확히는 sdk의 silent drop이 아닌 browser-level postMessage filtering이지만,
  *  관측 가능한 결과는 동일 — connector 측에서는 응답 부재 → 5006)
  */
-const puppeteer = require('puppeteer')
+const { launchBrowser } = require('./launchBrowser')
 
 const HARNESS_URL = 'http://localhost:9091/tests/unit/2_v2_e2e/harness.html'
 const SDK_URL = 'http://localhost:5174/'
@@ -19,10 +19,7 @@ describe('[v2 e2e] T-E-06 origin mismatch → TIMEOUT', () => {
   let page: any
 
   beforeAll(async () => {
-    browser = await puppeteer.launch({
-      headless: 'new',
-      args: ['--no-sandbox', '--disable-setuid-sandbox', '--disable-popup-blocking'],
-    })
+    browser = await launchBrowser()
     page = await browser.newPage()
     await page.goto(HARNESS_URL)
   })

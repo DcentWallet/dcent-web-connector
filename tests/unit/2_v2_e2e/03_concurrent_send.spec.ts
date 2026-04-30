@@ -5,7 +5,7 @@
  * 정확히 1회의 _handshake outbound postMessage만 발생시키는지 검증.
  * harness가 popupWindow.postMessage를 spy로 감싸 카운트.
  */
-const puppeteer = require('puppeteer')
+const { launchBrowser } = require('./launchBrowser')
 
 const HARNESS_URL = 'http://localhost:9091/tests/unit/2_v2_e2e/harness.html'
 const SDK_URL = 'http://localhost:5174/'
@@ -15,10 +15,7 @@ describe('[v2 e2e] T-E-03 concurrent send → handshake 1회', () => {
   let page: any
 
   beforeAll(async () => {
-    browser = await puppeteer.launch({
-      headless: 'new',
-      args: ['--no-sandbox', '--disable-setuid-sandbox', '--disable-popup-blocking'],
-    })
+    browser = await launchBrowser()
     page = await browser.newPage()
     await page.goto(HARNESS_URL)
   })

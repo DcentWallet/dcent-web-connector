@@ -4,7 +4,7 @@
  * connector(dist/v2) ↔ sdk(localhost:5174) 실제 popup 환경에서
  * send 첫 호출 시 자동 handshake 발동 → sdk ack → echo 응답 round-trip.
  */
-const puppeteer = require('puppeteer')
+const { launchBrowser } = require('./launchBrowser')
 
 const HARNESS_URL = 'http://localhost:9091/tests/unit/2_v2_e2e/harness.html'
 const SDK_URL = 'http://localhost:5174/'
@@ -14,10 +14,7 @@ describe('[v2 e2e] T-E-01 handshake → echo round-trip', () => {
   let page: any
 
   beforeAll(async () => {
-    browser = await puppeteer.launch({
-      headless: 'new',
-      args: ['--no-sandbox', '--disable-setuid-sandbox', '--disable-popup-blocking'],
-    })
+    browser = await launchBrowser()
     page = await browser.newPage()
     await page.goto(HARNESS_URL)
   })

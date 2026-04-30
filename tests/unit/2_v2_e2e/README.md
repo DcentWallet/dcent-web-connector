@@ -32,17 +32,34 @@ PR마다 자동 실행은 cycle 03+에서 검토 (현재는 manual trigger).
 
 GitHub Actions UI에서 "v2 e2e" workflow → "Run workflow" 클릭하여 실행.
 
-## dev mode 디버깅 옵션
+## 디버깅 옵션 (env var, 파일 수정 불필요)
 
-flaky 재현 또는 시각 디버그 시 sdk dev server를 따로 띄우는 옵션:
+`launchBrowser` 헬퍼가 다음 env var를 읽음 — 파일 수정 없이 즉시 토글:
+
+```bash
+# 시각 디버그 — 실제 Chrome 창 띄움
+E2E_HEADLESS=false yarn unit-v2-e2e
+
+# 한 spec만 시각 디버그
+E2E_HEADLESS=false yarn unit-v2-e2e --testPathPattern=01_handshake
+
+# 슬로우 모션 (puppeteer 명령 사이 200ms delay — 가독성)
+E2E_HEADLESS=false E2E_SLOWMO=200 yarn unit-v2-e2e
+
+# devtools 자동 오픈
+E2E_HEADLESS=false E2E_DEVTOOLS=true yarn unit-v2-e2e --testPathPattern=04_popup_close
+```
+
+### dev mode HMR (sdk 실시간 변경 확인)
+
+sdk 코드를 바꿔가며 e2e를 돌리려면 :5174 정적 server 대신 :5173 dev server를 사용. spec의 `SDK_URL`을 임시 수정하거나 별도 spec 작성:
 
 ```bash
 # 터미널 A
 cd main-repos/dcent-web-sdk && npm run dev   # port 5173 (HMR 활성)
 
-# 터미널 B — globalSetup이 :5174로 launch한 정적 server를 무시하려면 spec의 popUpUrl 변경 필요
-# 일반 디버그는 yarn unit-v2-e2e의 headless: false로 변경하는 것이 더 빠름:
-#   spec 파일에서 puppeteer.launch({headless: false}) 로 수정 후 실행
+# 터미널 B — spec의 SDK_URL을 'http://localhost:5173/'으로 임시 변경
+E2E_HEADLESS=false yarn unit-v2-e2e --testPathPattern=01_handshake
 ```
 
 ## 시나리오 매핑

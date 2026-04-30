@@ -5,7 +5,7 @@
  * popUpUrl을 listener 없는 빈 페이지(harness :9091/empty.html)로 향하게 하여
  * 2s 후 ProviderError(TIMEOUT, 5006)로 reject 검증.
  */
-const puppeteer = require('puppeteer')
+const { launchBrowser } = require('./launchBrowser')
 
 const HARNESS_URL = 'http://localhost:9091/tests/unit/2_v2_e2e/harness.html'
 const EMPTY_URL = 'http://localhost:9091/tests/unit/2_v2_e2e/empty.html'
@@ -15,10 +15,7 @@ describe('[v2 e2e] T-E-05 setTimeoutMs → TIMEOUT', () => {
   let page: any
 
   beforeAll(async () => {
-    browser = await puppeteer.launch({
-      headless: 'new',
-      args: ['--no-sandbox', '--disable-setuid-sandbox', '--disable-popup-blocking'],
-    })
+    browser = await launchBrowser()
     page = await browser.newPage()
     await page.goto(HARNESS_URL)
   })

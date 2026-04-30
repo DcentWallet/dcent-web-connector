@@ -8,7 +8,7 @@
  *
  * sdk 코드 변경 없음 — puppeteer가 sdk popup page에서 직접 evaluate.
  */
-const puppeteer = require('puppeteer')
+const { launchBrowser } = require('./launchBrowser')
 
 const HARNESS_URL = 'http://localhost:9091/tests/unit/2_v2_e2e/harness.html'
 const SDK_URL = 'http://localhost:5174/'
@@ -18,10 +18,7 @@ describe('[v2 e2e] T-E-07 invalid envelope silent drop', () => {
   let page: any
 
   beforeAll(async () => {
-    browser = await puppeteer.launch({
-      headless: 'new',
-      args: ['--no-sandbox', '--disable-setuid-sandbox', '--disable-popup-blocking'],
-    })
+    browser = await launchBrowser()
     page = await browser.newPage()
     await page.goto(HARNESS_URL)
   })

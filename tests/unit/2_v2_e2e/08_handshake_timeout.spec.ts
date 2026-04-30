@@ -6,7 +6,7 @@
  *
  * (T-E-05와 차이: T-E-05는 send timeout 일반, T-E-08은 specifically handshake가 ack 받지 못한 경우)
  */
-const puppeteer = require('puppeteer')
+const { launchBrowser } = require('./launchBrowser')
 
 const HARNESS_URL = 'http://localhost:9091/tests/unit/2_v2_e2e/harness.html'
 const EMPTY_URL = 'http://localhost:9091/tests/unit/2_v2_e2e/empty.html'
@@ -16,10 +16,7 @@ describe('[v2 e2e] T-E-08 handshake timeout', () => {
   let page: any
 
   beforeAll(async () => {
-    browser = await puppeteer.launch({
-      headless: 'new',
-      args: ['--no-sandbox', '--disable-setuid-sandbox', '--disable-popup-blocking'],
-    })
+    browser = await launchBrowser()
     page = await browser.newPage()
     await page.goto(HARNESS_URL)
   })

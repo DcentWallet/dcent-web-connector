@@ -5,7 +5,7 @@
  * popUpUrl을 listener 없는 빈 페이지(harness :9091/empty.html)로 향하게 하여
  * 2s 후 ProviderError(TIMEOUT, 5006)로 reject 검증.
  */
-const puppeteer = require('puppeteer')
+const { launchBrowser } = require('./launchBrowser')
 
 const HARNESS_URL = 'http://localhost:9091/tests/unit/2_v2_e2e/harness.html'
 const EMPTY_URL = 'http://localhost:9091/tests/unit/2_v2_e2e/empty.html'
@@ -15,10 +15,7 @@ describe('[v2 e2e] T-E-05 setTimeoutMs → TIMEOUT', () => {
   let page: any
 
   beforeAll(async () => {
-    browser = await puppeteer.launch({
-      headless: 'new',
-      args: ['--no-sandbox', '--disable-setuid-sandbox', '--disable-popup-blocking'],
-    })
+    browser = await launchBrowser()
     page = await browser.newPage()
     await page.goto(HARNESS_URL)
   })
@@ -45,8 +42,9 @@ describe('[v2 e2e] T-E-05 setTimeoutMs → TIMEOUT', () => {
 
     expect(result.ok).toBe(false)
     expect(result.error.code).toBe(5006)
-    // 2s 부근 (1.5s ~ 5s 허용 — flake margin)
+    // 2s 이상은 보장(setTimeoutMs 적용 확인). 상한은 default 60s와 분리만 되면 충분
+    // (slowmo/visual mode에서 puppeteer protocol overhead로 elapsed 증가 가능 — 30s까지 허용)
     expect(elapsed).toBeGreaterThan(1500)
-    expect(elapsed).toBeLessThan(5000)
+    expect(elapsed).toBeLessThan(30000)
   }, 30000)
 })

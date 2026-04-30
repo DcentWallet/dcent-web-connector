@@ -3,7 +3,7 @@
  * babel-jest + @babel/preset-typescript로 트랜스파일 (기존 babel 7 환경 일관)
  */
 module.exports = {
-  testEnvironment: 'node',
+  testEnvironment: 'jsdom',
   testMatch: ['**/tests/unit/v2/**/*.test.ts'],
   transform: {
     '^.+\\.tsx?$': 'babel-jest',

@@ -43,8 +43,8 @@ describe('[v2 e2e] T-E-08 handshake timeout', () => {
 
     expect(result.ok).toBe(false)
     expect(result.error.code).toBe(5006)
-    // 3s 부근 (2.5s ~ 6s 허용)
+    // 3s 이상 보장. 상한은 default 60s와 분리만 되면 충분 (slowmo/visual overhead 흡수)
     expect(elapsed).toBeGreaterThan(2500)
-    expect(elapsed).toBeLessThan(6000)
+    expect(elapsed).toBeLessThan(30000)
   }, 30000)
 })

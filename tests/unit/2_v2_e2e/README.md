@@ -34,28 +34,24 @@ GitHub Actions UI에서 "v2 e2e" workflow → "Run workflow" 클릭하여 실행
 
 ## 디버깅 옵션 (yarn scripts, 파일 수정 불필요)
 
+> **중요**: `:visual` / `:slowmo` / `:devtools`는 **단일 spec 검사용**. 8개 spec 모두 visual 모드로 동시 실행하면 puppeteer protocol session 충돌/Chrome 윈도우 누적으로 일부가 실패합니다. 전체 검증은 `yarn unit-v2-e2e` (headless)로 하세요.
+
 ```bash
-# 기본 — headless (가장 빠름, ~17s)
+# 전체 자동 검증 — headless (~17s, 8/8 PASS)
 yarn unit-v2-e2e
 
-# 시각 디버그 — 실제 Chrome 창 띄움
-yarn unit-v2-e2e:visual
-
-# 슬로우 모션 — popup 동작을 천천히 시각화 (가장 직관적)
-yarn unit-v2-e2e:slowmo
-
-# devtools 자동 오픈 — postMessage 흐름 검사
-yarn unit-v2-e2e:devtools
-
-# 한 spec만 시각 디버그 (jest --testPathPattern 그대로 통과)
-yarn unit-v2-e2e:visual --testPathPattern=01_handshake
-yarn unit-v2-e2e:slowmo --testPathPattern=04_popup_close
+# 단일 spec 시각 디버그 (반드시 --testPathPattern 동반)
+yarn unit-v2-e2e:visual --testPathPattern=01_handshake     # 실제 Chrome 창
+yarn unit-v2-e2e:slowmo --testPathPattern=04_popup_close   # 슬로우 모션 (150ms delay)
+yarn unit-v2-e2e:devtools --testPathPattern=01_handshake   # devtools 자동 오픈
 ```
+
+가장 추천: `yarn unit-v2-e2e:slowmo --testPathPattern=04_popup_close` — popup 열림 → 100ms 후 puppeteer가 강제 close → connector polling이 감지해 4900 reject 흐름이 슬로우 모션으로 시각화.
 
 각 alias는 env var(`E2E_HEADLESS` / `E2E_DEVTOOLS` / `E2E_SLOWMO`)를 미리 세팅해 jest를 실행. `launchBrowser.js` 헬퍼가 이 env를 읽음. 직접 env var를 넘겨도 동작:
 
 ```bash
-E2E_HEADLESS=false E2E_SLOWMO=500 yarn unit-v2-e2e
+E2E_HEADLESS=false E2E_SLOWMO=300 yarn unit-v2-e2e --testPathPattern=01_handshake
 ```
 
 ### dev mode HMR (sdk 실시간 변경 확인)

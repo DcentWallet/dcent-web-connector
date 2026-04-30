@@ -42,8 +42,9 @@ describe('[v2 e2e] T-E-05 setTimeoutMs → TIMEOUT', () => {
 
     expect(result.ok).toBe(false)
     expect(result.error.code).toBe(5006)
-    // 2s 부근 (1.5s ~ 5s 허용 — flake margin)
+    // 2s 이상은 보장(setTimeoutMs 적용 확인). 상한은 default 60s와 분리만 되면 충분
+    // (slowmo/visual mode에서 puppeteer protocol overhead로 elapsed 증가 가능 — 30s까지 허용)
     expect(elapsed).toBeGreaterThan(1500)
-    expect(elapsed).toBeLessThan(5000)
+    expect(elapsed).toBeLessThan(30000)
   }, 30000)
 })

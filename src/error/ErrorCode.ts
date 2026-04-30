@@ -28,4 +28,7 @@ export enum ErrorCode {
   DEVICE_USER_CANCELLED = 5004,
   DEVICE_FW_INCOMPATIBLE = 5005,
   TIMEOUT = 5006,
+  // PROTOCOL_VERSION_MISMATCH(5007)는 connector ↔ sdk handshake로 확인된 protocol 버전 불일치
+  // (m02-02 추가). TIMEOUT(5006: transport timeout)과 의미 분리 — version major mismatch 전용.
+  PROTOCOL_VERSION_MISMATCH = 5007,
 }

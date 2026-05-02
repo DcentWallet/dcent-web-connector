@@ -13,19 +13,42 @@
  *   E2E_HEADLESS=false E2E_DEVTOOLS=true yarn unit-v2-e2e         # devtools 자동 오픈
  */
 const puppeteer = require('puppeteer')
+const fs = require('fs')
 
 const LAUNCH_ARGS = ['--no-sandbox', '--disable-setuid-sandbox', '--disable-popup-blocking']
+
+/**
+ * 시스템 Chrome 경로 자동 탐색 (macOS / Linux / Windows).
+ * puppeteer 내장 Chromium revision이 현재 OS와 맞지 않을 때 fallback.
+ * E2E_CHROME_PATH 환경변수로 override 가능.
+ */
+function findSystemChrome () {
+  if (process.env.E2E_CHROME_PATH) return process.env.E2E_CHROME_PATH
+  const candidates = [
+    '/Applications/Google Chrome.app/Contents/MacOS/Google Chrome', // macOS
+    '/usr/bin/google-chrome-stable', // Linux
+    '/usr/bin/google-chrome',
+    '/usr/bin/chromium-browser',
+    '/usr/bin/chromium',
+  ]
+  for (const c of candidates) {
+    try { if (fs.existsSync(c)) return c } catch (_) {}
+  }
+  return undefined
+}
 
 function launchBrowser () {
   const headless = process.env.E2E_HEADLESS === 'false' ? false : 'new'
   const devtools = process.env.E2E_DEVTOOLS === 'true'
   const slowMo = process.env.E2E_SLOWMO ? Number(process.env.E2E_SLOWMO) : 0
+  const executablePath = findSystemChrome()
 
   return puppeteer.launch({
     headless,
     devtools,
     slowMo,
     args: LAUNCH_ARGS,
+    ...(executablePath ? { executablePath } : {}),
   })
 }
 

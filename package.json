@@ -16,8 +16,8 @@
     "unit-v2-e2e:visual": "E2E_HEADLESS=false jest --config jest.v2-e2e.config.js --runInBand",
     "unit-v2-e2e:slowmo": "E2E_HEADLESS=false E2E_SLOWMO=100 jest --config jest.v2-e2e.config.js --runInBand",
     "unit-v2-e2e:devtools": "E2E_HEADLESS=false E2E_DEVTOOLS=true jest --config jest.v2-e2e.config.js --runInBand",
-    "lint": "eslint --ext .js src-v1 tests",
-    "lint:fix": "eslint --ext .js src-v1 tests --fix",
+    "lint": "eslint --ext .js src-v1 tests playground.js",
+    "lint:fix": "eslint --ext .js src-v1 tests playground.js --fix",
     "tsc": "tsc --noEmit"
   },
   "jest": {

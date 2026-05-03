@@ -314,6 +314,6 @@ it('T-U-EVM-05: simulateEvmLoad 후 CHAIN_KEY_PATH Proxy — eip155:1 defaultKey
   expect(api.CHAIN_KEY_PATH['eip155:1']).toBe("m/44'/60'/0'/0/0")
   expect(api.CHAIN_KEY_PATH['eip155:8217']).toBe("m/44'/8217'/0'/0/0")
 
-  // Solana는 여전히 SOLANA_KEY_PATH에서 반환
-  expect(api.CHAIN_KEY_PATH['solana:5eykt4UsFv8P8NJdTREpY1vzqKqZKvdp']).toBe("m/44'/501'/0'/0'")
+  // m06-01-03: chains.json 통합 후 Solana keyPath는 wallet-models derivationFormat 기준 (m/44'/501'/0')
+  expect(api.CHAIN_KEY_PATH['solana:5eykt4UsFv8P8NJdTREpY1vzqKqZKvdp']).toBe("m/44'/501'/0'")
 })

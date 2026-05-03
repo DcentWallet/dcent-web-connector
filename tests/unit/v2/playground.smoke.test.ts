@@ -113,7 +113,8 @@ it("T-U-03: chainId default keyPath 매핑 — eip155:1, solana mainnet", () => 
   const chainKeyPath = api.CHAIN_KEY_PATH
 
   expect(chainKeyPath['eip155:1']).toBe("m/44'/60'/0'/0/0")
-  expect(chainKeyPath['solana:5eykt4UsFv8P8NJdTREpY1vzqKqZKvdp']).toBe("m/44'/501'/0'/0'")
+  // m06-01-03: chains.json 통합 후 Solana keyPath는 wallet-models derivationFormat 기준 (m/44'/501'/0')
+  expect(chainKeyPath['solana:5eykt4UsFv8P8NJdTREpY1vzqKqZKvdp']).toBe("m/44'/501'/0'")
 })
 
 // ─────────────────────────────────────────────────────────

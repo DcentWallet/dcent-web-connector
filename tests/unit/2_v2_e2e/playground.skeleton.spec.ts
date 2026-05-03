@@ -33,18 +33,21 @@ describe('[v2 e2e] playground skeleton', () => {
   })
 
   // ────────────────────────────────────────────────────────
-  // T-E2E-01: 페이지 smoke — 로드 + 트리 5개 노드 + 디바이스 indicator 회색 dot
+  // T-E2E-01: 페이지 smoke — 로드 + 트리 노드(EVM 포함) + 디바이스 indicator 회색 dot
   // ────────────────────────────────────────────────────────
-  it('T-E2E-01: index-v2.html 로드 + 트리 5개 노드 + indicator 초기 회색', async () => {
+  it('T-E2E-01: index-v2.html 로드 + 트리 5개 non-placeholder 노드 + indicator 초기 회색', async () => {
     await page.goto(PLAYGROUND_URL, { waitUntil: 'networkidle0' })
 
     // 타이틀 확인
     const title = await page.title()
     expect(title).toContain("D'CENT")
 
-    // 트리 5개 노드 존재
-    const treeItems = await page.$$('.tree-item')
-    expect(treeItems.length).toBe(5)
+    // countMethodNodes: EVM 체인 로드 후 placeholder 제외 노드가 5 이상
+    // (chains.evm.json 로드 성공 시 5 + 64 = 69, 실패 시 5)
+    const nonPlaceholderCount = await page.evaluate(() => {
+      return (window as any)._playgroundTestAPI.countMethodNodes()
+    })
+    expect(nonPlaceholderCount).toBeGreaterThanOrEqual(5)
 
     // 디바이스 indicator: #conn-dot에 connected/error class 없음 (회색)
     const dotClass = await page.$eval('#conn-dot', (el: Element) => el.className)

@@ -70,17 +70,17 @@ afterEach(() => {
 // ─────────────────────────────────────────────────────────
 // T-U-01: 트리 DOM 빌더 — TREE 선언적 객체에서 expected node 개수(getDeviceInfo 1 + signMessage 4 = 5)
 // ─────────────────────────────────────────────────────────
-it('T-U-01: 트리 DOM에 5개 method node가 렌더링된다', () => {
+it('T-U-01: 트리 DOM에 5개 non-placeholder method node가 렌더링된다', () => {
   const api = (window as any)._playgroundTestAPI
   expect(api).toBeDefined()
 
-  // countMethodNodes: TREE 구조 순회 (DOM 상관없이 선언 카운트)
+  // countMethodNodes: placeholder 제외 카운트 (getDeviceInfo 1 + signMessage 4 = 5)
   const count = api.countMethodNodes()
   expect(count).toBe(5) // getDeviceInfo(1) + eth:personal(1) + eth:v3(1) + eth:v4(1) + sol:raw(1)
 
-  // DOM에도 5개 .tree-item이 렌더됨
+  // DOM에는 placeholder 포함 6개 .tree-item (EVM 체인 로드 전 placeholder 1개 추가)
   const domItems = document.querySelectorAll('.tree-item')
-  expect(domItems.length).toBe(5)
+  expect(domItems.length).toBe(6) // 5 non-placeholder + 1 EVM loading placeholder
 })
 
 // ─────────────────────────────────────────────────────────

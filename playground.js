@@ -7,28 +7,47 @@
  *
  * 룰 준수:
  *   - error-handling-consistency: 모든 실패 경로는 appendLog({ error: ... }) 통일
- *   - boundary-validation: keyPath / message 필드 검증 후 dispatcher 호출
+ *   - boundary-validation: keyPath / message / transaction 필드 검증 후 dispatcher 호출
  *   - async-hygiene: await + catch 블록 정형화
  *   - sensitive-info-logging: console 호출 0
  *   - no-console-direct: playground.js는 src/ 바깥이나 방어적으로 0건 유지
+ *
+ * m06-01-02: signTransaction EVM 추가
+ *   - CHAIN_KEY_PATH inline 테이블 제거 (R13=a) → chains.evm.json runtime fetch lookup
+ *   - EVM 트리 그룹: Sign Transaction > Ethereum (EIP-155) > chain variants
+ *   - presets.evm.json 로드 (runtime fetch)
  */
 ;(function () {
   'use strict'
 
-  // ── chainId → default keyPath SLIP44 매핑 (signMessage 대상만, ~10 entry) ──
-  // Child 2에서 chains.json lookup으로 교체 예정 (R13=a)
-  var CHAIN_KEY_PATH = {
-    'eip155:1': "m/44'/60'/0'/0/0", // Ethereum Mainnet
-    'eip155:56': "m/44'/60'/0'/0/0", // BNB Smart Chain
-    'eip155:137': "m/44'/60'/0'/0/0", // Polygon
-    'eip155:42161': "m/44'/60'/0'/0/0", // Arbitrum One
-    'eip155:10': "m/44'/60'/0'/0/0", // Optimism
-    'eip155:8217': "m/44'/8217'/0'/0/0", // Kaia
+  // ── EVM chains runtime state (chains.evm.json 로드 후 채워짐) ──
+  // chainId → { displayName, defaultKeyPath }
+  var evmChainsMap = {} // 로드 완료 전: 빈 객체
+  var evmChainsList = [] // 순서 유지용 배열
+  var evmPresetsMap = {} // presetId → preset object
+  var evmPresetsList = [] // 전체 preset 배열
+
+  // ── Solana chainId → keyPath (non-EVM 고정값; EVM은 chains.evm.json) ──
+  var SOLANA_KEY_PATH = {
     'solana:5eykt4UsFv8P8NJdTREpY1vzqKqZKvdp': "m/44'/501'/0'/0'", // Solana Mainnet
     'solana:4sGjMW1sUnHzSxGspuhpqLDx6wiys6fWEeD': "m/44'/501'/0'/0'", // Solana Devnet
   }
 
+  // ── chainId → default keyPath lookup (EVM: chains.evm.json, Solana: 고정값) ──
+  // CHAIN_KEY_PATH 인라인 테이블은 chains.evm.json lookup으로 교체됨 (R13=a)
+  var CHAIN_KEY_PATH = new Proxy({}, {
+    get: function (_, chainId) {
+      if (evmChainsMap[chainId]) return evmChainsMap[chainId].defaultKeyPath
+      return SOLANA_KEY_PATH[chainId] || "m/44'/60'/0'/0/0"
+    },
+    has: function (_, chainId) {
+      return !!(evmChainsMap[chainId] || SOLANA_KEY_PATH[chainId])
+    },
+  })
+
   // ── 트리 선언적 정의 ──
+  // Sign Transaction > Ethereum (EIP-155) 그룹은 chains.evm.json 로드 후
+  // buildEvmSignTxGroup()이 동적으로 채운다.
   var TREE = [
     {
       kind: 'group',
@@ -80,6 +99,28 @@
               label: 'signMessage (raw)',
               chainId: 'solana:5eykt4UsFv8P8NJdTREpY1vzqKqZKvdp',
               metaKind: 'raw',
+            },
+          ],
+        },
+      ],
+    },
+    {
+      kind: 'group',
+      id: 'signTx-evm-group',
+      label: 'Sign Transaction',
+      items: [
+        {
+          kind: 'family',
+          id: 'signTx-evm-family',
+          label: 'Ethereum (EIP-155)',
+          // items는 chains.evm.json 로드 후 buildEvmSignTxGroup()이 채운다
+          items: [
+            {
+              kind: 'method',
+              id: 'signTx:evm:loading',
+              label: '(loading chains…)',
+              chainId: '',
+              _placeholder: true,
             },
           ],
         },
@@ -152,6 +193,7 @@
     logs: [], // append-only LogEntry[]
     pauseAutoScroll: false,
     sdkVersion: null, // dist에서 추출한 packageVersion (있으면)
+    evmChainsLoaded: false, // chains.evm.json 로드 완료 여부
   }
 
   // ── DOM refs ──
@@ -217,8 +259,97 @@
     })
   }
 
+  // ── chains.evm.json + presets.evm.json 런타임 로드 ──
+  function loadEvmData () {
+    // fetch 미지원 환경 (jsdom unit test 등) — 조용히 스킵
+    if (typeof fetch !== 'function') return
+
+    // chains.evm.json
+    var chainsPromise = fetch('/playground/chains.evm.json')
+      .then(function (r) {
+        if (!r.ok) throw new Error('chains.evm.json fetch failed: ' + r.status)
+        return r.json()
+      })
+      .then(function (chains) {
+        evmChainsList = chains
+        evmChainsMap = {}
+        chains.forEach(function (c) {
+          evmChainsMap[c.chainId] = { displayName: c.displayName, defaultKeyPath: c.defaultKeyPath }
+        })
+      })
+      .catch(function () {
+        // 로드 실패 시 트리에 안내 노드 유지 (placeholder)
+        evmChainsList = []
+        evmChainsMap = {}
+      })
+
+    // presets.evm.json
+    var presetsPromise = fetch('/playground/presets.evm.json')
+      .then(function (r) {
+        if (!r.ok) throw new Error('presets.evm.json fetch failed: ' + r.status)
+        return r.json()
+      })
+      .then(function (presets) {
+        evmPresetsList = presets
+        evmPresetsMap = {}
+        presets.forEach(function (p) {
+          evmPresetsMap[p.id] = p
+        })
+      })
+      .catch(function () {
+        evmPresetsList = []
+        evmPresetsMap = {}
+      })
+
+    // 둘 다 완료 후 트리 재빌드
+    Promise.all([chainsPromise, presetsPromise]).then(function () {
+      state.evmChainsLoaded = true
+      buildEvmSignTxGroup()
+      buildTree()
+    }).catch(function () {
+      buildTree()
+    })
+  }
+
+  // ── EVM SignTx 트리 그룹 빌드 (chains.evm.json 로드 후) ──
+  function buildEvmSignTxGroup () {
+    // TREE 내 signTx-evm-family 를 찾아 items를 교체
+    var signTxGroup = TREE.find(function (g) { return g.id === 'signTx-evm-group' })
+    if (!signTxGroup) return
+
+    var evmFamily = signTxGroup.items.find(function (f) { return f.id === 'signTx-evm-family' })
+    if (!evmFamily) return
+
+    if (evmChainsList.length === 0) {
+      // chains.evm.json 로드 실패 — 안내 노드
+      evmFamily.items = [
+        {
+          kind: 'method',
+          id: 'signTx:evm:error',
+          label: '⚠ Run yarn extract-chains first',
+          chainId: '',
+          _placeholder: true,
+        },
+      ]
+      return
+    }
+
+    // 체인별 method node 생성
+    evmFamily.items = evmChainsList.map(function (c) {
+      return {
+        kind: 'method',
+        id: 'signTx:evm:' + c.chainId,
+        label: c.displayName,
+        chainId: c.chainId,
+        defaultKeyPath: c.defaultKeyPath,
+      }
+    })
+  }
+
   // ── Select method → populate form ──
   function selectMethod (methodDef) {
+    if (methodDef._placeholder) return // placeholder는 선택 불가
+
     state.selectedMethodId = methodDef.id
     state.selectedMethodDef = methodDef
 
@@ -237,6 +368,8 @@
       renderGetDeviceInfoForm()
     } else if (methodDef.id.startsWith('signMessage:')) {
       renderSignMessageForm(methodDef)
+    } else if (methodDef.id.startsWith('signTx:evm:')) {
+      renderSignTxEvmForm(methodDef)
     }
 
     // Update Send button state
@@ -315,6 +448,81 @@
       presetRow.appendChild(presetLabel)
       presetRow.appendChild(presetSelect)
       formFields.appendChild(presetRow)
+    }
+  }
+
+  // ── renderSignTxEvmForm ──
+  function renderSignTxEvmForm (methodDef) {
+    // chainId (read-only, 트리 선택값)
+    appendFormRow('chainId', 'Chain ID', 'input', {
+      value: methodDef.chainId,
+      readOnly: true,
+    })
+
+    // keyPath (chains.evm.json defaultKeyPath 초기값)
+    appendFormRow('keyPath', 'Key Path', 'input', {
+      value: methodDef.defaultKeyPath || "m/44'/60'/0'/0/0",
+      placeholder: "m/44'/60'/0'/0/0",
+    })
+
+    // transaction (JSON textarea)
+    var txInput = appendFormRow('transaction', 'Transaction (JSON)', 'textarea', {
+      value: '',
+      placeholder: '{"type":2,"to":"0x...","value":"0x...","gasLimit":"0x..."}',
+    })
+    if (txInput) txInput.rows = 8
+
+    // preset note
+    var noteEl = document.createElement('p')
+    noteEl.style.cssText = 'font-size:10px;color:#aaa;margin-bottom:6px;'
+    noteEl.textContent = 'Edit nonce/fee before send — preset is a template only'
+    formFields.appendChild(noteEl)
+
+    // preset selector (applicable presets 필터링)
+    var applicablePresets = evmPresetsList.filter(function (p) {
+      return !p.applicableChainIds || p.applicableChainIds.indexOf(methodDef.chainId) !== -1
+    })
+
+    if (applicablePresets.length > 0) {
+      var presetRow = document.createElement('div')
+      presetRow.className = 'form-row'
+      var presetLabel = document.createElement('label')
+      presetLabel.setAttribute('for', 'field-preset')
+      presetLabel.textContent = 'Preset'
+      var presetSelect = document.createElement('select')
+      presetSelect.id = 'field-preset'
+      var defaultOpt = document.createElement('option')
+      defaultOpt.value = ''
+      defaultOpt.textContent = '-- select preset --'
+      presetSelect.appendChild(defaultOpt)
+      applicablePresets.forEach(function (p) {
+        var opt = document.createElement('option')
+        opt.value = p.id
+        opt.textContent = p.label
+        presetSelect.appendChild(opt)
+      })
+      presetSelect.addEventListener('change', function () {
+        var presetId = presetSelect.value
+        if (!presetId) return
+        var preset = evmPresetsMap[presetId]
+        if (!preset) return
+        var txEl = document.getElementById('field-transaction')
+        if (txEl) txEl.value = JSON.stringify(preset.transaction, null, 2)
+      })
+
+      // applicableChainIds 외 chain에서는 preset select 비활성
+      var isApplicable = applicablePresets.length > 0
+      if (!isApplicable) presetSelect.disabled = true
+
+      presetRow.appendChild(presetLabel)
+      presetRow.appendChild(presetSelect)
+      formFields.appendChild(presetRow)
+    } else {
+      // 해당 chain에 applicable preset 없음 — 안내
+      var noPresetEl = document.createElement('p')
+      noPresetEl.style.cssText = 'font-size:10px;color:#888;margin-bottom:4px;'
+      noPresetEl.textContent = 'No presets available for this chain. Enter transaction JSON manually.'
+      formFields.appendChild(noPresetEl)
     }
   }
 
@@ -461,6 +669,8 @@
       sendGetDeviceInfo()
     } else if (methodId.startsWith('signMessage:')) {
       sendSignMessage()
+    } else if (methodId.startsWith('signTx:evm:')) {
+      sendSignTxEvm()
     }
   })
 
@@ -556,6 +766,68 @@
     }).catch(function (err) {
       appendLog({
         method: 'signMessage',
+        chainId: chainId,
+        keyPath: keyPath,
+        request: params,
+        error: normalizeError(err),
+        latencyMs: Date.now() - startMs,
+      })
+    })
+  }
+
+  function sendSignTxEvm () {
+    var methodDef = state.selectedMethodDef
+    if (!methodDef) return
+
+    var chainIdEl = document.getElementById('field-chainId')
+    var keyPathEl = document.getElementById('field-keyPath')
+    var txEl = document.getElementById('field-transaction')
+
+    var chainId = chainIdEl ? chainIdEl.value : methodDef.chainId
+    var keyPath = keyPathEl ? keyPathEl.value.trim() : ''
+    var txRaw = txEl ? txEl.value.trim() : ''
+
+    // boundary-validation: keyPath
+    var keyPathError = validateKeyPath(keyPath)
+    if (keyPathError) {
+      showFieldError('keyPath', keyPathError)
+      return
+    }
+
+    // boundary-validation: transaction required
+    if (!txRaw) {
+      showFieldError('transaction', 'Transaction JSON is required')
+      return
+    }
+
+    // boundary-validation: transaction must be valid JSON
+    var txObj
+    try {
+      txObj = JSON.parse(txRaw)
+    } catch (e) {
+      showFieldError('transaction', 'Transaction must be valid JSON')
+      return
+    }
+
+    var params = { chainId: chainId, keyPath: keyPath, transaction: txObj }
+    var startMs = Date.now()
+
+    state.queue.enqueue(function () {
+      return state.transport.send({ id: _genId(), method: 'signTransaction', params: params })
+    }).then(function (resp) {
+      var result = resp && resp.result ? resp.result : resp
+      appendLog({
+        method: 'signTransaction',
+        chainId: chainId,
+        keyPath: keyPath,
+        request: params,
+        response: result,
+        latencyMs: Date.now() - startMs,
+        deviceFirmware: state.device && state.device.firmware,
+      })
+    }).catch(function (err) {
+      appendLog({
+        method: 'signTransaction',
         chainId: chainId,
         keyPath: keyPath,
         request: params,
@@ -706,6 +978,8 @@
     }
     buildTree()
     updateSendBtn()
+    // Load EVM chain + preset data asynchronously (non-blocking)
+    loadEvmData()
   }
 
   init()
@@ -733,7 +1007,7 @@
       var count = 0
       function walk (items) {
         items.forEach(function (item) {
-          if (item.kind === 'method') count++
+          if (item.kind === 'method' && !item._placeholder) count++
           else if (item.items) walk(item.items)
         })
       }
@@ -768,5 +1042,21 @@
       btnDisconnect.style.display = 'none'
       updateSendBtn()
     },
+    // ── EVM SignTx test helpers ──
+    getEvmChainsMap: function () { return evmChainsMap },
+    getEvmChainsList: function () { return evmChainsList },
+    getEvmPresetsList: function () { return evmPresetsList },
+    simulateEvmLoad: function (chains, presets) {
+      evmChainsMap = {}
+      evmChainsList = chains || []
+      evmChainsList.forEach(function (c) { evmChainsMap[c.chainId] = c })
+      evmPresetsMap = {}
+      evmPresetsList = presets || []
+      evmPresetsList.forEach(function (p) { evmPresetsMap[p.id] = p })
+      state.evmChainsLoaded = true
+      buildEvmSignTxGroup()
+      buildTree()
+    },
+    buildEvmSignTxGroup: buildEvmSignTxGroup,
   }
 })()

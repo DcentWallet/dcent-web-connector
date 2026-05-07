@@ -20,6 +20,22 @@ export interface PopupTransportOptions {
   origin?: string
   /** connector 측 protocol version. 기본 '2.0'. handshake 시 sdk와 major match 비교 (m02-02). */
   protocolVersion?: string
+  /**
+   * sdk → connector `_ready` 신호 대기 timeout (ms). 기본 10000 (10s).
+   * 미수신 시 silent fallback으로 `_handshake`를 즉시 송신 (구 sdk 호환). m07-02 B Gate.
+   */
+  readyTimeoutMs?: number
+}
+
+/**
+ * sdk(m07-01) → connector 단방향 ready signal envelope.
+ * `id` / `method`가 부재한 신호 메시지로, messageListener의 envelope shape 검증에서
+ * 별도 분기로 인식된다 (boundary-validation 룰).
+ */
+export interface ReadySignal {
+  type: '_ready'
+  version: string
+  serverName: string
 }
 
 interface PendingRequest {
@@ -52,6 +68,7 @@ export class PopupTransport implements MessageTransport {
   private readonly popUpUrl: string
   private readonly origin: string
   private readonly protocolVersion: string
+  private readonly readyTimeoutMs: number
   private timeoutMs: number
 
   private popupWindow: Window | null = null
@@ -61,12 +78,31 @@ export class PopupTransport implements MessageTransport {
   private closePollingInterval: ReturnType<typeof setInterval> | null = null
   private currentState: TransportState = 'disconnected'
   private handshakePromise: Promise<void> | null = null
+  // m07-02: _ready 게이트 (B Gate) 상태
+  private readyPromise: Promise<void> | null = null
+  private readyTimer: ReturnType<typeof setTimeout> | null = null
+  private resolveReady: (() => void) | null = null
+  // m07-02: pre-handshake 단계(ensureReady → ensureHandshake chain) 도중인 send의 reject 콜백.
+  // close() 시 이들을 DISCONNECTED로 reject하여 게이트에서 정지된 send도 즉시 종료.
+  private preHandshakeRejecters: Set<(error: ProviderError) => void> = new Set()
 
   constructor(options: PopupTransportOptions = {}) {
     this.popUpUrl = options.popUpUrl ?? 'https://bridge.dcentwallet.com/v2'
     this.timeoutMs = options.timeoutMs ?? 60000
     this.origin = options.origin ?? new URL(this.popUpUrl).origin
     this.protocolVersion = options.protocolVersion ?? '2.0'
+    // boundary-validation: readyTimeoutMs는 양의 유한 number만 허용. 미지정 시 default 10s.
+    const ready = options.readyTimeoutMs
+    if (ready === undefined) {
+      this.readyTimeoutMs = 10000
+    } else if (typeof ready !== 'number' || !Number.isFinite(ready) || ready <= 0) {
+      throw new ProviderError(
+        ErrorCode.INVALID_PARAMS,
+        `readyTimeoutMs must be a positive finite number, got ${String(ready)}`,
+      )
+    } else {
+      this.readyTimeoutMs = ready
+    }
   }
 
   send<TParams, TResult>(
@@ -83,9 +119,17 @@ export class PopupTransport implements MessageTransport {
       // 3. close polling 시작 (1회)
       this.ensureClosePolling()
 
-      // 4. handshake 보장 후 실제 send 진행 (m02-02)
-      this.ensureHandshake().then(
+      // m07-02: pre-handshake 단계에 close()가 호출되면 이 reject로 즉시 종료
+      this.preHandshakeRejecters.add(reject)
+
+      // 4. m07-02 B Gate: _ready 신호 대기 → handshake 보장 → 실제 send 진행
+      this.ensureReady()
+        .then(() => this.ensureHandshake())
+        .then(
         () => {
+          // pre-handshake 구간 통과 — rejecter 제거 (이후는 pending Map이 close() 처리)
+          this.preHandshakeRejecters.delete(reject)
+
           // 4a. timeout 설정
           const timer = setTimeout(() => {
             this.pending.delete(message.id)
@@ -119,6 +163,7 @@ export class PopupTransport implements MessageTransport {
           }
         },
         (handshakeError) => {
+          this.preHandshakeRejecters.delete(reject)
           // handshake 실패 시 send도 즉시 fail (close()는 sendHandshake 내부에서 이미 호출됨)
           reject(handshakeError)
         },
@@ -149,6 +194,17 @@ export class PopupTransport implements MessageTransport {
     }
     this.pending.clear()
 
+    // 1b. m07-02: pre-handshake 단계 도중인 send도 모두 reject
+    for (const r of this.preHandshakeRejecters) {
+      r(
+        new ProviderError(
+          ErrorCode.DISCONNECTED,
+          'Transport closed before handshake completed',
+        ),
+      )
+    }
+    this.preHandshakeRejecters.clear()
+
     // 2. message listener 해제
     if (this.messageListener) {
       window.removeEventListener('message', this.messageListener)
@@ -175,6 +231,14 @@ export class PopupTransport implements MessageTransport {
 
     // 7. handshake state 리셋 — 재오픈 시 새 handshake (m02-02)
     this.handshakePromise = null
+
+    // 8. m07-02 ready state 리셋 — readyTimer cleanup + 재오픈 시 새 _ready 사이클
+    if (this.readyTimer) {
+      clearTimeout(this.readyTimer)
+      this.readyTimer = null
+    }
+    this.readyPromise = null
+    this.resolveReady = null
   }
 
   /**
@@ -216,17 +280,61 @@ export class PopupTransport implements MessageTransport {
       if (event.origin !== this.origin) return
 
       const data = event.data
-      // boundary-validation: envelope shape 검증
-      if (!data || typeof data !== 'object' || typeof data.id !== 'string') return
+      if (!data || typeof data !== 'object') return
 
-      const pending = this.pending.get(data.id)
+      // m07-02: _ready envelope 분기 (id/method가 부재한 신호 메시지)
+      if ((data as { type?: unknown }).type === '_ready') {
+        const ready = data as Partial<ReadySignal>
+        // boundary-validation: version / serverName 존재 + string 검증
+        if (typeof ready.version !== 'string' || typeof ready.serverName !== 'string') return
+        if (this.resolveReady) {
+          const r = this.resolveReady
+          this.resolveReady = null // 재호출 방지
+          r()
+        }
+        return
+      }
+
+      // boundary-validation: ResponseEnvelope shape 검증
+      if (typeof (data as { id?: unknown }).id !== 'string') return
+
+      const pending = this.pending.get((data as { id: string }).id)
       if (!pending) return // 모르는 id (이미 timeout 처리되었을 수 있음)
 
       clearTimeout(pending.timer)
-      this.pending.delete(data.id)
+      this.pending.delete((data as { id: string }).id)
       pending.resolve(data as ResponseEnvelope<unknown>)
     }
     window.addEventListener('message', this.messageListener, false)
+  }
+
+  /**
+   * m07-02 B Gate: sdk(m07-01)가 송신하는 `_ready` 신호 대기.
+   * 첫 호출만 timer + listener 등록, 이후 호출은 동일 Promise 공유 (race 방지).
+   * `readyTimeoutMs` 만료 시 silent resolve → `_handshake` 즉시 송신 (Y Timeout fallback, 구 sdk 호환).
+   * close() 시 `readyPromise = null` 리셋 → 재오픈 시 새 ready 사이클.
+   */
+  private ensureReady(): Promise<void> {
+    if (this.readyPromise) return this.readyPromise
+    this.readyPromise = new Promise<void>((resolve) => {
+      // _ready 수신 시 messageListener에서 resolveReady() 호출
+      this.resolveReady = () => {
+        if (this.readyTimer) {
+          clearTimeout(this.readyTimer)
+          this.readyTimer = null
+        }
+        resolve()
+      }
+      // Y Timeout fallback — readyTimeoutMs 만료 시 silent resolve. 이후 _handshake 자체가
+      // m02-02의 timeoutMs로 보호되므로 추가 에러 처리 불필요 (error-handling-consistency:
+      // ready signal 자체는 자산과 무관하므로 silent fallback이 정책상 정당).
+      this.readyTimer = setTimeout(() => {
+        this.readyTimer = null
+        this.resolveReady = null
+        resolve()
+      }, this.readyTimeoutMs)
+    })
+    return this.readyPromise
   }
 
   private ensureClosePolling(): void {
@@ -266,6 +374,10 @@ export class PopupTransport implements MessageTransport {
           ErrorCode.TIMEOUT,
           `Handshake timed out after ${this.timeoutMs}ms`,
         )
+        // m07-02: handshake error는 send의 .then(_, errHandler)가 받아 reject되어야 함.
+        // close()가 preHandshakeRejecters로 DISCONNECTED를 먼저 던지면 actual error가 가려짐.
+        // → close() 전에 preHandshakeRejecters를 비워서 handshake error가 송출되도록 함.
+        this.preHandshakeRejecters.clear()
         this.close().catch(() => {
           /* defensive noop */
         })
@@ -282,6 +394,8 @@ export class PopupTransport implements MessageTransport {
               `Handshake rejected by sdk: ${errResp.message ?? 'unknown'}`,
               errResp.data,
             )
+            // m07-02: handshake error 우선 — close()의 DISCONNECTED가 가리지 않도록 사전 비움
+            this.preHandshakeRejecters.clear()
             this.close().catch(() => {
               /* defensive noop */
             })
@@ -297,6 +411,7 @@ export class PopupTransport implements MessageTransport {
               ErrorCode.PROTOCOL_VERSION_MISMATCH,
               `Protocol version mismatch: connector=${this.protocolVersion}, sdk=${typeof remoteVersion === 'string' ? remoteVersion : String(remoteVersion)}`,
             )
+            this.preHandshakeRejecters.clear()
             this.close().catch(() => {
               /* defensive noop */
             })
@@ -329,6 +444,7 @@ export class PopupTransport implements MessageTransport {
           ErrorCode.INTERNAL_ERROR,
           `Handshake postMessage failed: ${(err as Error).message}`,
         )
+        this.preHandshakeRejecters.clear()
         this.close().catch(() => {
           /* defensive noop */
         })

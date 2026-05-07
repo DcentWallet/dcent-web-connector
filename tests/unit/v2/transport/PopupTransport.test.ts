@@ -41,14 +41,20 @@ function dispatchResponse(origin: string, data: unknown): void {
 }
 
 /**
- * Handshake auto-respond helper (m02-02).
+ * Handshake auto-respond helper (m02-02 + m07-02).
  * postMessage spy가 _handshake 메시지를 받으면 microtask로 ack 응답 dispatch.
- * sdkVersion override 가능. 일반 메시지는 swallow (test가 직접 dispatch).
+ * m07-02 B Gate 추가 후: window.addEventListener('message', ...) 호출을 wrap하여
+ * 메시지 리스너가 등록되는 시점에 microtask로 `_ready` 신호를 자동 dispatch.
+ * 이로써 PopupTransport.send() → ensureReady() 즉시 게이트가 열려 기존 35건이 회귀 없이 통과.
+ *
+ * m07-02 게이트를 명시적으로 테스트하려면 이 helper 대신 mockPopup.postMessage.mockImplementation을
+ * 직접 정의하고 sendReadySignal()를 수동 호출 (sendReady=false 변형 시).
  */
 function installHandshakeAutoRespond(
   mockPopup: MockPopup,
   origin: string = DEFAULT_ORIGIN,
   sdkVersion: string = '2.0',
+  serverName: string = 'bridge-ui',
 ): void {
   mockPopup.postMessage.mockImplementation((message: { method?: unknown; id?: unknown }, msgOrigin: string) => {
     if (message?.method === '_handshake' && typeof message.id === 'string') {
@@ -56,22 +62,75 @@ function installHandshakeAutoRespond(
       Promise.resolve().then(() => {
         dispatchResponse(responseOrigin, {
           id: message.id,
-          result: { version: sdkVersion, serverName: 'bridge-ui' },
+          result: { version: sdkVersion, serverName },
         })
       })
     }
   })
+  // m07-02: ready 신호 자동 dispatch — addEventListener('message')가 호출되는 시점에 emit.
+  // PopupTransport.ensureMessageListener()가 호출되면 PopupTransport.ensureReady()가 곧 이어
+  // resolveReady를 등록하므로, microtask 1 tick 후에 ready를 dispatch하면 게이트가 열린다.
+  installReadyAutoRespondOnce(origin, sdkVersion, serverName)
+}
+
+let _readyAutoRespondAddSpy: jest.SpyInstance | null = null
+let _readyAutoRespondConfig: { origin: string; version: string; serverName: string } | null = null
+
+function installReadyAutoRespondOnce(origin: string, version: string, serverName: string): void {
+  // 매 호출마다 최신 config로 갱신 — 같은 테스트 내 origin 변경(예: T-U-15) 지원
+  _readyAutoRespondConfig = { origin, version, serverName }
+  if (_readyAutoRespondAddSpy) return
+  const origAdd = window.addEventListener.bind(window)
+  _readyAutoRespondAddSpy = jest
+    .spyOn(window, 'addEventListener')
+    .mockImplementation(((type: string, listener: EventListenerOrEventListenerObject, options?: boolean | AddEventListenerOptions) => {
+      const ret = origAdd(type, listener, options)
+      if (type === 'message') {
+        // 1 microtask 뒤에 ready emit — PopupTransport.send()가 ensureReady의 resolveReady를
+        // 등록한 다음 tick에 emit되므로 게이트가 곧바로 열림
+        Promise.resolve().then(() => {
+          if (_readyAutoRespondConfig) {
+            const c = _readyAutoRespondConfig
+            dispatchResponse(c.origin, { type: '_ready', version: c.version, serverName: c.serverName })
+          }
+        })
+      }
+      return ret
+    }) as typeof window.addEventListener)
+}
+
+function uninstallReadyAutoRespond(): void {
+  if (_readyAutoRespondAddSpy) {
+    _readyAutoRespondAddSpy.mockRestore()
+    _readyAutoRespondAddSpy = null
+  }
+  _readyAutoRespondConfig = null
 }
 
 /**
- * Handshake round-trip 마이크로태스크 flush.
- * 1) handshake response dispatch → listener resolve handshake pending
- * 2) handshakePromise resolve → ensureHandshake.then 실행 → 실제 send postMessage 호출
+ * m07-02: `_ready` 신호를 수동 dispatch. T-U-RG 시리즈 / readyTimeoutMs fallback 시나리오에서 사용.
+ */
+function sendReadySignal(
+  origin: string = DEFAULT_ORIGIN,
+  version: string = '2.0',
+  serverName: string = 'bridge-ui',
+): void {
+  dispatchResponse(origin, { type: '_ready', version, serverName })
+}
+
+/**
+ * Ready + Handshake round-trip 마이크로태스크 flush (m07-02 후 게이트가 1단계 더 추가됨).
+ * 1) ready 신호 dispatch (addEventListener spy가 microtask로 emit) → listener가 resolveReady() 호출
+ * 2) readyPromise resolve → ensureHandshake() 실행 → handshake postMessage
+ * 3) handshake response dispatch → listener resolve handshake pending
+ * 4) handshakePromise resolve → 실제 send postMessage 호출
+ *
+ * 각 .then chain마다 microtask 1 tick씩 소모하므로 넉넉히 6 tick await.
  */
 async function flushHandshake(): Promise<void> {
-  await Promise.resolve()
-  await Promise.resolve()
-  await Promise.resolve()
+  for (let i = 0; i < 6; i++) {
+    await Promise.resolve()
+  }
 }
 
 describe('PopupTransport', () => {
@@ -92,6 +151,7 @@ describe('PopupTransport', () => {
   afterEach(() => {
     jest.useRealTimers()
     openSpy.mockRestore()
+    uninstallReadyAutoRespond()
   })
 
   // ===== T-U-01: send happy path =====
@@ -419,7 +479,8 @@ describe('PopupTransport', () => {
       transport = new PopupTransport()
       // handshake 후 어떤 메시지가 어떤 method로 갔는지 검사할 수 있어야 함
       void transport.send(makeEnvelope('req-1')).catch(() => {})
-      await Promise.resolve() // executor 동기 진입
+      // m07-02: ready 게이트 1단계 추가 → microtask flush 충분히
+      await flushHandshake()
 
       const handshakeCalls = mockPopup.postMessage.mock.calls.filter(
         (c: unknown[]) => (c[0] as { method?: string })?.method === '_handshake',
@@ -519,6 +580,8 @@ describe('PopupTransport', () => {
       mockPopup.postMessage.mockImplementation(() => { /* swallow */ })
 
       const promise = transport.send(makeEnvelope('req-1'))
+      // m07-02: ready 게이트 통과 후 handshake setTimeout이 등록되도록 microtask flush
+      await flushHandshake()
       jest.advanceTimersByTime(60000)
 
       await expect(promise).rejects.toMatchObject({ code: ErrorCode.TIMEOUT })
@@ -640,7 +703,8 @@ describe('PopupTransport', () => {
       mockPopup.postMessage.mockImplementation(() => { /* swallow */ })
 
       const promise = transport.send(makeEnvelope('req-1'))
-      await Promise.resolve() // handshake pending 등록
+      // m07-02: ready 게이트 통과 후 handshake pending 등록까지 기다림
+      await flushHandshake()
 
       // 사용자가 popup 강제 close
       mockPopup.closed = true
@@ -650,6 +714,280 @@ describe('PopupTransport', () => {
 
       // DISCONNECTED reject (timeout=60000보다 훨씬 빠름)
       await expect(promise).rejects.toMatchObject({ code: ErrorCode.DISCONNECTED })
+    })
+  })
+
+  // =========================================================================
+  // m07-02 Ready Gate 단위 테스트 (T-U-RG-01 ~ T-U-RG-08)
+  // =========================================================================
+
+  // ===== T-U-RG-01: B Gate happy path =====
+  describe('T-U-RG-01: B Gate happy path', () => {
+    it('_ready 수신 → _handshake 송신 → method round-trip 성공', async () => {
+      transport = new PopupTransport()
+      // 기본 helper가 _ready + _handshake 모두 자동 응답
+      const env = makeEnvelope('req-rg-1')
+      const promise = transport.send<{ x: number }, { ok: true }>(env)
+      await flushHandshake()
+
+      // _handshake가 send된 후 method도 정상 송신
+      const methodCalls = mockPopup.postMessage.mock.calls.filter(
+        (c: unknown[]) => (c[0] as { method?: string })?.method === 'test_method',
+      )
+      expect(methodCalls.length).toBe(1)
+
+      dispatchResponse(DEFAULT_ORIGIN, { id: 'req-rg-1', result: { ok: true } })
+      const response = (await promise) as ResponseEnvelope<{ ok: true }>
+      expect(response.id).toBe('req-rg-1')
+
+      await transport.close()
+    })
+  })
+
+  // ===== T-U-RG-02: Y Timeout fallback =====
+  describe('T-U-RG-02: Y Timeout fallback (구 sdk 호환)', () => {
+    it('_ready 미수신 + readyTimeoutMs 만료 → _handshake 즉시 송신', async () => {
+      transport = new PopupTransport({ readyTimeoutMs: 50 })
+      // 기본 helper의 _ready auto-emit 비활성화
+      uninstallReadyAutoRespond()
+      // _handshake만 자동 응답
+      mockPopup.postMessage.mockImplementation((message: { method?: unknown; id?: unknown }, msgOrigin: string) => {
+        if (message?.method === '_handshake' && typeof message.id === 'string') {
+          Promise.resolve().then(() => {
+            dispatchResponse(msgOrigin, {
+              id: message.id,
+              result: { version: '2.0', serverName: 'bridge-ui-old' },
+            })
+          })
+        }
+      })
+
+      const promise = transport.send(makeEnvelope('req-rg-2'))
+      // ready 게이트 등록 후 readyTimeoutMs 만료까지 시간 진행
+      await Promise.resolve()
+      jest.advanceTimersByTime(50)
+      await flushHandshake()
+
+      // _handshake가 readyTimeout 후 송신됐는지 검증
+      const handshakeCalls = mockPopup.postMessage.mock.calls.filter(
+        (c: unknown[]) => (c[0] as { method?: string })?.method === '_handshake',
+      )
+      expect(handshakeCalls.length).toBe(1)
+
+      dispatchResponse(DEFAULT_ORIGIN, { id: 'req-rg-2', result: 'fallback-ok' })
+      await expect(promise).resolves.toMatchObject({ id: 'req-rg-2', result: 'fallback-ok' })
+
+      await transport.close()
+    })
+  })
+
+  // ===== T-U-RG-03: _ready envelope shape 검증 =====
+  describe('T-U-RG-03: _ready shape boundary-validation', () => {
+    it('version/serverName 누락된 _ready는 무시 → 정상 _ready 또는 timeout 대기', async () => {
+      transport = new PopupTransport({ readyTimeoutMs: 100 })
+      uninstallReadyAutoRespond()
+      mockPopup.postMessage.mockImplementation((message: { method?: unknown; id?: unknown }, msgOrigin: string) => {
+        if (message?.method === '_handshake' && typeof message.id === 'string') {
+          Promise.resolve().then(() => {
+            dispatchResponse(msgOrigin, {
+              id: message.id,
+              result: { version: '2.0', serverName: 'bridge-ui' },
+            })
+          })
+        }
+      })
+
+      const promise = transport.send(makeEnvelope('req-rg-3'))
+      await Promise.resolve()
+
+      // 잘못된 _ready 메시지들 — 모두 무시되어야 함
+      dispatchResponse(DEFAULT_ORIGIN, { type: '_ready' }) // version, serverName 누락
+      dispatchResponse(DEFAULT_ORIGIN, { type: '_ready', version: 123, serverName: 'x' }) // version non-string
+      dispatchResponse(DEFAULT_ORIGIN, { type: '_ready', version: '2.0' }) // serverName 누락
+
+      // 아직 readyTimeout 안 지남 → handshake 송신 안 됨
+      let handshakeCalls = mockPopup.postMessage.mock.calls.filter(
+        (c: unknown[]) => (c[0] as { method?: string })?.method === '_handshake',
+      )
+      expect(handshakeCalls.length).toBe(0)
+
+      // 정상 _ready 도착 → 게이트 열림
+      sendReadySignal()
+      await flushHandshake()
+
+      handshakeCalls = mockPopup.postMessage.mock.calls.filter(
+        (c: unknown[]) => (c[0] as { method?: string })?.method === '_handshake',
+      )
+      expect(handshakeCalls.length).toBe(1)
+
+      dispatchResponse(DEFAULT_ORIGIN, { id: 'req-rg-3', result: 'ok' })
+      await expect(promise).resolves.toMatchObject({ id: 'req-rg-3' })
+
+      await transport.close()
+    })
+  })
+
+  // ===== T-U-RG-04: 다중 send → ready 대기 1회 공유 =====
+  describe('T-U-RG-04: 다중 send → ready 대기 1회 공유', () => {
+    it('3개 동시 send + 1번의 _ready emit → 3개 모두 게이트 통과', async () => {
+      transport = new PopupTransport()
+      // 기본 helper의 _ready 1회 emit이 3개 send를 모두 통과시켜야 함
+      const p1 = transport.send(makeEnvelope('a'))
+      const p2 = transport.send(makeEnvelope('b'))
+      const p3 = transport.send(makeEnvelope('c'))
+      await flushHandshake()
+
+      // _handshake도 1회만 (m02-02 in-flight 공유와 동일)
+      const handshakeCalls = mockPopup.postMessage.mock.calls.filter(
+        (c: unknown[]) => (c[0] as { method?: string })?.method === '_handshake',
+      )
+      expect(handshakeCalls.length).toBe(1)
+
+      // 3개 모두 method postMessage 호출
+      const methodCalls = mockPopup.postMessage.mock.calls.filter(
+        (c: unknown[]) => (c[0] as { method?: string })?.method === 'test_method',
+      )
+      expect(methodCalls.length).toBe(3)
+
+      dispatchResponse(DEFAULT_ORIGIN, { id: 'a', result: 1 })
+      dispatchResponse(DEFAULT_ORIGIN, { id: 'b', result: 2 })
+      dispatchResponse(DEFAULT_ORIGIN, { id: 'c', result: 3 })
+
+      const [r1, r2, r3] = await Promise.all([p1, p2, p3])
+      expect((r1 as ResponseEnvelope<number>).result).toBe(1)
+      expect((r2 as ResponseEnvelope<number>).result).toBe(2)
+      expect((r3 as ResponseEnvelope<number>).result).toBe(3)
+
+      await transport.close()
+    })
+  })
+
+  // ===== T-U-RG-05: close 후 재오픈 시 새 ready 사이클 =====
+  describe('T-U-RG-05: close 후 재오픈 시 새 ready 사이클', () => {
+    it('close 후 send → 새 readyPromise + 새 _ready 대기', async () => {
+      transport = new PopupTransport()
+
+      const p1 = transport.send(makeEnvelope('first'))
+      await flushHandshake()
+      dispatchResponse(DEFAULT_ORIGIN, { id: 'first', result: 1 })
+      await expect(p1).resolves.toMatchObject({ id: 'first' })
+
+      // 첫 사이클 확정 후 close → 새 popup으로 두 번째 사이클
+      await transport.close()
+      const newPopup = makeMockPopup()
+      openSpy.mockImplementation(() => newPopup as unknown as Window)
+      // 두 번째 popup에도 helper 부착 (uninstall된 spy 재설치)
+      installHandshakeAutoRespond(newPopup)
+
+      const p2 = transport.send(makeEnvelope('second'))
+      await flushHandshake()
+
+      // 새 사이클에서도 _handshake 송신 + 정상 round-trip
+      const handshakeCalls = newPopup.postMessage.mock.calls.filter(
+        (c: unknown[]) => (c[0] as { method?: string })?.method === '_handshake',
+      )
+      expect(handshakeCalls.length).toBe(1)
+
+      dispatchResponse(DEFAULT_ORIGIN, { id: 'second', result: 2 })
+      await expect(p2).resolves.toMatchObject({ id: 'second' })
+
+      await transport.close()
+    })
+  })
+
+  // ===== T-U-RG-06: _ready origin 가드 =====
+  describe('T-U-RG-06: _ready origin guard', () => {
+    it('잘못된 origin의 _ready는 무시', async () => {
+      transport = new PopupTransport({ readyTimeoutMs: 100 })
+      uninstallReadyAutoRespond()
+      mockPopup.postMessage.mockImplementation((message: { method?: unknown; id?: unknown }, msgOrigin: string) => {
+        if (message?.method === '_handshake' && typeof message.id === 'string') {
+          Promise.resolve().then(() => {
+            dispatchResponse(msgOrigin, {
+              id: message.id,
+              result: { version: '2.0', serverName: 'bridge-ui' },
+            })
+          })
+        }
+      })
+
+      const promise = transport.send(makeEnvelope('req-rg-6'))
+      await Promise.resolve()
+
+      // 악의적 origin의 _ready — 무시되어야 함
+      dispatchResponse('https://evil.example.com', { type: '_ready', version: '2.0', serverName: 'evil' })
+
+      // handshake 아직 송신 안 됨
+      let handshakeCalls = mockPopup.postMessage.mock.calls.filter(
+        (c: unknown[]) => (c[0] as { method?: string })?.method === '_handshake',
+      )
+      expect(handshakeCalls.length).toBe(0)
+
+      // 정상 origin의 _ready
+      sendReadySignal()
+      await flushHandshake()
+
+      handshakeCalls = mockPopup.postMessage.mock.calls.filter(
+        (c: unknown[]) => (c[0] as { method?: string })?.method === '_handshake',
+      )
+      expect(handshakeCalls.length).toBe(1)
+
+      dispatchResponse(DEFAULT_ORIGIN, { id: 'req-rg-6', result: 'ok' })
+      await expect(promise).resolves.toMatchObject({ id: 'req-rg-6' })
+
+      await transport.close()
+    })
+  })
+
+  // ===== T-U-RG-07: readyTimeoutMs 옵션 검증 =====
+  describe('T-U-RG-07: readyTimeoutMs 옵션 검증', () => {
+    it('default 10000 + override + invalid 값 throw', () => {
+      // default
+      const t1 = new PopupTransport()
+      // (private이지만 runtime accessible — 타입 캐스트로 검사)
+      expect((t1 as unknown as { readyTimeoutMs: number }).readyTimeoutMs).toBe(10000)
+
+      // override 양수
+      const t2 = new PopupTransport({ readyTimeoutMs: 500 })
+      expect((t2 as unknown as { readyTimeoutMs: number }).readyTimeoutMs).toBe(500)
+
+      // invalid: -1
+      expect(() => new PopupTransport({ readyTimeoutMs: -1 })).toThrow(ProviderError)
+      expect(() => new PopupTransport({ readyTimeoutMs: -1 })).toThrow(/positive finite number/)
+
+      // invalid: NaN
+      expect(() => new PopupTransport({ readyTimeoutMs: NaN })).toThrow(ProviderError)
+
+      // invalid: 0
+      expect(() => new PopupTransport({ readyTimeoutMs: 0 })).toThrow(ProviderError)
+
+      // invalid: non-number (런타임 보호 — 타입은 number지만 외부에서 any로 들어올 수 있음)
+      expect(() => new PopupTransport({ readyTimeoutMs: '500' as unknown as number })).toThrow(ProviderError)
+    })
+  })
+
+  // ===== T-U-RG-08: close 시 readyTimer + readyPromise 정리 =====
+  describe('T-U-RG-08: close cleanup of ready state', () => {
+    it('close 후 readyTimer / readyPromise / resolveReady 모두 null', async () => {
+      transport = new PopupTransport({ readyTimeoutMs: 5000 })
+      uninstallReadyAutoRespond()
+      mockPopup.postMessage.mockImplementation(() => { /* swallow — ready 게이트에서 정지 */ })
+
+      // send 호출하여 ready 게이트 진입 (resolveReady + readyTimer 등록)
+      void transport.send(makeEnvelope('req-rg-8')).catch(() => { /* close로 reject 예상 */ })
+      await Promise.resolve()
+
+      // close 호출 — 모든 ready state cleanup
+      await transport.close()
+
+      const t = transport as unknown as {
+        readyTimer: unknown
+        readyPromise: unknown
+        resolveReady: unknown
+      }
+      expect(t.readyTimer).toBeNull()
+      expect(t.readyPromise).toBeNull()
+      expect(t.resolveReady).toBeNull()
     })
   })
 })

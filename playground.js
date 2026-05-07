@@ -24,6 +24,12 @@
  *   - loadChainsData(): chains.json + presets.evm.json + presets.non-evm.json 통합 로드
  *   - buildNonEvmSignTxGroup(): 비-EVM family별 트리 그룹 동적 빌드
  *   - sendSignTxNonEvm(): 비-EVM signTransaction dispatcher
+ *
+ * m06-01-04: signTransaction Rest 8 family 추가
+ *   - NON_EVM_FAMILIES 6 → 13 (algorand / conflux / cosmos / fil / polkadot / stacks / tezos / vechain 추가)
+ *   - FAMILY_LABELS 7 → 14 (Rest family 표시명 추가)
+ *   - presets.rest.json runtime fetch + nonEvmPresetsList 병합
+ *   - test API: simulateRestLoad alias + buildTree 노출 (T-U-REST-03 트리 노드 수 검증, R4=a)
  */
 ;(function () {
   'use strict'
@@ -45,7 +51,7 @@
   var nonEvmPresetsList = [] // 전체 비-EVM preset 배열
 
   // ── FAMILY_LABELS: family → 트리 표시명 ──
-  // m06-01-03 추가
+  // m06-01-03 추가, m06-01-04 신규 8 family 표시명 추가
   var FAMILY_LABELS = {
     ethereum: 'Ethereum (EIP-155)',
     bitcoin: 'Bitcoin',
@@ -54,11 +60,23 @@
     hedera: 'Hedera',
     stellar: 'Stellar',
     tron: 'Tron',
+    // m06-01-04 신규 8 family
+    algorand: 'Algorand',
+    conflux: 'Conflux',
+    cosmos: 'Cosmos (cosmjs)',
+    fil: 'Filecoin',
+    polkadot: 'Polkadot',
+    stacks: 'Stacks',
+    tezos: 'Tezos',
+    vechain: 'VeChain',
   }
 
   // ── NON_EVM_FAMILIES: 비-EVM family 목록 (트리 그룹 생성 순서) ──
-  // m06-01-03 추가
-  var NON_EVM_FAMILIES = ['bitcoin', 'solana', 'xrp', 'hedera', 'stellar', 'tron']
+  // m06-01-03 추가, m06-01-04 신규 8 family 추가 (ethereum 제외 13개 family)
+  var NON_EVM_FAMILIES = [
+    'bitcoin', 'solana', 'xrp', 'hedera', 'stellar', 'tron',
+    'algorand', 'conflux', 'cosmos', 'fil', 'polkadot', 'stacks', 'tezos', 'vechain',
+  ]
 
   // ── chainId → default keyPath lookup (chains.json runtime data) ──
   // m06-01-03: allChainsMap으로 통합 (EVM + 비-EVM)
@@ -351,7 +369,9 @@
         evmPresetsMap = {}
       })
 
-    // presets.non-evm.json
+    // presets.non-evm.json + presets.rest.json (m06-01-04 추가)
+    // 비-EVM 6 family + Rest 8 family preset을 같은 nonEvmPresetsList에 병합한다.
+    // 두 fetch를 chain하여 race condition 회피 — non-evm가 reset 후 rest가 push.
     var nonEvmPresetsPromise = fetch('/playground/presets.non-evm.json')
       .then(function (r) {
         if (!r.ok) throw new Error('presets.non-evm.json fetch failed: ' + r.status)
@@ -361,6 +381,21 @@
         nonEvmPresetsList = presets
         nonEvmPresetsMap = {}
         presets.forEach(function (p) { nonEvmPresetsMap[p.id] = p })
+        // m06-01-04: presets.rest.json 병합 — 실패 시 기존 non-evm preset만 사용
+        return fetch('/playground/presets.rest.json')
+          .then(function (r) {
+            if (!r.ok) throw new Error('presets.rest.json fetch failed: ' + r.status)
+            return r.json()
+          })
+          .then(function (rest) {
+            rest.forEach(function (p) {
+              nonEvmPresetsList.push(p)
+              nonEvmPresetsMap[p.id] = p
+            })
+          })
+          .catch(function () {
+            // presets.rest.json 로드 실패 — 기존 non-evm preset만 사용 (degraded mode)
+          })
       })
       .catch(function () {
         nonEvmPresetsList = []
@@ -1352,5 +1387,12 @@
     buildNonEvmSignTxGroups: buildNonEvmSignTxGroups,
     NON_EVM_FAMILIES: NON_EVM_FAMILIES,
     FAMILY_LABELS: FAMILY_LABELS,
+    // m06-01-04: 트리 노드 수 검증을 위해 buildTree 직접 노출 (R4=a)
+    buildTree: buildTree,
+    // m06-01-04: simulateRestLoad — Rest family chain/preset inject helper.
+    // 기존 simulateNonEvmLoad와 동작 동일 (alias) — 의도 명시 + 향후 family별 분리 여지.
+    simulateRestLoad: function (chains, presets) {
+      return window._playgroundTestAPI.simulateNonEvmLoad(chains, presets)
+    },
   }
 })()

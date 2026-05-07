@@ -232,9 +232,9 @@ it('T-U-NEVM-01: simulateNonEvmLoad 후 TREE에 6 family 그룹과 chainId 노�
   expect(xlmNode).not.toBeNull()
   expect(trxNode).not.toBeNull()
 
-  // 6 family 존재 확인
+  // 6 family (bitcoin / solana / xrp / hedera / stellar / tron) 모두 NON_EVM_FAMILIES에 포함됨
+  // m06-01-04 갱신: NON_EVM_FAMILIES는 13 family로 확장됨 (Rest 8 family 추가) — length 단언 제거
   const families = api.NON_EVM_FAMILIES as string[]
-  expect(families).toHaveLength(6)
   expect(families).toContain('bitcoin')
   expect(families).toContain('solana')
   expect(families).toContain('xrp')
@@ -347,16 +347,17 @@ it('T-U-NEVM-04: presets.non-evm.json — 6 family preset fixture 모두 valid J
 
 // ─────────────────────────────────────────────────────────────────────────────
 // T-U-NEVM-05: 미지원 chainId는 트리에서 제외 (비-EVM family 없음)
+// m06-01-04 갱신: cosmos는 known family로 승격됨 → 진짜 알 수 없는 namespace로 변경
 // ─────────────────────────────────────────────────────────────────────────────
 it('T-U-NEVM-05: 알 수 없는 family chain은 트리 non-EVM 그룹에 포함되지 않는다', () => {
   const api = (window as any)._playgroundTestAPI
 
-  // 알 수 없는 family chain 주입
+  // 알 수 없는 family chain 주입 (NON_EVM_FAMILIES에 등록되지 않은 namespace)
   const unknownFamilyChain = {
-    chainId: 'cosmos:cosmoshub-4',
-    family: 'cosmos', // NON_EVM_FAMILIES에 없음
-    displayName: 'Cosmos',
-    defaultKeyPath: "m/44'/118'/0'/0/0",
+    chainId: 'unknown_ns:test-chain',
+    family: 'unknown_ns', // NON_EVM_FAMILIES에 없음
+    displayName: 'Unknown Network',
+    defaultKeyPath: "m/44'/0'/0'/0/0",
   }
 
   api.simulateNonEvmLoad(
@@ -364,9 +365,9 @@ it('T-U-NEVM-05: 알 수 없는 family chain은 트리 non-EVM 그룹에 포함�
     SAMPLE_NON_EVM_PRESETS
   )
 
-  // cosmos 노드는 트리에 없어야 함 (NON_EVM_FAMILIES에 cosmos가 없으므로)
-  const cosmosNode = document.querySelector('[data-method-id^="signTx:cosmos:"]')
-  expect(cosmosNode).toBeNull()
+  // unknown_ns 노드는 트리에 없어야 함 (NON_EVM_FAMILIES에 unknown_ns가 없으므로)
+  const unknownNode = document.querySelector('[data-method-id^="signTx:unknown_ns:"]')
+  expect(unknownNode).toBeNull()
 
   // 정상 family 6개는 여전히 존재
   expect(document.querySelector('[data-method-id^="signTx:bitcoin:"]')).not.toBeNull()

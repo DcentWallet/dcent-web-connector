@@ -180,6 +180,12 @@
     "defaultKeyPath": "m/44'/60'/0'/0/0"
   },
   {
+    "chainId": "conflux:cfx",
+    "family": "conflux",
+    "displayName": "Conflux",
+    "defaultKeyPath": "m/44'/60'/0'"
+  },
+  {
     "chainId": "eip155:3776",
     "family": "ethereum",
     "displayName": "Astar zkEVM",
@@ -414,6 +420,12 @@
     "defaultKeyPath": "m/44'/144'/0'/0/0"
   },
   {
+    "chainId": "cosmos:Binance-Chain-Tigris",
+    "family": "cosmos",
+    "displayName": "Binance coin",
+    "defaultKeyPath": "m/44'/714'/0'/0/0"
+  },
+  {
     "chainId": "stellar:pubnet",
     "family": "stellar",
     "displayName": "Stellar",
@@ -426,10 +438,58 @@
     "defaultKeyPath": "m/44'/3030'/0'"
   },
   {
+    "chainId": "stacks:1",
+    "family": "stacks",
+    "displayName": "Stacks",
+    "defaultKeyPath": "m/44'/5757'/0'/0/0"
+  },
+  {
     "chainId": "solana:5eykt4UsFv8P8NJdTREpY1vzqKqZKvdp",
     "family": "solana",
     "displayName": "Solana",
     "defaultKeyPath": "m/44'/501'/0'"
+  },
+  {
+    "chainId": "polkadot:91b171bb158e2d3848fa23a9f1c25182",
+    "family": "polkadot",
+    "displayName": "Polkadot",
+    "defaultKeyPath": "m/44'/354'/0'/0/0"
+  },
+  {
+    "chainId": "cosmos:cosmoshub-4",
+    "family": "cosmos",
+    "displayName": "Cosmos",
+    "defaultKeyPath": "m/44'/118'/0'/0/0"
+  },
+  {
+    "chainId": "tezos:NetXdQprcVkpaWU",
+    "family": "tezos",
+    "displayName": "Tezos",
+    "defaultKeyPath": "m/44'/1729'/0'/0'"
+  },
+  {
+    "chainId": "vechain:b1ac3413d346d43539627e6be7ec1b4a",
+    "family": "vechain",
+    "displayName": "VeChain",
+    "defaultKeyPath": "m/44'/60'/0'/0/0"
+  },
+  {
+    "chainId": "cosmos:coreum-mainnet-1",
+    "family": "cosmos",
+    "displayName": "TX",
+    "defaultKeyPath": "m/44'/990'/0'/0/0"
+  },
+  {
+    "chainId": "algorand:wGHE2Pwdvd7S12BL5FaOP20EGYesN73k",
+    "family": "algorand",
+    "displayName": "Algorand",
+    "defaultKeyPath": "m/44'/283'/0'/0/0"
+  },
+  {
+    "chainId": "fil:f",
+    "family": "fil",
+    "displayName": "Filecoin",
+    "defaultKeyPath": "m/44'/461'/0'/0/0"
   },
   {
     "chainId": "tron:mainnet",

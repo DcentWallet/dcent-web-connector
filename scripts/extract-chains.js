@@ -7,7 +7,7 @@
  *
  * 출력 shape (ChainEntry):
  *   chainId:        string  — CAIP-19 namespace only, e.g. "eip155:1", "bip122:000…", "solana:5eykt…"
- *   family:         string  — 'ethereum' | 'bitcoin' | 'solana' | 'xrp' | 'hedera' | 'stellar' | 'tron'
+ *   family:         string  — deriveFamily() 출력 (14개 known + 알 수 없는 namespace fallback)
  *   displayName:    string  — human readable name
  *   defaultKeyPath: string  — default BIP32 derivation path
  *
@@ -16,14 +16,12 @@
  *
  * 출력 경로: playground/chains.json (통합 파일 — m06-01-03)
  *
- * FAMILY_FILTERS 맵:
- *   ethereum → eip155: prefix (EVM 계열)
- *   bitcoin  → bip122: prefix
- *   solana   → solana: prefix
- *   xrp      → xrpl: prefix
- *   hedera   → hedera: prefix
- *   stellar  → stellar: prefix
- *   tron     → tron: prefix (wallet-models에 CAIP-19 미지정 → static entry fallback)
+ * deriveFamily() — CAIP-19 namespace → family name (m06-01-04 generic화).
+ * known map (14 namespace, R1=a 결정):
+ *   eip155 → ethereum, bip122 → bitcoin, solana → solana, xrpl → xrp,
+ *   hedera → hedera, stellar → stellar, tron → tron (caip19 미지정 → TRON_STATIC fallback),
+ *   algorand / conflux / cosmos / fil / polkadot / stacks / tezos / vechain → 동일 family명.
+ * 알 수 없는 namespace는 namespace 자체를 family명으로 사용 (fallback).
  */
 
 'use strict'
@@ -33,16 +31,38 @@ const path = require('path')
 
 const OUTPUT_PATH = path.resolve(__dirname, '..', 'playground', 'chains.json')
 
-// ── FAMILY_FILTERS: chainId prefix → family name ──────────────────────────────
-// 각 prefix로 시작하는 chainId를 해당 family로 분류한다.
-const FAMILY_FILTERS = {
-  ethereum: function (chainId) { return chainId.startsWith('eip155:') },
-  bitcoin:  function (chainId) { return chainId.startsWith('bip122:') },
-  solana:   function (chainId) { return chainId.startsWith('solana:') },
-  xrp:      function (chainId) { return chainId.startsWith('xrpl:') },
-  hedera:   function (chainId) { return chainId.startsWith('hedera:') },
-  stellar:  function (chainId) { return chainId.startsWith('stellar:') },
-  tron:     function (chainId) { return chainId.startsWith('tron:') },
+// ── deriveFamily: CAIP-19 namespace → family name ─────────────────────────────
+// wallet-models cryptoCurrencies registry의 모든 namespace를 family로 매핑.
+// 알 수 없는 namespace는 namespace 자체를 family명으로 사용 (fallback).
+// R1=a 결정: wallet-models 인벤토리 기준 14개 namespace 매핑.
+const FAMILY_KNOWN_MAP = {
+  // 기존 7 family (Child 1-3 covered)
+  eip155: 'ethereum',
+  bip122: 'bitcoin',
+  solana: 'solana',
+  xrpl:   'xrp',
+  hedera: 'hedera',
+  stellar:'stellar',
+  tron:   'tron',
+  // m06-01-04 신규 8 family
+  algorand: 'algorand',
+  conflux:  'conflux',
+  cosmos:   'cosmos',
+  fil:      'fil',
+  polkadot: 'polkadot',
+  stacks:   'stacks',
+  tezos:    'tezos',
+  vechain:  'vechain',
+}
+
+// CAIP-19 namespace로부터 family 도출.
+// chainId가 빈 문자열 / non-string / `:` 미포함이면 null 반환 (caller가 skip).
+// known map에 있으면 그 값, 없으면 namespace 자체를 family명으로 사용 (fallback).
+function deriveFamily (chainId) {
+  if (typeof chainId !== 'string' || chainId.length === 0) return null
+  const ns = chainId.split(':')[0]
+  if (!ns) return null
+  return FAMILY_KNOWN_MAP[ns] || ns
 }
 
 // ── 소스 결정: npm 패키지 우선, 없으면 refer-repos TypeScript 파싱 ──────────────
@@ -90,11 +110,8 @@ function parseFamilyTs (tsPath) {
     // namespace:chainRef/slip44:N → namespace:chainRef
     const chainId = caip19Full.replace(/\/slip44:\d+$/, '')
 
-    // family 판별
-    let family = null
-    for (const [fam, filter] of Object.entries(FAMILY_FILTERS)) {
-      if (filter(chainId)) { family = fam; break }
-    }
+    // family 판별 (m06-01-04: deriveFamily generic화)
+    const family = deriveFamily(chainId)
     if (!family) continue
 
     // EVM: numeric chainId 필수
@@ -196,10 +213,8 @@ function parseFamilyJs (jsPath) {
 
     const chainId = entry.caip19.replace(/\/slip44:\d+$/, '')
 
-    let family = null
-    for (const [fam, filter] of Object.entries(FAMILY_FILTERS)) {
-      if (filter(chainId)) { family = fam; break }
-    }
+    // family 판별 (m06-01-04: deriveFamily generic화)
+    const family = deriveFamily(chainId)
     if (!family) continue
 
     if (family === 'ethereum') {
@@ -282,9 +297,11 @@ function main () {
     }
   }
 
-  // 각 family 최소 1개 이상 있는지 확인
-  const familyNames = Object.keys(FAMILY_FILTERS)
-  const missing = familyNames.filter(function (fam) {
+  // 각 family 최소 1개 이상 있는지 확인 (Child 1-3 covered family 기준)
+  // m06-01-04 신규 8 family는 wallet-models 인벤토리에 entry가 없을 수 있으므로 missing 검사 대상에서 제외.
+  // 신규 family 누락은 known map 기반 fallback으로 자동 노출되므로 별도 검증 불필요.
+  const COVERED_FAMILIES = ['ethereum', 'bitcoin', 'solana', 'xrp', 'hedera', 'stellar', 'tron']
+  const missing = COVERED_FAMILIES.filter(function (fam) {
     return !allChains.some(function (c) { return c.family === fam })
   })
   if (missing.length > 0) {

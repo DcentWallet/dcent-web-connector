@@ -63,3 +63,28 @@ npm run dev
 ```
 npm run test
 ```
+
+## v2 Playground
+
+The v2 Playground is a manual test page for the connector v2 API.
+
+### Usage
+
+```bash
+# 1. Build the v2 bundle
+yarn build
+
+# 2. Open the playground in your browser
+open index-v2.html
+# Or serve locally:
+# yarn dev  →  http://localhost:9090/index-v2.html
+```
+
+### Features
+
+- **Device Indicator** — shows connection status, firmware version, and model
+- **Method Tree** — browse and select connector v2 methods (`getDeviceInfo`, `signMessage`)
+- **Request Log** — append-only log with JSONL export (`Copy all`)
+- **Form (B1 pattern)** — per-method input form with boundary validation
+
+> Note: `index-v2.html` and `playground.js` are excluded from the npm tarball (`.npmignore`).

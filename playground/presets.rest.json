@@ -1,0 +1,191 @@
+[
+  {
+    "id": "algo-payment",
+    "label": "Algorand ALGO payment",
+    "family": "algorand",
+    "applicableChainIds": [
+      "algorand:wGHE2Pwdvd7S12BL5FaOP20EGYesN73k"
+    ],
+    "note": "Algorand 결제(pay) 트랜잭션. amount 단위는 microAlgo (1 ALGO = 1,000,000). from/to/amount 수정 후 송금.",
+    "sourceUrl": "https://github.com/algorand/js-algorand-sdk",
+    "transaction": {
+      "type": "pay",
+      "from": "ALGORAND7XVFXWDX5HGMI6TEIIIYNYXATWJDAWTOGCHKZHJV2KLYE5LZQ4",
+      "to": "ALGORAND7XVFXWDX5HGMI6TEIIIYNYXATWJDAWTOGCHKZHJV2KLYE5LZQ4",
+      "amount": 1000000,
+      "fee": 1000,
+      "firstRound": 1,
+      "lastRound": 1000,
+      "genesisID": "mainnet-v1.0",
+      "genesisHash": "wGHE2Pwdvd7S12BL5FaOP20EGYesN73ktiHc0CYz/uo="
+    }
+  },
+  {
+    "id": "cfx-transfer",
+    "label": "Conflux CFX transfer",
+    "family": "conflux",
+    "applicableChainIds": [
+      "conflux:cfx"
+    ],
+    "note": "Conflux Core Space 송금 트랜잭션 (EVM 호환). chainId 1029 = Conflux Hydra mainnet. from/to/value 수정 후 송금.",
+    "sourceUrl": "https://github.com/Conflux-Chain/js-conflux-sdk",
+    "transaction": {
+      "from": "0x1B25fB6E9579B5fC7BAc3D80Bc1bAd3e63CB9b14",
+      "to": "0x1A2b4cF52dc1B6d0D0e3c4C3B5b3A0cF52dc1B6d0",
+      "value": "0x10",
+      "gas": "0x5208",
+      "gasPrice": "0x3b9aca00",
+      "nonce": "0x0",
+      "chainId": "0x405",
+      "epochHeight": "0x0",
+      "storageLimit": "0x0",
+      "data": "0x"
+    }
+  },
+  {
+    "id": "atom-transfer",
+    "label": "Cosmos ATOM transfer",
+    "family": "cosmos",
+    "applicableChainIds": [
+      "cosmos:cosmoshub-4"
+    ],
+    "note": "Cosmos Hub MsgSend (cosmjs StdSignDoc). amount 단위는 uatom (1 ATOM = 1,000,000). fromAddress/toAddress/amount 수정 후 송금.",
+    "sourceUrl": "https://github.com/cosmos/cosmjs",
+    "transaction": {
+      "msgs": [
+        {
+          "typeUrl": "/cosmos.bank.v1beta1.MsgSend",
+          "value": {
+            "fromAddress": "cosmos1qpe9h7lndhg27gpsxq8r43kytt7uzkfrxvqhnq",
+            "toAddress": "cosmos1qpe9h7lndhg27gpsxq8r43kytt7uzkfrxvqhnq",
+            "amount": [
+              { "denom": "uatom", "amount": "1000000" }
+            ]
+          }
+        }
+      ],
+      "fee": {
+        "amount": [
+          { "denom": "uatom", "amount": "5000" }
+        ],
+        "gas": "200000"
+      },
+      "memo": "",
+      "chainId": "cosmoshub-4",
+      "accountNumber": "0",
+      "sequence": "0"
+    }
+  },
+  {
+    "id": "fil-transfer",
+    "label": "Filecoin FIL transfer",
+    "family": "fil",
+    "applicableChainIds": [
+      "fil:f"
+    ],
+    "note": "Filecoin Lotus Message (BLS/secp256k1). value 단위는 attoFIL (1 FIL = 10^18). to/from/value 수정 후 송금.",
+    "sourceUrl": "https://github.com/glifio/modules",
+    "transaction": {
+      "to": "f1xcbgdhkgkwht3hrrnui3jdopeejsoas2rujnkdi",
+      "from": "f1xcbgdhkgkwht3hrrnui3jdopeejsoas2rujnkdi",
+      "nonce": 0,
+      "value": "1000000000000000000",
+      "gasLimit": 500000,
+      "gasFeeCap": "100000",
+      "gasPremium": "100000",
+      "method": 0,
+      "params": ""
+    }
+  },
+  {
+    "id": "dot-transfer",
+    "label": "Polkadot DOT transfer",
+    "family": "polkadot",
+    "applicableChainIds": [
+      "polkadot:91b171bb158e2d3848fa23a9f1c25182"
+    ],
+    "note": "Polkadot balances.transfer extrinsic. args[1] 단위는 Planck (1 DOT = 10^10 Planck). args[0] 수신자 주소 + args[1] 금액 수정 후 송금.",
+    "sourceUrl": "https://github.com/polkadot-js/api",
+    "transaction": {
+      "method": "balances.transfer",
+      "args": [
+        "15oF4uVJwmo4TdGW7VfQxNLavjCXviqxT9S1MgbjMNHr6Sp5",
+        "1000000000000"
+      ],
+      "era": "0x00",
+      "nonce": 0,
+      "tip": 0,
+      "specVersion": 9430,
+      "transactionVersion": 24,
+      "blockHash": "0x91b171bb158e2d3848fa23a9f1c25182fb8e20313b2c1eb49219da7a70ce90c3",
+      "genesisHash": "0x91b171bb158e2d3848fa23a9f1c25182fb8e20313b2c1eb49219da7a70ce90c3"
+    }
+  },
+  {
+    "id": "stx-transfer",
+    "label": "Stacks STX transfer",
+    "family": "stacks",
+    "applicableChainIds": [
+      "stacks:1"
+    ],
+    "note": "Stacks tokenTransfer (makeSTXTokenTransfer). amount 단위는 microSTX (1 STX = 1,000,000). recipient/amount 수정 후 송금.",
+    "sourceUrl": "https://github.com/hirosystems/stacks.js",
+    "transaction": {
+      "txType": "tokenTransfer",
+      "recipient": "SP3FBR2AGK5H9QBDH3EEN6DF8EK8JY7RX8QJ5SVTE",
+      "amount": "1000000",
+      "memo": "",
+      "fee": "180",
+      "nonce": "0",
+      "anchorMode": 3,
+      "postConditionMode": 1,
+      "network": "mainnet"
+    }
+  },
+  {
+    "id": "xtz-transfer",
+    "label": "Tezos XTZ transfer",
+    "family": "tezos",
+    "applicableChainIds": [
+      "tezos:NetXdQprcVkpaWU"
+    ],
+    "note": "Tezos transaction operation (taquito). amount 단위는 mutez (1 XTZ = 1,000,000). source/destination/amount 수정 후 송금.",
+    "sourceUrl": "https://github.com/ecadlabs/taquito",
+    "transaction": {
+      "kind": "transaction",
+      "source": "tz1burnburnburnburnburnburnburjAYjjX",
+      "fee": "1420",
+      "counter": "1",
+      "gasLimit": "10307",
+      "storageLimit": "257",
+      "amount": "1000000",
+      "destination": "tz1burnburnburnburnburnburnburjAYjjX"
+    }
+  },
+  {
+    "id": "vet-transfer",
+    "label": "VeChain VET transfer",
+    "family": "vechain",
+    "applicableChainIds": [
+      "vechain:b1ac3413d346d43539627e6be7ec1b4a"
+    ],
+    "note": "VeChain Thor transaction (thor-devkit). clauses[0].value는 wei 단위 hex (1 VET = 10^18 wei). clauses[0].to/value 수정 후 송금.",
+    "sourceUrl": "https://github.com/vechain/thor-devkit.js",
+    "transaction": {
+      "chainTag": 74,
+      "blockRef": "0x0000000000000000",
+      "expiration": 720,
+      "clauses": [
+        {
+          "to": "0x1B25fB6E9579B5fC7BAc3D80Bc1bAd3e63CB9b14",
+          "value": "0x10",
+          "data": "0x"
+        }
+      ],
+      "gasPriceCoef": 0,
+      "gas": 21000,
+      "dependsOn": null,
+      "nonce": "0x0"
+    }
+  }
+]

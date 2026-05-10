@@ -10,8 +10,8 @@
  * UUID v4 기반 id (cycle 02에서 uuid 라이브러리 도입 예정)
  */
 export interface MessageEnvelope<T = unknown> {
-  id: string        // UUID v4 — 요청-응답 매칭용
-  method: string    // 메서드 이름 (예: 'connect', 'signTransaction')
+  id: string // UUID v4 — 요청-응답 매칭용
+  method: string // 메서드 이름 (예: 'connect', 'signTransaction')
   params?: T
 }
 
@@ -20,7 +20,7 @@ export interface MessageEnvelope<T = unknown> {
  * JSON-RPC 2.0 호환 형태 (result xor error)
  */
 export interface ResponseEnvelope<T = unknown> {
-  id: string        // 요청 id와 매칭
+  id: string // 요청 id와 매칭
   result?: T
   error?: { code: number; message: string; data?: unknown }
 }

@@ -1,5 +1,29 @@
-// v2 public API entry point (cycle 01 — skeleton 단계)
-// cycle 02: 실제 메시지 송수신 + 핸드셰이크 구현 예정
+// v2 public API entry point (m08-01-01 — facade layer)
+//
+// 본 child가 추가하는 것:
+//   - default export object (`import dcent from 'dcent-web-connector'` 패턴 — v1 호환)
+//   - new named exports: lifecycle (setTimeOutMs / setConnectionListener / popupWindowClose) +
+//     enums (coinType / coinGroup / coinName / bitcoinTxType / klaytnTxType / xrpTxType / state) +
+//     unitConverter
+//   - 기존 named exports (transport / queue / error)는 그대로 유지
+//
+// 후속 child(m08-01-02 등)가 sign / read-only API를 default export object에 추가할 예정.
+// package.json `main`은 m08-01-05까지 src-v1/index.js를 가리키므로, 본 child가 머지되어도
+// npm published 패키지의 진입점은 v1. dApp 영향 없음.
+
+import * as lifecycle from './lifecycle'
+import {
+  coinType,
+  coinGroup,
+  coinName,
+  bitcoinTxType,
+  klaytnTxType,
+  xrpTxType,
+  state,
+} from './types'
+import { unitConverter } from './utils/unitConverter'
+
+// === 기존 named exports (m02-01·m02-02·m07-02 SHIPPED) ===
 export type {
   MessageEnvelope,
   ResponseEnvelope,
@@ -13,3 +37,61 @@ export { SerialRequestQueue } from './queue/RequestQueue'
 
 export { ErrorCode } from './error/ErrorCode'
 export { ProviderError } from './error/ProviderError'
+
+// === 새 named exports (m08-01-01) ===
+export { setTimeOutMs, setConnectionListener, popupWindowClose } from './lifecycle'
+export type { ConnectionListener } from './lifecycle'
+
+export {
+  coinType,
+  coinGroup,
+  coinName,
+  bitcoinTxType,
+  klaytnTxType,
+  xrpTxType,
+  state,
+} from './types'
+export type {
+  CoinType,
+  CoinTypeValue,
+  CoinGroup,
+  CoinGroupValue,
+  CoinName,
+  CoinNameValue,
+  BitcoinTxType,
+  BitcoinTxTypeValue,
+  KlaytnTxType,
+  KlaytnTxTypeValue,
+  XrpTxType,
+  XrpTxTypeValue,
+  State,
+  StateValue,
+} from './types'
+
+export { unitConverter } from './utils/unitConverter'
+export type { UnitConvertResult } from './utils/unitConverter'
+
+// === default export object (v1 호환 패턴) ===
+//
+// dApp이 `import dcent from 'dcent-web-connector'` 또는 `const dcent = require(...)`로
+// 받았을 때 v1과 동등한 멤버 접근 (`dcent.coinType`, `dcent.setTimeOutMs(...)`)이 가능.
+//
+// 후속 child(m08-01-02 등)가 sign / read-only / configure 메서드를 이 객체에 추가한다.
+const dcent = {
+  // lifecycle
+  setTimeOutMs: lifecycle.setTimeOutMs,
+  setConnectionListener: lifecycle.setConnectionListener,
+  popupWindowClose: lifecycle.popupWindowClose,
+  // enums
+  coinType,
+  coinGroup,
+  coinName,
+  bitcoinTxType,
+  klaytnTxType,
+  xrpTxType,
+  state,
+  // utils
+  unitConverter,
+} as const
+
+export default dcent

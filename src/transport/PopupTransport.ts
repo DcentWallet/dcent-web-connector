@@ -86,7 +86,7 @@ export class PopupTransport implements MessageTransport {
   // close() 시 이들을 DISCONNECTED로 reject하여 게이트에서 정지된 send도 즉시 종료.
   private preHandshakeRejecters: Set<(error: ProviderError) => void> = new Set()
 
-  constructor(options: PopupTransportOptions = {}) {
+  constructor (options: PopupTransportOptions = {}) {
     this.popUpUrl = options.popUpUrl ?? 'https://bridge.dcentwallet.com/v2'
     this.timeoutMs = options.timeoutMs ?? 60000
     this.origin = options.origin ?? new URL(this.popUpUrl).origin
@@ -105,7 +105,7 @@ export class PopupTransport implements MessageTransport {
     }
   }
 
-  send<TParams, TResult>(
+  send<TParams, TResult> (
     message: MessageEnvelope<TParams>,
   ): Promise<ResponseEnvelope<TResult>> {
     return new Promise((resolve, reject) => {
@@ -171,17 +171,17 @@ export class PopupTransport implements MessageTransport {
     })
   }
 
-  on(event: 'state', handler: (state: TransportState) => void): void {
+  on (event: 'state', handler: (state: TransportState) => void): void {
     if (event !== 'state') return
     this.stateHandlers.add(handler)
   }
 
-  off(event: 'state', handler: (state: TransportState) => void): void {
+  off (event: 'state', handler: (state: TransportState) => void): void {
     if (event !== 'state') return
     this.stateHandlers.delete(handler)
   }
 
-  async close(): Promise<void> {
+  async close (): Promise<void> {
     // 1. 모든 pending 요청 reject (DISCONNECTED)
     for (const [id, p] of this.pending.entries()) {
       clearTimeout(p.timer)
@@ -245,7 +245,7 @@ export class PopupTransport implements MessageTransport {
    * default timeout override (v1 dcent.setTimeOutMs 호환).
    * boundary-validation: ms는 양의 유한 number만 허용.
    */
-  setTimeoutMs(ms: number): void {
+  setTimeoutMs (ms: number): void {
     if (typeof ms !== 'number' || !Number.isFinite(ms) || ms <= 0) {
       throw new ProviderError(
         ErrorCode.INVALID_PARAMS,
@@ -257,7 +257,7 @@ export class PopupTransport implements MessageTransport {
 
   // === 내부 헬퍼 ===
 
-  private ensurePopup(reject: (e: ProviderError) => void): void {
+  private ensurePopup (reject: (e: ProviderError) => void): void {
     // 이미 열린 popup 재사용
     if (this.popupWindow && !this.popupWindow.closed) return
     this.popupWindow = window.open(this.popUpUrl, '_blank')
@@ -273,7 +273,7 @@ export class PopupTransport implements MessageTransport {
     this.setState('connected')
   }
 
-  private ensureMessageListener(): void {
+  private ensureMessageListener (): void {
     if (this.messageListener) return
     this.messageListener = (event: MessageEvent) => {
       // boundary-validation: origin 검증
@@ -314,7 +314,7 @@ export class PopupTransport implements MessageTransport {
    * `readyTimeoutMs` 만료 시 silent resolve → `_handshake` 즉시 송신 (Y Timeout fallback, 구 sdk 호환).
    * close() 시 `readyPromise = null` 리셋 → 재오픈 시 새 ready 사이클.
    */
-  private ensureReady(): Promise<void> {
+  private ensureReady (): Promise<void> {
     if (this.readyPromise) return this.readyPromise
     this.readyPromise = new Promise<void>((resolve) => {
       // _ready 수신 시 messageListener에서 resolveReady() 호출
@@ -337,7 +337,7 @@ export class PopupTransport implements MessageTransport {
     return this.readyPromise
   }
 
-  private ensureClosePolling(): void {
+  private ensureClosePolling (): void {
     if (this.closePollingInterval) return
     this.closePollingInterval = setInterval(() => {
       if (!this.popupWindow || this.popupWindow.closed) {
@@ -354,7 +354,7 @@ export class PopupTransport implements MessageTransport {
    * In-flight handshake Promise 공유. 첫 호출만 sendHandshake 발동,
    * 이후 호출은 동일 Promise 반환 (race 방지). close() 시 null 리셋.
    */
-  private ensureHandshake(): Promise<void> {
+  private ensureHandshake (): Promise<void> {
     if (this.handshakePromise) return this.handshakePromise
     this.handshakePromise = this.sendHandshake()
     return this.handshakePromise
@@ -364,7 +364,7 @@ export class PopupTransport implements MessageTransport {
    * `_handshake` 메시지 송신 + sdk ack 대기 + version major 비교.
    * 실패 시 close() + reject (caller가 send를 재호출하면 새 handshake 시도).
    */
-  private sendHandshake(): Promise<void> {
+  private sendHandshake (): Promise<void> {
     return new Promise<void>((resolve, reject) => {
       const handshakeId = `_handshake_${Date.now()}_${Math.random().toString(36).slice(2)}`
 
@@ -457,14 +457,14 @@ export class PopupTransport implements MessageTransport {
    * Semver major version 호환성 비교. connector 'X.y.z' vs sdk 'X.a.b' → major 같으면 OK.
    * boundary-validation: typeof 'string' + split('.')[0] 길이 > 0 체크.
    */
-  private isVersionCompatible(remoteVersion: unknown): boolean {
+  private isVersionCompatible (remoteVersion: unknown): boolean {
     if (typeof remoteVersion !== 'string') return false
     const localMajor = this.protocolVersion.split('.')[0]
     const remoteMajor = remoteVersion.split('.')[0]
     return localMajor.length > 0 && remoteMajor.length > 0 && localMajor === remoteMajor
   }
 
-  private setState(state: TransportState): void {
+  private setState (state: TransportState): void {
     if (this.currentState === state) return
     this.currentState = state
     for (const handler of this.stateHandlers) {

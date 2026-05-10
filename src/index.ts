@@ -22,6 +22,7 @@ import {
   state,
 } from './types'
 import { unitConverter } from './utils/unitConverter'
+import { sign } from './sign'
 
 // === 기존 named exports (m02-01·m02-02·m07-02 SHIPPED) ===
 export type {
@@ -71,6 +72,13 @@ export type {
 export { unitConverter } from './utils/unitConverter'
 export type { UnitConvertResult } from './utils/unitConverter'
 
+// === 새 named exports (m08-01-02 — sign / V1 호환) ===
+export { sign } from './sign'
+export type { SignInput, V1Response, V1ResponseHeader, V1ResponseBody } from './sign'
+// internal helpers (sibling module이 사용 — m08-01-03/04 wrapper가 import)
+export { _call, _genId, _sanitizeChain, _assertV1Success, providerErrorToV1, chainToMethod } from './sign'
+export type { CallInput } from './sign'
+
 // === default export object (v1 호환 패턴) ===
 //
 // dApp이 `import dcent from 'dcent-web-connector'` 또는 `const dcent = require(...)`로
@@ -92,6 +100,8 @@ const dcent = {
   state,
   // utils
   unitConverter,
+  // sign (m08-01-02)
+  sign,
 } as const
 
 export default dcent

@@ -144,18 +144,27 @@ it('T-U-EVM-01: simulateEvmLoad 후 EVM 체인 노드가 TREE에 추가된다', 
   expect(evmNodes.length).toBe(SAMPLE_CHAINS.length)
 })
 
+// m08-01-05 helper: facade-shaped mock dcent
+function makeMockDcent (signImpl?: jest.Mock) {
+  return {
+    sign: signImpl || jest.fn().mockResolvedValue({ header: { status: 'success' }, body: { parameter: {} } }),
+    getDeviceInfo: jest.fn().mockResolvedValue({ header: { status: 'success' }, body: { parameter: {} } }),
+    popupWindowClose: jest.fn(),
+    setConnectionListener: jest.fn(),
+  }
+}
+
 // ─────────────────────────────────────────────────────────────────────────────
 // T-U-EVM-02: EVM signTx 폼 — keyPath·transaction 누락 시 dispatcher 0건
+// m08-01-05: facade dcent.sign 호출 여부로 검증
 // ─────────────────────────────────────────────────────────────────────────────
 it('T-U-EVM-02: keyPath 누락 시 Send → dispatcher 0건', () => {
   const api = (window as any)._playgroundTestAPI
 
   api.simulateEvmLoad(SAMPLE_CHAINS, SAMPLE_PRESETS)
 
-  const mockEnqueue = jest.fn(function (task: any) { return task() })
-  const mockTransport = { send: jest.fn(), on: jest.fn(), off: jest.fn(), close: jest.fn() }
-  const mockQueue = { enqueue: mockEnqueue, size: jest.fn(), clear: jest.fn() }
-  api.simulateConnect(mockTransport, mockQueue, { model: 'Bio', firmware: '3.0' })
+  const mockDcent = makeMockDcent()
+  api.simulateConnect(mockDcent, null, { model: 'Bio', firmware: '3.0' })
 
   // eip155:1 노드 선택
   const evmNode = document.querySelector('[data-method-id="signTx:evm:eip155:1"]') as HTMLElement
@@ -172,7 +181,7 @@ it('T-U-EVM-02: keyPath 누락 시 Send → dispatcher 0건', () => {
 
   document.getElementById('btn-send')?.click()
 
-  expect(mockEnqueue).not.toHaveBeenCalled()
+  expect(mockDcent.sign).not.toHaveBeenCalled()
 })
 
 it('T-U-EVM-02b: transaction 누락 시 Send → dispatcher 0건', () => {
@@ -180,10 +189,8 @@ it('T-U-EVM-02b: transaction 누락 시 Send → dispatcher 0건', () => {
 
   api.simulateEvmLoad(SAMPLE_CHAINS, SAMPLE_PRESETS)
 
-  const mockEnqueue = jest.fn(function (task: any) { return task() })
-  const mockTransport = { send: jest.fn(), on: jest.fn(), off: jest.fn(), close: jest.fn() }
-  const mockQueue = { enqueue: mockEnqueue, size: jest.fn(), clear: jest.fn() }
-  api.simulateConnect(mockTransport, mockQueue, { model: 'Bio', firmware: '3.0' })
+  const mockDcent = makeMockDcent()
+  api.simulateConnect(mockDcent, null, { model: 'Bio', firmware: '3.0' })
 
   const evmNode = document.querySelector('[data-method-id="signTx:evm:eip155:1"]') as HTMLElement
   evmNode.click()
@@ -197,7 +204,7 @@ it('T-U-EVM-02b: transaction 누락 시 Send → dispatcher 0건', () => {
 
   document.getElementById('btn-send')?.click()
 
-  expect(mockEnqueue).not.toHaveBeenCalled()
+  expect(mockDcent.sign).not.toHaveBeenCalled()
 })
 
 // ─────────────────────────────────────────────────────────────────────────────
@@ -210,10 +217,8 @@ it('T-U-EVM-03: 잘못된 JSON transaction → dispatcher 0건 (boundary-validat
   api.simulateEvmLoad(SAMPLE_CHAINS, SAMPLE_PRESETS)
   api.clearLogs()
 
-  const mockEnqueue = jest.fn(function (task: any) { return task() })
-  const mockTransport = { send: jest.fn(), on: jest.fn(), off: jest.fn(), close: jest.fn() }
-  const mockQueue = { enqueue: mockEnqueue, size: jest.fn(), clear: jest.fn() }
-  api.simulateConnect(mockTransport, mockQueue, { model: 'Bio', firmware: '3.0' })
+  const mockDcent = makeMockDcent()
+  api.simulateConnect(mockDcent, null, { model: 'Bio', firmware: '3.0' })
 
   const evmNode = document.querySelector('[data-method-id="signTx:evm:eip155:1"]') as HTMLElement
   evmNode.click()
@@ -227,7 +232,7 @@ it('T-U-EVM-03: 잘못된 JSON transaction → dispatcher 0건 (boundary-validat
   document.getElementById('btn-send')?.click()
 
   // boundary-validation: JSON 파싱 실패 → dispatcher 호출 없음
-  expect(mockEnqueue).not.toHaveBeenCalled()
+  expect(mockDcent.sign).not.toHaveBeenCalled()
 
   // early return이므로 log entry 없음 (showFieldError만 호출)
   const entries = api.getLogEntries()
@@ -235,19 +240,18 @@ it('T-U-EVM-03: 잘못된 JSON transaction → dispatcher 0건 (boundary-validat
 })
 
 // ─────────────────────────────────────────────────────────────────────────────
-// T-U-EVM-04: 정상 전송 — signTransaction 요청 파라미터 검증
+// T-U-EVM-04: 정상 전송 — facade dcent.sign({chain: 'eip155:N', payload}) 호출 검증
+// m08-01-05: 통합 sign API 사용 — chain은 CAIP-19 형식
 // ─────────────────────────────────────────────────────────────────────────────
-it('T-U-EVM-04: 정상 전송 시 signTransaction { chainId, keyPath, transaction } 파라미터 전달', async () => {
+it('T-U-EVM-04: 정상 전송 시 dcent.sign({chain: eip155:N, payload}) 호출', async () => {
   const api = (window as any)._playgroundTestAPI
 
   api.simulateEvmLoad(SAMPLE_CHAINS, SAMPLE_PRESETS)
   api.clearLogs()
 
-  const mockSend = jest.fn().mockResolvedValue({ id: 'tx-1', result: { signedTx: '0xabc' } })
-  const mockEnqueue = jest.fn(function (task: any) { return task() })
-  const mockTransport = { send: mockSend, on: jest.fn(), off: jest.fn(), close: jest.fn() }
-  const mockQueue = { enqueue: mockEnqueue, size: jest.fn(), clear: jest.fn() }
-  api.simulateConnect(mockTransport, mockQueue, { model: 'Bio', firmware: '3.0' })
+  const mockSign = jest.fn().mockResolvedValue({ header: { status: 'success' }, body: { parameter: { signedTx: '0xabc' } } })
+  const mockDcent = makeMockDcent(mockSign)
+  api.simulateConnect(mockDcent, null, { model: 'Bio', firmware: '3.0' })
 
   // eip155:137 (Polygon) 선택
   const evmNode = document.querySelector('[data-method-id="signTx:evm:eip155:137"]') as HTMLElement
@@ -264,16 +268,13 @@ it('T-U-EVM-04: 정상 전송 시 signTransaction { chainId, keyPath, transactio
   // Promise 완료 대기
   await new Promise((r) => setTimeout(r, 50))
 
-  // enqueue 호출 확인
-  expect(mockEnqueue).toHaveBeenCalledTimes(1)
-
-  // transport.send 파라미터 검증
-  expect(mockSend).toHaveBeenCalledTimes(1)
-  const sentPayload = mockSend.mock.calls[0][0]
-  expect(sentPayload.method).toBe('signTransaction')
-  expect(sentPayload.params.chainId).toBe('eip155:137')
-  expect(sentPayload.params.keyPath).toBe("m/44'/60'/0'/0/0")
-  expect(sentPayload.params.transaction).toEqual(JSON.parse(VALID_TX_JSON))
+  // dcent.sign 호출 검증 — { chain: 'eip155:137', payload: { chainId, keyPath, transaction } }
+  expect(mockSign).toHaveBeenCalledTimes(1)
+  const signInput = mockSign.mock.calls[0][0]
+  expect(signInput.chain).toBe('eip155:137')
+  expect(signInput.payload.chainId).toBe('eip155:137')
+  expect(signInput.payload.keyPath).toBe("m/44'/60'/0'/0/0")
+  expect(signInput.payload.transaction).toEqual(JSON.parse(VALID_TX_JSON))
 
   // 로그 확인
   const entries = api.getLogEntries()

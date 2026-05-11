@@ -4,6 +4,7 @@ This is package for connecting WEB and D'CENT biometric wallet.<br>
 User interface is presented in a popup window served from `https://bridge.dcentwallet.com/v2`.
 
 - [Integration](doc/index.md)
+- v0.16.0 → v2 마이그레이션 가이드: [MIGRATION-v1-to-v2.md](./MIGRATION-v1-to-v2.md)
 
 ## Installation
 
@@ -87,4 +88,4 @@ open index-v2.html
 - **Request Log** — append-only log with JSONL export (`Copy all`)
 - **Form (B1 pattern)** — per-method input form with boundary validation
 
-> Note: `index-v2.html` and `playground.js` are excluded from the npm tarball (`.npmignore`).
+> Note: `index-v2.html` and `playground.js` are included in the npm tarball as a living reference for v0.16.0 → v2 migration. See [MIGRATION-v1-to-v2.md](./MIGRATION-v1-to-v2.md) for details.

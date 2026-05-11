@@ -53,6 +53,15 @@ import {
   getKlaytnSignedTransaction,
   checkParameter,
   _sanitizeEthereumTypeOptions,
+  // m08-01-04: v1 non-EVM simple sign wrappers (8개)
+  getBitcoinSignedTransaction,
+  getXrpSignedTransaction,
+  getHederaSignedTransaction,
+  getHederaSignedMessage,
+  getStellarSignedTransaction,
+  getTronSignedTransaction,
+  getSignedMessage,
+  getSignedData,
 } from './sign'
 
 // === 기존 named exports (m02-01·m02-02·m07-02 SHIPPED) ===
@@ -149,6 +158,25 @@ export {
 } from './sign'
 export type { EvmTokenContract, KlaytnContract, EthereumTypeOptions } from './sign'
 
+// === 새 named exports (m08-01-04 — v1 non-EVM simple sign wrappers) ===
+export {
+  getBitcoinSignedTransaction,
+  getXrpSignedTransaction,
+  getHederaSignedTransaction,
+  getHederaSignedMessage,
+  getStellarSignedTransaction,
+  getTronSignedTransaction,
+  getSignedMessage,
+  getSignedData,
+} from './sign'
+export type {
+  XrpTxObject,
+  HederaTxParams,
+  HederaMsgParams,
+  StellarTxParams,
+  TronTxParams,
+} from './sign'
+
 // === default export object (v1 호환 패턴) ===
 //
 // dApp이 `import dcent from 'dcent-web-connector'` 또는 `const dcent = require(...)`로
@@ -201,6 +229,15 @@ const dcent = {
   getKlaytnSignedTransaction,
   checkParameter,
   _sanitizeEthereumTypeOptions,
+  // m08-01-04: v1 non-EVM simple sign wrappers (8개)
+  getBitcoinSignedTransaction,
+  getXrpSignedTransaction,
+  getHederaSignedTransaction,
+  getHederaSignedMessage,
+  getStellarSignedTransaction,
+  getTronSignedTransaction,
+  getSignedMessage,
+  getSignedData,
 } as const
 
 export default dcent

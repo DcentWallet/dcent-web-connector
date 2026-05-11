@@ -59,3 +59,22 @@ export type { EvmTokenContract, KlaytnContract } from './evm'
 export { checkParameter } from './checkParameter'
 export { _sanitizeEthereumTypeOptions } from './_sanitizeEthereumTypeOptions'
 export type { EthereumTypeOptions } from './_sanitizeEthereumTypeOptions'
+
+// m08-01-04: v1 non-EVM simple sign wrappers (8개 — pass-through 패턴)
+export {
+  getBitcoinSignedTransaction,
+  getXrpSignedTransaction,
+  getHederaSignedTransaction,
+  getHederaSignedMessage,
+  getStellarSignedTransaction,
+  getTronSignedTransaction,
+  getSignedMessage,
+  getSignedData,
+} from './nonEvmSimple'
+export type {
+  XrpTxObject,
+  HederaTxParams,
+  HederaMsgParams,
+  StellarTxParams,
+  TronTxParams,
+} from './nonEvmSimple'

@@ -78,3 +78,19 @@ export type {
   StellarTxParams,
   TronTxParams,
 } from './nonEvmSimple'
+
+// m08-01-04.5: v1 non-EVM complex sign wrappers (9개 — UnitConverter + Union method 통합 + 후처리)
+export {
+  getTrcTokenSignedTransaction,
+  getTezosSignedTransaction,
+  getVechainSignedTransaction,
+  getNearSignedTransaction,
+  getHavahSignedTransaction,
+  getPolkadotSignedTransaction,
+  getCosmosSignedTransaction,
+  getAlgorandSignedTransaction,
+  getParachainSignedTransaction,
+} from './nonEvmComplex'
+
+// m08-01-04.5: Cosmos czone family helper (Cosmos wrapper에서만 사용 — sibling export)
+export { getCzonDecimal } from './getCzonDecimal'

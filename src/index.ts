@@ -20,6 +20,8 @@ import {
   klaytnTxType,
   xrpTxType,
   state,
+  // m08-01-04.5
+  coinDecimals,
 } from './types'
 import { unitConverter } from './utils/unitConverter'
 import {
@@ -62,6 +64,17 @@ import {
   getTronSignedTransaction,
   getSignedMessage,
   getSignedData,
+  // m08-01-04.5: v1 non-EVM complex sign wrappers (9개) + Cosmos czone helper
+  getTrcTokenSignedTransaction,
+  getTezosSignedTransaction,
+  getVechainSignedTransaction,
+  getNearSignedTransaction,
+  getHavahSignedTransaction,
+  getPolkadotSignedTransaction,
+  getCosmosSignedTransaction,
+  getAlgorandSignedTransaction,
+  getParachainSignedTransaction,
+  getCzonDecimal,
 } from './sign'
 
 // === 기존 named exports (m02-01·m02-02·m07-02 SHIPPED) ===
@@ -91,6 +104,8 @@ export {
   klaytnTxType,
   xrpTxType,
   state,
+  // m08-01-04.5
+  coinDecimals,
 } from './types'
 export type {
   CoinType,
@@ -107,6 +122,10 @@ export type {
   XrpTxTypeValue,
   State,
   StateValue,
+  // m08-01-04.5
+  CoinDecimals,
+  CoinDecimalsKey,
+  CoinDecimalsValue,
 } from './types'
 
 export { unitConverter } from './utils/unitConverter'
@@ -177,6 +196,20 @@ export type {
   TronTxParams,
 } from './sign'
 
+// === 새 named exports (m08-01-04.5 — v1 non-EVM complex sign wrappers + Cosmos czone helper) ===
+export {
+  getTrcTokenSignedTransaction,
+  getTezosSignedTransaction,
+  getVechainSignedTransaction,
+  getNearSignedTransaction,
+  getHavahSignedTransaction,
+  getPolkadotSignedTransaction,
+  getCosmosSignedTransaction,
+  getAlgorandSignedTransaction,
+  getParachainSignedTransaction,
+  getCzonDecimal,
+} from './sign'
+
 // === default export object (v1 호환 패턴) ===
 //
 // dApp이 `import dcent from 'dcent-web-connector'` 또는 `const dcent = require(...)`로
@@ -196,6 +229,8 @@ const dcent = {
   klaytnTxType,
   xrpTxType,
   state,
+  // m08-01-04.5: coinDecimals enum (v1 deferred port)
+  coinDecimals,
   // utils
   unitConverter,
   // sign (m08-01-02)
@@ -238,6 +273,17 @@ const dcent = {
   getTronSignedTransaction,
   getSignedMessage,
   getSignedData,
+  // m08-01-04.5: v1 non-EVM complex sign wrappers (9개) + Cosmos czone helper
+  getTrcTokenSignedTransaction,
+  getTezosSignedTransaction,
+  getVechainSignedTransaction,
+  getNearSignedTransaction,
+  getHavahSignedTransaction,
+  getPolkadotSignedTransaction,
+  getCosmosSignedTransaction,
+  getAlgorandSignedTransaction,
+  getParachainSignedTransaction,
+  getCzonDecimal,
 } as const
 
 export default dcent

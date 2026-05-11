@@ -46,6 +46,13 @@ import {
   isAvaliableLabel,
   isAvaliableCoinGroup,
   isAvailableSyncAccountCoinName,
+  // m08-01-03: v1 EVM sign wrappers + checkParameter helper
+  getEthereumSignedTransaction,
+  getEthereumSignedMessage,
+  getTokenSignedTransaction,
+  getKlaytnSignedTransaction,
+  checkParameter,
+  _sanitizeEthereumTypeOptions,
 } from './sign'
 
 // === 기존 named exports (m02-01·m02-02·m07-02 SHIPPED) ===
@@ -131,6 +138,17 @@ export {
   isAvailableSyncAccountCoinName,
 } from './sign'
 
+// === 새 named exports (m08-01-03 — v1 EVM sign wrappers + checkParameter helper) ===
+export {
+  getEthereumSignedTransaction,
+  getEthereumSignedMessage,
+  getTokenSignedTransaction,
+  getKlaytnSignedTransaction,
+  checkParameter,
+  _sanitizeEthereumTypeOptions,
+} from './sign'
+export type { EvmTokenContract, KlaytnContract, EthereumTypeOptions } from './sign'
+
 // === default export object (v1 호환 패턴) ===
 //
 // dApp이 `import dcent from 'dcent-web-connector'` 또는 `const dcent = require(...)`로
@@ -176,6 +194,13 @@ const dcent = {
   isAvaliableLabel,
   isAvaliableCoinGroup,
   isAvailableSyncAccountCoinName,
+  // m08-01-03: v1 EVM sign wrappers + checkParameter helper
+  getEthereumSignedTransaction,
+  getEthereumSignedMessage,
+  getTokenSignedTransaction,
+  getKlaytnSignedTransaction,
+  checkParameter,
+  _sanitizeEthereumTypeOptions,
 } as const
 
 export default dcent

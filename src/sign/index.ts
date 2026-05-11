@@ -47,3 +47,15 @@ export {
   isAvaliableCoinGroup,
   isAvailableSyncAccountCoinName,
 } from './coinGroupValidator'
+
+// m08-01-03: v1 EVM sign wrappers + checkParameter helper + typeOptions sanitize
+export {
+  getEthereumSignedTransaction,
+  getEthereumSignedMessage,
+  getTokenSignedTransaction,
+  getKlaytnSignedTransaction,
+} from './evm'
+export type { EvmTokenContract, KlaytnContract } from './evm'
+export { checkParameter } from './checkParameter'
+export { _sanitizeEthereumTypeOptions } from './_sanitizeEthereumTypeOptions'
+export type { EthereumTypeOptions } from './_sanitizeEthereumTypeOptions'

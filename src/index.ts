@@ -22,7 +22,31 @@ import {
   state,
 } from './types'
 import { unitConverter } from './utils/unitConverter'
-import { sign } from './sign'
+import {
+  sign,
+  // m08-01-02.5: read-only / configure / Bitcoin tx-builder
+  info,
+  getDeviceInfo,
+  getAccountInfo,
+  getAddress,
+  getXPUB,
+  setLabel,
+  syncAccount,
+  selectAddress,
+  getBitcoinTransactionObject,
+  addBitcoinTransactionInput,
+  addBitcoinTransactionOutput,
+  // m08-01-02.5: v1 validator helpers (export 표면 보존 — v1 typo 포함)
+  isAvaliableCoinType,
+  isCzoneCoinType,
+  isParachainCoinType,
+  isBitcoinTxCoinType,
+  isTokenType,
+  getCzonePrifix,
+  isAvaliableLabel,
+  isAvaliableCoinGroup,
+  isAvailableSyncAccountCoinName,
+} from './sign'
 
 // === 기존 named exports (m02-01·m02-02·m07-02 SHIPPED) ===
 export type {
@@ -79,6 +103,34 @@ export type { SignInput, V1Response, V1ResponseHeader, V1ResponseBody } from './
 export { _call, _genId, _sanitizeChain, _assertV1Success, providerErrorToV1, chainToMethod } from './sign'
 export type { CallInput } from './sign'
 
+// === 새 named exports (m08-01-02.5 — read-only / configure / Bitcoin tx-builder + v1 validators) ===
+export {
+  info,
+  getDeviceInfo,
+  getAccountInfo,
+  getAddress,
+  getXPUB,
+  setLabel,
+  syncAccount,
+  selectAddress,
+  getBitcoinTransactionObject,
+  addBitcoinTransactionInput,
+  addBitcoinTransactionOutput,
+} from './sign'
+export type { SyncAccountInfo, BitcoinTxObject, BitcoinTxParameter } from './sign'
+// v1 validator helpers — dApp 표면 1:1 보존 (v1 typo `getCzonePrifix` 포함)
+export {
+  isAvaliableCoinType,
+  isCzoneCoinType,
+  isParachainCoinType,
+  isBitcoinTxCoinType,
+  isTokenType,
+  getCzonePrifix,
+  isAvaliableLabel,
+  isAvaliableCoinGroup,
+  isAvailableSyncAccountCoinName,
+} from './sign'
+
 // === default export object (v1 호환 패턴) ===
 //
 // dApp이 `import dcent from 'dcent-web-connector'` 또는 `const dcent = require(...)`로
@@ -102,6 +154,28 @@ const dcent = {
   unitConverter,
   // sign (m08-01-02)
   sign,
+  // m08-01-02.5: read-only / configure / Bitcoin tx-builder
+  info,
+  getDeviceInfo,
+  getAccountInfo,
+  getAddress,
+  getXPUB,
+  setLabel,
+  syncAccount,
+  selectAddress,
+  getBitcoinTransactionObject,
+  addBitcoinTransactionInput,
+  addBitcoinTransactionOutput,
+  // m08-01-02.5: v1 validator helpers (dApp 표면 1:1 보존 — v1 typo 포함)
+  isAvaliableCoinType,
+  isCzoneCoinType,
+  isParachainCoinType,
+  isBitcoinTxCoinType,
+  isTokenType,
+  getCzonePrifix,
+  isAvaliableLabel,
+  isAvaliableCoinGroup,
+  isAvailableSyncAccountCoinName,
 } as const
 
 export default dcent

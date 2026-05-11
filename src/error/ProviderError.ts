@@ -11,7 +11,7 @@ export class ProviderError extends Error {
   public readonly code: ErrorCode | number
   public readonly data?: unknown
 
-  constructor(code: ErrorCode | number, message: string, data?: unknown) {
+  constructor (code: ErrorCode | number, message: string, data?: unknown) {
     super(message)
     this.name = 'ProviderError'
     this.code = code

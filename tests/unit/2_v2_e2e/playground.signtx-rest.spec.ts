@@ -33,26 +33,21 @@ describe('[v2 e2e] playground signTx Rest family', () => {
     await browser.close()
   })
 
-  // Helper: mock transport 주입 + simulateConnect
+  // m08-01-05: Helper — inject mock dcent facade + simulateConnect
   async function setupMockTransport() {
     await page.evaluate(() => {
       const api = (window as any)._playgroundTestAPI
       ;(window as any)._capturedRequests = []
-      const mockTransport = {
-        send: (payload: any) => {
-          ;(window as any)._capturedRequests.push(payload)
-          return Promise.resolve({ id: payload.id, result: { signedTx: 'mock-signed-cosmos-tx' } })
+      const mockDcent = {
+        sign: (input: any) => {
+          ;(window as any)._capturedRequests.push(input)
+          return Promise.resolve({ header: { status: 'success' }, body: { parameter: { signedTx: 'mock-signed-cosmos-tx' } } })
         },
-        on: (_: string, _fn: any) => {},
-        off: () => {},
-        close: () => Promise.resolve(),
+        getDeviceInfo: () => Promise.resolve({ header: { status: 'success' }, body: { parameter: {} } }),
+        popupWindowClose: () => {},
+        setConnectionListener: () => {},
       }
-      const mockQueue = {
-        enqueue: (task: any) => task(),
-        size: () => 0,
-        clear: () => {},
-      }
-      api.simulateConnect(mockTransport, mockQueue, { model: 'Biometric', firmware: '3.23.0' })
+      api.simulateConnect(mockDcent, null, { model: 'Biometric', firmware: '3.23.0' })
     })
   }
 
@@ -123,11 +118,12 @@ describe('[v2 e2e] playground signTx Rest family', () => {
     expect(captured.length).toBe(1)
 
     const req = captured[0]
-    expect(req.method).toBe('signTransaction')
-    expect(req.params.chainId).toMatch(/^cosmos:/)
-    expect(req.params.keyPath).toMatch(/^m\//)
-    expect(typeof req.params.transaction).toBe('object')
-    expect(req.params.transaction).not.toBeNull()
+    // m08-01-05: facade dcent.sign({chain, payload}) 호출됨
+    expect(req.chain).toMatch(/^cosmos:/)
+    expect(req.payload.chainId).toMatch(/^cosmos:/)
+    expect(req.payload.keyPath).toMatch(/^m\//)
+    expect(typeof req.payload.transaction).toBe('object')
+    expect(req.payload.transaction).not.toBeNull()
 
     // Step 10: 로그 엔트리 확인
     const entries = await page.evaluate(() =>

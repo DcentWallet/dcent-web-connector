@@ -8,9 +8,13 @@
   <h1>v2 e2e harness</h1>
   <script src="/dist/v2/dcent-web-connector.min.js"></script>
   <script>
-    // dist/v2 번들의 libraryTarget: 'this' → window에 PopupTransport / ErrorCode / ProviderError / SerialRequestQueue 노출
-    var PopupTransport = window.PopupTransport
-    var ErrorCode = window.ErrorCode
+    // m08-01-05 (D-02 A): v2 번들이 window.dcent에 entire module exports를 노출
+    // 이전: libraryTarget: 'this' → window.PopupTransport / window.ErrorCode 직접 노출
+    // 변경: window.dcent.PopupTransport / window.dcent.ErrorCode (named exports는 dcent 객체 안)
+    // index-v2.html은 default export object를 window.dcent에 alias하지만 harness는 named exports가 필요
+    // 따라서 harness는 window.dcent의 raw module shape를 그대로 사용
+    var PopupTransport = window.dcent.PopupTransport
+    var ErrorCode = window.dcent.ErrorCode
 
     // T-E-03 handshake 카운트 spy — connector 측 PopupTransport.sendHandshake (private but runtime accessible)를 wrap
     // popup 측 postMessage는 cross-origin이라 replace 불가하므로 connector 측에서 카운트

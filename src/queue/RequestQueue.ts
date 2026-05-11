@@ -31,7 +31,7 @@ export class SerialRequestQueue implements RequestQueue {
   private chain: Promise<unknown> = Promise.resolve()
   private pending = 0
 
-  enqueue<T>(task: () => Promise<T>): Promise<T> {
+  enqueue<T> (task: () => Promise<T>): Promise<T> {
     this.pending += 1
     // chain.then(task, task): 이전 작업의 resolve/reject 무관하게 task 실행
     const result = this.chain.then(task, task) as Promise<T>
@@ -43,11 +43,11 @@ export class SerialRequestQueue implements RequestQueue {
     return result
   }
 
-  size(): number {
+  size (): number {
     return this.pending
   }
 
-  clear(): void {
+  clear (): void {
     // 현재는 새 chain으로 리셋만 수행.
     // cycle 02에서 AbortController로 미완 task 취소 강화 예정.
     this.chain = Promise.resolve()

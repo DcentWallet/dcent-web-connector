@@ -196,21 +196,26 @@ it('T-U-06: Copy all — 2건 log 후 JSONL 형식 검증', () => {
 
 // ─────────────────────────────────────────────────────────
 // T-U-07: 입력 폼 boundary validation — keyPath 누락 시 dispatcher 호출 0건
+// m08-01-05: facade-shaped mock으로 simulateConnect 호출 (state.connected만 검증)
 // ─────────────────────────────────────────────────────────
 it('T-U-07: keyPath 누락 시 Send 클릭 → dispatcher 호출 0건', () => {
   const api = (window as any)._playgroundTestAPI
 
-  // mock transport + queue
-  const mockSend = jest.fn().mockResolvedValue({ id: 'x', result: {} })
-  const mockEnqueue = jest.fn(function (task: any) { return task() })
-  const mockTransport = { send: mockSend, on: jest.fn(), off: jest.fn(), close: jest.fn() }
-  const mockQueue = { enqueue: mockEnqueue, size: jest.fn(), clear: jest.fn() }
+  // m08-01-05: facade-shaped mock — sign / getDeviceInfo가 dispatcher 진입점
+  const mockSign = jest.fn().mockResolvedValue({ header: { status: 'success' }, body: { parameter: {} } })
+  const mockGetDeviceInfo = jest.fn().mockResolvedValue({ header: { status: 'success' }, body: { parameter: {} } })
+  const mockDcent = {
+    sign: mockSign,
+    getDeviceInfo: mockGetDeviceInfo,
+    popupWindowClose: jest.fn(),
+    setConnectionListener: jest.fn(),
+  }
 
   // signMessage:eth:personal 선택 후 connect 시뮬레이션
   const signMethodItem = document.querySelector('[data-method-id="signMessage:eth:personal"]') as HTMLElement
   signMethodItem.click()
 
-  api.simulateConnect(mockTransport, mockQueue, { model: 'Bio', firmware: '3.0' })
+  api.simulateConnect(mockDcent, null, { model: 'Bio', firmware: '3.0' })
 
   // keyPath 필드를 비움
   const keyPathEl = document.getElementById('field-keyPath') as HTMLInputElement
@@ -225,25 +230,33 @@ it('T-U-07: keyPath 누락 시 Send 클릭 → dispatcher 호출 0건', () => {
   expect(btnSend.disabled).toBe(false)
   btnSend.click()
 
-  // dispatcher가 호출되지 않아야 함
-  expect(mockEnqueue).not.toHaveBeenCalled()
+  // dispatcher (sign)가 호출되지 않아야 함 — boundary validation에서 차단됨
+  expect(mockSign).not.toHaveBeenCalled()
 })
 
 // ─────────────────────────────────────────────────────────
-// T-U-08: 에러 응답 매핑 — ProviderError throw → LogEntry.error
+// T-U-08: 에러 응답 매핑 — facade가 v1 형식 error로 reject → LogEntry.error
+// m08-01-05: facade의 v1 호환 응답 — { header: { status: 'failure' }, body: { error: { code, message } } }
 // ─────────────────────────────────────────────────────────
-it('T-U-08: ProviderError(-32603) throw → LogEntry.error 매핑', async () => {
+it('T-U-08: facade v1 형식 error → LogEntry.error 매핑', async () => {
   const api = (window as any)._playgroundTestAPI
   api.clearLogs()
 
-  const ProviderErrorCtor = (window as any).ProviderError
-  const mockError = new ProviderErrorCtor(-32603, 'Internal error')
+  // m08-01-05: facade가 reject할 때는 보통 ProviderError이지만 v1 호환 응답으로 wrap된 형태도 가능
+  // playground.normalizeError가 두 형식 모두 처리해야 함
+  const v1Error = {
+    body: { error: { code: -32603, message: 'Internal error' } },
+    header: { status: 'failure' },
+  }
+  const mockGetDeviceInfo = jest.fn().mockRejectedValue(v1Error)
+  const mockDcent = {
+    sign: jest.fn(),
+    getDeviceInfo: mockGetDeviceInfo,
+    popupWindowClose: jest.fn(),
+    setConnectionListener: jest.fn(),
+  }
 
-  const mockEnqueue = jest.fn().mockRejectedValue(mockError)
-  const mockTransport = { send: jest.fn(), on: jest.fn(), off: jest.fn(), close: jest.fn() }
-  const mockQueue = { enqueue: mockEnqueue, size: jest.fn(), clear: jest.fn() }
-
-  api.simulateConnect(mockTransport, mockQueue, { model: 'Bio', firmware: '3.0' })
+  api.simulateConnect(mockDcent, null, { model: 'Bio', firmware: '3.0' })
 
   // getDeviceInfo 선택
   const getDeviceItem = document.querySelector('[data-method-id="getDeviceInfo"]') as HTMLElement
@@ -264,26 +277,31 @@ it('T-U-08: ProviderError(-32603) throw → LogEntry.error 매핑', async () => 
 })
 
 // ─────────────────────────────────────────────────────────
-// T-U-09: transport === null 인 동안 모든 Send 버튼 disabled (Connect 후 활성화)
+// T-U-09: state.connected === false 인 동안 모든 Send 버튼 disabled (Connect 후 활성화)
+// m08-01-05: state.transport → state.connected로 변경
 // ─────────────────────────────────────────────────────────
-it('T-U-09: transport null → btn-send disabled; connect 후 method 선택 시 활성화', () => {
+it('T-U-09: not connected → btn-send disabled; connect 후 method 선택 시 활성화', () => {
   const api = (window as any)._playgroundTestAPI
   const btnSend = document.getElementById('btn-send') as HTMLButtonElement
 
-  // 초기 상태: transport null
-  expect(api.state.transport).toBeNull()
+  // 초기 상태: not connected
+  expect(api.state.connected).toBe(false)
   expect(btnSend.disabled).toBe(true)
   expect(btnSend.getAttribute('aria-disabled')).toBe('true')
 
-  // 메서드 선택 — 여전히 disabled (transport 없음)
+  // 메서드 선택 — 여전히 disabled (not connected)
   const getDeviceItem = document.querySelector('[data-method-id="getDeviceInfo"]') as HTMLElement
   getDeviceItem.click()
   expect(btnSend.disabled).toBe(true)
 
-  // Connect 시뮬레이션
-  const mockTransport = { send: jest.fn(), on: jest.fn(), off: jest.fn(), close: jest.fn() }
-  const mockQueue = { enqueue: jest.fn(), size: jest.fn(), clear: jest.fn() }
-  api.simulateConnect(mockTransport, mockQueue, { model: 'Bio', firmware: '3.0' })
+  // Connect 시뮬레이션 — facade-shaped mock
+  const mockDcent = {
+    sign: jest.fn(),
+    getDeviceInfo: jest.fn(),
+    popupWindowClose: jest.fn(),
+    setConnectionListener: jest.fn(),
+  }
+  api.simulateConnect(mockDcent, null, { model: 'Bio', firmware: '3.0' })
 
   // Connect 후에도 method 선택 상태이므로 활성화
   expect(btnSend.disabled).toBe(false)

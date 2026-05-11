@@ -98,25 +98,20 @@ describe('[v2 e2e] playground signTx EVM', () => {
     )
     expect(evmNodeCount).toBe(SAMPLE_CHAINS.length)
 
-    // Step 3: Mock transport 주입 + connect
+    // m08-01-05: Step 3: Mock dcent facade 주입 + simulateConnect
     await page.evaluate(() => {
       const api = (window as any)._playgroundTestAPI
       ;(window as any)._capturedRequests = []
-      const mockTransport = {
-        send: (payload: any) => {
-          ;(window as any)._capturedRequests.push(payload)
-          return Promise.resolve({ id: payload.id, result: { signedTx: '0xdeadbeef' } })
+      const mockDcent = {
+        sign: (input: any) => {
+          ;(window as any)._capturedRequests.push(input)
+          return Promise.resolve({ header: { status: 'success' }, body: { parameter: { signedTx: '0xdeadbeef' } } })
         },
-        on: (_: string, _fn: any) => {},
-        off: () => {},
-        close: () => Promise.resolve(),
+        getDeviceInfo: () => Promise.resolve({ header: { status: 'success' }, body: { parameter: {} } }),
+        popupWindowClose: () => {},
+        setConnectionListener: () => {},
       }
-      const mockQueue = {
-        enqueue: (task: any) => task(),
-        size: () => 0,
-        clear: () => {},
-      }
-      api.simulateConnect(mockTransport, mockQueue, { model: 'Biometric', firmware: '3.23.0' })
+      api.simulateConnect(mockDcent, null, { model: 'Biometric', firmware: '3.23.0' })
     })
 
     // Step 4: Ethereum (eip155:1) 노드 클릭
@@ -155,16 +150,17 @@ describe('[v2 e2e] playground signTx EVM', () => {
     // Step 8: 응답 대기
     await new Promise((r) => setTimeout(r, 300))
 
-    // Step 9: 전송된 요청 파라미터 검증
+    // m08-01-05: Step 9: 전송된 sign input 파라미터 검증
     const captured = await page.evaluate(() => (window as any)._capturedRequests)
     expect(captured.length).toBe(1)
 
     const req = captured[0]
-    expect(req.method).toBe('signTransaction')
-    expect(req.params.chainId).toBe('eip155:1')
-    expect(req.params.keyPath).toBe("m/44'/60'/0'/0/0")
-    expect(req.params.transaction).toBeDefined()
-    expect(req.params.transaction.type).toBe(2)
+    // facade dcent.sign({ chain: 'eip155:1', payload: { chainId, keyPath, transaction } })
+    expect(req.chain).toBe('eip155:1')
+    expect(req.payload.chainId).toBe('eip155:1')
+    expect(req.payload.keyPath).toBe("m/44'/60'/0'/0/0")
+    expect(req.payload.transaction).toBeDefined()
+    expect(req.payload.transaction.type).toBe(2)
 
     // Step 10: 로그 엔트리 확인
     const entries = await page.evaluate(() =>

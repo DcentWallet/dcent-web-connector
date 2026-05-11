@@ -1,0 +1,33 @@
+/**
+ * v2 facade — klaytnTxType enum (m08-01-01)
+ *
+ * v1 src-v1/type/dcent-web-type.js의 klaytnTxType과 키·값 1:1 일치.
+ * 값은 hex (0x...)로 v1과 동일하게 number 타입.
+ */
+export const klaytnTxType = Object.freeze({
+  LEGACY: 0xff,
+  FEE_PAYER: 0xee,
+
+  VALUE_TRANSFER: 0x08,
+  FEE_DELEGATED_VALUE_TRANSFER: 0x09,
+  FEE_DELEGATED_VALUE_TRANSFER_WITH_RATIO: 0x0a,
+
+  VALUE_TRANSFER_MEMO: 0x10,
+  FEE_DELEGATED_VALUE_TRANSFER_MEMO: 0x11,
+  FEE_DELEGATED_VALUE_TRANSFER_MEMO_WITH_RATIO: 0x12,
+
+  SMART_CONTRACT_DEPLOY: 0x28,
+  FEE_DELEGATED_SMART_CONTRACT_DEPLOY: 0x29,
+  FEE_DELEGATED_SMART_CONTRACT_DEPLOY_WITH_RATIO: 0x2a,
+
+  SMART_CONTRACT_EXECUTION: 0x30,
+  FEE_DELEGATED_SMART_CONTRACT_EXECUTION: 0x31,
+  FEE_DELEGATED_SMART_CONTRACT_EXECUTION_WITH_RATIO: 0x32,
+
+  CANCEL: 0x38,
+  FEE_DELEGATED_CANCEL: 0x39,
+  FEE_DELEGATED_CANCEL_WITH_RATIO: 0x3a,
+} as const)
+
+export type KlaytnTxType = keyof typeof klaytnTxType
+export type KlaytnTxTypeValue = typeof klaytnTxType[KlaytnTxType]

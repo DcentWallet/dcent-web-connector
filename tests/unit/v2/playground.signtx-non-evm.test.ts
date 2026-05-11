@@ -251,9 +251,14 @@ it('T-U-NEVM-02: btc-transfer preset 적용 → Bitcoin chain node 활성, texta
 
   api.simulateNonEvmLoad(SAMPLE_NON_EVM_CHAINS, SAMPLE_NON_EVM_PRESETS)
 
-  const mockTransport = { send: jest.fn(), on: jest.fn(), off: jest.fn(), close: jest.fn() }
-  const mockQueue = { enqueue: jest.fn(function (task: any) { return task() }), size: jest.fn(), clear: jest.fn() }
-  api.simulateConnect(mockTransport, mockQueue, { model: 'Bio', firmware: '3.0' })
+  // m08-01-05: facade-shaped mock
+  const mockDcent = {
+    sign: jest.fn().mockResolvedValue({ header: { status: 'success' }, body: { parameter: {} } }),
+    getDeviceInfo: jest.fn().mockResolvedValue({ header: { status: 'success' }, body: { parameter: {} } }),
+    popupWindowClose: jest.fn(),
+    setConnectionListener: jest.fn(),
+  }
+  api.simulateConnect(mockDcent, null, { model: 'Bio', firmware: '3.0' })
 
   // Bitcoin chain node 클릭
   const btcNode = document.querySelector('[data-method-id="signTx:bitcoin:bip122:000000000019d6689c085ae165831e93"]') as HTMLElement

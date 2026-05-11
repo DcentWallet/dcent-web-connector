@@ -2,8 +2,12 @@
  * playground.js — D'CENT Connector v2 Playground
  *
  * 외부 라이브러리 0, 표준 DOM API만 사용.
- * dist/v2/dcent-web-connector.min.js 로드 후 window 전역:
- *   PopupTransport, SerialRequestQueue, ErrorCode, ProviderError
+ * dist/v2/dcent-web-connector.min.js 로드 후 index-v2.html에서 alias:
+ *   <script>window.dcent = (window.dcent && window.dcent.default) || window.dcent;</script>
+ * 결과: window.dcent === facade default export object (v0.16.0 dApp이 require()로 받는 것과 동일 shape)
+ *
+ * m08-01-05 (D-04 B finality): playground이 PopupTransport / SerialRequestQueue / _genId 직접 사용 패턴을
+ * 모두 제거하고 facade의 `dcent.<method>()` 호출로 단순화. transport/queue는 facade singleton이 내부 관리.
  *
  * 룰 준수:
  *   - error-handling-consistency: 모든 실패 경로는 appendLog({ error: ... }) 통일
@@ -236,9 +240,9 @@
   }
 
   // ── 전역 상태 ──
+  // m08-01-05: transport / queue는 facade singleton이 내부 관리 — playground은 connected boolean만 추적
   var state = {
-    transport: null, // PopupTransport 인스턴스 또는 null
-    queue: null, // SerialRequestQueue
+    connected: false, // dcent facade 사용 여부 (true이면 popup이 활성/대기 상태)
     device: null, // 마지막 getDeviceInfo 응답
     selectedMethodId: null, // 현재 선택된 트리 아이템 id
     selectedMethodDef: null, // 선택된 메서드 정의 객체
@@ -247,6 +251,9 @@
     sdkVersion: null, // dist에서 추출한 packageVersion (있으면)
     evmChainsLoaded: false, // chains.json 로드 완료 여부 (EVM + 비-EVM 통합)
     nonEvmChainsLoaded: false, // 비-EVM chains/presets 로드 완료 여부 (m06-01-03)
+    // 테스트용 inject — simulateConnect가 mock 함수 객체를 주입할 때 사용
+    // null이면 진짜 window.dcent 사용
+    _testDcent: null,
   }
 
   // ── DOM refs ──
@@ -265,10 +272,13 @@
   var btnClear = $('btn-clear')
   var btnCopy = $('btn-copy')
 
-  // ── SDK globals (window에 노출됨 by dist libraryTarget: 'this') ──
-  var PopupTransport = window.PopupTransport
-  var SerialRequestQueue = window.SerialRequestQueue
-  // ProviderError는 window.ProviderError로 직접 접근 (테스트 API에서 참조)
+  // ── SDK facade reference (m08-01-05) ──
+  // index-v2.html이 window.dcent를 default export object로 alias함:
+  //   <script>window.dcent = (window.dcent && window.dcent.default) || window.dcent;</script>
+  // _getDcent()는 매 호출 시점에 facade를 lookup → simulateConnect의 mock inject도 지원
+  function _getDcent () {
+    return state._testDcent || window.dcent
+  }
 
   // ── Build Tree DOM ──
   function buildTree () {
@@ -793,33 +803,43 @@
     onDisconnect()
   })
 
+  // m08-01-05: state listener는 connect/disconnect 사이클과 독립적으로 1회 등록
+  // facade가 listener를 cached하므로 reset 후에도 자동 복구 (singleton.ts 동작)
+  var _stateListenerRegistered = false
+  function _ensureStateListener () {
+    if (_stateListenerRegistered) return
+    var dcent = _getDcent()
+    if (!dcent || typeof dcent.setConnectionListener !== 'function') return
+    dcent.setConnectionListener(function (transportState) {
+      if (transportState === 'disconnected' && state.connected) {
+        onTransportDisconnected('Popup was closed')
+      }
+    })
+    _stateListenerRegistered = true
+  }
+
   function onConnect () {
     btnConnect.disabled = true
     connDot.className = ''
     deviceInfoEl.textContent = 'Connecting...'
 
-    try {
-      state.transport = new PopupTransport({ popUpUrl: 'https://bridge.dcentwallet.com/v2' })
-      state.queue = new SerialRequestQueue(state.transport)
-    } catch (e) {
-      updateIndicator({ connected: false, error: true, msg: 'Init failed: ' + e.message })
+    var dcent = _getDcent()
+    if (!dcent || typeof dcent.getDeviceInfo !== 'function') {
+      updateIndicator({ connected: false, error: true, msg: 'Init failed: window.dcent not loaded' })
       btnConnect.disabled = false
       return
     }
 
-    // Listen for transport state changes (popup close, etc.)
-    state.transport.on('state', function (transportState) {
-      if (transportState === 'disconnected') {
-        onTransportDisconnected('Popup was closed')
-      }
-    })
+    // m08-01-05: facade가 transport/queue를 lazy 생성 — listener는 1회만 등록
+    _ensureStateListener()
 
     var startMs = Date.now()
-    state.queue.enqueue(function () {
-      return state.transport.send({ id: _genId(), method: 'getDeviceInfo' })
-    }).then(function (resp) {
-      var device = resp && resp.result ? resp.result : {}
+    // m08-01-05: dcent.getDeviceInfo()는 v1 호환 응답 ({header, body}) 반환
+    dcent.getDeviceInfo().then(function (resp) {
+      // v1 응답 형식: { header: {status: 'success'}, body: { parameter: {...device fields...} } }
+      var device = (resp && resp.body && resp.body.parameter) || (resp && resp.result) || {}
       state.device = device
+      state.connected = true
       var latencyMs = Date.now() - startMs
       updateIndicator({ connected: true, model: device.model, fw: device.firmware })
       btnConnect.style.display = 'none'
@@ -846,11 +866,12 @@
   }
 
   function onDisconnect () {
-    if (state.transport) {
-      state.transport.close().catch(function () {})
+    // m08-01-05: facade의 popupWindowClose가 transport singleton을 close
+    var dcent = _getDcent()
+    if (dcent && typeof dcent.popupWindowClose === 'function') {
+      try { dcent.popupWindowClose() } catch (e) { /* defensive noop */ }
     }
-    state.transport = null
-    state.queue = null
+    state.connected = false
     state.device = null
     updateIndicator({ connected: false })
     btnConnect.style.display = ''
@@ -861,8 +882,7 @@
   }
 
   function onTransportDisconnected (reason) {
-    state.transport = null
-    state.queue = null
+    state.connected = false
     updateIndicator({ connected: false, error: true, msg: reason || 'Disconnected' })
     btnConnect.style.display = ''
     btnConnect.disabled = false
@@ -894,7 +914,7 @@
 
   // ── Send ──
   btnSend.addEventListener('click', function () {
-    if (!state.transport) return
+    if (!state.connected) return
     var methodId = state.selectedMethodId
     if (!methodId) return
 
@@ -915,7 +935,7 @@
 
   function updateSendBtn () {
     // disabled when: not connected OR no method selected
-    var canSend = !!state.transport && !!state.selectedMethodId
+    var canSend = !!state.connected && !!state.selectedMethodId
     btnSend.disabled = !canSend
     if (!canSend) {
       btnSend.setAttribute('aria-disabled', 'true')
@@ -926,10 +946,10 @@
 
   function sendGetDeviceInfo () {
     var startMs = Date.now()
-    state.queue.enqueue(function () {
-      return state.transport.send({ id: _genId(), method: 'getDeviceInfo' })
-    }).then(function (resp) {
-      var result = resp && resp.result ? resp.result : resp
+    var dcent = _getDcent()
+    // m08-01-05: facade의 v1 호환 API — 응답은 v1 envelope ({header, body.parameter})
+    dcent.getDeviceInfo().then(function (resp) {
+      var result = (resp && resp.body && resp.body.parameter) || (resp && resp.result) || resp
       state.device = result
       appendLog({
         method: 'getDeviceInfo',
@@ -989,10 +1009,12 @@
     var params = { chainId: chainId, keyPath: keyPath, message: message, meta: metaObj }
     var startMs = Date.now()
 
-    state.queue.enqueue(function () {
-      return state.transport.send({ id: _genId(), method: 'signMessage', params: params })
-    }).then(function (resp) {
-      var result = resp && resp.result ? resp.result : resp
+    // m08-01-05: 통합 sign API 사용 — chain 인자로 raw method 전달 (v1 fallback path)
+    // CAIP-19 (예: 'eip155:1') 또는 v1 method 문자열 ('signMessage') 모두 지원.
+    // 본 dispatcher는 v1 호환 'signMessage' method를 그대로 사용.
+    var dcent = _getDcent()
+    dcent.sign({ chain: 'signMessage', payload: params }).then(function (resp) {
+      var result = (resp && resp.body && resp.body.parameter) || (resp && resp.result) || resp
       appendLog({
         method: 'signMessage',
         chainId: chainId,
@@ -1051,10 +1073,16 @@
     var params = { chainId: chainId, keyPath: keyPath, transaction: txObj }
     var startMs = Date.now()
 
-    state.queue.enqueue(function () {
-      return state.transport.send({ id: _genId(), method: 'signTransaction', params: params })
-    }).then(function (resp) {
-      var result = resp && resp.result ? resp.result : resp
+    // m08-01-05: EVM signTx는 통합 sign API 사용 — chain은 CAIP-19 형식 (eip155:N)
+    // chainId가 이미 'eip155:N' 형식이면 그대로 사용, 숫자만이면 prefix 추가
+    // 본 dispatcher는 통합 API를 시연. dApp이 v1 wrapper를 더 좋아하면
+    //   dcent.getEthereumSignedTransaction(coinType, nonce, gasPrice, ...) 도 사용 가능.
+    var dcent = _getDcent()
+    var caipChain = (chainId && chainId.indexOf(':') !== -1)
+      ? chainId
+      : ('eip155:' + (chainId || 1))
+    dcent.sign({ chain: caipChain, payload: params }).then(function (resp) {
+      var result = (resp && resp.body && resp.body.parameter) || (resp && resp.result) || resp
       appendLog({
         method: 'signTransaction',
         chainId: chainId,
@@ -1114,10 +1142,12 @@
     var params = { chainId: chainId, keyPath: keyPath, transaction: txObj }
     var startMs = Date.now()
 
-    state.queue.enqueue(function () {
-      return state.transport.send({ id: _genId(), method: 'signTransaction', params: params })
-    }).then(function (resp) {
-      var result = resp && resp.result ? resp.result : resp
+    // m08-01-05: 비-EVM signTx도 통합 sign API — chainId가 이미 CAIP-19 형식 (bip122:..., cosmos:...)
+    // chainId가 비어있으면 v1 method 'signTransaction' fallback (chainToMethod이 default 처리)
+    var dcent = _getDcent()
+    var caipChain = chainId || 'signTransaction'
+    dcent.sign({ chain: caipChain, payload: params }).then(function (resp) {
+      var result = (resp && resp.body && resp.body.parameter) || (resp && resp.result) || resp
       appendLog({
         method: 'signTransaction',
         chainId: chainId,
@@ -1258,14 +1288,18 @@
   })
 
   // ── Utils ──
-  var _idCounter = 0
-  function _genId () {
-    _idCounter += 1
-    return 'pg-' + Date.now() + '-' + _idCounter
-  }
+  // m08-01-05: _genId 제거 — facade의 _call이 내부 ID 생성 (singleton.ts/idGen.ts)
 
   function normalizeError (err) {
     if (!err) return { code: -1, message: 'Unknown error' }
+    // m08-01-05: facade는 v1 호환 응답으로 reject하거나 ProviderError로 throw
+    // v1 형식: { header: { status: 'failure' }, body: { error: { code, message } } }
+    if (err && err.body && err.body.error) {
+      return {
+        code: err.body.error.code !== undefined ? err.body.error.code : -1,
+        message: err.body.error.message || String(err),
+      }
+    }
     return {
       code: err.code !== undefined ? err.code : -1,
       message: err.message || String(err),
@@ -1317,27 +1351,59 @@
       return count
     },
     isSendDisabled: function () { return btnSend.disabled },
-    simulateConnect: function (mockTransport, mockQueue, mockDevice) {
-      state.transport = mockTransport
-      state.queue = mockQueue
+    // m08-01-05: simulateConnect는 mock dcent facade를 inject + 연결 상태로 진입
+    // mockDcentOrTransport: { getDeviceInfo, sign, popupWindowClose, setConnectionListener, ... }
+    //   기존 호출 호환: 첫 인자가 transport-like(`.send`/`.on` 가진 객체)이면 wrapper 생성
+    simulateConnect: function (mockDcentOrTransport, mockQueueOrUnused, mockDevice) {
+      var dcentMock
+      if (mockDcentOrTransport && (typeof mockDcentOrTransport.getDeviceInfo === 'function' ||
+                                    typeof mockDcentOrTransport.sign === 'function')) {
+        // 새 패턴: facade-shaped mock
+        dcentMock = mockDcentOrTransport
+      } else if (mockDcentOrTransport && typeof mockDcentOrTransport.send === 'function') {
+        // 구 패턴 호환: transport mock → facade-shaped wrapper로 변환
+        var transport = mockDcentOrTransport
+        dcentMock = {
+          getDeviceInfo: function () {
+            return transport.send({ id: 'mock-' + Date.now(), method: 'getDeviceInfo' })
+              .then(function (resp) {
+                // resp는 transport raw envelope — v1 호환 envelope으로 wrap
+                if (resp && resp.body) return resp
+                return { header: { status: 'success' }, body: { parameter: (resp && resp.result) || resp } }
+              })
+          },
+          sign: function (input) {
+            return transport.send({ id: 'mock-' + Date.now(), method: input.chain || 'signTransaction', params: input.payload })
+              .then(function (resp) {
+                if (resp && resp.body) return resp
+                return { header: { status: 'success' }, body: { parameter: (resp && resp.result) || resp } }
+              })
+          },
+          popupWindowClose: function () {
+            if (typeof transport.close === 'function') transport.close().catch(function () {})
+          },
+          setConnectionListener: function (l) {
+            if (typeof transport.on === 'function') transport.on('state', l)
+          },
+        }
+      } else {
+        dcentMock = mockDcentOrTransport
+      }
+      state._testDcent = dcentMock
+      state.connected = true
       state.device = mockDevice || null
+      _stateListenerRegistered = false
+      _ensureStateListener()
       updateIndicator({ connected: true, model: mockDevice && mockDevice.model, fw: mockDevice && mockDevice.firmware })
       btnConnect.style.display = 'none'
       btnDisconnect.style.display = ''
       updateSendBtn()
-      // transport state listener 등록 (onConnect와 동일하게)
-      if (mockTransport && typeof mockTransport.on === 'function') {
-        mockTransport.on('state', function (transportState) {
-          if (transportState === 'disconnected') {
-            onTransportDisconnected('Popup was closed')
-          }
-        })
-      }
     },
     simulateDisconnect: function () {
-      state.transport = null
-      state.queue = null
+      state._testDcent = null
+      state.connected = false
       state.device = null
+      _stateListenerRegistered = false
       updateIndicator({ connected: false })
       btnConnect.style.display = ''
       btnConnect.disabled = false

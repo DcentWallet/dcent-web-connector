@@ -204,9 +204,14 @@ it('T-U-REST-05: preset 부재 family chain 노드는 트리에 노출되되 tex
 
   api.simulateNonEvmLoad(cosmosOnlyChains, presetsExcludingCosmos)
 
-  const mockTransport = { send: jest.fn(), on: jest.fn(), off: jest.fn(), close: jest.fn() }
-  const mockQueue = { enqueue: jest.fn(function (task: any) { return task() }), size: jest.fn(), clear: jest.fn() }
-  api.simulateConnect(mockTransport, mockQueue, { model: 'Bio', firmware: '3.0' })
+  // m08-01-05: facade-shaped mock
+  const mockDcent = {
+    sign: jest.fn().mockResolvedValue({ header: { status: 'success' }, body: { parameter: {} } }),
+    getDeviceInfo: jest.fn().mockResolvedValue({ header: { status: 'success' }, body: { parameter: {} } }),
+    popupWindowClose: jest.fn(),
+    setConnectionListener: jest.fn(),
+  }
+  api.simulateConnect(mockDcent, null, { model: 'Bio', firmware: '3.0' })
 
   // Cosmos chain 노드 클릭
   const cosmosNode = document.querySelector('[data-method-id^="signTx:cosmos:"]') as HTMLElement

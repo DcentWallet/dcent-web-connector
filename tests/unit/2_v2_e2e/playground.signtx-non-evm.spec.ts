@@ -147,26 +147,21 @@ describe('[v2 e2e] playground signTx non-EVM', () => {
     await browser.close()
   })
 
-  // Helper: inject mock transport + connect
+  // m08-01-05: Helper — inject mock dcent facade + simulateConnect
   async function setupMockTransport() {
     await page.evaluate(() => {
       const api = (window as any)._playgroundTestAPI
       ;(window as any)._capturedRequests = []
-      const mockTransport = {
-        send: (payload: any) => {
-          ;(window as any)._capturedRequests.push(payload)
-          return Promise.resolve({ id: payload.id, result: { signedTx: 'mock-signed-tx-hex' } })
+      const mockDcent = {
+        sign: (input: any) => {
+          ;(window as any)._capturedRequests.push(input)
+          return Promise.resolve({ header: { status: 'success' }, body: { parameter: { signedTx: 'mock-signed-tx-hex' } } })
         },
-        on: (_: string, _fn: any) => {},
-        off: () => {},
-        close: () => Promise.resolve(),
+        getDeviceInfo: () => Promise.resolve({ header: { status: 'success' }, body: { parameter: {} } }),
+        popupWindowClose: () => {},
+        setConnectionListener: () => {},
       }
-      const mockQueue = {
-        enqueue: (task: any) => task(),
-        size: () => 0,
-        clear: () => {},
-      }
-      api.simulateConnect(mockTransport, mockQueue, { model: 'Biometric', firmware: '3.23.0' })
+      api.simulateConnect(mockDcent, null, { model: 'Biometric', firmware: '3.23.0' })
     })
   }
 
@@ -230,13 +225,14 @@ describe('[v2 e2e] playground signTx non-EVM', () => {
     expect(captured.length).toBe(1)
 
     const req = captured[0]
-    expect(req.method).toBe('signTransaction')
-    expect(req.params.chainId).toBe('bip122:000000000019d6689c085ae165831e93')
-    expect(req.params.keyPath).toBe("m/84'/0'/0'/0/0")
-    expect(req.params.transaction).toBeDefined()
+    // m08-01-05: facade dcent.sign({chain, payload}) 호출됨
+    expect(req.chain).toBe('bip122:000000000019d6689c085ae165831e93')
+    expect(req.payload.chainId).toBe('bip122:000000000019d6689c085ae165831e93')
+    expect(req.payload.keyPath).toBe("m/84'/0'/0'/0/0")
+    expect(req.payload.transaction).toBeDefined()
     // Bitcoin transaction shape: inputs 배열
-    expect(Array.isArray(req.params.transaction.inputs)).toBe(true)
-    expect(Array.isArray(req.params.transaction.outputs)).toBe(true)
+    expect(Array.isArray(req.payload.transaction.inputs)).toBe(true)
+    expect(Array.isArray(req.payload.transaction.outputs)).toBe(true)
 
     // Step 10: 로그 엔트리 확인
     const entries = await page.evaluate(() =>
@@ -309,13 +305,14 @@ describe('[v2 e2e] playground signTx non-EVM', () => {
     expect(captured.length).toBe(1)
 
     const req = captured[0]
-    expect(req.method).toBe('signTransaction')
-    expect(req.params.chainId).toBe('solana:5eykt4UsFv8P8NJdTREpY1vzqKqZKvdp')
-    expect(req.params.keyPath).toBe("m/44'/501'/0'")
-    expect(req.params.transaction).toBeDefined()
+    // m08-01-05: facade dcent.sign({chain, payload}) 호출됨
+    expect(req.chain).toBe('solana:5eykt4UsFv8P8NJdTREpY1vzqKqZKvdp')
+    expect(req.payload.chainId).toBe('solana:5eykt4UsFv8P8NJdTREpY1vzqKqZKvdp')
+    expect(req.payload.keyPath).toBe("m/44'/501'/0'")
+    expect(req.payload.transaction).toBeDefined()
     // Solana Versioned Transaction shape: version 필드
-    expect(req.params.transaction.version).toBe(0)
-    expect(req.params.transaction.feePayer).toBeDefined()
+    expect(req.payload.transaction.version).toBe(0)
+    expect(req.payload.transaction.feePayer).toBeDefined()
 
     // Step 10: 로그 엔트리 확인
     const entries = await page.evaluate(() =>

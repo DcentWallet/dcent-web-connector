@@ -280,8 +280,12 @@
 
 </div>
 
-<!-- v2 dist bundle (libraryTarget: 'this' → window globals) -->
+<!-- v2 dist bundle (m08-01-05 D-02 A: window.dcent = entire module exports) -->
 <script src="/dist/v2/dcent-web-connector.min.js"></script>
+<!-- m08-01-05 (D-04 B align): default export object 별칭 — window.dcent = facade default
+     이로써 playground이 dcent.getDeviceInfo() / dcent.sign(...) / dcent.getEthereumSignedTransaction(...)을
+     v0.16.0 dApp이 require()로 받는 것과 동일한 shape으로 호출 -->
+<script>window.dcent = (window.dcent && window.dcent.default) || window.dcent;</script>
 <script src="/playground.js"></script>
 </body>
 </html>

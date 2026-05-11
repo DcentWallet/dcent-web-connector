@@ -73,26 +73,17 @@ describe('[v2 e2e] playground skeleton', () => {
   it('T-E2E-02: simulateConnect + getDeviceInfo → indicator green + log 1건', async () => {
     await page.goto(PLAYGROUND_URL, { waitUntil: 'networkidle0' })
 
-    // mock transport 주입: getDeviceInfo 성공 응답 반환
+    // m08-01-05: facade-shaped mock 주입
     await page.evaluate(() => {
       const api = (window as any)._playgroundTestAPI
       const mockDevice = { model: 'Biometric', firmware: '3.23.0' }
-      const mockSend = () => Promise.resolve({
-        id: 'mock-id',
-        result: mockDevice,
-      })
-      const mockTransport = {
-        send: mockSend,
-        on: (_: string, fn: any) => {},
-        off: (_: string, fn: any) => {},
-        close: () => Promise.resolve(),
+      const mockDcent = {
+        sign: () => Promise.resolve({ header: { status: 'success' }, body: { parameter: {} } }),
+        getDeviceInfo: () => Promise.resolve({ header: { status: 'success' }, body: { parameter: mockDevice } }),
+        popupWindowClose: () => {},
+        setConnectionListener: () => {},
       }
-      const mockQueue = {
-        enqueue: (task: any) => task(),
-        size: () => 0,
-        clear: () => {},
-      }
-      api.simulateConnect(mockTransport, mockQueue, mockDevice)
+      api.simulateConnect(mockDcent, null, mockDevice)
     })
 
     // indicator green
@@ -120,37 +111,33 @@ describe('[v2 e2e] playground skeleton', () => {
   // ────────────────────────────────────────────────────────
   // T-E2E-03: popup close event → indicator 빨강 + 로그에 close 안내
   // (pre-audit R4 — 자동 재연결 시도 0건)
+  // m08-01-05: facade-shaped mock — setConnectionListener를 통해 state listener capture
   // ────────────────────────────────────────────────────────
-  it('T-E2E-03: transport close event → indicator 빨강 + close 로그 + 자동 재연결 없음', async () => {
+  it('T-E2E-03: facade state listener → close event → indicator 빨강 + close 로그', async () => {
     await page.goto(PLAYGROUND_URL, { waitUntil: 'networkidle0' })
 
-    // mock transport: on('state') 핸들러를 capture하여 나중에 close 이벤트 trigger
+    // m08-01-05: facade-shaped mock — setConnectionListener가 listener capture
     await page.evaluate(() => {
       const api = (window as any)._playgroundTestAPI
-      const stateHandlers: any[] = []
-      const mockTransport = {
-        send: () => Promise.resolve({ id: 'x', result: {} }),
-        on: (_: string, fn: any) => { stateHandlers.push(fn) },
-        off: () => {},
-        close: () => Promise.resolve(),
-        _triggerClose: () => { stateHandlers.forEach((fn: any) => fn('disconnected')) },
+      const stateListeners: any[] = []
+      const mockDcent = {
+        sign: () => Promise.resolve({ header: { status: 'success' }, body: { parameter: {} } }),
+        getDeviceInfo: () => Promise.resolve({ header: { status: 'success' }, body: { parameter: {} } }),
+        popupWindowClose: () => {},
+        setConnectionListener: (l: any) => { stateListeners.push(l) },
+        _triggerClose: () => { stateListeners.forEach((fn: any) => fn('disconnected')) },
       }
-      const mockQueue = {
-        enqueue: (task: any) => task(),
-        size: () => 0,
-        clear: () => {},
-      }
-      api.simulateConnect(mockTransport, mockQueue, { model: 'Bio', firmware: '3.0' })
-      ;(window as any)._mockTransport = mockTransport
+      api.simulateConnect(mockDcent, null, { model: 'Bio', firmware: '3.0' })
+      ;(window as any)._mockDcent = mockDcent
     })
 
     // connected 상태 확인
     const dotClassBefore = await page.$eval('#conn-dot', (el: Element) => el.className)
     expect(dotClassBefore).toContain('connected')
 
-    // close event 발생 (PopupTransport close 이벤트 시뮬레이션)
+    // close event 발생 (facade state listener trigger)
     await page.evaluate(() => {
-      ;(window as any)._mockTransport._triggerClose()
+      ;(window as any)._mockDcent._triggerClose()
     })
     await new Promise((r) => setTimeout(r, 100))
 
@@ -158,7 +145,7 @@ describe('[v2 e2e] playground skeleton', () => {
     const dotClassAfter = await page.$eval('#conn-dot', (el: Element) => el.className)
     expect(dotClassAfter).toContain('error')
 
-    // 로그에 close 관련 항목
+    // 로그에 close 관련 항목 — playground.normalizeError가 v1 형식 응답을 정상 처리
     const entries = await page.evaluate(() => {
       return (window as any)._playgroundTestAPI.getLogEntries()
     })
@@ -167,55 +154,46 @@ describe('[v2 e2e] playground skeleton', () => {
     )
     expect(closeEntry).toBeDefined()
 
-    // 자동 재연결: state.transport가 null (재연결 없음)
-    const transportIsNull = await page.evaluate(() => {
-      return (window as any)._playgroundTestAPI.state.transport === null
+    // 자동 재연결: state.connected === false
+    const isDisconnected = await page.evaluate(() => {
+      return (window as any)._playgroundTestAPI.state.connected === false
     })
-    expect(transportIsNull).toBe(true)
+    expect(isDisconnected).toBe(true)
   }, 30000)
 
   // ────────────────────────────────────────────────────────
-  // T-E2E-04: getDeviceInfo timeout → ProviderError(TIMEOUT=5006) → LogEntry.error + indicator 빨강
+  // T-E2E-04: getDeviceInfo timeout → ProviderError → LogEntry.error + indicator 빨강
   // (pre-audit R5)
+  // m08-01-05: facade-shaped mock — getDeviceInfo가 timeout error로 reject
   // ────────────────────────────────────────────────────────
-  it('T-E2E-04: getDeviceInfo timeout → 5006 TIMEOUT LogEntry.error + indicator error', async () => {
+  it('T-E2E-04: getDeviceInfo timeout → ProviderError code → LogEntry.error + indicator error', async () => {
     await page.goto(PLAYGROUND_URL, { waitUntil: 'networkidle0' })
 
-    // mock transport: getDeviceInfo → reject with TIMEOUT error
+    // m08-01-05: facade-shaped mock — getDeviceInfo가 ProviderError로 reject
     await page.evaluate(() => {
       const api = (window as any)._playgroundTestAPI
-      const stateHandlers: any[] = []
-      const ProviderErrorCtor = (window as any).ProviderError
-      const mockTransport = {
-        send: () => Promise.reject(new ProviderErrorCtor(5006, 'Request timed out')),
-        on: (_: string, fn: any) => { stateHandlers.push(fn) },
-        off: () => {},
-        close: () => Promise.resolve(),
+      const ProviderErrorCtor = (window as any).ProviderError ||
+        class ProviderError extends Error {
+          code: number
+          constructor (code: number, message: string) {
+            super(message)
+            this.name = 'ProviderError'
+            this.code = code
+          }
+        }
+      const mockDcent = {
+        sign: () => Promise.resolve({ header: { status: 'success' }, body: { parameter: {} } }),
+        getDeviceInfo: () => Promise.reject(new ProviderErrorCtor(5006, 'Request timed out')),
+        popupWindowClose: () => {},
+        setConnectionListener: () => {},
       }
-      const mockQueue = {
-        enqueue: (task: any) => task(),
-        size: () => 0,
-        clear: () => {},
-      }
-
-      // simulate connect attempt (transport이 있어야 Send 활성화)
-      // transport connect는 성공했다고 가정, getDeviceInfo가 timeout
-      api.state.transport = mockTransport
-      api.state.queue = mockQueue
+      api.simulateConnect(mockDcent, null, { model: 'Bio', firmware: '3.0' })
     })
 
     // getDeviceInfo 선택
     await page.click('[data-method-id="getDeviceInfo"]')
 
-    // Send 활성화 여부: transport 직접 설정했으므 활성화되어야 하나
-    // updateSendBtn()이 호출되어야 함 — 클릭 후 체크
-    // transport를 direct set했으므로 updateSendBtn은 호출되지 않음. btnSend 직접 enable.
-    await page.evaluate(() => {
-      const btn = document.getElementById('btn-send') as HTMLButtonElement
-      btn.disabled = false
-      btn.setAttribute('aria-disabled', 'false')
-    })
-
+    // simulateConnect로 state.connected=true이므로 method 선택 후 Send 활성화
     await page.click('#btn-send')
     await new Promise((r) => setTimeout(r, 200))
 
@@ -227,5 +205,43 @@ describe('[v2 e2e] playground skeleton', () => {
     expect(timeoutEntry).toBeDefined()
     expect(timeoutEntry.error.code).toBe(5006)
     expect(timeoutEntry.method).toBe('getDeviceInfo')
+  }, 30000)
+
+  // ────────────────────────────────────────────────────────
+  // T-E2E-ERR-CLOSE-01 (D-18 A): popup_close → playground catch 블록에서 v1 형식 응답
+  //   facade가 v1 호환 응답 ({ header.status: 'failure', body.error.code: 'pop-up_closed' })으로 reject
+  //   playground.normalizeError가 v1 형식을 인식하여 LogEntry.error.code = 'pop-up_closed' 매핑
+  // ────────────────────────────────────────────────────────
+  it('T-E2E-ERR-CLOSE-01: facade v1 형식 popup_close 응답 → LogEntry.error.code 매핑', async () => {
+    await page.goto(PLAYGROUND_URL, { waitUntil: 'networkidle0' })
+
+    // m08-01-05 (D-18): facade가 popup_close 시 v1 호환 envelope으로 reject
+    await page.evaluate(() => {
+      const api = (window as any)._playgroundTestAPI
+      const v1ErrorEnvelope = {
+        header: { status: 'failure' },
+        body: { error: { code: 'pop-up_closed', message: 'Popup window was closed by user' } },
+      }
+      const mockDcent = {
+        sign: () => Promise.resolve({ header: { status: 'success' }, body: { parameter: {} } }),
+        getDeviceInfo: () => Promise.reject(v1ErrorEnvelope),
+        popupWindowClose: () => {},
+        setConnectionListener: () => {},
+      }
+      api.simulateConnect(mockDcent, null, { model: 'Bio', firmware: '3.0' })
+    })
+
+    await page.click('[data-method-id="getDeviceInfo"]')
+    await page.click('#btn-send')
+    await new Promise((r) => setTimeout(r, 200))
+
+    // 로그에서 'pop-up_closed' code를 가진 entry 찾기
+    const entries = await page.evaluate(() => {
+      return (window as any)._playgroundTestAPI.getLogEntries()
+    })
+    const closeErrEntry = entries.find((e: any) => e.error && e.error.code === 'pop-up_closed')
+    expect(closeErrEntry).toBeDefined()
+    expect(closeErrEntry.error.code).toBe('pop-up_closed')
+    expect(closeErrEntry.method).toBe('getDeviceInfo')
   }, 30000)
 })

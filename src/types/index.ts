@@ -12,3 +12,5 @@ export { bitcoinTxType, type BitcoinTxType, type BitcoinTxTypeValue } from './bi
 export { klaytnTxType, type KlaytnTxType, type KlaytnTxTypeValue } from './klaytnTxType'
 export { xrpTxType, type XrpTxType, type XrpTxTypeValue } from './xrpTxType'
 export { state, type State, type StateValue } from './state'
+// m08-01-04.5: coinDecimals enum (v1 src-v1/type/dcent-web-type.js#l242-251 deferred port)
+export { coinDecimals, type CoinDecimals, type CoinDecimalsKey, type CoinDecimalsValue } from './coinDecimals'

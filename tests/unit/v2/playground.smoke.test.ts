@@ -277,6 +277,90 @@ it('T-U-08: facade v1 형식 error → LogEntry.error 매핑', async () => {
 })
 
 // ─────────────────────────────────────────────────────────
+// T-R-06 (b08-01): facade가 failure envelope을 resolve로 돌려주는 시나리오에서
+// sendGetDeviceInfo 호출 → appendLog의 error 필드가 설정되고 state.device는 미오염
+// ─────────────────────────────────────────────────────────
+it('T-R-06: failure envelope resolve 시 error로 기록되고 state.device 미오염', async () => {
+  const api = (window as any)._playgroundTestAPI
+  api.clearLogs()
+
+  // facade가 v1 failure envelope을 resolve로 돌려주는 mock (silent success 흡수 시나리오)
+  const v1Failure = {
+    header: { status: 'failure' },
+    body: { error: { code: 'X', message: 'device is not connected' } },
+  }
+  const mockGetDeviceInfo = jest.fn().mockResolvedValue(v1Failure)
+  const mockDcent = {
+    sign: jest.fn(),
+    getDeviceInfo: mockGetDeviceInfo,
+    popupWindowClose: jest.fn(),
+    setConnectionListener: jest.fn(),
+  }
+
+  // 사전: state.device를 깨끗한 상태로 만들고 connected만 true (popup-only 모델)
+  api.simulateConnect(mockDcent, null, null)
+  // simulateConnect 직후 device는 null
+  expect(api.state.device).toBeNull()
+
+  // getDeviceInfo 선택 후 Send
+  const getDeviceItem = document.querySelector('[data-method-id="getDeviceInfo"]') as HTMLElement
+  getDeviceItem.click()
+  document.getElementById('btn-send')?.click()
+
+  // Promise resolve 대기
+  await new Promise((r) => setTimeout(r, 50))
+
+  const entries = api.getLogEntries()
+  expect(entries.length).toBeGreaterThan(0)
+  const lastEntry = entries[entries.length - 1]
+  // failure envelope이 silent success로 흡수되지 않고 error로 기록되어야 함
+  expect(lastEntry.error).toBeDefined()
+  expect(lastEntry.error.message).toBe('device is not connected')
+  // state.device는 오염되지 않아야 함
+  expect(api.state.device).toBeNull()
+})
+
+// ─────────────────────────────────────────────────────────
+// T-R-09 (b08-01): onConnect → tree에서 getDeviceInfo 선택 → [Send]로 state.device가 채워짐
+// E2E-style 단위 합 — onConnect는 popup-only, getDeviceInfo는 Send 경로의 단일 책임자
+// ─────────────────────────────────────────────────────────
+it('T-R-09: onConnect → getDeviceInfo Send 흐름에서 state.device가 채워진다', async () => {
+  const api = (window as any)._playgroundTestAPI
+
+  const deviceInfo = { model: 'Biometric', firmware: '3.0.1' }
+  const mockGetDeviceInfo = jest.fn().mockResolvedValue({
+    header: { status: 'success' },
+    body: { parameter: deviceInfo },
+  })
+  const mockDcent = {
+    sign: jest.fn(),
+    getDeviceInfo: mockGetDeviceInfo,
+    popupWindowClose: jest.fn(),
+    setConnectionListener: jest.fn(),
+  }
+  ;(window as any).dcent = mockDcent
+
+  // onConnect — popup-only (device 미터치)
+  api.onConnect()
+  expect(api.state.connected).toBe(true)
+  expect(api.state.device).toBeNull()
+  expect(mockGetDeviceInfo).not.toHaveBeenCalled()
+
+  // 트리에서 getDeviceInfo 선택 → Send
+  const getDeviceItem = document.querySelector('[data-method-id="getDeviceInfo"]') as HTMLElement
+  getDeviceItem.click()
+  document.getElementById('btn-send')?.click()
+
+  // Promise resolve 대기
+  await new Promise((r) => setTimeout(r, 50))
+
+  // getDeviceInfo 단일 책임자 — Send 시점에 호출됨
+  expect(mockGetDeviceInfo).toHaveBeenCalledTimes(1)
+  // state.device가 채워짐
+  expect(api.state.device).toEqual(deviceInfo)
+})
+
+// ─────────────────────────────────────────────────────────
 // T-U-09: state.connected === false 인 동안 모든 Send 버튼 disabled (Connect 후 활성화)
 // m08-01-05: state.transport → state.connected로 변경
 // ─────────────────────────────────────────────────────────

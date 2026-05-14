@@ -75,7 +75,8 @@ describe('[v2 e2e] playground signTx Rest family', () => {
 
     // Step 4: Cosmos Hub 4 노드 클릭 — preset의 applicableChainIds와 정확히 매칭되는 chainId
     // (chains.json은 여러 cosmos chain 포함하지만 atom-transfer preset은 cosmoshub-4 전용)
-    const cosmosSelector = 'signTx:cosmos:cosmos:cosmoshub-4'
+    // m09-01-02: chains.json의 chainId는 CAIP-19 형식이므로 selector도 full CAIP-19 사용
+    const cosmosSelector = 'signTx:cosmos:cosmos:cosmoshub-4/slip44:118'
     await page.waitForSelector(`[data-method-id="${cosmosSelector}"]`, { timeout: 5000 })
     await page.click(`[data-method-id="${cosmosSelector}"]`)
 

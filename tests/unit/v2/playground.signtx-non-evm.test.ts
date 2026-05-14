@@ -315,9 +315,10 @@ it('T-U-NEVM-03: CHAIN_KEY_PATH Proxy — 비-EVM family별 defaultKeyPath 반�
 })
 
 // ─────────────────────────────────────────────────────────────────────────────
-// T-U-NEVM-04: preset fixture 6개 모두 valid JSON 파싱
+// T-U-NEVM-04 / T-DATA-01: preset fixture (wm 등록 family) 모두 valid JSON 파싱 + CAIP-19 형식
+// m09-01-02: wm 미등록 chain (tron:mainnet) 제외 — 5 family. applicableChainIds는 CAIP-19 형식.
 // ─────────────────────────────────────────────────────────────────────────────
-it('T-U-NEVM-04: presets.non-evm.json — 6 family preset fixture 모두 valid JSON', () => {
+it('T-U-NEVM-04: presets.non-evm.json — wm 등록 family preset 모두 valid JSON + CAIP-19', () => {
   const presetsPath = path.resolve(__dirname, '../../../playground/presets.non-evm.json')
   const raw = fs.readFileSync(presetsPath, 'utf8')
 
@@ -327,11 +328,15 @@ it('T-U-NEVM-04: presets.non-evm.json — 6 family preset fixture 모두 valid J
 
   presets = JSON.parse(raw)
   expect(Array.isArray(presets)).toBe(true)
-  expect(presets.length).toBe(6)
+  // m09-01-02: tron은 wm 미등록 → 본 PR scope에서 제외 (m09-02에서 추가)
+  expect(presets.length).toBe(5)
 
   // 각 preset의 필수 필드 확인
   const requiredFields = ['id', 'label', 'family', 'applicableChainIds', 'transaction']
-  const expectedFamilies = ['bitcoin', 'solana', 'xrp', 'hedera', 'stellar', 'tron']
+  const expectedFamilies = ['bitcoin', 'solana', 'xrp', 'hedera', 'stellar']
+
+  // CAIP-19 정규식: namespace:reference/slip44:N
+  const CAIP19_RE = /^[-a-z0-9]{3,8}:[-_a-zA-Z0-9]{1,32}\/slip44:\d+$/
 
   presets.forEach((p: any) => {
     requiredFields.forEach((field) => {
@@ -340,13 +345,60 @@ it('T-U-NEVM-04: presets.non-evm.json — 6 family preset fixture 모두 valid J
     expect(expectedFamilies).toContain(p.family)
     expect(Array.isArray(p.applicableChainIds)).toBe(true)
     expect(p.applicableChainIds.length).toBeGreaterThan(0)
+    // T-DATA-01: applicableChainIds 모두 CAIP-19 형식이어야 함
+    p.applicableChainIds.forEach((c: string) => {
+      expect(c).toMatch(CAIP19_RE)
+    })
     expect(typeof p.transaction).toBe('object')
   })
 
-  // family 중복 없이 6개 모두 존재
+  // family 중복 없이 5개 모두 존재
   const families = presets.map((p: any) => p.family)
   expectedFamilies.forEach((fam) => {
     expect(families).toContain(fam)
+  })
+
+  // tron은 제외되었어야 함 (m09-02 의존)
+  expect(families).not.toContain('tron')
+})
+
+// ─────────────────────────────────────────────────────────────────────────────
+// T-DATA-01: chains.json — 모든 entry chainId가 CAIP-19 형식
+// ─────────────────────────────────────────────────────────────────────────────
+it('T-DATA-01: chains.json — 모든 entry chainId가 CAIP-19 형식 (namespace:ref/slip44:N)', () => {
+  const chainsPath = path.resolve(__dirname, '../../../playground/chains.json')
+  const raw = fs.readFileSync(chainsPath, 'utf8')
+  const chains: any[] = JSON.parse(raw)
+
+  expect(Array.isArray(chains)).toBe(true)
+  expect(chains.length).toBeGreaterThan(0)
+
+  const CAIP19_RE = /^[-a-z0-9]{3,8}:[-_a-zA-Z0-9]{1,32}\/slip44:\d+$/
+
+  chains.forEach((c: any) => {
+    expect(typeof c.chainId).toBe('string')
+    expect(c.chainId).toMatch(CAIP19_RE)
+  })
+})
+
+// ─────────────────────────────────────────────────────────────────────────────
+// T-DATA-02: presets.*.json의 applicableChainIds가 chains.json chainId 집합에 포함
+// ─────────────────────────────────────────────────────────────────────────────
+it('T-DATA-02: presets applicableChainIds ⊆ chains.json chainIds', () => {
+  const chainsPath = path.resolve(__dirname, '../../../playground/chains.json')
+  const evmPresetsPath = path.resolve(__dirname, '../../../playground/presets.evm.json')
+  const nonEvmPresetsPath = path.resolve(__dirname, '../../../playground/presets.non-evm.json')
+
+  const chains: any[] = JSON.parse(fs.readFileSync(chainsPath, 'utf8'))
+  const evmPresets: any[] = JSON.parse(fs.readFileSync(evmPresetsPath, 'utf8'))
+  const nonEvmPresets: any[] = JSON.parse(fs.readFileSync(nonEvmPresetsPath, 'utf8'))
+
+  const chainIds = new Set(chains.map((c: any) => c.chainId))
+
+  ;[...evmPresets, ...nonEvmPresets].forEach((p: any) => {
+    p.applicableChainIds.forEach((c: string) => {
+      expect(chainIds.has(c)).toBe(true)
+    })
   })
 })
 

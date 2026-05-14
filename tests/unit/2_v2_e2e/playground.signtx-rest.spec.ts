@@ -75,7 +75,8 @@ describe('[v2 e2e] playground signTx Rest family', () => {
 
     // Step 4: Cosmos Hub 4 노드 클릭 — preset의 applicableChainIds와 정확히 매칭되는 chainId
     // (chains.json은 여러 cosmos chain 포함하지만 atom-transfer preset은 cosmoshub-4 전용)
-    const cosmosSelector = 'signTx:cosmos:cosmos:cosmoshub-4'
+    // m09-01-02: chains.json의 chainId는 CAIP-19 형식이므로 selector도 full CAIP-19 사용
+    const cosmosSelector = 'signTx:cosmos:cosmos:cosmoshub-4/slip44:118'
     await page.waitForSelector(`[data-method-id="${cosmosSelector}"]`, { timeout: 5000 })
     await page.click(`[data-method-id="${cosmosSelector}"]`)
 
@@ -118,9 +119,9 @@ describe('[v2 e2e] playground signTx Rest family', () => {
     expect(captured.length).toBe(1)
 
     const req = captured[0]
-    // m08-01-05: facade dcent.sign({chain, payload}) 호출됨
-    expect(req.chain).toMatch(/^cosmos:/)
-    expect(req.payload.chainId).toMatch(/^cosmos:/)
+    // m09-01-02: 1번 경로 마이그레이션 — chain intent literal + CAIP-19 payload.chainId
+    expect(req.chain).toBe('signTransaction')
+    expect(req.payload.chainId).toMatch(/^cosmos:.+\/slip44:\d+$/)
     expect(req.payload.keyPath).toMatch(/^m\//)
     expect(typeof req.payload.transaction).toBe('object')
     expect(req.payload.transaction).not.toBeNull()

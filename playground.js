@@ -153,14 +153,14 @@
               kind: 'method',
               id: 'signMessage:eth:personal',
               label: 'personal_sign',
-              chainId: 'eip155:1',
+              chainId: 'eip155:1/slip44:60',
               metaKind: 'personal',
             },
             {
               kind: 'method',
               id: 'signMessage:eth:eip712-v3',
               label: 'signTypedData_v3',
-              chainId: 'eip155:1',
+              chainId: 'eip155:1/slip44:60',
               metaKind: 'eip712',
               metaVersion: 'V3',
             },
@@ -168,7 +168,7 @@
               kind: 'method',
               id: 'signMessage:eth:eip712-v4',
               label: 'signTypedData_v4',
-              chainId: 'eip155:1',
+              chainId: 'eip155:1/slip44:60',
               metaKind: 'eip712',
               metaVersion: 'V4',
             },
@@ -182,7 +182,7 @@
               kind: 'method',
               id: 'signMessage:sol:raw',
               label: 'signMessage (raw)',
-              chainId: 'solana:5eykt4UsFv8P8NJdTREpY1vzqKqZKvdp',
+              chainId: 'solana:5eykt4UsFv8P8NJdTREpY1vzqKqZKvdp/slip44:501',
               metaKind: 'raw',
             },
           ],
@@ -1091,16 +1091,12 @@
     var params = { chainId: chainId, keyPath: keyPath, transaction: txObj }
     var startMs = Date.now()
 
-    // m08-01-05: EVM signTx는 통합 sign API 사용 — chain은 CAIP-19 형식 (eip155:N)
-    // chainId가 이미 'eip155:N' 형식이면 그대로 사용, 숫자만이면 prefix 추가
-    // 본 dispatcher는 통합 API를 시연. dApp이 v1 wrapper를 더 좋아하면
-    //   dcent.getEthereumSignedTransaction(coinType, nonce, gasPrice, ...) 도 사용 가능.
+    // m09-01-02: 1번 경로 마이그레이션 — chain intent literal 'signTransaction' 사용 + payload.chainId는 CAIP-19.
+    // connector chainToMethod의 PREFIX_TO_METHOD 미매치 → fallthrough → sdk MethodRegistry hit.
+    // chainId(CAIP-19)는 sdk resolveChainId가 wallet-models registry로 currency 결정.
     var dcent = _getDcent()
-    var caipChain = (chainId && chainId.indexOf(':') !== -1)
-      ? chainId
-      : ('eip155:' + (chainId || 1))
     // b08-01: _unwrapV1Envelope이 success → body.parameter unwrap, failure → throw로 변환
-    dcent.sign({ chain: caipChain, payload: params }).then(_unwrapV1Envelope).then(function (result) {
+    dcent.sign({ chain: 'signTransaction', payload: params }).then(_unwrapV1Envelope).then(function (result) {
       appendLog({
         method: 'signTransaction',
         chainId: chainId,
@@ -1160,12 +1156,11 @@
     var params = { chainId: chainId, keyPath: keyPath, transaction: txObj }
     var startMs = Date.now()
 
-    // m08-01-05: 비-EVM signTx도 통합 sign API — chainId가 이미 CAIP-19 형식 (bip122:..., cosmos:...)
-    // chainId가 비어있으면 v1 method 'signTransaction' fallback (chainToMethod이 default 처리)
+    // m09-01-02: 1번 경로 마이그레이션 — chain intent literal 'signTransaction' 사용 + payload.chainId는 CAIP-19.
+    // bip122/solana/xrpl/cosmos/stellar/hedera 등 비-EVM도 동일 패턴. chains.json의 chainId가 이미 CAIP-19.
     var dcent = _getDcent()
-    var caipChain = chainId || 'signTransaction'
     // b08-01: _unwrapV1Envelope이 success → body.parameter unwrap, failure → throw로 변환
-    dcent.sign({ chain: caipChain, payload: params }).then(_unwrapV1Envelope).then(function (result) {
+    dcent.sign({ chain: 'signTransaction', payload: params }).then(_unwrapV1Envelope).then(function (result) {
       appendLog({
         method: 'signTransaction',
         chainId: chainId,

@@ -118,9 +118,9 @@ describe('[v2 e2e] playground signTx Rest family', () => {
     expect(captured.length).toBe(1)
 
     const req = captured[0]
-    // m08-01-05: facade dcent.sign({chain, payload}) 호출됨
-    expect(req.chain).toMatch(/^cosmos:/)
-    expect(req.payload.chainId).toMatch(/^cosmos:/)
+    // m09-01-02: 1번 경로 마이그레이션 — chain intent literal + CAIP-19 payload.chainId
+    expect(req.chain).toBe('signTransaction')
+    expect(req.payload.chainId).toMatch(/^cosmos:.+\/slip44:\d+$/)
     expect(req.payload.keyPath).toMatch(/^m\//)
     expect(typeof req.payload.transaction).toBe('object')
     expect(req.payload.transaction).not.toBeNull()

@@ -18,42 +18,39 @@ const { launchBrowser } = require('./launchBrowser')
 const HARNESS_BASE = 'http://localhost:9091'
 const PLAYGROUND_URL = `${HARNESS_BASE}/index-v2.html`
 
+// m09-01-02: CAIP-19 형식 (1번 경로 마이그레이션). slip44는 SLIP-0044 spec.
+// 단, tron은 wm 미등록이므로 본 PR scope에서 fixture만 유지 (chainId는 CAIP-2 그대로 유지하여
+// resolveChainId fail 흐름 검증 가능). 실제 chains.json은 tron entry 제거됨.
 const SAMPLE_NON_EVM_CHAINS = [
   {
-    chainId: 'bip122:000000000019d6689c085ae165831e93',
+    chainId: 'bip122:000000000019d6689c085ae165831e93/slip44:0',
     family: 'bitcoin',
     displayName: 'Bitcoin',
     defaultKeyPath: "m/84'/0'/0'/0/0",
   },
   {
-    chainId: 'solana:5eykt4UsFv8P8NJdTREpY1vzqKqZKvdp',
+    chainId: 'solana:5eykt4UsFv8P8NJdTREpY1vzqKqZKvdp/slip44:501',
     family: 'solana',
     displayName: 'Solana',
     defaultKeyPath: "m/44'/501'/0'",
   },
   {
-    chainId: 'xrpl:0',
+    chainId: 'xrpl:0/slip44:144',
     family: 'xrp',
     displayName: 'XRPL',
     defaultKeyPath: "m/44'/144'/0'/0/0",
   },
   {
-    chainId: 'hedera:mainnet',
+    chainId: 'hedera:mainnet/slip44:3030',
     family: 'hedera',
     displayName: 'Hedera Hashgraph',
     defaultKeyPath: "m/44'/3030'/0'",
   },
   {
-    chainId: 'stellar:pubnet',
+    chainId: 'stellar:pubnet/slip44:148',
     family: 'stellar',
     displayName: 'Stellar',
     defaultKeyPath: "m/44'/148'/0'",
-  },
-  {
-    chainId: 'tron:mainnet',
-    family: 'tron',
-    displayName: 'Tron',
-    defaultKeyPath: "m/44'/195'/0'/0/0",
   },
 ]
 
@@ -62,7 +59,7 @@ const SAMPLE_NON_EVM_PRESETS = [
     id: 'btc-transfer',
     label: 'Bitcoin native-segwit transfer',
     family: 'bitcoin',
-    applicableChainIds: ['bip122:000000000019d6689c085ae165831e93'],
+    applicableChainIds: ['bip122:000000000019d6689c085ae165831e93/slip44:0'],
     note: 'P2WPKH native SegWit',
     sourceUrl: 'https://github.com/bitcoinjs/bitcoinjs-lib',
     transaction: {
@@ -83,7 +80,7 @@ const SAMPLE_NON_EVM_PRESETS = [
     id: 'sol-transfer',
     label: 'Solana SOL transfer',
     family: 'solana',
-    applicableChainIds: ['solana:5eykt4UsFv8P8NJdTREpY1vzqKqZKvdp'],
+    applicableChainIds: ['solana:5eykt4UsFv8P8NJdTREpY1vzqKqZKvdp/slip44:501'],
     note: 'Versioned Transaction (version: 0)',
     sourceUrl: 'https://solana-labs.github.io/solana-web3.js/',
     transaction: {
@@ -192,7 +189,7 @@ describe('[v2 e2e] playground signTx non-EVM', () => {
     await setupMockTransport()
 
     // Step 4: Bitcoin 노드 클릭
-    await page.click('[data-method-id="signTx:bitcoin:bip122:000000000019d6689c085ae165831e93"]')
+    await page.click('[data-method-id="signTx:bitcoin:bip122:000000000019d6689c085ae165831e93/slip44:0"]')
 
     // Step 5: 폼 렌더링 확인
     const hasKeyPath = await page.$('#field-keyPath')
@@ -225,9 +222,9 @@ describe('[v2 e2e] playground signTx non-EVM', () => {
     expect(captured.length).toBe(1)
 
     const req = captured[0]
-    // m08-01-05: facade dcent.sign({chain, payload}) 호출됨
-    expect(req.chain).toBe('bip122:000000000019d6689c085ae165831e93')
-    expect(req.payload.chainId).toBe('bip122:000000000019d6689c085ae165831e93')
+    // m09-01-02: 1번 경로 마이그레이션 — chain intent literal + CAIP-19 payload.chainId
+    expect(req.chain).toBe('signTransaction')
+    expect(req.payload.chainId).toBe('bip122:000000000019d6689c085ae165831e93/slip44:0')
     expect(req.payload.keyPath).toBe("m/84'/0'/0'/0/0")
     expect(req.payload.transaction).toBeDefined()
     // Bitcoin transaction shape: inputs 배열
@@ -271,8 +268,8 @@ describe('[v2 e2e] playground signTx non-EVM', () => {
     // Step 3: Mock transport 주입
     await setupMockTransport()
 
-    // Step 4: Solana 노드 클릭
-    await page.click('[data-method-id="signTx:solana:solana:5eykt4UsFv8P8NJdTREpY1vzqKqZKvdp"]')
+    // Step 4: Solana 노드 클릭 — m09-01-02: CAIP-19
+    await page.click('[data-method-id="signTx:solana:solana:5eykt4UsFv8P8NJdTREpY1vzqKqZKvdp/slip44:501"]')
 
     // Step 5: 폼 렌더링 확인
     const hasKeyPath = await page.$('#field-keyPath')
@@ -305,9 +302,9 @@ describe('[v2 e2e] playground signTx non-EVM', () => {
     expect(captured.length).toBe(1)
 
     const req = captured[0]
-    // m08-01-05: facade dcent.sign({chain, payload}) 호출됨
-    expect(req.chain).toBe('solana:5eykt4UsFv8P8NJdTREpY1vzqKqZKvdp')
-    expect(req.payload.chainId).toBe('solana:5eykt4UsFv8P8NJdTREpY1vzqKqZKvdp')
+    // m09-01-02: 1번 경로 마이그레이션 — chain intent literal + CAIP-19 payload.chainId
+    expect(req.chain).toBe('signTransaction')
+    expect(req.payload.chainId).toBe('solana:5eykt4UsFv8P8NJdTREpY1vzqKqZKvdp/slip44:501')
     expect(req.payload.keyPath).toBe("m/44'/501'/0'")
     expect(req.payload.transaction).toBeDefined()
     // Solana Versioned Transaction shape: version 필드

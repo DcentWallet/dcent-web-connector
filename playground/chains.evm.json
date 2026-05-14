@@ -1,384 +1,384 @@
 [
   {
-    "chainId": "eip155:1",
+    "chainId": "eip155:1/slip44:60",
     "family": "ethereum",
     "displayName": "Ethereum",
     "defaultKeyPath": "m/44'/60'/0'/0/0"
   },
   {
-    "chainId": "eip155:30",
+    "chainId": "eip155:30/slip44:60",
     "family": "ethereum",
     "displayName": "RSK Smart Bitcoin",
     "defaultKeyPath": "m/44'/60'/0'/0/0"
   },
   {
-    "chainId": "eip155:8217",
+    "chainId": "eip155:8217/slip44:60",
     "family": "ethereum",
     "displayName": "Kaia",
     "defaultKeyPath": "m/44'/60'/0'/0/0"
   },
   {
-    "chainId": "eip155:61",
+    "chainId": "eip155:61/slip44:60",
     "family": "ethereum",
     "displayName": "Ethereum Classic",
     "defaultKeyPath": "m/44'/60'/0'/0/0"
   },
   {
-    "chainId": "eip155:256",
+    "chainId": "eip155:256/slip44:60",
     "family": "ethereum",
     "displayName": "Luniverse",
     "defaultKeyPath": "m/44'/60'/0'/0/0"
   },
   {
-    "chainId": "eip155:50",
+    "chainId": "eip155:50/slip44:60",
     "family": "ethereum",
     "displayName": "XDC (XinFin)",
     "defaultKeyPath": "m/44'/550'/0'/0/0"
   },
   {
-    "chainId": "eip155:56",
+    "chainId": "eip155:56/slip44:60",
     "family": "ethereum",
     "displayName": "Binance Smart Chain",
     "defaultKeyPath": "m/44'/60'/0'/0/0"
   },
   {
-    "chainId": "eip155:10",
+    "chainId": "eip155:10/slip44:60",
     "family": "ethereum",
     "displayName": "Optimism",
     "defaultKeyPath": "m/44'/60'/0'/0/0"
   },
   {
-    "chainId": "eip155:11",
+    "chainId": "eip155:11/slip44:60",
     "family": "ethereum",
     "displayName": "Metadium",
     "defaultKeyPath": "m/44'/60'/0'/0/0"
   },
   {
-    "chainId": "eip155:14",
+    "chainId": "eip155:14/slip44:60",
     "family": "ethereum",
     "displayName": "Flare Network",
     "defaultKeyPath": "m/44'/60'/0'/0/0"
   },
   {
-    "chainId": "eip155:19",
+    "chainId": "eip155:19/slip44:60",
     "family": "ethereum",
     "displayName": "Songbird Canary-Network",
     "defaultKeyPath": "m/44'/60'/0'/0/0"
   },
   {
-    "chainId": "eip155:25",
+    "chainId": "eip155:25/slip44:60",
     "family": "ethereum",
     "displayName": "Cronos",
     "defaultKeyPath": "m/44'/60'/0'/0/0"
   },
   {
-    "chainId": "eip155:66",
+    "chainId": "eip155:66/slip44:60",
     "family": "ethereum",
     "displayName": "OKX Chain",
     "defaultKeyPath": "m/44'/60'/0'/0/0"
   },
   {
-    "chainId": "eip155:100",
+    "chainId": "eip155:100/slip44:60",
     "family": "ethereum",
     "displayName": "Gnosis",
     "defaultKeyPath": "m/44'/60'/0'/0/0"
   },
   {
-    "chainId": "eip155:246",
+    "chainId": "eip155:246/slip44:60",
     "family": "ethereum",
     "displayName": "Energy Web Chain",
     "defaultKeyPath": "m/44'/60'/0'/0/0"
   },
   {
-    "chainId": "eip155:248",
+    "chainId": "eip155:248/slip44:60",
     "family": "ethereum",
     "displayName": "Oasys",
     "defaultKeyPath": "m/44'/60'/0'/0/0"
   },
   {
-    "chainId": "eip155:250",
+    "chainId": "eip155:250/slip44:60",
     "family": "ethereum",
     "displayName": "Fantom Opera",
     "defaultKeyPath": "m/44'/60'/0'/0/0"
   },
   {
-    "chainId": "eip155:255",
+    "chainId": "eip155:255/slip44:60",
     "family": "ethereum",
     "displayName": "Kroma",
     "defaultKeyPath": "m/44'/60'/0'/0/0"
   },
   {
-    "chainId": "eip155:288",
+    "chainId": "eip155:288/slip44:60",
     "family": "ethereum",
     "displayName": "Boba",
     "defaultKeyPath": "m/44'/60'/0'/0/0"
   },
   {
-    "chainId": "eip155:321",
+    "chainId": "eip155:321/slip44:60",
     "family": "ethereum",
     "displayName": "KCC",
     "defaultKeyPath": "m/44'/60'/0'/0/0"
   },
   {
-    "chainId": "eip155:592",
+    "chainId": "eip155:592/slip44:60",
     "family": "ethereum",
     "displayName": "Astar EVM",
     "defaultKeyPath": "m/44'/60'/0'/0/0"
   },
   {
-    "chainId": "eip155:2017",
+    "chainId": "eip155:2017/slip44:60",
     "family": "ethereum",
     "displayName": "Orbit Chain",
     "defaultKeyPath": "m/44'/60'/0'/0/0"
   },
   {
-    "chainId": "eip155:7518",
+    "chainId": "eip155:7518/slip44:60",
     "family": "ethereum",
     "displayName": "MEVerse",
     "defaultKeyPath": "m/44'/60'/0'/0/0"
   },
   {
-    "chainId": "eip155:8453",
+    "chainId": "eip155:8453/slip44:60",
     "family": "ethereum",
     "displayName": "Base",
     "defaultKeyPath": "m/44'/60'/0'/0/0"
   },
   {
-    "chainId": "eip155:42161",
+    "chainId": "eip155:42161/slip44:60",
     "family": "ethereum",
     "displayName": "Arbitrum One",
     "defaultKeyPath": "m/44'/60'/0'/0/0"
   },
   {
-    "chainId": "eip155:42220",
+    "chainId": "eip155:42220/slip44:60",
     "family": "ethereum",
     "displayName": "Celo",
     "defaultKeyPath": "m/44'/60'/0'/0/0"
   },
   {
-    "chainId": "eip155:43114",
+    "chainId": "eip155:43114/slip44:60",
     "family": "ethereum",
     "displayName": "Avalanche C-Chain",
     "defaultKeyPath": "m/44'/60'/0'/0/0"
   },
   {
-    "chainId": "eip155:1666600000",
+    "chainId": "eip155:1666600000/slip44:60",
     "family": "ethereum",
     "displayName": "Harmony",
     "defaultKeyPath": "m/44'/60'/0'/0/0"
   },
   {
-    "chainId": "eip155:11297108109",
+    "chainId": "eip155:11297108109/slip44:60",
     "family": "ethereum",
     "displayName": "Palm",
     "defaultKeyPath": "m/44'/60'/0'/0/0"
   },
   {
-    "chainId": "eip155:137",
+    "chainId": "eip155:137/slip44:60",
     "family": "ethereum",
     "displayName": "Polygon",
     "defaultKeyPath": "m/44'/60'/0'/0/0"
   },
   {
-    "chainId": "eip155:3776",
+    "chainId": "eip155:3776/slip44:60",
     "family": "ethereum",
     "displayName": "Astar zkEVM",
     "defaultKeyPath": "m/44'/60'/0'/0/0"
   },
   {
-    "chainId": "eip155:612",
+    "chainId": "eip155:612/slip44:60",
     "family": "ethereum",
     "displayName": "EIOB Chain",
     "defaultKeyPath": "m/44'/60'/0'/0/0"
   },
   {
-    "chainId": "eip155:4613",
+    "chainId": "eip155:4613/slip44:60",
     "family": "ethereum",
     "displayName": "VERY Mainnet",
     "defaultKeyPath": "m/44'/60'/0'/0/0"
   },
   {
-    "chainId": "eip155:37",
+    "chainId": "eip155:37/slip44:60",
     "family": "ethereum",
     "displayName": "XPLA",
     "defaultKeyPath": "m/44'/60'/0'/0/0"
   },
   {
-    "chainId": "eip155:81",
+    "chainId": "eip155:81/slip44:60",
     "family": "ethereum",
     "displayName": "Japan Open Chain",
     "defaultKeyPath": "m/44'/60'/0'/0/0"
   },
   {
-    "chainId": "eip155:1625",
+    "chainId": "eip155:1625/slip44:60",
     "family": "ethereum",
     "displayName": "Gravity Alpha",
     "defaultKeyPath": "m/44'/60'/0'/0/0"
   },
   {
-    "chainId": "eip155:102030",
+    "chainId": "eip155:102030/slip44:60",
     "family": "ethereum",
     "displayName": "Creditcoin EVM",
     "defaultKeyPath": "m/44'/60'/0'/0/0"
   },
   {
-    "chainId": "eip155:314",
+    "chainId": "eip155:314/slip44:60",
     "family": "ethereum",
     "displayName": "Filecoin EVM",
     "defaultKeyPath": "m/44'/60'/0'/0/0"
   },
   {
-    "chainId": "eip155:1689",
+    "chainId": "eip155:1689/slip44:60",
     "family": "ethereum",
     "displayName": "NERO",
     "defaultKeyPath": "m/44'/60'/0'/0/0"
   },
   {
-    "chainId": "eip155:146",
+    "chainId": "eip155:146/slip44:60",
     "family": "ethereum",
     "displayName": "Sonic",
     "defaultKeyPath": "m/44'/60'/0'/0/0"
   },
   {
-    "chainId": "eip155:22776",
+    "chainId": "eip155:22776/slip44:60",
     "family": "ethereum",
     "displayName": "MAP Protocol",
     "defaultKeyPath": "m/44'/60'/0'/0/0"
   },
   {
-    "chainId": "eip155:1868",
+    "chainId": "eip155:1868/slip44:60",
     "family": "ethereum",
     "displayName": "Soneium",
     "defaultKeyPath": "m/44'/60'/0'/0/0"
   },
   {
-    "chainId": "eip155:534352",
+    "chainId": "eip155:534352/slip44:60",
     "family": "ethereum",
     "displayName": "Scroll",
     "defaultKeyPath": "m/44'/60'/0'/0/0"
   },
   {
-    "chainId": "eip155:41923",
+    "chainId": "eip155:41923/slip44:60",
     "family": "ethereum",
     "displayName": "Edu Chain",
     "defaultKeyPath": "m/44'/60'/0'/0/0"
   },
   {
-    "chainId": "eip155:5050",
+    "chainId": "eip155:5050/slip44:60",
     "family": "ethereum",
     "displayName": "Skate",
     "defaultKeyPath": "m/44'/60'/0'/0/0"
   },
   {
-    "chainId": "eip155:888888888",
+    "chainId": "eip155:888888888/slip44:60",
     "family": "ethereum",
     "displayName": "Ancient8",
     "defaultKeyPath": "m/44'/60'/0'/0/0"
   },
   {
-    "chainId": "eip155:88888",
+    "chainId": "eip155:88888/slip44:60",
     "family": "ethereum",
     "displayName": "Chiliz",
     "defaultKeyPath": "m/44'/60'/0'/0/0"
   },
   {
-    "chainId": "eip155:167000",
+    "chainId": "eip155:167000/slip44:60",
     "family": "ethereum",
     "displayName": "Taiko Alethia",
     "defaultKeyPath": "m/44'/60'/0'/0/0"
   },
   {
-    "chainId": "eip155:80094",
+    "chainId": "eip155:80094/slip44:60",
     "family": "ethereum",
     "displayName": "Berachain",
     "defaultKeyPath": "m/44'/60'/0'/0/0"
   },
   {
-    "chainId": "eip155:1514",
+    "chainId": "eip155:1514/slip44:60",
     "family": "ethereum",
     "displayName": "Story Network",
     "defaultKeyPath": "m/44'/60'/0'/0/0"
   },
   {
-    "chainId": "eip155:1440000",
+    "chainId": "eip155:1440000/slip44:60",
     "family": "ethereum",
     "displayName": "XRPL EVM",
     "defaultKeyPath": "m/44'/60'/0'/0/0"
   },
   {
-    "chainId": "eip155:169",
+    "chainId": "eip155:169/slip44:60",
     "family": "ethereum",
     "displayName": "Manta Pacific",
     "defaultKeyPath": "m/44'/60'/0'/0/0"
   },
   {
-    "chainId": "eip155:20250217",
+    "chainId": "eip155:20250217/slip44:60",
     "family": "ethereum",
     "displayName": "Xphere",
     "defaultKeyPath": "m/44'/60'/0'/0/0"
   },
   {
-    "chainId": "eip155:999",
+    "chainId": "eip155:999/slip44:60",
     "family": "ethereum",
     "displayName": "HyperEVM",
     "defaultKeyPath": "m/44'/60'/0'/0/0"
   },
   {
-    "chainId": "eip155:484",
+    "chainId": "eip155:484/slip44:60",
     "family": "ethereum",
     "displayName": "Camp Mainnet",
     "defaultKeyPath": "m/44'/60'/0'/0/0"
   },
   {
-    "chainId": "eip155:6985385",
+    "chainId": "eip155:6985385/slip44:60",
     "family": "ethereum",
     "displayName": "Humanity Protocol",
     "defaultKeyPath": "m/44'/60'/0'/0/0"
   },
   {
-    "chainId": "eip155:210000",
+    "chainId": "eip155:210000/slip44:60",
     "family": "ethereum",
     "displayName": "JuChain",
     "defaultKeyPath": "m/44'/60'/0'/0/0"
   },
   {
-    "chainId": "eip155:50104",
+    "chainId": "eip155:50104/slip44:60",
     "family": "ethereum",
     "displayName": "Sophon",
     "defaultKeyPath": "m/44'/60'/0'/0/0"
   },
   {
-    "chainId": "eip155:4352",
+    "chainId": "eip155:4352/slip44:60",
     "family": "ethereum",
     "displayName": "MemeCore",
     "defaultKeyPath": "m/44'/60'/0'/0/0"
   },
   {
-    "chainId": "eip155:98866",
+    "chainId": "eip155:98866/slip44:60",
     "family": "ethereum",
     "displayName": "Plume",
     "defaultKeyPath": "m/44'/60'/0'/0/0"
   },
   {
-    "chainId": "eip155:1776",
+    "chainId": "eip155:1776/slip44:60",
     "family": "ethereum",
     "displayName": "Injective",
     "defaultKeyPath": "m/44'/60'/0'/0/0"
   },
   {
-    "chainId": "eip155:143",
+    "chainId": "eip155:143/slip44:60",
     "family": "ethereum",
     "displayName": "Monad Mainnet",
     "defaultKeyPath": "m/44'/60'/0'/0/0"
   },
   {
-    "chainId": "eip155:7300",
+    "chainId": "eip155:7300/slip44:60",
     "family": "ethereum",
     "displayName": "XPLAVerse",
     "defaultKeyPath": "m/44'/60'/0'/0/0"
   },
   {
-    "chainId": "eip155:204",
+    "chainId": "eip155:204/slip44:60",
     "family": "ethereum",
     "displayName": "opBNB",
     "defaultKeyPath": "m/44'/60'/0'/0/0"

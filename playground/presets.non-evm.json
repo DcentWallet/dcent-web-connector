@@ -4,7 +4,7 @@
     "label": "Bitcoin native-segwit transfer",
     "family": "bitcoin",
     "applicableChainIds": [
-      "bip122:000000000019d6689c085ae165831e93"
+      "bip122:000000000019d6689c085ae165831e93/slip44:0"
     ],
     "note": "P2WPKH native SegWit output. Amounts in satoshi. Edit inputs/outputs before send.",
     "sourceUrl": "https://github.com/bitcoinjs/bitcoinjs-lib/blob/master/test/transaction_builder.spec.js",
@@ -32,7 +32,7 @@
     "label": "Solana SOL transfer",
     "family": "solana",
     "applicableChainIds": [
-      "solana:5eykt4UsFv8P8NJdTREpY1vzqKqZKvdp"
+      "solana:5eykt4UsFv8P8NJdTREpY1vzqKqZKvdp/slip44:501"
     ],
     "note": "Versioned Transaction (version: 0) format. Edit to/lamports before send.",
     "sourceUrl": "https://solana-labs.github.io/solana-web3.js/classes/VersionedTransaction.html",
@@ -43,8 +43,16 @@
         {
           "programId": "11111111111111111111111111111111",
           "keys": [
-            { "pubkey": "11111111111111111111111111111111", "isSigner": true, "isWritable": true },
-            { "pubkey": "11111111111111111111111111111112", "isSigner": false, "isWritable": true }
+            {
+              "pubkey": "11111111111111111111111111111111",
+              "isSigner": true,
+              "isWritable": true
+            },
+            {
+              "pubkey": "11111111111111111111111111111112",
+              "isSigner": false,
+              "isWritable": true
+            }
           ],
           "data": {
             "instruction": 2,
@@ -60,7 +68,7 @@
     "label": "XRP Payment",
     "family": "xrp",
     "applicableChainIds": [
-      "xrpl:0"
+      "xrpl:0/slip44:144"
     ],
     "note": "XRP Ledger Payment transaction. Edit Destination/Amount before send.",
     "sourceUrl": "https://js.xrpl.org/interfaces/Payment.html",
@@ -79,15 +87,21 @@
     "label": "Hedera HBAR transfer",
     "family": "hedera",
     "applicableChainIds": [
-      "hedera:mainnet"
+      "hedera:mainnet/slip44:3030"
     ],
     "note": "Hedera TransferTransaction (CryptoTransfer). Edit accountId/amount before send.",
     "sourceUrl": "https://docs.hedera.com/hedera/sdks-and-apis/sdks/cryptocurrency/transfer-cryptocurrency",
     "transaction": {
       "type": "CryptoTransfer",
       "transfers": [
-        { "accountId": "0.0.2", "amount": -100000000 },
-        { "accountId": "0.0.3", "amount": 100000000 }
+        {
+          "accountId": "0.0.2",
+          "amount": -100000000
+        },
+        {
+          "accountId": "0.0.3",
+          "amount": 100000000
+        }
       ],
       "memo": "",
       "maxTransactionFee": 100000000,
@@ -99,51 +113,23 @@
     "label": "Stellar XLM payment",
     "family": "stellar",
     "applicableChainIds": [
-      "stellar:pubnet"
+      "stellar:pubnet/slip44:148"
     ],
     "note": "Stellar Operation.payment for native XLM. Edit destination/amount before send.",
     "sourceUrl": "https://stellar.github.io/js-stellar-sdk/Operation.payment.html",
     "transaction": {
       "type": "payment",
       "destination": "GAAZI4TCR3TY5OJHCTJC2A4QSY6CJWJH5IAJTGKIN2ER7LBNVKOCCWN",
-      "asset": { "code": "XLM", "issuer": null },
+      "asset": {
+        "code": "XLM",
+        "issuer": null
+      },
       "amount": "10",
-      "memo": { "type": "none" },
+      "memo": {
+        "type": "none"
+      },
       "fee": 100,
       "sequenceNumber": "0"
-    }
-  },
-  {
-    "id": "trx-transfer",
-    "label": "Tron TRX transfer",
-    "family": "tron",
-    "applicableChainIds": [
-      "tron:mainnet"
-    ],
-    "note": "TronWeb transactionBuilder.sendTrx format. Amount in SUN (1 TRX = 1,000,000 SUN). Edit to/amount before send.",
-    "sourceUrl": "https://developers.tron.network/docs/getting-started-with-tronweb",
-    "transaction": {
-      "to_address": "TPswDDCAWhJAZGdHPidFiqHuoXXVKRiTZ2",
-      "owner_address": "TN3W4H6rK2ce4vX9YnFQHwKENnHjoxb3m9",
-      "amount": 1000000,
-      "raw_data": {
-        "contract": [
-          {
-            "type": "TransferContract",
-            "parameter": {
-              "value": {
-                "to_address": "TPswDDCAWhJAZGdHPidFiqHuoXXVKRiTZ2",
-                "owner_address": "TN3W4H6rK2ce4vX9YnFQHwKENnHjoxb3m9",
-                "amount": 1000000
-              }
-            }
-          }
-        ],
-        "ref_block_bytes": "0000",
-        "ref_block_hash": "0000000000000000",
-        "expiration": 1800000,
-        "timestamp": 0
-      }
     }
   }
 ]

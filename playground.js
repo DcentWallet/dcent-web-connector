@@ -1027,12 +1027,11 @@
     var params = { chainId: chainId, keyPath: keyPath, message: message, meta: metaObj }
     var startMs = Date.now()
 
-    // m08-01-05: 통합 sign API 사용 — chain 인자로 raw method 전달 (v1 fallback path)
-    // CAIP-19 (예: 'eip155:1') 또는 v1 method 문자열 ('signMessage') 모두 지원.
-    // 본 dispatcher는 v1 호환 'signMessage' method를 그대로 사용.
+    // m09-04-01.5: NEW schema 마이그레이션 — { method, chainId, payload }.
+    // method는 intent literal ('signMessage'), chainId(CAIP-19)는 top-level, payload에는 chainId 제거.
     var dcent = _getDcent()
     // b08-01: _unwrapV1Envelope이 success → body.parameter unwrap, failure → throw로 변환
-    dcent.sign({ chain: 'signMessage', payload: params }).then(_unwrapV1Envelope).then(function (result) {
+    dcent.sign({ method: 'signMessage', chainId: chainId, payload: { keyPath: keyPath, message: message, meta: metaObj } }).then(_unwrapV1Envelope).then(function (result) {
       appendLog({
         method: 'signMessage',
         chainId: chainId,
@@ -1091,12 +1090,12 @@
     var params = { chainId: chainId, keyPath: keyPath, transaction: txObj }
     var startMs = Date.now()
 
-    // m09-01-02: 1번 경로 마이그레이션 — chain intent literal 'signTransaction' 사용 + payload.chainId는 CAIP-19.
-    // connector chainToMethod의 PREFIX_TO_METHOD 미매치 → fallthrough → sdk MethodRegistry hit.
-    // chainId(CAIP-19)는 sdk resolveChainId가 wallet-models registry로 currency 결정.
+    // m09-04-01.5: NEW schema 마이그레이션 — { method, chainId, payload }.
+    // method='signTransaction' (intent literal), chainId(CAIP-19) top-level, payload에서 chainId 제거.
+    // sdk resolveChainId가 wallet-models registry로 currency 결정.
     var dcent = _getDcent()
     // b08-01: _unwrapV1Envelope이 success → body.parameter unwrap, failure → throw로 변환
-    dcent.sign({ chain: 'signTransaction', payload: params }).then(_unwrapV1Envelope).then(function (result) {
+    dcent.sign({ method: 'signTransaction', chainId: chainId, payload: { keyPath: keyPath, transaction: txObj } }).then(_unwrapV1Envelope).then(function (result) {
       appendLog({
         method: 'signTransaction',
         chainId: chainId,
@@ -1156,11 +1155,11 @@
     var params = { chainId: chainId, keyPath: keyPath, transaction: txObj }
     var startMs = Date.now()
 
-    // m09-01-02: 1번 경로 마이그레이션 — chain intent literal 'signTransaction' 사용 + payload.chainId는 CAIP-19.
+    // m09-04-01.5: NEW schema 마이그레이션 — { method, chainId, payload }.
     // bip122/solana/xrpl/cosmos/stellar/hedera 등 비-EVM도 동일 패턴. chains.json의 chainId가 이미 CAIP-19.
     var dcent = _getDcent()
     // b08-01: _unwrapV1Envelope이 success → body.parameter unwrap, failure → throw로 변환
-    dcent.sign({ chain: 'signTransaction', payload: params }).then(_unwrapV1Envelope).then(function (result) {
+    dcent.sign({ method: 'signTransaction', chainId: chainId, payload: { keyPath: keyPath, transaction: txObj } }).then(_unwrapV1Envelope).then(function (result) {
       appendLog({
         method: 'signTransaction',
         chainId: chainId,

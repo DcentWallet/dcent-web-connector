@@ -4,7 +4,7 @@
     "label": "Algorand ALGO payment",
     "family": "algorand",
     "applicableChainIds": [
-      "algorand:wGHE2Pwdvd7S12BL5FaOP20EGYesN73k"
+      "algorand:wGHE2Pwdvd7S12BL5FaOP20EGYesN73k/slip44:283"
     ],
     "note": "Algorand 결제(pay) 트랜잭션. amount 단위는 microAlgo (1 ALGO = 1,000,000). from/to/amount 수정 후 송금.",
     "sourceUrl": "https://github.com/algorand/js-algorand-sdk",
@@ -25,7 +25,7 @@
     "label": "Conflux CFX transfer",
     "family": "conflux",
     "applicableChainIds": [
-      "conflux:cfx"
+      "conflux:cfx/slip44:503"
     ],
     "note": "Conflux Core Space 송금 트랜잭션 (EVM 호환). chainId 1029 = Conflux Hydra mainnet. from/to/value 수정 후 송금.",
     "sourceUrl": "https://github.com/Conflux-Chain/js-conflux-sdk",
@@ -47,7 +47,7 @@
     "label": "Cosmos ATOM transfer",
     "family": "cosmos",
     "applicableChainIds": [
-      "cosmos:cosmoshub-4"
+      "cosmos:cosmoshub-4/slip44:118"
     ],
     "note": "Cosmos Hub MsgSend (cosmjs StdSignDoc). amount 단위는 uatom (1 ATOM = 1,000,000). fromAddress/toAddress/amount 수정 후 송금.",
     "sourceUrl": "https://github.com/cosmos/cosmjs",
@@ -81,7 +81,7 @@
     "label": "Filecoin FIL transfer",
     "family": "fil",
     "applicableChainIds": [
-      "fil:f"
+      "fil:f/slip44:461"
     ],
     "note": "Filecoin Lotus Message (BLS/secp256k1). value 단위는 attoFIL (1 FIL = 10^18). to/from/value 수정 후 송금.",
     "sourceUrl": "https://github.com/glifio/modules",
@@ -102,7 +102,7 @@
     "label": "Polkadot DOT transfer",
     "family": "polkadot",
     "applicableChainIds": [
-      "polkadot:91b171bb158e2d3848fa23a9f1c25182"
+      "polkadot:91b171bb158e2d3848fa23a9f1c25182/slip44:354"
     ],
     "note": "Polkadot balances.transfer extrinsic. args[1] 단위는 Planck (1 DOT = 10^10 Planck). args[0] 수신자 주소 + args[1] 금액 수정 후 송금.",
     "sourceUrl": "https://github.com/polkadot-js/api",
@@ -126,7 +126,7 @@
     "label": "Stacks STX transfer",
     "family": "stacks",
     "applicableChainIds": [
-      "stacks:1"
+      "stacks:1/slip44:5757"
     ],
     "note": "Stacks tokenTransfer (makeSTXTokenTransfer). amount 단위는 microSTX (1 STX = 1,000,000). recipient/amount 수정 후 송금.",
     "sourceUrl": "https://github.com/hirosystems/stacks.js",
@@ -147,7 +147,7 @@
     "label": "Tezos XTZ transfer",
     "family": "tezos",
     "applicableChainIds": [
-      "tezos:NetXdQprcVkpaWU"
+      "tezos:NetXdQprcVkpaWU/slip44:1729"
     ],
     "note": "Tezos transaction operation (taquito). amount 단위는 mutez (1 XTZ = 1,000,000). source/destination/amount 수정 후 송금.",
     "sourceUrl": "https://github.com/ecadlabs/taquito",
@@ -167,7 +167,7 @@
     "label": "VeChain VET transfer",
     "family": "vechain",
     "applicableChainIds": [
-      "vechain:b1ac3413d346d43539627e6be7ec1b4a"
+      "vechain:b1ac3413d346d43539627e6be7ec1b4a/slip44:818"
     ],
     "note": "VeChain Thor transaction (thor-devkit). clauses[0].value는 wei 단위 hex (1 VET = 10^18 wei). clauses[0].to/value 수정 후 송금.",
     "sourceUrl": "https://github.com/vechain/thor-devkit.js",

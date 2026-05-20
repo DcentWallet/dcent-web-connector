@@ -38,6 +38,37 @@
 ;(function () {
   'use strict'
 
+  // ── b08-01: v1 호환 envelope unwrap helper ──
+  // facade가 resolve로 돌려준 failure 응답을 throw로 변환한다.
+  // src/sign/assert.ts:_assertV1Success와 유사하지만 다른 정책 — playground 인라인 버전은
+  // success path에서 추가로 body.parameter까지 unwrap하고, throw 시 plain Error 사용
+  // (playground는 ProviderError import 회피 — vanilla JS).
+  // v1 특례(transaction.user_cancel)는 throw하지 않고 body를 그대로 반환 (호환 보존).
+  function _unwrapV1Envelope (resp) {
+    // v1 envelope이 아닌 경우(legacy result 형태 / null / primitive)는 그대로 반환
+    if (!resp || typeof resp !== 'object' || !resp.header || typeof resp.header !== 'object') {
+      return resp
+    }
+    var status = resp.header.status
+    if (status === 'success') {
+      // body.parameter가 있으면 그것을, 없으면 envelope 자체 (호출자가 알아서 처리)
+      return (resp.body && resp.body.parameter) || resp.body || resp
+    }
+    // status === 'failure' — v1 특례 보존
+    var cmd = resp.body && resp.body.command
+    var errCode = resp.body && resp.body.error && resp.body.error.code
+    if (cmd === 'transaction' && errCode === 'user_cancel') {
+      // user_cancel은 facade가 resolve로 돌려주는 v1 특례 — playground도 동일하게 resolve 흐름 유지
+      return resp.body.parameter || resp.body || resp
+    }
+    // 그 외 failure → throw (호출자의 .catch가 받아 normalizeError + appendLog error 분기)
+    var msg = (resp.body && resp.body.error && resp.body.error.message) || 'unknown failure'
+    var err = new Error(msg)
+    err.code = errCode || 'internal_error'
+    err.v1Envelope = resp
+    throw err
+  }
+
   // ── EVM chains runtime state (chains.json 로드 후 채워짐) ──
   // chainId → { displayName, defaultKeyPath, family }
   var evmChainsMap = {} // 로드 완료 전: 빈 객체
@@ -122,14 +153,14 @@
               kind: 'method',
               id: 'signMessage:eth:personal',
               label: 'personal_sign',
-              chainId: 'eip155:1',
+              chainId: 'eip155:1/slip44:60',
               metaKind: 'personal',
             },
             {
               kind: 'method',
               id: 'signMessage:eth:eip712-v3',
               label: 'signTypedData_v3',
-              chainId: 'eip155:1',
+              chainId: 'eip155:1/slip44:60',
               metaKind: 'eip712',
               metaVersion: 'V3',
             },
@@ -137,7 +168,7 @@
               kind: 'method',
               id: 'signMessage:eth:eip712-v4',
               label: 'signTypedData_v4',
-              chainId: 'eip155:1',
+              chainId: 'eip155:1/slip44:60',
               metaKind: 'eip712',
               metaVersion: 'V4',
             },
@@ -151,7 +182,7 @@
               kind: 'method',
               id: 'signMessage:sol:raw',
               label: 'signMessage (raw)',
-              chainId: 'solana:5eykt4UsFv8P8NJdTREpY1vzqKqZKvdp',
+              chainId: 'solana:5eykt4UsFv8P8NJdTREpY1vzqKqZKvdp/slip44:501',
               metaKind: 'raw',
             },
           ],
@@ -819,49 +850,36 @@
   }
 
   function onConnect () {
+    // b08-01: popup-only 진입점.
+    //   - dcent.getDeviceInfo() 호출 + state.device 채우기는 제거.
+    //   - device info fetch는 [getDeviceInfo] 트리 메뉴 + [Send]가 단일 책임자.
+    //   - listener 등록 + state.connected = true + 버튼 토글 + appendLog만 수행.
     btnConnect.disabled = true
     connDot.className = ''
     deviceInfoEl.textContent = 'Connecting...'
 
     var dcent = _getDcent()
-    if (!dcent || typeof dcent.getDeviceInfo !== 'function') {
+    if (!dcent || typeof dcent.setConnectionListener !== 'function') {
       updateIndicator({ connected: false, error: true, msg: 'Init failed: window.dcent not loaded' })
       btnConnect.disabled = false
       return
     }
 
-    // m08-01-05: facade가 transport/queue를 lazy 생성 — listener는 1회만 등록
+    // m08-01-05: facade가 transport/queue를 lazy 생성 — listener는 1회만 등록.
+    // popup은 첫 sign / getDeviceInfo 호출 시 lazy하게 열린다.
     _ensureStateListener()
 
-    var startMs = Date.now()
-    // m08-01-05: dcent.getDeviceInfo()는 v1 호환 응답 ({header, body}) 반환
-    dcent.getDeviceInfo().then(function (resp) {
-      // v1 응답 형식: { header: {status: 'success'}, body: { parameter: {...device fields...} } }
-      var device = (resp && resp.body && resp.body.parameter) || (resp && resp.result) || {}
-      state.device = device
-      state.connected = true
-      var latencyMs = Date.now() - startMs
-      updateIndicator({ connected: true, model: device.model, fw: device.firmware })
-      btnConnect.style.display = 'none'
-      btnDisconnect.style.display = ''
-      updateSendBtn()
-      appendLog({
-        method: 'getDeviceInfo',
-        request: {},
-        response: device,
-        latencyMs: latencyMs,
-        deviceFirmware: device.firmware,
-      })
-    }).catch(function (err) {
-      var errInfo = normalizeError(err)
-      updateIndicator({ connected: false, error: true, msg: errInfo.message })
-      btnConnect.disabled = false
-      appendLog({
-        method: 'getDeviceInfo',
-        request: {},
-        error: errInfo,
-        latencyMs: Date.now() - startMs,
-      })
+    // state.device는 건드리지 않는다 — [getDeviceInfo] 버튼이 단일 책임자.
+    state.connected = true
+    updateIndicator({ connected: true })
+    btnConnect.style.display = 'none'
+    btnDisconnect.style.display = ''
+    updateSendBtn()
+    appendLog({
+      method: '_connect',
+      request: {},
+      response: { msg: 'Ready (popup will open on first call)' },
+      latencyMs: 0,
     })
   }
 
@@ -948,8 +966,8 @@
     var startMs = Date.now()
     var dcent = _getDcent()
     // m08-01-05: facade의 v1 호환 API — 응답은 v1 envelope ({header, body.parameter})
-    dcent.getDeviceInfo().then(function (resp) {
-      var result = (resp && resp.body && resp.body.parameter) || (resp && resp.result) || resp
+    // b08-01: _unwrapV1Envelope이 success → body.parameter unwrap, failure → throw로 변환
+    dcent.getDeviceInfo().then(_unwrapV1Envelope).then(function (result) {
       state.device = result
       appendLog({
         method: 'getDeviceInfo',
@@ -1013,8 +1031,8 @@
     // CAIP-19 (예: 'eip155:1') 또는 v1 method 문자열 ('signMessage') 모두 지원.
     // 본 dispatcher는 v1 호환 'signMessage' method를 그대로 사용.
     var dcent = _getDcent()
-    dcent.sign({ chain: 'signMessage', payload: params }).then(function (resp) {
-      var result = (resp && resp.body && resp.body.parameter) || (resp && resp.result) || resp
+    // b08-01: _unwrapV1Envelope이 success → body.parameter unwrap, failure → throw로 변환
+    dcent.sign({ chain: 'signMessage', payload: params }).then(_unwrapV1Envelope).then(function (result) {
       appendLog({
         method: 'signMessage',
         chainId: chainId,
@@ -1073,16 +1091,12 @@
     var params = { chainId: chainId, keyPath: keyPath, transaction: txObj }
     var startMs = Date.now()
 
-    // m08-01-05: EVM signTx는 통합 sign API 사용 — chain은 CAIP-19 형식 (eip155:N)
-    // chainId가 이미 'eip155:N' 형식이면 그대로 사용, 숫자만이면 prefix 추가
-    // 본 dispatcher는 통합 API를 시연. dApp이 v1 wrapper를 더 좋아하면
-    //   dcent.getEthereumSignedTransaction(coinType, nonce, gasPrice, ...) 도 사용 가능.
+    // m09-01-02: 1번 경로 마이그레이션 — chain intent literal 'signTransaction' 사용 + payload.chainId는 CAIP-19.
+    // connector chainToMethod의 PREFIX_TO_METHOD 미매치 → fallthrough → sdk MethodRegistry hit.
+    // chainId(CAIP-19)는 sdk resolveChainId가 wallet-models registry로 currency 결정.
     var dcent = _getDcent()
-    var caipChain = (chainId && chainId.indexOf(':') !== -1)
-      ? chainId
-      : ('eip155:' + (chainId || 1))
-    dcent.sign({ chain: caipChain, payload: params }).then(function (resp) {
-      var result = (resp && resp.body && resp.body.parameter) || (resp && resp.result) || resp
+    // b08-01: _unwrapV1Envelope이 success → body.parameter unwrap, failure → throw로 변환
+    dcent.sign({ chain: 'signTransaction', payload: params }).then(_unwrapV1Envelope).then(function (result) {
       appendLog({
         method: 'signTransaction',
         chainId: chainId,
@@ -1142,12 +1156,11 @@
     var params = { chainId: chainId, keyPath: keyPath, transaction: txObj }
     var startMs = Date.now()
 
-    // m08-01-05: 비-EVM signTx도 통합 sign API — chainId가 이미 CAIP-19 형식 (bip122:..., cosmos:...)
-    // chainId가 비어있으면 v1 method 'signTransaction' fallback (chainToMethod이 default 처리)
+    // m09-01-02: 1번 경로 마이그레이션 — chain intent literal 'signTransaction' 사용 + payload.chainId는 CAIP-19.
+    // bip122/solana/xrpl/cosmos/stellar/hedera 등 비-EVM도 동일 패턴. chains.json의 chainId가 이미 CAIP-19.
     var dcent = _getDcent()
-    var caipChain = chainId || 'signTransaction'
-    dcent.sign({ chain: caipChain, payload: params }).then(function (resp) {
-      var result = (resp && resp.body && resp.body.parameter) || (resp && resp.result) || resp
+    // b08-01: _unwrapV1Envelope이 success → body.parameter unwrap, failure → throw로 변환
+    dcent.sign({ chain: 'signTransaction', payload: params }).then(_unwrapV1Envelope).then(function (result) {
       appendLog({
         method: 'signTransaction',
         chainId: chainId,
@@ -1328,6 +1341,9 @@
     validateKeyPath: validateKeyPath,
     state: state,
     appendLog: appendLog,
+    // b08-01: envelope unwrap helper + popup-only onConnect 검증용 노출
+    _unwrapV1Envelope: _unwrapV1Envelope,
+    onConnect: onConnect,
     getLogEntries: function () { return state.logs },
     clearLogs: function () {
       state.logs = []

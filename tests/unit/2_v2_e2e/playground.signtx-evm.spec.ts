@@ -17,15 +17,16 @@ const { launchBrowser } = require('./launchBrowser')
 const HARNESS_BASE = 'http://localhost:9091'
 const PLAYGROUND_URL = `${HARNESS_BASE}/index-v2.html`
 
+// m09-01-02: CAIP-19 형식 (1번 경로 마이그레이션). EVM은 slip44:60.
 const SAMPLE_CHAINS = [
   {
-    chainId: 'eip155:1',
+    chainId: 'eip155:1/slip44:60',
     family: 'ethereum',
     displayName: 'Ethereum',
     defaultKeyPath: "m/44'/60'/0'/0/0",
   },
   {
-    chainId: 'eip155:137',
+    chainId: 'eip155:137/slip44:60',
     family: 'ethereum',
     displayName: 'Polygon',
     defaultKeyPath: "m/44'/60'/0'/0/0",
@@ -37,7 +38,7 @@ const SAMPLE_PRESETS = [
     id: 'evm-transfer-1559',
     label: 'EVM transfer (EIP-1559)',
     note: 'Template only — edit nonce/maxFeePerGas before send',
-    applicableChainIds: ['eip155:1', 'eip155:137'],
+    applicableChainIds: ['eip155:1/slip44:60', 'eip155:137/slip44:60'],
     transaction: {
       type: 2,
       to: '0x0000000000000000000000000000000000000000',
@@ -114,8 +115,8 @@ describe('[v2 e2e] playground signTx EVM', () => {
       api.simulateConnect(mockDcent, null, { model: 'Biometric', firmware: '3.23.0' })
     })
 
-    // Step 4: Ethereum (eip155:1) 노드 클릭
-    await page.click('[data-method-id="signTx:evm:eip155:1"]')
+    // Step 4: Ethereum (eip155:1/slip44:60) 노드 클릭 — m09-01-02: CAIP-19
+    await page.click('[data-method-id="signTx:evm:eip155:1/slip44:60"]')
 
     // Step 5: 폼 렌더링 확인 — keyPath, transaction 필드 존재
     const hasKeyPath = await page.$('#field-keyPath')
@@ -155,9 +156,10 @@ describe('[v2 e2e] playground signTx EVM', () => {
     expect(captured.length).toBe(1)
 
     const req = captured[0]
-    // facade dcent.sign({ chain: 'eip155:1', payload: { chainId, keyPath, transaction } })
-    expect(req.chain).toBe('eip155:1')
-    expect(req.payload.chainId).toBe('eip155:1')
+    // m09-01-02: 1번 경로 마이그레이션 — chain은 intent literal 'signTransaction',
+    //   payload.chainId는 CAIP-19 (eip155:1/slip44:60)
+    expect(req.chain).toBe('signTransaction')
+    expect(req.payload.chainId).toBe('eip155:1/slip44:60')
     expect(req.payload.keyPath).toBe("m/44'/60'/0'/0/0")
     expect(req.payload.transaction).toBeDefined()
     expect(req.payload.transaction.type).toBe(2)

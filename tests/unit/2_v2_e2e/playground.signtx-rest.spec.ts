@@ -119,12 +119,14 @@ describe('[v2 e2e] playground signTx Rest family', () => {
     expect(captured.length).toBe(1)
 
     const req = captured[0]
-    // m09-01-02: 1번 경로 마이그레이션 — chain intent literal + CAIP-19 payload.chainId
-    expect(req.chain).toBe('signTransaction')
-    expect(req.payload.chainId).toMatch(/^cosmos:.+\/slip44:\d+$/)
+    // m09-04-01: NEW schema — method intent literal + chainId(CAIP-19) top-level, payload는 keyPath/transaction
+    expect(req.method).toBe('signTransaction')
+    expect(req.chainId).toMatch(/^cosmos:.+\/slip44:\d+$/)
     expect(req.payload.keyPath).toMatch(/^m\//)
     expect(typeof req.payload.transaction).toBe('object')
     expect(req.payload.transaction).not.toBeNull()
+    // payload에 chainId 키가 없어야 함 (top-level로 이동)
+    expect(req.payload.chainId).toBeUndefined()
 
     // Step 10: 로그 엔트리 확인
     const entries = await page.evaluate(() =>

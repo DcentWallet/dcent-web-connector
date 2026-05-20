@@ -113,7 +113,7 @@ export type { UnitConvertResult } from './utils/unitConverter'
 export { sign } from './sign'
 export type { SignInput, V1Response, V1ResponseHeader, V1ResponseBody } from './sign'
 // internal helpers (sibling module이 사용)
-export { _call, _genId, _sanitizeChain, _assertV1Success, providerErrorToV1 } from './sign'
+export { _call, _genId, _sanitizeMethod, _sanitizeChainId, _assertV1Success, providerErrorToV1 } from './sign'
 export type { CallInput } from './sign'
 
 // === 새 named exports (m08-01-02.5 — read-only / configure / Bitcoin tx-builder + v1 validators) ===

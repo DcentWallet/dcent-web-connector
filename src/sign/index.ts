@@ -21,7 +21,7 @@ export type { V1Response, V1ResponseHeader, V1ResponseBody } from './types'
 export { _call } from './call'
 export type { CallInput } from './call'
 export { _genId } from './idGen'
-export { _sanitizeChain } from './sanitize'
+export { _sanitizeMethod, _sanitizeChainId } from './sanitize'
 export { _assertV1Success } from './assert'
 export { providerErrorToV1 } from './error'
 

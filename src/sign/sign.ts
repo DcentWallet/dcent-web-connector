@@ -1,26 +1,26 @@
 /**
- * v2 sign — public 통합 sign API (m08-01-02)
+ * v2 sign — public 통합 sign API (m09-04-01 fallback-only)
  *
- * dApp이 호출하는 단일 진입점. v1의 분산된 sign 함수들(`getEthereumSignedTransaction`,
- * `getBitcoinSignedTransaction`, `getXrpSignedTransaction`, ...)을 chain 인자 하나로 통합.
+ * dApp이 호출하는 단일 진입점. chain 식별자(CAIP-19 또는 v1 method)와 payload를
+ * 그대로 bridge sdk에 전달한다.
  *
  * 동작:
  *   1. chain 값을 _sanitizeChain으로 검증 (type/length/whitelist/prototype 키)
- *   2. chainToMethod로 bridge method 결정 (CAIP-19 prefix 매칭 또는 fallback)
- *   3. _call({method, params: payload})로 위임 — popup으로 송신 후 응답 수신
+ *   2. _call({method: safeChain, params: payload})로 위임 — chain 문자열이 곧 method
  *
- * 주의: v1 wrapper(m08-01-03/04)는 sign을 거치지 않고 _call을 직접 호출한다 (D-05).
- * 따라서 본 함수는 dApp이 새로 통합 API를 사용할 때만 진입점.
+ * m09-04-01 변경: chain 정적 매핑 제거. CAIP-19 prefix 매핑 책임은 bridge sdk 측이
+ * `resolveChainId(chainId)` + wallet-models registry로 자동 dispatch한다. connector는
+ * chain-agnostic transport (`connector-chain-addition-isolation` 룰).
  *
  * 룰 준수:
  *   - dapp-input-sanitization: chain 검증 (C3). payload는 bridge sdk 책임으로 pass-through
  *   - error-handling-consistency: V1Response를 그대로 반환 (throw는 _sanitizeChain에서만)
  *   - provider-security-checklist C3: chain은 dApp-controllable, _sanitizeChain이 origin-fixed가 아닌
  *     항목에 대한 whitelist 적용
+ *   - connector-chain-addition-isolation: chain enum / 정적 매핑 부재
  */
 
 import { _call } from './call'
-import { chainToMethod } from './chainToMethod'
 import { _sanitizeChain } from './sanitize'
 import type { V1Response } from './types'
 
@@ -41,6 +41,5 @@ export interface SignInput {
  */
 export async function sign (input: SignInput): Promise<V1Response> {
   const safeChain = _sanitizeChain(input.chain)
-  const method = chainToMethod(safeChain)
-  return _call({ method, params: input.payload })
+  return _call({ method: safeChain, params: input.payload })
 }

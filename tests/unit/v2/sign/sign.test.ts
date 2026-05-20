@@ -85,7 +85,7 @@ describe('sign — NEW schema {method, chainId, payload}', () => {
     await sign({
       method: 'signTransaction',
       chainId: 'eip155:1',
-      payload: { tx: { to: '0xdef' } },
+      payload: { keyPath: "m/44'/60'/0'/0/0", tx: { to: '0xdef' } },
     })
 
     expect(sendSpy.mock.calls[0][0].method).toBe('signTransaction')
@@ -99,7 +99,7 @@ describe('sign — NEW schema {method, chainId, payload}', () => {
     await sign({
       method: 'signTransaction',
       chainId: 'bip122:000000000019d6689c085ae165831e93',
-      payload: {},
+      payload: { keyPath: "m/44'/0'/0'/0/0" },
     })
 
     expect(sendSpy.mock.calls[0][0].chainId).toBe('bip122:000000000019d6689c085ae165831e93')
@@ -112,7 +112,7 @@ describe('sign — NEW schema {method, chainId, payload}', () => {
     await sign({
       method: 'signTransaction',
       chainId: 'xrpl:0',
-      payload: {},
+      payload: { keyPath: "m/44'/144'/0'/0/0" },
     })
 
     expect(sendSpy.mock.calls[0][0].chainId).toBe('xrpl:0')
@@ -125,7 +125,7 @@ describe('sign — NEW schema {method, chainId, payload}', () => {
     await sign({
       method: 'signTransaction',
       chainId: 'cosmos:cosmoshub-4',
-      payload: {},
+      payload: { keyPath: "m/44'/118'/0'/0/0" },
     })
 
     expect(sendSpy.mock.calls[0][0].chainId).toBe('cosmos:cosmoshub-4')
@@ -141,7 +141,7 @@ describe('sign — NEW schema {method, chainId, payload}', () => {
     const resp = await sign({
       method: 'customSignSui',
       chainId: 'sui:mainnet',
-      payload: { tx: 'serialized' },
+      payload: { keyPath: "m/44'/784'/0'/0'/0'", tx: 'serialized' },
     })
 
     expect(sendSpy.mock.calls[0][0].method).toBe('customSignSui')

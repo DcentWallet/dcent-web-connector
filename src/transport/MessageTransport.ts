@@ -8,10 +8,15 @@
 /**
  * 요청 envelope — connector → sdk 방향
  * UUID v4 기반 id (cycle 02에서 uuid 라이브러리 도입 예정)
+ *
+ * m09-04-01 NEW schema: chainId 별도 필드. sign API는 CAIP-19 chainId를 method와 분리해
+ * envelope top-level에 싣고, sdk handleRequest는 method + chainId 조합으로 wm registry dispatch.
+ * sign 이외 lifecycle/read-only 메서드는 chainId 없이 송신 가능.
  */
 export interface MessageEnvelope<T = unknown> {
   id: string // UUID v4 — 요청-응답 매칭용
-  method: string // 메서드 이름 (예: 'connect', 'signTransaction')
+  method: string // 메서드 이름 (예: 'signMessage', 'signTransaction', 'getDeviceInfo')
+  chainId?: string // CAIP-19 chain identifier (sign API 전용, optional)
   params?: T
 }
 

@@ -32,9 +32,14 @@ import { _genId } from './idGen'
 import { providerErrorToV1 } from './error'
 import type { V1Response, V1ResponseHeader, V1ResponseBody } from './types'
 
-/** _call 입력 — method 이름 + optional params 객체. */
+/** _call 입력 — method 이름 + optional chainId(CAIP-19) + optional params 객체. */
 export interface CallInput {
   method: string
+  /**
+   * CAIP-19 chain identifier — m09-04-01 NEW schema에서 sign API가 별도 필드로 분리.
+   * sign 외 read-only/lifecycle 메서드(getDeviceInfo / info 등)는 chainId가 없을 수 있어 optional.
+   */
+  chainId?: string
   params?: Record<string, unknown>
 }
 
@@ -113,7 +118,14 @@ export async function _call (input: CallInput): Promise<V1Response> {
 
   try {
     const envelope = await queue.enqueue(() =>
-      _getTransport().send({ id, method: input.method, params: input.params }),
+      _getTransport().send({
+        id,
+        method: input.method,
+        // chainId는 optional — sign API에서만 채워지고 그 외 lifecycle 메서드는 undefined.
+        // MessageTransport.send는 임의 envelope 필드를 그대로 forward하므로 sdk 측이 수신.
+        ...(input.chainId !== undefined ? { chainId: input.chainId } : {}),
+        params: input.params,
+      }),
     )
 
     // boundary-validation: envelope shape

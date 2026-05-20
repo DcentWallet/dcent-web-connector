@@ -1,15 +1,20 @@
-// v2 public API entry point (m08-01-01 — facade layer)
+// v2 public API entry point (m09-04-01 — v1 wrapper paths 제거 후 facade)
 //
-// 본 child가 추가하는 것:
+// 본 entry는 다음을 export한다:
 //   - default export object (`import dcent from 'dcent-web-connector'` 패턴 — v1 호환)
-//   - new named exports: lifecycle (setTimeOutMs / setConnectionListener / popupWindowClose) +
-//     enums (coinType / coinGroup / coinName / bitcoinTxType / klaytnTxType / xrpTxType / state) +
-//     unitConverter
-//   - 기존 named exports (transport / queue / error)는 그대로 유지
+//   - named exports: lifecycle / enums / unitConverter / sign / read-only / configure /
+//     bitcoin tx builder / validator helpers
 //
-// 후속 child(m08-01-02 등)가 sign / read-only API를 default export object에 추가할 예정.
-// package.json `main`은 m08-01-05까지 src-v1/index.js를 가리키므로, 본 child가 머지되어도
-// npm published 패키지의 진입점은 v1. dApp 영향 없음.
+// m09-04-01 변경: v1 wrapper 21개(EVM 4 + non-EVM simple 8 + non-EVM complex 9) +
+// chainToMethod 매핑 + v1 전용 helper 3개(`checkParameter` / `_sanitizeEthereumTypeOptions` /
+// `getCzonDecimal`) 및 wrapper-only type 8개(`EvmTokenContract` / `KlaytnContract` /
+// `EthereumTypeOptions` / `XrpTxObject` / `HederaTxParams` / `HederaMsgParams` /
+// `StellarTxParams` / `TronTxParams`) 모두 제거. 단일 v2 wire `dcent.sign({chain, payload})`만
+// 외부 dApp 진입점으로 남는다 (connector-chain-addition-isolation 룰의 비전).
+//
+// 보존: v1 enum (coinType / coinGroup / coinName / bitcoinTxType / klaytnTxType / xrpTxType /
+// state / coinDecimals) + utility (unitConverter) + sign / read-only / configure / bitcoin tx
+// builder / validator helpers 4개.
 
 import * as lifecycle from './lifecycle'
 import {
@@ -48,33 +53,6 @@ import {
   isAvaliableLabel,
   isAvaliableCoinGroup,
   isAvailableSyncAccountCoinName,
-  // m08-01-03: v1 EVM sign wrappers + checkParameter helper
-  getEthereumSignedTransaction,
-  getEthereumSignedMessage,
-  getTokenSignedTransaction,
-  getKlaytnSignedTransaction,
-  checkParameter,
-  _sanitizeEthereumTypeOptions,
-  // m08-01-04: v1 non-EVM simple sign wrappers (8개)
-  getBitcoinSignedTransaction,
-  getXrpSignedTransaction,
-  getHederaSignedTransaction,
-  getHederaSignedMessage,
-  getStellarSignedTransaction,
-  getTronSignedTransaction,
-  getSignedMessage,
-  getSignedData,
-  // m08-01-04.5: v1 non-EVM complex sign wrappers (9개) + Cosmos czone helper
-  getTrcTokenSignedTransaction,
-  getTezosSignedTransaction,
-  getVechainSignedTransaction,
-  getNearSignedTransaction,
-  getHavahSignedTransaction,
-  getPolkadotSignedTransaction,
-  getCosmosSignedTransaction,
-  getAlgorandSignedTransaction,
-  getParachainSignedTransaction,
-  getCzonDecimal,
 } from './sign'
 
 // === 기존 named exports (m02-01·m02-02·m07-02 SHIPPED) ===
@@ -134,8 +112,8 @@ export type { UnitConvertResult } from './utils/unitConverter'
 // === 새 named exports (m08-01-02 — sign / V1 호환) ===
 export { sign } from './sign'
 export type { SignInput, V1Response, V1ResponseHeader, V1ResponseBody } from './sign'
-// internal helpers (sibling module이 사용 — m08-01-03/04 wrapper가 import)
-export { _call, _genId, _sanitizeChain, _assertV1Success, providerErrorToV1, chainToMethod } from './sign'
+// internal helpers (sibling module이 사용)
+export { _call, _genId, _sanitizeChain, _assertV1Success, providerErrorToV1 } from './sign'
 export type { CallInput } from './sign'
 
 // === 새 named exports (m08-01-02.5 — read-only / configure / Bitcoin tx-builder + v1 validators) ===
@@ -166,56 +144,10 @@ export {
   isAvailableSyncAccountCoinName,
 } from './sign'
 
-// === 새 named exports (m08-01-03 — v1 EVM sign wrappers + checkParameter helper) ===
-export {
-  getEthereumSignedTransaction,
-  getEthereumSignedMessage,
-  getTokenSignedTransaction,
-  getKlaytnSignedTransaction,
-  checkParameter,
-  _sanitizeEthereumTypeOptions,
-} from './sign'
-export type { EvmTokenContract, KlaytnContract, EthereumTypeOptions } from './sign'
-
-// === 새 named exports (m08-01-04 — v1 non-EVM simple sign wrappers) ===
-export {
-  getBitcoinSignedTransaction,
-  getXrpSignedTransaction,
-  getHederaSignedTransaction,
-  getHederaSignedMessage,
-  getStellarSignedTransaction,
-  getTronSignedTransaction,
-  getSignedMessage,
-  getSignedData,
-} from './sign'
-export type {
-  XrpTxObject,
-  HederaTxParams,
-  HederaMsgParams,
-  StellarTxParams,
-  TronTxParams,
-} from './sign'
-
-// === 새 named exports (m08-01-04.5 — v1 non-EVM complex sign wrappers + Cosmos czone helper) ===
-export {
-  getTrcTokenSignedTransaction,
-  getTezosSignedTransaction,
-  getVechainSignedTransaction,
-  getNearSignedTransaction,
-  getHavahSignedTransaction,
-  getPolkadotSignedTransaction,
-  getCosmosSignedTransaction,
-  getAlgorandSignedTransaction,
-  getParachainSignedTransaction,
-  getCzonDecimal,
-} from './sign'
-
 // === default export object (v1 호환 패턴) ===
 //
 // dApp이 `import dcent from 'dcent-web-connector'` 또는 `const dcent = require(...)`로
 // 받았을 때 v1과 동등한 멤버 접근 (`dcent.coinType`, `dcent.setTimeOutMs(...)`)이 가능.
-//
-// 후속 child(m08-01-02 등)가 sign / read-only / configure 메서드를 이 객체에 추가한다.
 const dcent = {
   // lifecycle
   setTimeOutMs: lifecycle.setTimeOutMs,
@@ -257,33 +189,6 @@ const dcent = {
   isAvaliableLabel,
   isAvaliableCoinGroup,
   isAvailableSyncAccountCoinName,
-  // m08-01-03: v1 EVM sign wrappers + checkParameter helper
-  getEthereumSignedTransaction,
-  getEthereumSignedMessage,
-  getTokenSignedTransaction,
-  getKlaytnSignedTransaction,
-  checkParameter,
-  _sanitizeEthereumTypeOptions,
-  // m08-01-04: v1 non-EVM simple sign wrappers (8개)
-  getBitcoinSignedTransaction,
-  getXrpSignedTransaction,
-  getHederaSignedTransaction,
-  getHederaSignedMessage,
-  getStellarSignedTransaction,
-  getTronSignedTransaction,
-  getSignedMessage,
-  getSignedData,
-  // m08-01-04.5: v1 non-EVM complex sign wrappers (9개) + Cosmos czone helper
-  getTrcTokenSignedTransaction,
-  getTezosSignedTransaction,
-  getVechainSignedTransaction,
-  getNearSignedTransaction,
-  getHavahSignedTransaction,
-  getPolkadotSignedTransaction,
-  getCosmosSignedTransaction,
-  getAlgorandSignedTransaction,
-  getParachainSignedTransaction,
-  getCzonDecimal,
 } as const
 
 export default dcent

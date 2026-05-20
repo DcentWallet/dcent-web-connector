@@ -240,11 +240,11 @@ it('T-U-EVM-03: 잘못된 JSON transaction → dispatcher 0건 (boundary-validat
 })
 
 // ─────────────────────────────────────────────────────────────────────────────
-// T-U-EVM-04 / T-U-01: 정상 전송 — facade dcent.sign({chain: 'signTransaction', payload}) 호출 검증
-// m09-01-02: 1번 경로 마이그레이션 — chain은 intent literal 'signTransaction',
-//   payload.chainId는 CAIP-19 (eip155:N/slip44:60)
+// T-U-EVM-04 / T-U-01: 정상 전송 — facade dcent.sign({method, chainId, payload}) 호출 검증
+// m09-04-01.5: NEW schema 마이그레이션 — method='signTransaction' (intent literal),
+//   chainId(CAIP-19)는 top-level, payload는 { keyPath, transaction }만 포함
 // ─────────────────────────────────────────────────────────────────────────────
-it('T-U-EVM-04: 정상 전송 시 dcent.sign({chain: "signTransaction", payload: {chainId: CAIP-19}}) 호출', async () => {
+it('T-U-EVM-04: 정상 전송 시 dcent.sign({method: "signTransaction", chainId: CAIP-19, payload}) 호출', async () => {
   const api = (window as any)._playgroundTestAPI
 
   api.simulateEvmLoad(SAMPLE_CHAINS, SAMPLE_PRESETS)
@@ -269,14 +269,17 @@ it('T-U-EVM-04: 정상 전송 시 dcent.sign({chain: "signTransaction", payload:
   // Promise 완료 대기
   await new Promise((r) => setTimeout(r, 50))
 
-  // dcent.sign 호출 검증 — { chain: 'signTransaction', payload: { chainId, keyPath, transaction } }
-  // m09-01-02: chain은 intent literal. payload.chainId는 form에서 가져온 값(이 테스트에서는 SAMPLE_CHAINS의 'eip155:137').
+  // dcent.sign 호출 검증 — { method: 'signTransaction', chainId, payload: { keyPath, transaction } }
+  // m09-04-01.5: NEW schema — method는 intent literal, chainId(CAIP-19)는 top-level,
+  //   payload는 { keyPath, transaction }만 포함 (chainId 제거).
   expect(mockSign).toHaveBeenCalledTimes(1)
   const signInput = mockSign.mock.calls[0][0]
-  expect(signInput.chain).toBe('signTransaction')
-  expect(signInput.payload.chainId).toBe('eip155:137')
+  expect(signInput.method).toBe('signTransaction')
+  expect(signInput.chainId).toBe('eip155:137')
   expect(signInput.payload.keyPath).toBe("m/44'/60'/0'/0/0")
   expect(signInput.payload.transaction).toEqual(JSON.parse(VALID_TX_JSON))
+  // payload에 chainId 키가 없어야 함 (top-level로 이동)
+  expect(signInput.payload.chainId).toBeUndefined()
 
   // 로그 확인
   const entries = api.getLogEntries()

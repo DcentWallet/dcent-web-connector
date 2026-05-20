@@ -167,3 +167,266 @@ playground 코드는 v0.16.0 dApp이 작성하는 패턴과 동일하다 — `re
 
 - m08-01 chain의 5개 PR(facade 뼈대, 통합 sign, read-only, EVM/non-EVM wrappers, playground rewrite)에 v2 구현 상세
 - v1 코드는 `src-v1/`에 read-only로 보존 — npm published 패키지의 진입점은 v2이지만 v1 소스 파일은 디버깅 reference로 남아있음
+
+---
+
+## Sign 흐름 — v1 vs v2 비교
+
+dApp이 D'CENT 디바이스로 트랜잭션/메시지를 서명하는 흐름이 v1과 v2에서 어떻게 다른지 비교한다. **v0.16.0 사용자는 무수정으로 v2에서 동작**하지만, 새로 작성하는 dApp은 v2 통합 sign API를 선택할 수 있다.
+
+### v1 흐름 (v0.16.0 master 브랜치 시점)
+
+```
+┌────────┐   1. selectAddress         ┌──────────┐
+│  dApp  │ ─────────────────────────▶ │ connector│
+└────────┘                            └────┬─────┘
+    ▲                                      │
+    │                                      │ 2. window.open(popup)
+    │ 8. address (string)                  │    + postMessage selectAddress
+    │                                      ▼
+    │                                 ┌──────────┐
+    │                                 │  popup   │ ── 3. USB selectAddress
+    │                                 │ (Vue 2)  │      (devices read)
+    │                                 └────┬─────┘
+    │                                      │ 4. address
+    │                                      │ 5. user confirm UI (needUserConfirm)
+    │                                      │ 6. postMessage result
+    └──────────────────────────────────────┘
+    │ 9. getEthereumSignedTransaction(coinType, ..., keyPath, chainId)
+    ▼                                ┌──────────┐
+┌────────┐ ────────────────────────▶ │ connector│
+│  dApp  │                           └────┬─────┘
+└────────┘                                │ 10. popup signTransaction (chain별 wrapper)
+                                          ▼
+                                     ┌──────────┐
+                                     │  popup   │ ── 11. USB sign
+                                     │          │      (user confirm again)
+                                     └──────────┘
+```
+
+**v1 핵심 특징**:
+
+- **popup이 디바이스와 직접 통신**: wm 없음. popup이 매번 chain-specific 분기를 가짐 (`if (coinType === 'BITCOIN') ...`).
+- **selectAddress → sign 2단계 명시 호출**: dApp이 먼저 `selectAddress`로 주소를 받고, 받은 주소를 들고 `getEthereumSignedTransaction`을 다시 호출. dApp 측에서 주소 관리.
+- **매 호출 사용자 confirm**: `method-info.js`의 `needUserConfirm` flag에 따라 popup이 매 단계 confirm UI를 강제.
+- **chain 추가 시 popup 매번 수정**: 새 chain(예: Sui) 지원 → popup `if` 분기 추가 → wrapper 추가 → connector publish 필요.
+- **sign API 표면**: chain별 21개 wrapper (`getEthereumSignedTransaction`, `getBitcoinSignedTransaction`, `getXrpSignedTransaction`, ...). dApp은 자신이 다루는 chain마다 다른 함수 시그니처를 학습.
+
+v1 reference: `src-v1/src/pages/v2/Main.vue:155, 200-292` (selectAddress → needUserConfirm 흐름), `src-v1/src/js/method-info.js:105` (method 메타데이터의 `needUserConfirm` 정의).
+
+### v2 single wire 흐름 (현재)
+
+```
+┌────────┐   1. dcent.sign({ method, chainId, payload })   ┌──────────┐
+│  dApp  │ ───────────────────────────────────────────────▶│ connector│
+└────────┘                                                 │ (light   │
+    ▲                                                      │ validate)│
+    │                                                      └────┬─────┘
+    │                                                           │ 2. PopupTransport.send
+    │ 8. v1-envelope 응답 (header/body shape)                   │    + RequestQueue (single inflight)
+    │                                                           ▼
+    │                                                      ┌──────────┐
+    │                                                      │  popup   │
+    │                                                      │ (Vue/    │
+    │                                                      │  React)  │
+    │                                                      └────┬─────┘
+    │                                                           │ 3. handleRequest(method, chainId, payload)
+    │                                                           ▼
+    │                                                      ┌──────────┐
+    │                                                      │   sdk    │ ── 4. resolveChainId
+    │                                                      │ Layer 4  │      → cryptoCurrencies registry
+    │                                                      │ inject   │ ── 5. self-match ceremony
+    │                                                      │          │      (sdk-side address inject)
+    │                                                      └────┬─────┘
+    │                                                           │ 6. wm WalletConnect* API
+    │                                                           ▼
+    │                                                      ┌──────────┐
+    │                                                      │  wm +    │ ── 7. USB sign
+    │                                                      │  family  │      (single confirm)
+    │                                                      │ handler  │
+    │                                                      └──────────┘
+```
+
+**v2 핵심 특징**:
+
+- **chain-agnostic single wire**: connector는 light validation만 (keyPath 강제 / prototype 차단 / size limit / character whitelist). chain enum / 정적 매핑 부재.
+- **sdk Layer 4 (sdk-side inject)**: dApp이 keyPath만 알면, sdk가 self-match ceremony로 wm 등록 가능한 account를 만든 뒤 wm으로 위양. dApp은 더 이상 address를 들고 다닐 필요 없음.
+- **wm이 family별 dispatch**: chain 추가 시 wm registry + family handler만 추가. connector / sdk 수정 0건.
+- **sign API 표면**: 단일 진입점 `dcent.sign({ method, chainId, payload })`. CAIP-19 chainId로 chain 식별, method로 sign 종류 구분 (`signTransaction`, `personal_sign`, `signTypedData_v4`, ...).
+- **v1 호환**: v1 wrapper 21개는 그대로 동작 (내부적으로 `dcent.sign`으로 라우팅). dApp 코드 무수정.
+
+### 차이점 표
+
+| 영역 | v1 | v2 |
+|---|---|---|
+| chain 추가 시 connector 수정 | 매번 wrapper 추가 + publish | 0건 (wm + sdk 메시지 핸들러만) |
+| 사용자 명시 confirm | 매 단계 강제 (`needUserConfirm`) | 점진 복원 (m09-03-06/10/11 별도 child) |
+| Address 관리 | dApp이 selectAddress → sign 2단계 호출 | sdk Layer 4 self-match (dApp은 keyPath만) |
+| Sign API 표면 | chain별 21개 wrapper | 단일 `dcent.sign({ method, chainId, payload })` |
+| Payload 검증 | popup if 분기 | connector light validate (m09-04-05) + sdk Layer 4 (m09-03-05) |
+| v1 호환성 | — | 무수정 호환 (v0.16.0 wrapper 모두 유지) |
+| popup ↔ wm | popup이 USB 직접 호출 | popup이 wm WalletConnect* API 호출 |
+
+### dApp 마이그레이션 가이드 (v1 → v2 sign 흐름)
+
+**기존 v0.16.0 코드는 무수정**으로 동작한다. 그러나 새 chain을 추가하거나 코드 재작성 시점에 v2 통합 API로 점진 마이그레이션을 권장한다.
+
+#### EVM signTransaction
+
+```javascript
+// v1 (그대로 동작)
+const tx = await dcent.getEthereumSignedTransaction(
+  dcent.coinType.ETHEREUM,
+  '0x0',                          // nonce
+  '0x77359400',                   // maxFeePerGas
+  '0x5208',                       // gasLimit
+  '0x0000000000000000000000000000000000000000',  // to
+  '0x0',                          // value
+  '0x',                           // data
+  "m/44'/60'/0'/0/0",             // keyPath
+  1                               // chainId (number)
+)
+
+// v2 (권장)
+const signed = await dcent.sign({
+  method: 'signTransaction',
+  chainId: 'eip155:1/slip44:60',
+  payload: {
+    keyPath: "m/44'/60'/0'/0/0",
+    transaction: {
+      type: 2,                                  // EIP-1559
+      to: '0x0000000000000000000000000000000000000000',
+      value: '0x0',
+      gasLimit: '0x5208',
+      maxFeePerGas: '0x77359400',
+      maxPriorityFeePerGas: '0x3b9aca00',
+      nonce: '0x0',
+      data: '0x'
+    }
+  }
+})
+```
+
+#### EVM personal_sign
+
+```javascript
+// v1
+const sig = await dcent.getSignedMessage(
+  dcent.coinType.ETHEREUM,
+  "m/44'/60'/0'/0/0",
+  'Hello, D\'CENT!'
+)
+
+// v2
+const sig = await dcent.sign({
+  method: 'personal_sign',
+  chainId: 'eip155:1/slip44:60',
+  payload: {
+    keyPath: "m/44'/60'/0'/0/0",
+    message: 'Hello, D\'CENT!'
+  }
+})
+```
+
+#### EVM eth_signTypedData_v4
+
+```javascript
+// v1
+const sig = await dcent.getSignedData(
+  dcent.coinType.ETHEREUM,
+  "m/44'/60'/0'/0/0",
+  JSON.stringify({
+    types: { /* EIP-712 typed data */ },
+    primaryType: 'Transfer',
+    domain: { /* ... */ },
+    message: { /* ... */ }
+  })
+)
+
+// v2
+const sig = await dcent.sign({
+  method: 'signTypedData_v4',
+  chainId: 'eip155:1/slip44:60',
+  payload: {
+    keyPath: "m/44'/60'/0'/0/0",
+    message: JSON.stringify({ /* EIP-712 typed data */ })
+  }
+})
+```
+
+#### Solana
+
+```javascript
+// v1 (Solana는 별도 wrapper가 없어 generic getSignedMessage 사용)
+const sig = await dcent.getSignedMessage(
+  dcent.coinType.SOLANA,
+  "m/44'/501'/0'/0'",
+  'Hello Solana!'
+)
+
+// v2 (family-agnostic)
+const sig = await dcent.sign({
+  method: 'signMessage',
+  chainId: 'solana:5eykt4UsFv8P8NJdTREpY1vzqKqZKvdp/slip44:501',
+  payload: {
+    keyPath: "m/44'/501'/0'/0'",
+    message: 'Hello Solana!'
+  }
+})
+```
+
+### dApp이 keyPath/path를 알아내는 5가지 방법
+
+v2에서 `dcent.sign({ method, chainId, payload })`의 `payload.keyPath`는 필수다 (connector light validation이 강제). dApp이 keyPath를 알아내는 방법:
+
+1. **v1 `dcent.getAddress`** — v0.16.0 그대로 유지. chain별로 keyPath 후보를 사용자에게 받아 디바이스 주소 1건을 반환.
+2. **v1 `dcent.selectAddress`** — v0.16.0 그대로 유지. 디바이스가 다중 account를 노출할 때 사용자 선택 UI를 popup이 띄움.
+3. **v2 `dcent.connect(chain)` + popup picker UI** — m09-03-06 (별도 child) 도입 예정. WalletConnect 표준 흐름과 호환.
+4. **WC 표준 `eth_requestAccounts`** — wallet adapter / EIP-6963 통합 시. picker UI는 wallet 측이 제공.
+5. **dApp 내장 BIP44 표준** — dApp이 `m/44'/{coinType}'/0'/0/{index}` 패턴을 직접 생성. 사용자가 디바이스 PIN으로 한 번 확인.
+
+v1 path-only sign 흐름(선택지 1, 2)은 v2에서도 그대로 동작한다 — connector 표면이 호환이므로 기존 dApp은 마이그레이션 불필요.
+
+### 회귀 사례 후기 — m09-03-03 UAT (EVM signMessage)
+
+**증상** (m09-03-03 UAT, 2026-05-12):
+
+- testnet currency(eip155:5)로 personal_sign 호출 → sdk 내부에서 "currency mismatch" 에러로 무한 대기
+- 사용자 화면: sign 버튼 클릭 → 응답 없음 → UAT 진행 불가
+
+**근본 원인** (m09-03-03 UAT 시나리오 매트릭스 분석 결과):
+
+1. **sdk-side currency registry drift**: testnet currency가 wm `cryptoCurrencies` registry에 등록되지 않은 상태에서 sdk가 self-match ceremony 수행 → `_assertWmRegistrable`이 throw해야 할 자리에서 silent fall-through.
+2. **connector 측 payload validation 부재**: `keyPath` 누락 / prototype 오염 시도 / 잘못된 chainId 형식에 대해 친절한 에러 없이 silent pass → popup 측에서 cryptic error.
+
+**Fix chain** (sign 한바퀴 완성):
+
+1. **m09-03-05 (sdk)**: invariant guard 추가 — `_assertWmRegistrable`이 currency mismatch 시 즉시 throw + Layer 4 sdk-side address inject로 self-match ceremony 안정화.
+2. **m09-04-05 (connector)**: family-agnostic light validation — `keyPath` 강제, `__proto__` / `constructor` 차단, payload size limit 1MB, character whitelist (`_sanitizeChain` regex).
+3. **m09-04-06 (본 문서)**: 마이그레이션 가이드 + 회귀 사례 후기로 문서화.
+4. **m09-04-07 (별도 child)**: end-to-end e2e 통합 검증 (mock sdk fixture + sign 한바퀴 round-trip).
+
+**사용자가 직접 마주칠 수 있는 에러 메시지 매핑**:
+
+| 증상 | v1 (v0.16.0) | v2 (현재) |
+|---|---|---|
+| keyPath 누락 | popup이 cryptic timeout 또는 silent fail | connector immediate throw: `INVALID_PARAMS: 'keyPath' field required` |
+| testnet currency mismatch | popup 무한 대기 | sdk Layer 4 throw + user-facing 에러: `Currency mismatch — testnet not registered` |
+| `__proto__` 오염 시도 | popup이 prototype pollution 노출 가능 | connector immediate throw: `INVALID_PARAMS: prototype keys not allowed` |
+| 잘못된 chain string | popup if 분기에서 silent skip | connector `_sanitizeChain` throw: `INVALID_PARAMS: chain format invalid` |
+
+이 fix chain 머지 후 m09-03-03 UAT 시나리오는 전체 PASS — sign 한바퀴 완성.
+
+---
+
+## 살아있는 reference — playground (sign 시나리오 포함)
+
+리포 root의 `playground.js`(브라우저에서 `index-v2.html`로 실행)에 v2 sign API 사용 예시가 포함되어 있다.
+
+- **Sign Message tree** (`playground.js:144-191`): personal_sign / signTypedData_v3 / signTypedData_v4 / Solana raw message
+- **Sign Transaction tree** (`playground.js:192-215`): EVM EIP-1559 (chains.json에서 동적 빌드) / Bitcoin / Solana / XRP / Hedera / Stellar / Tron
+- **Sample presets** (`playground.js:218-271`): 각 sign method에 대한 입력 예시 (message / typed data fixture)
+- **Transaction presets** (`playground/presets.evm.json`, `playground/presets.non-evm.json`): chain별 transaction template
+
+playground는 dApp이 작성하는 패턴과 동일한 호출 흐름을 사용하며, v1 wrapper 호환 + v2 통합 sign API 양쪽 사용 예시를 한 페이지에서 확인할 수 있다.
+

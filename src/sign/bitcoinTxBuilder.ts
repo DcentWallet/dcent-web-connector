@@ -12,7 +12,7 @@
  *   - `parameter.output[].{type, value, to}`
  *
  * Bridge sdk가 이 nested envelope을 wire format으로 기대하므로, schema 변경 시 silent fail.
- * v1 호환 sign wrapper(`getBitcoinSignedTransaction`, m08-01-04)가 본 schema를 그대로 bridge로 송신.
+ * dApp의 v2 sign API(`dcent.sign({chain: 'bip122:...', payload})`)가 본 schema를 그대로 bridge로 송신.
  *
  * 룰 준수:
  *   - boundary-validation: coinType 검증 (`isBitcoinTxCoinType`)

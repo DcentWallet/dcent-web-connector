@@ -6,10 +6,10 @@
 //     bitcoin tx builder / validator helpers
 //
 // m09-04-01 변경: v1 wrapper 21개(EVM 4 + non-EVM simple 8 + non-EVM complex 9) +
-// chainToMethod 매핑 + v1 전용 helper 3개(`checkParameter` / `_sanitizeEthereumTypeOptions` /
-// `getCzonDecimal`) 및 wrapper-only type 8개(`EvmTokenContract` / `KlaytnContract` /
-// `EthereumTypeOptions` / `XrpTxObject` / `HederaTxParams` / `HederaMsgParams` /
-// `StellarTxParams` / `TronTxParams`) 모두 제거. 단일 v2 wire `dcent.sign({chain, payload})`만
+// chain → method 정적 매핑 + v1 전용 helper 3개(checkParameter / typeOptions sanitize /
+// czon decimal lookup) 및 wrapper-only type 8개(EvmTokenContract / KlaytnContract /
+// EthereumTypeOptions / XrpTxObject / HederaTxParams / HederaMsgParams /
+// StellarTxParams / TronTxParams) 모두 제거. 단일 v2 wire `dcent.sign({chain, payload})`만
 // 외부 dApp 진입점으로 남는다 (connector-chain-addition-isolation 룰의 비전).
 //
 // 보존: v1 enum (coinType / coinGroup / coinName / bitcoinTxType / klaytnTxType / xrpTxType /

@@ -4,9 +4,10 @@
  * sign 디렉토리의 public surface를 한 곳에서 export.
  * src/index.ts (v2 facade entry)가 본 모듈을 import하여 dApp에 노출한다.
  *
- * m09-04-01 변경: v1 wrapper 21개 + chainToMethod + 전용 helper 3개(`_sanitizeEthereumTypeOptions`,
- * `checkParameter`, `getCzonDecimal`) export 제거. 보존 helper 4개(`coinTypeValidators`,
- * `coinGroupValidator`, `labelValidator`, `bitcoinTxBuilder`)는 그대로 유지.
+ * m09-04-01 변경: v1 wrapper 21개 + chain → method 정적 매핑 + 전용 helper 3개
+ * (typeOptions sanitize / checkParameter / czon decimal lookup) export 제거.
+ * 보존 helper 4개(coinTypeValidators / coinGroupValidator / labelValidator /
+ * bitcoinTxBuilder)는 그대로 유지.
  */
 
 // public API

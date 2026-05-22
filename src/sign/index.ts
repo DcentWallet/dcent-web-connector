@@ -28,6 +28,8 @@ export { providerErrorToV1 } from './error'
 // m08-01-02.5: read-only / configure / Bitcoin tx-builder + v1 validators
 export { info, getDeviceInfo, getAccountInfo } from './info'
 export { getAddress, getXPUB } from './address'
+// m11-01-02: v2 chainId facade input type for getAddress
+export type { GetAddressV2Input } from './address'
 export { setLabel, syncAccount, selectAddress } from './configure'
 export type { SyncAccountInfo } from './configure'
 export {

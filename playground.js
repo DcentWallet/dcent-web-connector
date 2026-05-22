@@ -90,6 +90,11 @@
   var accountPresetsList = [] // 전체 account preset 배열
   var accountPresetsMap = {} // presetId → preset object
 
+  // ── bitcoin tx builder preset runtime state (m11-01-03) ──
+  // presets.bitcoin-tx.json 로드 후 채워진다. Builder form의 preset selector에서 사용.
+  var bitcoinTxPresetsList = [] // 전체 btx preset 배열
+  var bitcoinTxPresetsMap = {} // presetId → preset object
+
   // ── FAMILY_LABELS: family → 트리 표시명 ──
   // m06-01-03 추가, m06-01-04 신규 8 family 표시명 추가
   var FAMILY_LABELS = {
@@ -206,6 +211,18 @@
     },
     {
       kind: 'group',
+      label: 'Bitcoin Tx Builder',
+      items: [
+        // m11-01-03: bitcoin tx builder (3 facade calls + buildAndSign)
+        // method id prefix 'btx:' — selectMethod / Send dispatcher가 prefix로 분기
+        { kind: 'method', id: 'btx:new', label: 'getBitcoinTransactionObject' },
+        { kind: 'method', id: 'btx:addInput', label: 'addBitcoinTransactionInput' },
+        { kind: 'method', id: 'btx:addOutput', label: 'addBitcoinTransactionOutput' },
+        { kind: 'method', id: 'btx:buildAndSign', label: 'Build & Sign' },
+      ],
+    },
+    {
+      kind: 'group',
       id: 'signTx-evm-group',
       label: 'Sign Transaction',
       items: [
@@ -300,6 +317,14 @@
     // 테스트용 inject — simulateConnect가 mock 함수 객체를 주입할 때 사용
     // null이면 진짜 window.dcent 사용
     _testDcent: null,
+    // m11-01-03: bitcoin tx builder 누적 상태 (session 동안 유지, localStorage 미사용)
+    bitcoinTx: {
+      current: null, // BitcoinTxObject | null (facade가 반환한 nested envelope)
+      coinType: null, // 'BITCOIN' / 'BITCOIN_TESTNET' / 'MONACOIN' / 'MONACOIN_TESTNET'
+      chainId: null, // 'bip122:.../slip44:0' (Build & Sign 시 사용)
+      inputs: 0, // count for UI
+      outputs: 0,
+    },
   }
 
   // ── DOM refs ──
@@ -475,8 +500,25 @@
         accountPresetsMap = {}
       })
 
+    // presets.bitcoin-tx.json (m11-01-03) — Bitcoin tx builder 폼 preset
+    var bitcoinTxPresetsPromise = fetch('/playground/presets.bitcoin-tx.json')
+      .then(function (r) {
+        if (!r.ok) throw new Error('presets.bitcoin-tx.json fetch failed: ' + r.status)
+        return r.json()
+      })
+      .then(function (presets) {
+        bitcoinTxPresetsList = presets
+        bitcoinTxPresetsMap = {}
+        presets.forEach(function (p) { bitcoinTxPresetsMap[p.id] = p })
+      })
+      .catch(function () {
+        // btx preset 로드 실패 — preset selector 없는 builder 폼으로 degraded mode
+        bitcoinTxPresetsList = []
+        bitcoinTxPresetsMap = {}
+      })
+
     // 모두 완료 후 트리 재빌드
-    Promise.all([chainsPromise, evmPresetsPromise, nonEvmPresetsPromise, accountPresetsPromise]).then(function () {
+    Promise.all([chainsPromise, evmPresetsPromise, nonEvmPresetsPromise, accountPresetsPromise, bitcoinTxPresetsPromise]).then(function () {
       state.evmChainsLoaded = true
       buildEvmSignTxGroup()
       buildNonEvmSignTxGroups()
@@ -592,6 +634,9 @@
     if (methodDef.id.startsWith('account:')) {
       // m11-01-01: account/device API form
       renderAccountForm(methodDef)
+    } else if (methodDef.id.startsWith('btx:')) {
+      // m11-01-03: bitcoin tx builder form
+      renderBitcoinTxBuilderForm(methodDef)
     } else if (methodDef.id.startsWith('signMessage:')) {
       renderSignMessageForm(methodDef)
     } else if (methodDef.id.startsWith('signTx:evm:')) {
@@ -739,6 +784,225 @@
         placeholder: '(default "Bitcoin seed")',
       })
       return
+    }
+  }
+
+  // ── renderBitcoinTxBuilderForm (m11-01-03) ──
+  // Bitcoin transaction builder의 4 method form 빌더.
+  // methodDef.id는 'btx:{action}' 형식으로 분기 — action별 input 구성이 다르다.
+  //   - btx:new           → coinType select (+ chainId/keyPath text)
+  //   - btx:addInput      → prev_tx / utxo_idx / type (p2pkh/p2pk/p2sh/p2wpkh) / key 입력
+  //   - btx:addOutput     → type (p2pkh/p2pk/p2sh/p2wpkh/change) / value / to
+  //   - btx:buildAndSign  → 누적된 tx로 dcent.sign({method:'signTransaction', chainId, payload}) 호출
+  //
+  // 룰 준수:
+  //   - boundary-validation: utxo_idx 비숫자 가드, addInput/addOutput 전 state.bitcoinTx.current 가드
+  //   - error-handling-consistency: facade throw → catch → UI error 표시 통일 (appendLog error 분기)
+  //   - connector-chain-addition-isolation: chainId는 사용자 입력 그대로 pass-through (chain enum/switch 없음)
+  function renderBitcoinTxBuilderForm (methodDef) {
+    var action = methodDef.id.slice('btx:'.length)
+
+    // state 표시 — 현재 builder 누적 상황을 안내
+    var stateNote = document.createElement('p')
+    stateNote.id = 'btx-state-note'
+    stateNote.style.cssText = 'font-size:11px;color:#888;margin-bottom:8px;'
+    stateNote.textContent = _renderBitcoinTxStateText()
+    formFields.appendChild(stateNote)
+
+    // 공통 preset selector (applicableMethodIds 매칭)
+    var applicablePresets = bitcoinTxPresetsList.filter(function (p) {
+      return !p.applicableMethodIds || p.applicableMethodIds.indexOf(methodDef.id) !== -1
+    })
+    if (applicablePresets.length > 0) {
+      var presetRow = document.createElement('div')
+      presetRow.className = 'form-row'
+      var presetLabel = document.createElement('label')
+      presetLabel.setAttribute('for', 'field-preset')
+      presetLabel.textContent = 'Preset'
+      var presetSelect = document.createElement('select')
+      presetSelect.id = 'field-preset'
+      var defaultOpt = document.createElement('option')
+      defaultOpt.value = ''
+      defaultOpt.textContent = '-- select preset --'
+      presetSelect.appendChild(defaultOpt)
+      applicablePresets.forEach(function (p) {
+        var opt = document.createElement('option')
+        opt.value = p.id
+        opt.textContent = p.label
+        presetSelect.appendChild(opt)
+      })
+      presetSelect.addEventListener('change', function () {
+        var presetId = presetSelect.value
+        if (!presetId) return
+        var preset = bitcoinTxPresetsMap[presetId]
+        if (!preset) return
+        _applyBitcoinTxPreset(action, preset)
+      })
+      presetRow.appendChild(presetLabel)
+      presetRow.appendChild(presetSelect)
+      formFields.appendChild(presetRow)
+    }
+
+    if (action === 'new') {
+      // coinType <select> — isBitcoinTxCoinType 화이트리스트 (BITCOIN/BITCOIN_TESTNET/MONACOIN/MONACOIN_TESTNET)
+      var ctKeys = ['BITCOIN', 'BITCOIN_TESTNET', 'MONACOIN', 'MONACOIN_TESTNET']
+      var ctRow = document.createElement('div')
+      ctRow.className = 'form-row'
+      var ctLabel = document.createElement('label')
+      ctLabel.setAttribute('for', 'field-coinType')
+      ctLabel.textContent = 'coinType'
+      var ctSelect = document.createElement('select')
+      ctSelect.id = 'field-coinType'
+      ctKeys.forEach(function (k) {
+        var opt = document.createElement('option')
+        opt.value = k
+        opt.textContent = k
+        ctSelect.appendChild(opt)
+      })
+      ctSelect.value = 'BITCOIN'
+      ctRow.appendChild(ctLabel)
+      ctRow.appendChild(ctSelect)
+      formFields.appendChild(ctRow)
+
+      // chainId — Build & Sign 단계에서 사용. 사용자가 직접 입력 가능 (CAIP-19 pass-through).
+      appendFormRow('chainId', 'Chain ID (CAIP-19, for Build & Sign)', 'input', {
+        value: 'bip122:000000000019d6689c085ae165831e93/slip44:0',
+        placeholder: 'bip122:000000000019d6689c085ae165831e93/slip44:0',
+      })
+      return
+    }
+
+    if (action === 'addInput') {
+      // facade 시그니처: addBitcoinTransactionInput(tx, prevTx, utxoIdx, type, key)
+      appendFormRow('prevTx', 'prev_tx (raw hex of previous tx)', 'textarea', {
+        value: '',
+        placeholder: 'hex string (raw signing source)',
+      })
+      appendFormRow('utxoIdx', 'utxo_idx (output index, integer)', 'input', {
+        value: '0',
+        placeholder: '0',
+      })
+      // bitcoinTxType select — src/types/bitcoinTxType.ts enum 값 (p2pkh/p2pk/p2sh/multisig/p2wpkh/p2wsh)
+      var ttKeys = ['p2wpkh', 'p2pkh', 'p2pk', 'p2sh', 'multisig', 'p2wsh']
+      var ttRow = document.createElement('div')
+      ttRow.className = 'form-row'
+      var ttLabel = document.createElement('label')
+      ttLabel.setAttribute('for', 'field-inputType')
+      ttLabel.textContent = 'type (bitcoinTxType)'
+      var ttSelect = document.createElement('select')
+      ttSelect.id = 'field-inputType'
+      ttKeys.forEach(function (k) {
+        var opt = document.createElement('option')
+        opt.value = k
+        opt.textContent = k
+        ttSelect.appendChild(opt)
+      })
+      ttSelect.value = 'p2wpkh'
+      ttRow.appendChild(ttLabel)
+      ttRow.appendChild(ttSelect)
+      formFields.appendChild(ttRow)
+
+      appendFormRow('inputKey', 'key (BIP44 path)', 'input', {
+        value: "m/84'/0'/0'/0/0",
+        placeholder: "m/84'/0'/0'/0/0",
+      })
+      return
+    }
+
+    if (action === 'addOutput') {
+      // facade 시그니처: addBitcoinTransactionOutput(tx, type, value, to)
+      // output type enum 값 (change 포함)
+      var otKeys = ['p2wpkh', 'p2pkh', 'p2pk', 'p2sh', 'change']
+      var otRow = document.createElement('div')
+      otRow.className = 'form-row'
+      var otLabel = document.createElement('label')
+      otLabel.setAttribute('for', 'field-outputType')
+      otLabel.textContent = 'type (output script type)'
+      var otSelect = document.createElement('select')
+      otSelect.id = 'field-outputType'
+      otKeys.forEach(function (k) {
+        var opt = document.createElement('option')
+        opt.value = k
+        opt.textContent = k
+        otSelect.appendChild(opt)
+      })
+      otSelect.value = 'p2wpkh'
+      otRow.appendChild(otLabel)
+      otRow.appendChild(otSelect)
+      formFields.appendChild(otRow)
+
+      appendFormRow('outputValue', 'value (satoshi, string or number)', 'input', {
+        value: '',
+        placeholder: '200000',
+      })
+      appendFormRow('outputTo', 'to (receiver address)', 'input', {
+        value: '',
+        placeholder: 'bc1q...',
+      })
+      return
+    }
+
+    if (action === 'buildAndSign') {
+      // chainId / keyPath — Build & Sign 단계에서 필요. state.bitcoinTx에서 default 채움.
+      appendFormRow('chainId', 'Chain ID (CAIP-19)', 'input', {
+        value: state.bitcoinTx.chainId || 'bip122:000000000019d6689c085ae165831e93/slip44:0',
+        placeholder: 'bip122:.../slip44:0',
+      })
+      appendFormRow('keyPath', 'Key Path (signing path)', 'input', {
+        value: "m/84'/0'/0'/0/0",
+        placeholder: "m/84'/0'/0'/0/0",
+      })
+      return
+    }
+  }
+
+  // ── Bitcoin tx builder state helpers (m11-01-03) ──
+
+  function _renderBitcoinTxStateText () {
+    var b = state.bitcoinTx
+    if (!b.current) return 'Current tx: (none — call getBitcoinTransactionObject first)'
+    return 'Current tx: ' + (b.coinType || '?') + ' | ' + b.inputs + ' inputs / ' + b.outputs + ' outputs'
+  }
+
+  function _updateBitcoinTxStateDisplay () {
+    var note = document.getElementById('btx-state-note')
+    if (note) note.textContent = _renderBitcoinTxStateText()
+  }
+
+  // preset 적용 — action별로 다른 필드를 채운다 (form selector 변경 시 호출)
+  function _applyBitcoinTxPreset (action, preset) {
+    if (action === 'new') {
+      var ctSel = document.getElementById('field-coinType')
+      if (ctSel && preset.coinType) ctSel.value = preset.coinType
+      var chainIdEl = document.getElementById('field-chainId')
+      if (chainIdEl && preset.chainId) chainIdEl.value = preset.chainId
+      return
+    }
+    if (action === 'addInput' && preset.input) {
+      var prevTxEl = document.getElementById('field-prevTx')
+      if (prevTxEl) prevTxEl.value = preset.input.prev_tx || ''
+      var idxEl = document.getElementById('field-utxoIdx')
+      if (idxEl) idxEl.value = String(preset.input.utxo_idx == null ? 0 : preset.input.utxo_idx)
+      var typeEl = document.getElementById('field-inputType')
+      if (typeEl && preset.input.type) typeEl.value = preset.input.type
+      var keyEl = document.getElementById('field-inputKey')
+      if (keyEl && preset.input.key) keyEl.value = preset.input.key
+      return
+    }
+    if (action === 'addOutput' && preset.output) {
+      var otypeEl = document.getElementById('field-outputType')
+      if (otypeEl && preset.output.type) otypeEl.value = preset.output.type
+      var valEl = document.getElementById('field-outputValue')
+      if (valEl) valEl.value = String(preset.output.value == null ? '' : preset.output.value)
+      var toEl = document.getElementById('field-outputTo')
+      if (toEl && preset.output.to) toEl.value = preset.output.to
+      return
+    }
+    if (action === 'buildAndSign') {
+      var bsChainIdEl = document.getElementById('field-chainId')
+      if (bsChainIdEl && preset.chainId) bsChainIdEl.value = preset.chainId
+      var bsKpEl = document.getElementById('field-keyPath')
+      if (bsKpEl && preset.keyPath) bsKpEl.value = preset.keyPath
     }
   }
 
@@ -1123,6 +1387,9 @@
     if (methodId.startsWith('account:')) {
       // m11-01-01: account/device API dispatcher
       sendAccountCall(methodId)
+    } else if (methodId.startsWith('btx:')) {
+      // m11-01-03: bitcoin tx builder dispatcher
+      handleBitcoinTxAction(methodId)
     } else if (methodId.startsWith('signMessage:')) {
       sendSignMessage()
     } else if (methodId.startsWith('signTx:evm:')) {
@@ -1266,6 +1533,199 @@
         latencyMs: Date.now() - startMs,
       })
     })
+  }
+
+  // ── handleBitcoinTxAction (m11-01-03) ──
+  // bitcoin tx builder dispatcher.
+  //   - btx:new/addInput/addOutput: facade를 동기적으로 호출 (in-process, postMessage 없음)
+  //   - btx:buildAndSign: dcent.sign({method:'signTransaction', chainId, payload}) NEW schema 호출
+  //
+  // 모든 분기는 동일 패턴: try/catch + appendLog (error-handling-consistency).
+  // facade가 dcentException을 throw할 수 있으므로 try 안에서 호출.
+  function handleBitcoinTxAction (methodId) {
+    var action = methodId.slice('btx:'.length)
+    var startMs = Date.now()
+    var dcent = _getDcent()
+
+    try {
+      if (action === 'new') {
+        var ctEl = document.getElementById('field-coinType')
+        var chainIdEl = document.getElementById('field-chainId')
+        var coinTypeKey = ctEl ? ctEl.value : ''
+        // facade의 isBitcoinTxCoinType은 key 또는 value 모두 toLowerCase 비교로 매치하므로 그대로 전달
+        // 단 coinType enum이 노출되어 있으면 key → value 변환 (일관성)
+        var coinTypeValue = coinTypeKey
+        var coinTypeEnum = (window.dcent && window.dcent.coinType) || {}
+        if (coinTypeEnum[coinTypeKey] !== undefined) {
+          coinTypeValue = coinTypeEnum[coinTypeKey]
+        }
+        var chainId = chainIdEl ? chainIdEl.value.trim() : ''
+        // facade 호출 — coinType 미지원 시 dcentException throw
+        var txObj = dcent.getBitcoinTransactionObject(coinTypeValue)
+        state.bitcoinTx.current = txObj
+        state.bitcoinTx.coinType = coinTypeKey
+        state.bitcoinTx.chainId = chainId
+        state.bitcoinTx.inputs = 0
+        state.bitcoinTx.outputs = 0
+        _updateBitcoinTxStateDisplay()
+        appendLog({
+          method: 'getBitcoinTransactionObject',
+          request: { coinType: coinTypeValue },
+          response: txObj,
+          latencyMs: Date.now() - startMs,
+        })
+        return
+      }
+
+      if (action === 'addInput') {
+        if (!state.bitcoinTx.current) {
+          showFieldError('prevTx', "No tx — call 'getBitcoinTransactionObject' first")
+          return
+        }
+        var prevTxEl = document.getElementById('field-prevTx')
+        var utxoIdxEl = document.getElementById('field-utxoIdx')
+        var inputTypeEl = document.getElementById('field-inputType')
+        var inputKeyEl = document.getElementById('field-inputKey')
+        var prevTx = prevTxEl ? prevTxEl.value.trim() : ''
+        var utxoIdxRaw = utxoIdxEl ? utxoIdxEl.value.trim() : ''
+        var utxoIdx = parseInt(utxoIdxRaw, 10)
+        if (utxoIdxRaw === '' || isNaN(utxoIdx) || String(utxoIdx) !== utxoIdxRaw) {
+          // boundary-validation: 비숫자 silent fallback 회귀 가드 (NaN 방지)
+          showFieldError('utxoIdx', 'utxo_idx must be a non-negative integer')
+          return
+        }
+        if (!prevTx) {
+          showFieldError('prevTx', 'prev_tx is required')
+          return
+        }
+        var inputType = inputTypeEl ? inputTypeEl.value : 'p2wpkh'
+        var inputKey = inputKeyEl ? inputKeyEl.value.trim() : ''
+        if (!inputKey) {
+          showFieldError('inputKey', 'key (BIP44 path) is required')
+          return
+        }
+        // facade 호출 — in-place mutation 후 같은 객체 반환 (v1 1:1)
+        state.bitcoinTx.current = dcent.addBitcoinTransactionInput(
+          state.bitcoinTx.current,
+          prevTx,
+          utxoIdx,
+          inputType,
+          inputKey
+        )
+        state.bitcoinTx.inputs += 1
+        _updateBitcoinTxStateDisplay()
+        appendLog({
+          method: 'addBitcoinTransactionInput',
+          request: { prev_tx: prevTx.slice(0, 32) + '...', utxo_idx: utxoIdx, type: inputType, key: inputKey },
+          response: { inputs: state.bitcoinTx.inputs, outputs: state.bitcoinTx.outputs },
+          latencyMs: Date.now() - startMs,
+        })
+        return
+      }
+
+      if (action === 'addOutput') {
+        if (!state.bitcoinTx.current) {
+          showFieldError('outputTo', "No tx — call 'getBitcoinTransactionObject' first")
+          return
+        }
+        var outputTypeEl = document.getElementById('field-outputType')
+        var outputValueEl = document.getElementById('field-outputValue')
+        var outputToEl = document.getElementById('field-outputTo')
+        var outputType = outputTypeEl ? outputTypeEl.value : 'p2wpkh'
+        var outputValue = outputValueEl ? outputValueEl.value.trim() : ''
+        var outputTo = outputToEl ? outputToEl.value.trim() : ''
+        if (!outputValue) {
+          showFieldError('outputValue', 'value is required')
+          return
+        }
+        if (!outputTo) {
+          showFieldError('outputTo', 'to (receiver address) is required')
+          return
+        }
+        // facade 호출 — addBitcoinTransactionOutput(tx, type, value, to)
+        state.bitcoinTx.current = dcent.addBitcoinTransactionOutput(
+          state.bitcoinTx.current,
+          outputType,
+          outputValue,
+          outputTo
+        )
+        state.bitcoinTx.outputs += 1
+        _updateBitcoinTxStateDisplay()
+        appendLog({
+          method: 'addBitcoinTransactionOutput',
+          request: { type: outputType, value: outputValue, to: outputTo },
+          response: { inputs: state.bitcoinTx.inputs, outputs: state.bitcoinTx.outputs },
+          latencyMs: Date.now() - startMs,
+        })
+        return
+      }
+
+      if (action === 'buildAndSign') {
+        if (!state.bitcoinTx.current) {
+          showFieldError('chainId', "No tx — call 'getBitcoinTransactionObject' first")
+          return
+        }
+        if (state.bitcoinTx.inputs === 0) {
+          showFieldError('chainId', 'No inputs — call addBitcoinTransactionInput first')
+          return
+        }
+        if (state.bitcoinTx.outputs === 0) {
+          showFieldError('chainId', 'No outputs — call addBitcoinTransactionOutput first')
+          return
+        }
+        var bsChainIdEl = document.getElementById('field-chainId')
+        var bsKeyPathEl = document.getElementById('field-keyPath')
+        var bsChainId = bsChainIdEl ? bsChainIdEl.value.trim() : ''
+        var bsKeyPath = bsKeyPathEl ? bsKeyPathEl.value.trim() : ''
+        // boundary-validation: keyPath
+        var keyPathError = validateKeyPath(bsKeyPath)
+        if (keyPathError) {
+          showFieldError('keyPath', keyPathError)
+          return
+        }
+        if (!bsChainId) {
+          showFieldError('chainId', 'chainId is required')
+          return
+        }
+        var builtTx = state.bitcoinTx.current
+        // m09-04-01/DC-2221: NEW sign schema { method, chainId, payload } — OLD { chain, payload } 금지.
+        // connector-chain-addition-isolation: bsChainId는 사용자 입력 그대로 pass-through (chain enum 없음).
+        // b08-01: _unwrapV1Envelope이 success → body.parameter unwrap, failure → throw로 변환.
+        dcent.sign({
+          method: 'signTransaction',
+          chainId: bsChainId,
+          payload: { keyPath: bsKeyPath, transaction: builtTx },
+        }).then(_unwrapV1Envelope).then(function (result) {
+          appendLog({
+            method: 'signTransaction',
+            chainId: bsChainId,
+            keyPath: bsKeyPath,
+            request: { chainId: bsChainId, keyPath: bsKeyPath, transaction: builtTx },
+            response: result,
+            latencyMs: Date.now() - startMs,
+            deviceFirmware: state.device && state.device.firmware,
+          })
+        }).catch(function (err) {
+          appendLog({
+            method: 'signTransaction',
+            chainId: bsChainId,
+            keyPath: bsKeyPath,
+            request: { chainId: bsChainId, keyPath: bsKeyPath, transaction: builtTx },
+            error: normalizeError(err),
+            latencyMs: Date.now() - startMs,
+          })
+        })
+        return
+      }
+    } catch (syncErr) {
+      // facade sync throw (dcentException) → log + UI 표시
+      appendLog({
+        method: action,
+        request: {},
+        error: normalizeError(syncErr),
+        latencyMs: Date.now() - startMs,
+      })
+    }
   }
 
   function sendSignMessage () {
@@ -1765,5 +2225,20 @@
       accountPresetsList.forEach(function (p) { accountPresetsMap[p.id] = p })
     },
     _sanitizeSyncAccountInfos: _sanitizeSyncAccountInfos,
+    // ── Bitcoin tx builder helpers (m11-01-03) ──
+    getBitcoinTxPresetsList: function () { return bitcoinTxPresetsList },
+    simulateBitcoinTxPresetsLoad: function (presets) {
+      bitcoinTxPresetsList = presets || []
+      bitcoinTxPresetsMap = {}
+      bitcoinTxPresetsList.forEach(function (p) { bitcoinTxPresetsMap[p.id] = p })
+    },
+    getBitcoinTxState: function () { return state.bitcoinTx },
+    resetBitcoinTxState: function () {
+      state.bitcoinTx.current = null
+      state.bitcoinTx.coinType = null
+      state.bitcoinTx.chainId = null
+      state.bitcoinTx.inputs = 0
+      state.bitcoinTx.outputs = 0
+    },
   }
 })()

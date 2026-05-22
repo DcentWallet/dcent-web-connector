@@ -180,12 +180,16 @@ describe('[v2 e2e] playground account/device APIs', () => {
   }, 30000)
 
   // ────────────────────────────────────────────────────────
-  // T-E2E-04: getAddress coinType/path → Send → mock 수신 + 결과 출력
+  // T-E2E-04: getAddress v1 path 회귀 — v1 라디오 선택 후 coinType/path → Send → mock이 v1 args 수신
+  //
+  // m11-01-04: default=v2 path로 바뀌었으므로 v1 회귀 가드는 명시적으로 v1 라디오 클릭 필요.
   // ────────────────────────────────────────────────────────
-  it('T-E2E-04: getAddress (ETHEREUM, path) → mock 수신 args + success log', async () => {
+  it('T-E2E-04: getAddress v1 (ETHEREUM, path) → mock 수신 v1 args + success log', async () => {
     await setupPlaygroundWithSpy()
 
     await page.click('[data-method-id="account:getAddress"]')
+    // v1 path 라디오로 전환 — default는 v2이므로 v1 명시 선택
+    await page.click('#field-getaddress-path-v1')
     // coinType select default 'ETHEREUM', path default fills key path
     await page.click('#btn-send')
     await new Promise((r) => setTimeout(r, 200))
@@ -193,6 +197,7 @@ describe('[v2 e2e] playground account/device APIs', () => {
     const calls = await page.evaluate(() => (window as any)._mockCalls)
     const gaCall = calls.find((c: any) => c.method === 'getAddress')
     expect(gaCall).toBeDefined()
+    // v1 시그니처: args = (coinType, path, prefix) — 3개 인자
     // coinType enum value (lowercased — coinType.ETHEREUM === 'ethereum')
     expect(gaCall.args[0]).toBe('ethereum')
     expect(gaCall.args[1]).toBe("m/44'/60'/0'/0/0")
@@ -361,5 +366,222 @@ describe('[v2 e2e] playground account/device APIs', () => {
       (e: any) => e.method === 'setLabel' && e.error && e.error.code === 'param_error'
     )
     expect(errEntry).toBeDefined()
+  }, 30000)
+
+  // ────────────────────────────────────────────────────────
+  // m11-01-04 — getAddress v1/v2 path migration tests
+  //
+  // setupPlaygroundWithSpy의 mockDcent.getAddress는 stubFor('getAddress')로 모든 인자를 capture한다.
+  // v2 인풋은 단일 객체 인자, v1은 3개 인자 (coinType, path, prefix).
+  //
+  // 추가 셋업: v2 chainId select 옵션 채우기 위해 simulateEvmLoad로 chains 주입.
+  // ────────────────────────────────────────────────────────
+
+  /**
+   * v2 path 테스트용 추가 셋업 — allChainsMap에 mock chain 주입.
+   * setupPlaygroundWithSpy 호출 후 추가로 호출.
+   */
+  async function loadMockChainsForGetAddress () {
+    await page.evaluate(() => {
+      const api = (window as any)._playgroundTestAPI
+      // 최소 셋: eip155:1/slip44:60 (ETH mainnet, default 선택용) + eip155:1 + bitcoin
+      const mockChains = [
+        {
+          chainId: 'eip155:1/slip44:60',
+          name: 'Ethereum Mainnet',
+          family: 'evm',
+          defaultKeyPath: "m/44'/60'/0'/0/0",
+        },
+        {
+          chainId: 'eip155:1',
+          name: 'Ethereum',
+          family: 'evm',
+          defaultKeyPath: "m/44'/60'/0'/0/0",
+        },
+      ]
+      api.simulateEvmLoad(mockChains, [])
+    })
+  }
+
+  // ────────────────────────────────────────────────────────
+  // T-E2E-10: getAddress form 로드 시 path 토글 노출 (default=v2)
+  // ────────────────────────────────────────────────────────
+  it('T-E2E-10: getAddress form 로드 시 v1/v2 path 토글 표시 (default=v2)', async () => {
+    await setupPlaygroundWithSpy()
+    await page.click('[data-method-id="account:getAddress"]')
+    await new Promise((r) => setTimeout(r, 100))
+
+    const v1Radio = await page.$('#field-getaddress-path-v1')
+    const v2Radio = await page.$('#field-getaddress-path-v2')
+    expect(v1Radio).not.toBeNull()
+    expect(v2Radio).not.toBeNull()
+
+    // default checked=v2
+    const v2Checked = await page.$eval(
+      '#field-getaddress-path-v2',
+      (el: any) => el.checked
+    )
+    expect(v2Checked).toBe(true)
+
+    const v1Checked = await page.$eval(
+      '#field-getaddress-path-v1',
+      (el: any) => el.checked
+    )
+    expect(v1Checked).toBe(false)
+  }, 30000)
+
+  // ────────────────────────────────────────────────────────
+  // T-E2E-11: v2 path 선택 → chainId select + keyPath → Send → mock이 v2 object payload 수신
+  // ────────────────────────────────────────────────────────
+  it('T-E2E-11: getAddress v2 path → mock 수신 {chainId, keyPath} object + success log', async () => {
+    await setupPlaygroundWithSpy()
+    await loadMockChainsForGetAddress()
+
+    await page.click('[data-method-id="account:getAddress"]')
+    await new Promise((r) => setTimeout(r, 100))
+
+    // default v2 — chainId select가 'eip155:1/slip44:60'으로 자동 선택되어 있음
+    // keyPath default도 chains.json defaultKeyPath로 채워짐
+    await page.click('#btn-send')
+    await new Promise((r) => setTimeout(r, 200))
+
+    const calls = await page.evaluate(() => (window as any)._mockCalls)
+    const gaCall = calls.find((c: any) => c.method === 'getAddress')
+    expect(gaCall).toBeDefined()
+    // v2 시그니처: args[0]는 객체 {chainId, keyPath, prefix?}
+    expect(typeof gaCall.args[0]).toBe('object')
+    expect(gaCall.args[0].chainId).toBe('eip155:1/slip44:60')
+    expect(gaCall.args[0].keyPath).toBe("m/44'/60'/0'/0/0")
+    // prefix 비어있으면 객체에 부재 (undefined)
+    expect(gaCall.args[0].prefix).toBeUndefined()
+    // 추가 인자 없음 (v2는 단일 객체)
+    expect(gaCall.args[1]).toBeUndefined()
+
+    const entries = await page.evaluate(() =>
+      (window as any)._playgroundTestAPI.getLogEntries()
+    )
+    const last = entries[entries.length - 1]
+    expect(last.method).toBe('getAddress')
+    expect(last.error).toBeUndefined()
+  }, 30000)
+
+  // ────────────────────────────────────────────────────────
+  // T-E2E-12: v2 path + prefix 입력 → mock에 prefix 포함된 v2 payload 도달
+  // ────────────────────────────────────────────────────────
+  it('T-E2E-12: getAddress v2 path + prefix → mock 수신 {chainId, keyPath, prefix}', async () => {
+    await setupPlaygroundWithSpy()
+    await loadMockChainsForGetAddress()
+
+    await page.click('[data-method-id="account:getAddress"]')
+    await new Promise((r) => setTimeout(r, 100))
+
+    // v2 path default — prefix만 입력
+    await page.click('#field-prefix')
+    await page.type('#field-prefix', '42')
+    await page.click('#btn-send')
+    await new Promise((r) => setTimeout(r, 200))
+
+    const calls = await page.evaluate(() => (window as any)._mockCalls)
+    const gaCall = calls.find((c: any) => c.method === 'getAddress')
+    expect(gaCall).toBeDefined()
+    expect(gaCall.args[0].chainId).toBe('eip155:1/slip44:60')
+    expect(gaCall.args[0].keyPath).toBe("m/44'/60'/0'/0/0")
+    expect(gaCall.args[0].prefix).toBe('42')
+  }, 30000)
+
+  // ────────────────────────────────────────────────────────
+  // T-E2E-13 (negative): v2 path + chainId 미선택 → facade가 param_error throw → error log
+  //
+  // chainId가 미선택('-- select chain --')이면 빈 문자열이 facade로 전달되어
+  // _sanitizeChainId가 ProviderError → dcentException('param_error') re-throw.
+  // mock dcent의 getAddress는 모든 호출을 success로 응답하므로, 빈 chainId가 mock에
+  // 도달한 사실(부적절하게 전달됨) 자체를 검증한다 (실제 facade는 빈 chainId 거부 — m11-01-02 _getAddressV2).
+  //
+  // 본 테스트는 mock 환경 한계로 facade 거부를 직접 재현하지 못하므로, 대신
+  // 빈 chainId 객체가 mock에 도달했음을 확인하고 실제 facade 단위 테스트로 검증 위임.
+  // ────────────────────────────────────────────────────────
+  it('T-E2E-13 (negative): v2 path + chainId 미선택 → mock에 빈 chainId 객체 도달 (facade가 param_error throw)', async () => {
+    await setupPlaygroundWithSpy()
+    // harness가 chains.json 로드하므로 chainSelect에는 옵션이 채워져 있다.
+    // 사용자가 빈 '-- select chain --'(value="")로 명시적으로 변경한 시나리오 시뮬레이션.
+
+    await page.click('[data-method-id="account:getAddress"]')
+    await new Promise((r) => setTimeout(r, 200))
+
+    // chainSelect를 빈 문자열로 변경 — placeholder option 선택
+    await page.evaluate(() => {
+      const sel = document.getElementById('field-chainId') as HTMLSelectElement | null
+      if (sel) {
+        sel.value = ''
+        sel.dispatchEvent(new Event('change'))
+      }
+    })
+
+    await page.click('#btn-send')
+    await new Promise((r) => setTimeout(r, 200))
+
+    const calls = await page.evaluate(() => (window as any)._mockCalls)
+    const gaCall = calls.find((c: any) => c.method === 'getAddress')
+    // mock은 모든 호출을 받음 — getAddress 자체는 호출됨 (mock이 facade 검증을 안 함).
+    // chainId가 빈 문자열로 전달된 사실 확인.
+    expect(gaCall).toBeDefined()
+    expect(typeof gaCall.args[0]).toBe('object')
+    expect(gaCall.args[0].chainId).toBe('')
+    // 참고: 실제 facade(_getAddressV2)는 빈 chainId에 대해 _sanitizeChainId에서 throw하지만
+    // 본 e2e는 mock dcent를 사용하므로 그 검증은 unit test(playground.signtx 등)가 담당.
+  }, 30000)
+
+  // ────────────────────────────────────────────────────────
+  // T-E2E-14: v2 path + mock이 unknown_method 에러 → form 상단 안내 배너 노출 + error envelope log
+  //
+  // sdk(m11-02 미머지) race 상태에서 unknown_method 응답 시 graceful UX 검증.
+  // ────────────────────────────────────────────────────────
+  it('T-E2E-14: v2 path + unknown_method 에러 → 안내 배너 표시 + error log', async () => {
+    await setupPlaygroundWithSpy()
+    await loadMockChainsForGetAddress()
+
+    // mock getAddress를 override — unknown_method dcentException reject
+    await page.evaluate(() => {
+      const md = (window as any)._mockDcent
+      md.getAddress = (..._args: any[]) => {
+        const err: any = new Error('unknown_method: getAddress')
+        err.code = 'unknown_method'
+        err.body = { error: { code: 'unknown_method', message: 'getAddress v2 not supported' } }
+        // mock spy capture
+        const mc = (window as any)._mockCalls
+        mc.push({ method: 'getAddress', args: _args })
+        return Promise.reject(err)
+      }
+    })
+
+    await page.click('[data-method-id="account:getAddress"]')
+    await new Promise((r) => setTimeout(r, 100))
+
+    // 호출 전 — banner는 hidden
+    const initialDisplay = await page.$eval(
+      '#getaddress-banner',
+      (el: any) => el.style.display
+    )
+    expect(initialDisplay).toBe('none')
+
+    await page.click('#btn-send')
+    await new Promise((r) => setTimeout(r, 300))
+
+    // 호출 후 — banner는 visible (display !== 'none')
+    const bannerDisplay = await page.$eval(
+      '#getaddress-banner',
+      (el: any) => el.style.display
+    )
+    expect(bannerDisplay).toBe('block')
+
+    // error envelope이 그대로 log에 남아있는지 확인
+    const entries = await page.evaluate(() =>
+      (window as any)._playgroundTestAPI.getLogEntries()
+    )
+    const errEntry = entries.find(
+      (e: any) => e.method === 'getAddress' && e.error
+    )
+    expect(errEntry).toBeDefined()
+    expect(errEntry.error.code).toBe('unknown_method')
   }, 30000)
 })

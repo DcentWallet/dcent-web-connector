@@ -85,6 +85,11 @@
   var nonEvmPresetsMap = {} // presetId → preset object
   var nonEvmPresetsList = [] // 전체 비-EVM preset 배열
 
+  // ── account preset runtime state (m11-01-01) ──
+  // presets.account.json 로드 후 채워진다. syncAccount form의 preset selector에서 사용.
+  var accountPresetsList = [] // 전체 account preset 배열
+  var accountPresetsMap = {} // presetId → preset object
+
   // ── FAMILY_LABELS: family → 트리 표시명 ──
   // m06-01-03 추가, m06-01-04 신규 8 family 표시명 추가
   var FAMILY_LABELS = {
@@ -136,9 +141,19 @@
   var TREE = [
     {
       kind: 'group',
-      label: 'Device',
+      label: 'Account / Device',
       items: [
-        { kind: 'method', id: 'getDeviceInfo', label: 'getDeviceInfo' },
+        // m11-01-01: v1 read-only / configure / address API를 playground에 노출 (8 method)
+        // 기존 Device 그룹의 getDeviceInfo는 이 그룹으로 흡수. method id는 trie 분기를 위해
+        // 'account:' prefix 사용 (selectMethod / Send dispatcher가 prefix로 분기).
+        { kind: 'method', id: 'account:info', label: 'info' },
+        { kind: 'method', id: 'account:getDeviceInfo', label: 'getDeviceInfo' },
+        { kind: 'method', id: 'account:getAccountInfo', label: 'getAccountInfo' },
+        { kind: 'method', id: 'account:setLabel', label: 'setLabel' },
+        { kind: 'method', id: 'account:syncAccount', label: 'syncAccount' },
+        { kind: 'method', id: 'account:selectAddress', label: 'selectAddress' },
+        { kind: 'method', id: 'account:getAddress', label: 'getAddress' },
+        { kind: 'method', id: 'account:getXPUB', label: 'getXPUB' },
       ],
     },
     {
@@ -443,8 +458,25 @@
         nonEvmPresetsMap = {}
       })
 
-    // 셋 다 완료 후 트리 재빌드
-    Promise.all([chainsPromise, evmPresetsPromise, nonEvmPresetsPromise]).then(function () {
+    // presets.account.json (m11-01-01) — syncAccount 폼 preset
+    var accountPresetsPromise = fetch('/playground/presets.account.json')
+      .then(function (r) {
+        if (!r.ok) throw new Error('presets.account.json fetch failed: ' + r.status)
+        return r.json()
+      })
+      .then(function (presets) {
+        accountPresetsList = presets
+        accountPresetsMap = {}
+        presets.forEach(function (p) { accountPresetsMap[p.id] = p })
+      })
+      .catch(function () {
+        // account preset 로드 실패 — preset selector 없는 syncAccount 폼으로 degraded mode
+        accountPresetsList = []
+        accountPresetsMap = {}
+      })
+
+    // 모두 완료 후 트리 재빌드
+    Promise.all([chainsPromise, evmPresetsPromise, nonEvmPresetsPromise, accountPresetsPromise]).then(function () {
       state.evmChainsLoaded = true
       buildEvmSignTxGroup()
       buildNonEvmSignTxGroups()
@@ -557,8 +589,9 @@
     formTitle.textContent = methodDef.label || methodDef.id
     formFields.innerHTML = ''
 
-    if (methodDef.id === 'getDeviceInfo') {
-      renderGetDeviceInfoForm()
+    if (methodDef.id.startsWith('account:')) {
+      // m11-01-01: account/device API form
+      renderAccountForm(methodDef)
     } else if (methodDef.id.startsWith('signMessage:')) {
       renderSignMessageForm(methodDef)
     } else if (methodDef.id.startsWith('signTx:evm:')) {
@@ -572,11 +605,160 @@
     updateSendBtn()
   }
 
-  function renderGetDeviceInfoForm () {
-    var note = document.createElement('p')
-    note.style.cssText = 'font-size:11px;color:#888;margin-bottom:8px;'
-    note.textContent = 'Fetches device firmware, model, and address info.'
-    formFields.appendChild(note)
+  // ── renderAccountForm (m11-01-01) ──
+  // v1 호환 account/device API 8개의 동적 form 빌더.
+  // methodDef.id는 'account:{name}' 형식으로 분기 — name별 input 구성이 다르다.
+  // 모든 form은 _unwrapV1Envelope를 통해 v1 envelope을 unwrap한 결과를 결과 로그에 표시한다.
+  //
+  // 룰 준수:
+  //   - dapp-input-sanitization: syncAccount JSON.parse 결과는 known fields whitelist만 추출
+  //   - boundary-validation: JSON.parse 결과 Array.isArray 검증
+  //   - error-handling-consistency: facade throw → catch → UI error 표시 통일 (appendLog error 분기)
+  function renderAccountForm (methodDef) {
+    var name = methodDef.id.slice('account:'.length)
+
+    if (name === 'info' || name === 'getDeviceInfo' || name === 'getAccountInfo') {
+      // no-arg — 안내문만
+      var note = document.createElement('p')
+      note.style.cssText = 'font-size:11px;color:#888;margin-bottom:8px;'
+      if (name === 'info') {
+        note.textContent = 'Fetches D\'CENT Bridge daemon status.'
+      } else if (name === 'getDeviceInfo') {
+        note.textContent = 'Fetches device firmware, model, and address info.'
+      } else {
+        note.textContent = 'Fetches account list registered in the wallet.'
+      }
+      formFields.appendChild(note)
+      return
+    }
+
+    if (name === 'setLabel') {
+      appendFormRow('label', 'Label', 'input', {
+        value: '',
+        placeholder: '2~14 chars: a-z A-Z 0-9 . ! # $ % & + - _',
+      })
+      return
+    }
+
+    if (name === 'syncAccount') {
+      // preset selector (loaded from presets.account.json)
+      var applicablePresets = accountPresetsList.filter(function (p) {
+        return !p.applicableMethodIds || p.applicableMethodIds.indexOf(methodDef.id) !== -1
+      })
+      if (applicablePresets.length > 0) {
+        var presetRow = document.createElement('div')
+        presetRow.className = 'form-row'
+        var presetLabel = document.createElement('label')
+        presetLabel.setAttribute('for', 'field-preset')
+        presetLabel.textContent = 'Preset'
+        var presetSelect = document.createElement('select')
+        presetSelect.id = 'field-preset'
+        var defaultOpt = document.createElement('option')
+        defaultOpt.value = ''
+        defaultOpt.textContent = '-- select preset --'
+        presetSelect.appendChild(defaultOpt)
+        applicablePresets.forEach(function (p) {
+          var opt = document.createElement('option')
+          opt.value = p.id
+          opt.textContent = p.label
+          presetSelect.appendChild(opt)
+        })
+        presetSelect.addEventListener('change', function () {
+          var presetId = presetSelect.value
+          if (!presetId) return
+          var preset = accountPresetsMap[presetId]
+          if (!preset) return
+          var ta = document.getElementById('field-accountInfosJson')
+          if (ta) ta.value = JSON.stringify(preset.value, null, 2)
+        })
+        presetRow.appendChild(presetLabel)
+        presetRow.appendChild(presetSelect)
+        formFields.appendChild(presetRow)
+      }
+      var ta = appendFormRow('accountInfosJson', 'accountInfos (JSON array)', 'textarea', {
+        value: '',
+        placeholder: '[{"coin_group":"EVM","coin_name":"ETHEREUM","label":"ETH-1"}]',
+      })
+      if (ta) ta.rows = 8
+      return
+    }
+
+    if (name === 'selectAddress') {
+      var ta2 = appendFormRow('addressesJson', 'addresses (JSON array)', 'textarea', {
+        value: '',
+        placeholder: '["0xabc...", "0xdef..."]',
+      })
+      if (ta2) ta2.rows = 4
+      return
+    }
+
+    if (name === 'getAddress') {
+      // coinType <select> — src/types/coinType.ts enum 키 사용
+      var coinTypeKeys = Object.keys((window.dcent && window.dcent.coinType) || {})
+      if (coinTypeKeys.length === 0) {
+        // fallback (test 환경 등에서 window.dcent 미설정 시)
+        coinTypeKeys = ['BITCOIN', 'ETHEREUM', 'KLAYTN', 'RIPPLE', 'TRON', 'STELLAR']
+      }
+      var ctRow = document.createElement('div')
+      ctRow.className = 'form-row'
+      var ctLabel = document.createElement('label')
+      ctLabel.setAttribute('for', 'field-coinType')
+      ctLabel.textContent = 'coinType'
+      var ctSelect = document.createElement('select')
+      ctSelect.id = 'field-coinType'
+      coinTypeKeys.forEach(function (k) {
+        var opt = document.createElement('option')
+        opt.value = k
+        opt.textContent = k
+        ctSelect.appendChild(opt)
+      })
+      // default 'ETHEREUM' if available
+      if (coinTypeKeys.indexOf('ETHEREUM') !== -1) ctSelect.value = 'ETHEREUM'
+      ctRow.appendChild(ctLabel)
+      ctRow.appendChild(ctSelect)
+      formFields.appendChild(ctRow)
+
+      appendFormRow('path', 'Key Path', 'input', {
+        value: "m/44'/60'/0'/0/0",
+        placeholder: "m/44'/60'/0'/0/0",
+      })
+      appendFormRow('prefix', 'prefix (optional, parachain)', 'input', {
+        value: '',
+        placeholder: '(leave empty unless parachain)',
+      })
+      return
+    }
+
+    if (name === 'getXPUB') {
+      appendFormRow('key', 'Key Path', 'input', {
+        value: "m/44'/60'/0'",
+        placeholder: "m/44'/60'/0'",
+      })
+      appendFormRow('bip32name', 'bip32name (optional)', 'input', {
+        value: '',
+        placeholder: '(default "Bitcoin seed")',
+      })
+      return
+    }
+  }
+
+  // ── sanitize helper for syncAccount (m11-01-01) ──
+  // dapp-input-sanitization 룰: known fields whitelist만 추출, __proto__ / unknown key silent drop.
+  // playground 로컬 helper (connector src/sign/sanitize.ts는 string scalar 전용으로 다른 용도).
+  function _sanitizeSyncAccountInfos (parsed) {
+    if (!Array.isArray(parsed)) {
+      throw new Error('accountInfos must be an array')
+    }
+    return parsed.map(function (a) {
+      if (!a || typeof a !== 'object') {
+        throw new Error('each account entry must be an object')
+      }
+      return {
+        coin_group: String(a.coin_group == null ? '' : a.coin_group),
+        coin_name: String(a.coin_name == null ? '' : a.coin_name),
+        label: String(a.label == null ? '' : a.label),
+      }
+    })
   }
 
   function renderSignMessageForm (methodDef) {
@@ -938,8 +1120,9 @@
 
     clearFieldErrors()
 
-    if (methodId === 'getDeviceInfo') {
-      sendGetDeviceInfo()
+    if (methodId.startsWith('account:')) {
+      // m11-01-01: account/device API dispatcher
+      sendAccountCall(methodId)
     } else if (methodId.startsWith('signMessage:')) {
       sendSignMessage()
     } else if (methodId.startsWith('signTx:evm:')) {
@@ -962,23 +1145,122 @@
     }
   }
 
-  function sendGetDeviceInfo () {
+  // ── sendAccountCall (m11-01-01) ──
+  // v1 호환 account/device API 8개 dispatcher.
+  //   - facade는 v1 envelope ({header, body.parameter})으로 resolve 또는 dcentException throw.
+  //   - _unwrapV1Envelope: success → body.parameter unwrap, failure → throw (b08-01: DC-2097 회귀 방지).
+  //   - 모든 분기는 동일 패턴: try/catch + appendLog (error-handling-consistency).
+  //
+  // setLabel / syncAccount는 facade가 **synchronously** throw할 수 있다 (regex / coinGroup / coinName 검증).
+  // 모두 try 안에서 호출하여 Promise rejection으로 통일한다.
+  function sendAccountCall (methodId) {
+    var name = methodId.slice('account:'.length)
     var startMs = Date.now()
     var dcent = _getDcent()
-    // m08-01-05: facade의 v1 호환 API — 응답은 v1 envelope ({header, body.parameter})
-    // b08-01: _unwrapV1Envelope이 success → body.parameter unwrap, failure → throw로 변환
-    dcent.getDeviceInfo().then(_unwrapV1Envelope).then(function (result) {
-      state.device = result
+
+    // method별 인자 수집 + facade 호출. async IIFE로 sync throw → Promise rejection 통일.
+    var callPromise = (function () {
+      try {
+        if (name === 'info') return dcent.info()
+        if (name === 'getDeviceInfo') return dcent.getDeviceInfo()
+        if (name === 'getAccountInfo') return dcent.getAccountInfo()
+
+        if (name === 'setLabel') {
+          var labelEl = document.getElementById('field-label')
+          var label = labelEl ? labelEl.value : ''
+          return dcent.setLabel(label)
+        }
+
+        if (name === 'syncAccount') {
+          var taEl = document.getElementById('field-accountInfosJson')
+          var raw = taEl ? taEl.value.trim() : ''
+          if (!raw) {
+            return Promise.reject(new Error('accountInfos JSON is required'))
+          }
+          var parsed
+          try {
+            parsed = JSON.parse(raw)
+          } catch (e) {
+            return Promise.reject(new Error('Invalid JSON: ' + e.message))
+          }
+          var sanitized = _sanitizeSyncAccountInfos(parsed)
+          return dcent.syncAccount(sanitized)
+        }
+
+        if (name === 'selectAddress') {
+          var addrEl = document.getElementById('field-addressesJson')
+          var addrRaw = addrEl ? addrEl.value.trim() : ''
+          if (!addrRaw) {
+            return Promise.reject(new Error('addresses JSON is required'))
+          }
+          var addrParsed
+          try {
+            addrParsed = JSON.parse(addrRaw)
+          } catch (e2) {
+            return Promise.reject(new Error('Invalid JSON: ' + e2.message))
+          }
+          if (!Array.isArray(addrParsed)) {
+            return Promise.reject(new Error('addresses must be a JSON array'))
+          }
+          // dapp-input-sanitization: each element → string (silent coerce)
+          var addrs = addrParsed.map(function (a) { return String(a) })
+          return dcent.selectAddress(addrs)
+        }
+
+        if (name === 'getAddress') {
+          var ctEl = document.getElementById('field-coinType')
+          var pathEl = document.getElementById('field-path')
+          var prefixEl = document.getElementById('field-prefix')
+          var coinTypeKey = ctEl ? ctEl.value : ''
+          // playground select는 enum 키 (예: 'ETHEREUM')를 노출 — facade의 isAvaliableCoinType은
+          // key 또는 value 모두 toLowerCase 비교로 매치하므로 그대로 전달해도 동작.
+          // 단, facade 시그니처는 v1 1:1 — getAddress(coinType, path, prefix).
+          // 사용자가 enum 키로 보낼지 value로 보낼지 결정해야 한다. coinType.ts enum이 import되어 있으면
+          // key → value 변환을 한 번 거친다.
+          var coinTypeValue = coinTypeKey
+          var coinTypeEnum = (window.dcent && window.dcent.coinType) || {}
+          if (coinTypeEnum[coinTypeKey] !== undefined) {
+            coinTypeValue = coinTypeEnum[coinTypeKey]
+          }
+          var path = pathEl ? pathEl.value.trim() : ''
+          var prefixRaw = prefixEl ? prefixEl.value.trim() : ''
+          var prefix = prefixRaw === '' ? null : prefixRaw
+          return dcent.getAddress(coinTypeValue, path, prefix)
+        }
+
+        if (name === 'getXPUB') {
+          var keyEl = document.getElementById('field-key')
+          var bipEl = document.getElementById('field-bip32name')
+          var key = keyEl ? keyEl.value.trim() : ''
+          var bip32name = bipEl ? bipEl.value.trim() : ''
+          // facade signature: getXPUB(key, bip32name). bip32name이 빈 값이면 undefined 전달
+          // (facade 내부에서 default 'Bitcoin seed' 처리는 spec에 명시되지 않으므로 그대로 위임).
+          return dcent.getXPUB(key, bip32name === '' ? undefined : bip32name)
+        }
+
+        return Promise.reject(new Error('Unknown method: ' + methodId))
+      } catch (syncErr) {
+        // setLabel / syncAccount의 facade sync throw (dcentException) → Promise rejection으로 통일
+        return Promise.reject(syncErr)
+      }
+    })()
+
+    // common envelope unwrap + log
+    callPromise.then(_unwrapV1Envelope).then(function (result) {
+      if (name === 'getDeviceInfo') {
+        state.device = result
+      }
       appendLog({
-        method: 'getDeviceInfo',
+        method: name,
         request: {},
         response: result,
         latencyMs: Date.now() - startMs,
-        deviceFirmware: result && result.firmware,
+        deviceFirmware: (name === 'getDeviceInfo' && result && result.firmware) ||
+          (state.device && state.device.firmware),
       })
     }).catch(function (err) {
       appendLog({
-        method: 'getDeviceInfo',
+        method: name,
         request: {},
         error: normalizeError(err),
         latencyMs: Date.now() - startMs,
@@ -1475,5 +1757,13 @@
     simulateRestLoad: function (chains, presets) {
       return window._playgroundTestAPI.simulateNonEvmLoad(chains, presets)
     },
+    // ── Account preset helpers (m11-01-01) ──
+    getAccountPresetsList: function () { return accountPresetsList },
+    simulateAccountPresetsLoad: function (presets) {
+      accountPresetsList = presets || []
+      accountPresetsMap = {}
+      accountPresetsList.forEach(function (p) { accountPresetsMap[p.id] = p })
+    },
+    _sanitizeSyncAccountInfos: _sanitizeSyncAccountInfos,
   }
 })()

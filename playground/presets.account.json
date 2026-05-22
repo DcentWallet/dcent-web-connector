@@ -1,0 +1,27 @@
+[
+  {
+    "id": "syncAccount:eth-single",
+    "label": "Ethereum (single)",
+    "applicableMethodIds": ["account:syncAccount"],
+    "value": [
+      { "coin_group": "EVM", "coin_name": "ETHEREUM", "label": "ETH-1" }
+    ]
+  },
+  {
+    "id": "syncAccount:btc-single",
+    "label": "Bitcoin (single)",
+    "applicableMethodIds": ["account:syncAccount"],
+    "value": [
+      { "coin_group": "BITCOIN", "coin_name": "BITCOIN", "label": "BTC-1" }
+    ]
+  },
+  {
+    "id": "syncAccount:multi",
+    "label": "Multi (ETH + BTC)",
+    "applicableMethodIds": ["account:syncAccount"],
+    "value": [
+      { "coin_group": "EVM", "coin_name": "ETHEREUM", "label": "ETH-1" },
+      { "coin_group": "BITCOIN", "coin_name": "BITCOIN", "label": "BTC-1" }
+    ]
+  }
+]

@@ -123,9 +123,10 @@ afterEach(() => {
 it('T-U-EVM-01: simulateEvmLoad 후 EVM 체인 노드가 TREE에 추가된다', () => {
   const api = (window as any)._playgroundTestAPI
 
-  // 로드 전: placeholder 제외 메서드 개수 (5 = 기존)
+  // 로드 전: placeholder 제외 메서드 개수
+  // m11-01-01: account/device 그룹 8 method + sign message 4 method = 12 (기존 5에서 변경)
   const beforeCount = api.countMethodNodes()
-  expect(beforeCount).toBe(5)
+  expect(beforeCount).toBe(12)
 
   // EVM 체인 로드 시뮬레이션
   api.simulateEvmLoad(SAMPLE_CHAINS, SAMPLE_PRESETS)

@@ -68,19 +68,21 @@ afterEach(() => {
 })
 
 // ─────────────────────────────────────────────────────────
-// T-U-01: 트리 DOM 빌더 — TREE 선언적 객체에서 expected node 개수(getDeviceInfo 1 + signMessage 4 = 5)
+// T-U-01: 트리 DOM 빌더 — TREE 선언적 객체에서 expected node 개수
+// m11-01-01: Account/Device 그룹 8 method + signMessage 4 method = 12 (기존 5에서 변경)
 // ─────────────────────────────────────────────────────────
-it('T-U-01: 트리 DOM에 5개 non-placeholder method node가 렌더링된다', () => {
+it('T-U-01: 트리 DOM에 12개 non-placeholder method node가 렌더링된다', () => {
   const api = (window as any)._playgroundTestAPI
   expect(api).toBeDefined()
 
-  // countMethodNodes: placeholder 제외 카운트 (getDeviceInfo 1 + signMessage 4 = 5)
+  // countMethodNodes: placeholder 제외 카운트
+  // m11-01-01: Account/Device(8) + signMessage(4) = 12
   const count = api.countMethodNodes()
-  expect(count).toBe(5) // getDeviceInfo(1) + eth:personal(1) + eth:v3(1) + eth:v4(1) + sol:raw(1)
+  expect(count).toBe(12)
 
-  // DOM에는 placeholder 포함 6개 .tree-item (EVM 체인 로드 전 placeholder 1개 추가)
+  // DOM에는 placeholder 포함 13개 .tree-item (EVM 체인 로드 전 placeholder 1개 추가)
   const domItems = document.querySelectorAll('.tree-item')
-  expect(domItems.length).toBe(6) // 5 non-placeholder + 1 EVM loading placeholder
+  expect(domItems.length).toBe(13) // 12 non-placeholder + 1 EVM loading placeholder
 })
 
 // ─────────────────────────────────────────────────────────
@@ -259,7 +261,8 @@ it('T-U-08: facade v1 형식 error → LogEntry.error 매핑', async () => {
   api.simulateConnect(mockDcent, null, { model: 'Bio', firmware: '3.0' })
 
   // getDeviceInfo 선택
-  const getDeviceItem = document.querySelector('[data-method-id="getDeviceInfo"]') as HTMLElement
+  // m11-01-01: getDeviceInfo가 'Account / Device' 그룹으로 이동 — method id는 'account:getDeviceInfo'
+  const getDeviceItem = document.querySelector('[data-method-id="account:getDeviceInfo"]') as HTMLElement
   getDeviceItem.click()
 
   // Send 클릭
@@ -303,7 +306,8 @@ it('T-R-06: failure envelope resolve 시 error로 기록되고 state.device 미�
   expect(api.state.device).toBeNull()
 
   // getDeviceInfo 선택 후 Send
-  const getDeviceItem = document.querySelector('[data-method-id="getDeviceInfo"]') as HTMLElement
+  // m11-01-01: getDeviceInfo가 'Account / Device' 그룹으로 이동 — method id는 'account:getDeviceInfo'
+  const getDeviceItem = document.querySelector('[data-method-id="account:getDeviceInfo"]') as HTMLElement
   getDeviceItem.click()
   document.getElementById('btn-send')?.click()
 
@@ -347,7 +351,8 @@ it('T-R-09: onConnect → getDeviceInfo Send 흐름에서 state.device가 채워
   expect(mockGetDeviceInfo).not.toHaveBeenCalled()
 
   // 트리에서 getDeviceInfo 선택 → Send
-  const getDeviceItem = document.querySelector('[data-method-id="getDeviceInfo"]') as HTMLElement
+  // m11-01-01: getDeviceInfo가 'Account / Device' 그룹으로 이동 — method id는 'account:getDeviceInfo'
+  const getDeviceItem = document.querySelector('[data-method-id="account:getDeviceInfo"]') as HTMLElement
   getDeviceItem.click()
   document.getElementById('btn-send')?.click()
 
@@ -374,7 +379,8 @@ it('T-U-09: not connected → btn-send disabled; connect 후 method 선택 시 �
   expect(btnSend.getAttribute('aria-disabled')).toBe('true')
 
   // 메서드 선택 — 여전히 disabled (not connected)
-  const getDeviceItem = document.querySelector('[data-method-id="getDeviceInfo"]') as HTMLElement
+  // m11-01-01: getDeviceInfo가 'Account / Device' 그룹으로 이동 — method id는 'account:getDeviceInfo'
+  const getDeviceItem = document.querySelector('[data-method-id="account:getDeviceInfo"]') as HTMLElement
   getDeviceItem.click()
   expect(btnSend.disabled).toBe(true)
 

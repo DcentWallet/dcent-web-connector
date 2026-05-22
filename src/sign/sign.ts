@@ -48,6 +48,12 @@ export interface SignInput {
    * connector 경계에서 보장되는 contract는 `_validateSignPayload` 참조.
    */
   payload: Record<string, unknown>
+  /**
+   * (Session deviceId, 2026-05-22) dApp이 이전 응답에서 캡처한 HW `device_id`. 명시 시 sdk가
+   * 권한 캐시된 device 중 매칭되는 것에 picker 없이 자동 연결. mismatch면 V1Response failure
+   * (code 4001). 미명시 시 기존 picker 흐름.
+   */
+  deviceId?: string
 }
 
 /**
@@ -93,5 +99,13 @@ export async function sign (input: SignInput): Promise<V1Response> {
   const safeMethod = _sanitizeMethod(input.method)
   const safeChainId = _sanitizeChainId(input.chainId)
   _validateSignPayload(safeChainId, input.payload)
-  return _call({ method: safeMethod, chainId: safeChainId, params: input.payload })
+  // (Session deviceId, 2026-05-22) deviceId hint를 _call로 전달. _call이 PopupTransport
+  // .setPendingDeviceId로 등록 + handshake에 echo. dApp이 sign({..., deviceId})로 호출하면
+  // sdk가 자동 cached connect 시도.
+  return _call({
+    method: safeMethod,
+    chainId: safeChainId,
+    params: input.payload,
+    deviceId: input.deviceId,
+  })
 }

@@ -91,7 +91,8 @@ describe('[v2 e2e] playground skeleton', () => {
     expect(dotClass).toContain('connected')
 
     // getDeviceInfo 선택 + Send
-    await page.click('[data-method-id="getDeviceInfo"]')
+    // m11-01-01: getDeviceInfo가 'Account / Device' 그룹으로 이동 — method id는 'account:getDeviceInfo'
+    await page.click('[data-method-id="account:getDeviceInfo"]')
     const sendDisabled = await page.$eval('#btn-send', (el: HTMLButtonElement) => el.disabled)
     expect(sendDisabled).toBe(false)
     await page.click('#btn-send')
@@ -191,7 +192,8 @@ describe('[v2 e2e] playground skeleton', () => {
     })
 
     // getDeviceInfo 선택
-    await page.click('[data-method-id="getDeviceInfo"]')
+    // m11-01-01: getDeviceInfo가 'Account / Device' 그룹으로 이동 — method id는 'account:getDeviceInfo'
+    await page.click('[data-method-id="account:getDeviceInfo"]')
 
     // simulateConnect로 state.connected=true이므로 method 선택 후 Send 활성화
     await page.click('#btn-send')
@@ -231,7 +233,8 @@ describe('[v2 e2e] playground skeleton', () => {
       api.simulateConnect(mockDcent, null, { model: 'Bio', firmware: '3.0' })
     })
 
-    await page.click('[data-method-id="getDeviceInfo"]')
+    // m11-01-01: getDeviceInfo가 'Account / Device' 그룹으로 이동 — method id는 'account:getDeviceInfo'
+    await page.click('[data-method-id="account:getDeviceInfo"]')
     await page.click('#btn-send')
     await new Promise((r) => setTimeout(r, 200))
 

@@ -57,7 +57,7 @@ describe('getAddress — m08-01-02.5', () => {
     const resp = await getAddress('ETHEREUM', "m/44'/60'/0'/0/0")
 
     expect(sendSpy).toHaveBeenCalledTimes(1)
-    const callArg = sendSpy.mock.calls[0][0]
+    const callArg = sendSpy.mock.calls[0][0] as any
     expect(callArg.method).toBe('getAddress')
     expect(callArg.params).toEqual({
       coinType: 'ETHEREUM',
@@ -76,7 +76,7 @@ describe('getAddress — m08-01-02.5', () => {
 
     await getAddress('COREUM', "m/44'/118'/0'/0/0")
 
-    const callArg = sendSpy.mock.calls[0][0]
+    const callArg = sendSpy.mock.calls[0][0] as any
     expect(callArg.params?.coinType).toBe('czone')
     expect(callArg.params?.optionParam).toBe(Buffer.from('core', 'utf8').toString('hex'))
   })
@@ -90,7 +90,7 @@ describe('getAddress — m08-01-02.5', () => {
 
     await getAddress('PARA', "m/44'/354'/0'/0/0", '5')
 
-    const callArg = sendSpy.mock.calls[0][0]
+    const callArg = sendSpy.mock.calls[0][0] as any
     expect(callArg.params?.coinType).toBe('PARA')
     expect(callArg.params?.optionParam).toBe(5)
     expect(typeof callArg.params?.optionParam).toBe('number')
@@ -133,7 +133,7 @@ describe('getXPUB — m08-01-02.5', () => {
 
     await getXPUB("m/44'/0'/0'", 'Bitcoin seed')
 
-    const callArg = sendSpy.mock.calls[0][0]
+    const callArg = sendSpy.mock.calls[0][0] as any
     expect(callArg.method).toBe('getXPUB')
     expect(callArg.params).toEqual({ key: "m/44'/0'/0'", bip32name: 'Bitcoin seed' })
   })
@@ -188,7 +188,7 @@ describe('getAddress v2 chainId facade — m11-01-02', () => {
     })
 
     expect(sendSpy).toHaveBeenCalledTimes(1)
-    const callArg = sendSpy.mock.calls[0][0]
+    const callArg = sendSpy.mock.calls[0][0] as any
     expect(callArg.method).toBe('getAddress')
     expect(callArg.chainId).toBe('eip155:1/slip44:60')
     expect(callArg.params).toEqual({
@@ -215,7 +215,7 @@ describe('getAddress v2 chainId facade — m11-01-02', () => {
       prefix: 'core',
     })
 
-    const callArg = sendSpy.mock.calls[0][0]
+    const callArg = sendSpy.mock.calls[0][0] as any
     expect(callArg.params).toEqual({
       chainId: 'cosmos:core-mainnet-1',
       keyPath: "m/44'/118'/0'/0/0",
@@ -258,7 +258,7 @@ describe('getAddress v2 chainId facade — m11-01-02', () => {
 
     await getAddress('ETHEREUM', "m/44'/60'/0'/0/0")
 
-    const callArg = sendSpy.mock.calls[0][0]
+    const callArg = sendSpy.mock.calls[0][0] as any
     expect(callArg.method).toBe('getAddress')
     // v1 path는 chainId 필드를 보내지 않음
     expect(callArg.chainId).toBeUndefined()
@@ -277,7 +277,7 @@ describe('getAddress v2 chainId facade — m11-01-02', () => {
 
     await getAddress('PARA', "m/44'/354'/0'/0/0", '5')
 
-    const callArg = sendSpy.mock.calls[0][0]
+    const callArg = sendSpy.mock.calls[0][0] as any
     expect(callArg.params?.optionParam).toBe(5)
     expect(callArg.params?.coinType).toBe('PARA')
     expect(callArg.chainId).toBeUndefined()
@@ -317,7 +317,7 @@ describe('getAddress v2 chainId facade — m11-01-02', () => {
   test('T-U-08: array 입력 → param_error reject (typeof [] === object 함정 명시 거부)', async () => {
     await expect(
       // dApp이 실수로 array를 보낼 경우 (TypeScript 우회 시 catch 가능해야 함)
-      getAddress(['ETHEREUM', "m/44'/60'/0'/0/0"] as unknown as string),
+      getAddress(['ETHEREUM', "m/44'/60'/0'/0/0"] as any),
     ).rejects.toEqual(
       expectV1Error(
         'param_error',
@@ -338,7 +338,7 @@ describe('getAddress v2 chainId facade — m11-01-02', () => {
       keyPath: "m/44'/0'/0'/0/0",
     })
 
-    const callArg = sendSpy.mock.calls[0][0]
+    const callArg = sendSpy.mock.calls[0][0] as any
     // _call의 chainId 필드 — m11-02 sdk handler가 envelope의 chainId로 dispatch에 사용
     expect(callArg.chainId).toBe('bip122:000000000019d6689c085ae165831e93')
     // params에도 동일 chainId 포함 (sdk가 둘 중 어느 쪽을 쓰든 동등)

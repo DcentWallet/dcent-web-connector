@@ -124,9 +124,10 @@ it('T-U-EVM-01: simulateEvmLoad 후 EVM 체인 노드가 TREE에 추가된다', 
   const api = (window as any)._playgroundTestAPI
 
   // 로드 전: placeholder 제외 메서드 개수
-  // m11-01-01: account/device 그룹 8 method + sign message 4 method = 12 (기존 5에서 변경)
+  // m11-01-01: account/device 그룹 8 method + sign message 4 method = 12
+  // m11-01-03: Bitcoin Tx Builder 4 method 추가 → 16
   const beforeCount = api.countMethodNodes()
-  expect(beforeCount).toBe(12)
+  expect(beforeCount).toBe(16)
 
   // EVM 체인 로드 시뮬레이션
   api.simulateEvmLoad(SAMPLE_CHAINS, SAMPLE_PRESETS)

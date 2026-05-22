@@ -146,15 +146,20 @@
   var TREE = [
     {
       kind: 'group',
-      label: 'Account / Device',
+      label: 'Device API',
       items: [
-        // m11-01-01: v1 read-only / configure / address API를 playground에 노출 (8 method)
-        // 기존 Device 그룹의 getDeviceInfo는 이 그룹으로 흡수. method id는 trie 분기를 위해
-        // 'account:' prefix 사용 (selectMethod / Send dispatcher가 prefix로 분기).
+        // m11-01-01: v1 read-only / configure API. method id는 trie 분기를 위해
+        // 'account:' prefix 유지 (selectMethod / Send dispatcher가 prefix로 분기).
         { kind: 'method', id: 'account:info', label: 'info' },
         { kind: 'method', id: 'account:getDeviceInfo', label: 'getDeviceInfo' },
-        { kind: 'method', id: 'account:getAccountInfo', label: 'getAccountInfo' },
         { kind: 'method', id: 'account:setLabel', label: 'setLabel' },
+      ],
+    },
+    {
+      kind: 'group',
+      label: 'Account API',
+      items: [
+        { kind: 'method', id: 'account:getAccountInfo', label: 'getAccountInfo' },
         { kind: 'method', id: 'account:syncAccount', label: 'syncAccount' },
         { kind: 'method', id: 'account:selectAddress', label: 'selectAddress' },
         { kind: 'method', id: 'account:getAddress', label: 'getAddress' },
@@ -203,6 +208,45 @@
               id: 'signMessage:sol:raw',
               label: 'signMessage (raw)',
               chainId: 'solana:5eykt4UsFv8P8NJdTREpY1vzqKqZKvdp/slip44:501',
+              metaKind: 'raw',
+            },
+          ],
+        },
+        {
+          kind: 'family',
+          label: 'Tron',
+          items: [
+            {
+              kind: 'method',
+              id: 'signMessage:tron:raw',
+              label: 'signMessage (raw)',
+              chainId: 'tron:0x2b6653dc/slip44:195',
+              metaKind: 'raw',
+            },
+          ],
+        },
+        {
+          kind: 'family',
+          label: 'Polkadot',
+          items: [
+            {
+              kind: 'method',
+              id: 'signMessage:dot:raw',
+              label: 'signMessage (raw)',
+              chainId: 'polkadot:91b171bb158e2d3848fa23a9f1c25182/slip44:354',
+              metaKind: 'raw',
+            },
+          ],
+        },
+        {
+          kind: 'family',
+          label: 'Tezos',
+          items: [
+            {
+              kind: 'method',
+              id: 'signMessage:xtz:raw',
+              label: 'signMessage (raw)',
+              chainId: 'tezos:NetXdQprcVkpaWU/slip44:1729',
               metaKind: 'raw',
             },
           ],
@@ -298,6 +342,24 @@
       {
         label: 'Solana raw message',
         message: 'Hello Solana!',
+      },
+    ],
+    'signMessage:tron:raw': [
+      {
+        label: 'Tron raw message',
+        message: 'Hello Tron!',
+      },
+    ],
+    'signMessage:dot:raw': [
+      {
+        label: 'Polkadot raw message',
+        message: 'Hello Polkadot!',
+      },
+    ],
+    'signMessage:xtz:raw': [
+      {
+        label: 'Tezos raw message',
+        message: 'Hello Tezos!',
       },
     ],
   }

@@ -490,5 +490,11 @@
     "family": "fil",
     "displayName": "Filecoin",
     "defaultKeyPath": "m/44'/461'/0'/0/0"
+  },
+  {
+    "chainId": "tron:0x2b6653dc/slip44:195",
+    "family": "tron",
+    "displayName": "Tron",
+    "defaultKeyPath": "m/44'/195'/0'/0/0"
   }
 ]

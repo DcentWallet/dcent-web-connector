@@ -146,15 +146,20 @@
   var TREE = [
     {
       kind: 'group',
-      label: 'Account / Device',
+      label: 'Device API',
       items: [
-        // m11-01-01: v1 read-only / configure / address API를 playground에 노출 (8 method)
-        // 기존 Device 그룹의 getDeviceInfo는 이 그룹으로 흡수. method id는 trie 분기를 위해
-        // 'account:' prefix 사용 (selectMethod / Send dispatcher가 prefix로 분기).
+        // m11-01-01: v1 read-only / configure API. method id는 trie 분기를 위해
+        // 'account:' prefix 유지 (selectMethod / Send dispatcher가 prefix로 분기).
         { kind: 'method', id: 'account:info', label: 'info' },
         { kind: 'method', id: 'account:getDeviceInfo', label: 'getDeviceInfo' },
-        { kind: 'method', id: 'account:getAccountInfo', label: 'getAccountInfo' },
         { kind: 'method', id: 'account:setLabel', label: 'setLabel' },
+      ],
+    },
+    {
+      kind: 'group',
+      label: 'Account API',
+      items: [
+        { kind: 'method', id: 'account:getAccountInfo', label: 'getAccountInfo' },
         { kind: 'method', id: 'account:syncAccount', label: 'syncAccount' },
         { kind: 'method', id: 'account:selectAddress', label: 'selectAddress' },
         { kind: 'method', id: 'account:getAddress', label: 'getAddress' },
@@ -203,6 +208,52 @@
               id: 'signMessage:sol:raw',
               label: 'signMessage (raw)',
               chainId: 'solana:5eykt4UsFv8P8NJdTREpY1vzqKqZKvdp/slip44:501',
+              metaKind: 'raw',
+            },
+          ],
+        },
+        {
+          kind: 'family',
+          label: 'Tron',
+          items: [
+            {
+              kind: 'method',
+              id: 'signMessage:tron:raw',
+              label: 'signMessage (raw)',
+              chainId: 'tron:0x2b6653dc/slip44:195',
+              metaKind: 'raw',
+            },
+          ],
+        },
+        {
+          kind: 'family',
+          label: 'Polkadot',
+          items: [
+            {
+              kind: 'method',
+              id: 'signMessage:dot:raw',
+              label: 'signMessage (raw) — Polkadot',
+              chainId: 'polkadot:91b171bb158e2d3848fa23a9f1c25182/slip44:354',
+              metaKind: 'raw',
+            },
+            {
+              kind: 'method',
+              id: 'signMessage:dot:raw:astar',
+              label: 'signMessage (raw) — Astar',
+              chainId: 'polkadot:9eb76c5184c4ab8679d2d5d819fdf90b/slip44:810',
+              metaKind: 'raw',
+            },
+          ],
+        },
+        {
+          kind: 'family',
+          label: 'Tezos',
+          items: [
+            {
+              kind: 'method',
+              id: 'signMessage:xtz:raw',
+              label: 'signMessage (raw)',
+              chainId: 'tezos:NetXdQprcVkpaWU/slip44:1729',
               metaKind: 'raw',
             },
           ],
@@ -298,6 +349,24 @@
       {
         label: 'Solana raw message',
         message: 'Hello Solana!',
+      },
+    ],
+    'signMessage:tron:raw': [
+      {
+        label: 'Tron raw message',
+        message: 'Hello Tron!',
+      },
+    ],
+    'signMessage:dot:raw': [
+      {
+        label: 'Polkadot raw message',
+        message: 'Hello Polkadot!',
+      },
+    ],
+    'signMessage:xtz:raw': [
+      {
+        label: 'Tezos raw message',
+        message: 'Hello Tezos!',
       },
     ],
   }
@@ -738,6 +807,95 @@
     }
 
     if (name === 'getAddress') {
+      // m11-01-04: v1/v2 path toggle 도입.
+      //   - v1 path: 기존 coinType 시그니처 (dcent.getAddress(coinType, path, prefix))
+      //   - v2 path: chainId 시그니처 (dcent.getAddress({chainId, keyPath, prefix?})) — m11-01-02 facade
+      // default=v2. sdk(m11-02) 미머지 상태에서 unknown_method 에러 시 form 상단 안내 배너 표시 (graceful UX).
+      //
+      // 룰 준수:
+      //   - connector-chain-addition-isolation: chainId 문자열 pass-through만 (chain enum/switch 부재)
+      //   - boundary-validation: v2 input 검증은 facade(m11-01-02 _getAddressV2)가 담당, 폼은 UI validation만
+      _renderGetAddressForm()
+      return
+    }
+
+    if (name === 'getXPUB') {
+      appendFormRow('key', 'Key Path', 'input', {
+        value: "m/44'/60'/0'",
+        placeholder: "m/44'/60'/0'",
+      })
+      appendFormRow('bip32name', 'bip32name (optional)', 'input', {
+        value: '',
+        placeholder: '(default "Bitcoin seed")',
+      })
+      return
+    }
+  }
+
+  // ── _renderGetAddressForm (m11-01-04) ──
+  // getAddress v1/v2 path toggle 폼.
+  //   - 상단 라디오: [v1 (coinType)] / [v2 (chainId)] — default=v2
+  //   - v2 path: chainId <select> (allChainsMap 기반) + keyPath + optional prefix
+  //   - v1 path: coinType <select> + path + optional prefix (기존 폼 그대로)
+  //   - 상단 안내 배너 영역(`#getaddress-banner`)은 항상 생성되어 sendAccountCall이 표시/숨김
+  //
+  // 룰 준수:
+  //   - connector-chain-addition-isolation: chainId는 select value 그대로 pass-through, chain enum 추가 없음
+  //   - boundary-validation: chainId/keyPath 비어있을 때 Send 시 facade(m11-01-02)가 param_error throw
+  //
+  // path 선택 상태는 `data-getaddress-path` 속성으로 form container에 저장 ('v1' | 'v2', default 'v2')
+  function _renderGetAddressForm () {
+    // 상단 안내 배너 — 초기에는 hidden. sendAccountCall이 unknown_method 에러 감지 시 표시.
+    var banner = document.createElement('div')
+    banner.id = 'getaddress-banner'
+    banner.style.cssText = 'display:none;background:#fff3cd;color:#856404;padding:8px 10px;border-radius:4px;margin-bottom:8px;font-size:11px;border:1px solid #ffeaa7;'
+    banner.textContent = '⚠ sdk가 v2 payload(getAddress chainId)를 아직 처리하지 못합니다 (m11-02 미머지 상태). 임시로 v1 path (coinType)를 사용하거나 m11-02 SHIPPED를 기다리세요.'
+    formFields.appendChild(banner)
+
+    // path toggle radio
+    var toggleRow = document.createElement('div')
+    toggleRow.className = 'form-row'
+    var toggleLabel = document.createElement('label')
+    toggleLabel.textContent = 'Path'
+    toggleRow.appendChild(toggleLabel)
+
+    var toggleWrap = document.createElement('div')
+    toggleWrap.style.cssText = 'display:flex;gap:12px;font-size:12px;'
+
+    var v1Label = document.createElement('label')
+    v1Label.style.cssText = 'display:flex;align-items:center;gap:4px;cursor:pointer;'
+    var v1Radio = document.createElement('input')
+    v1Radio.type = 'radio'
+    v1Radio.name = 'getaddress-path'
+    v1Radio.id = 'field-getaddress-path-v1'
+    v1Radio.value = 'v1'
+    v1Label.appendChild(v1Radio)
+    v1Label.appendChild(document.createTextNode('v1 (coinType)'))
+
+    var v2Label = document.createElement('label')
+    v2Label.style.cssText = 'display:flex;align-items:center;gap:4px;cursor:pointer;'
+    var v2Radio = document.createElement('input')
+    v2Radio.type = 'radio'
+    v2Radio.name = 'getaddress-path'
+    v2Radio.id = 'field-getaddress-path-v2'
+    v2Radio.value = 'v2'
+    v2Radio.checked = true // default=v2
+    v2Label.appendChild(v2Radio)
+    v2Label.appendChild(document.createTextNode('v2 (chainId)'))
+
+    toggleWrap.appendChild(v1Label)
+    toggleWrap.appendChild(v2Label)
+    toggleRow.appendChild(toggleWrap)
+    formFields.appendChild(toggleRow)
+
+    // dynamic input container (path 전환 시 교체)
+    var inputContainer = document.createElement('div')
+    inputContainer.id = 'getaddress-inputs'
+    formFields.appendChild(inputContainer)
+
+    function _renderV1Inputs () {
+      inputContainer.innerHTML = ''
+
       // coinType <select> — src/types/coinType.ts enum 키 사용
       var coinTypeKeys = Object.keys((window.dcent && window.dcent.coinType) || {})
       if (coinTypeKeys.length === 0) {
@@ -757,34 +915,142 @@
         opt.textContent = k
         ctSelect.appendChild(opt)
       })
-      // default 'ETHEREUM' if available
       if (coinTypeKeys.indexOf('ETHEREUM') !== -1) ctSelect.value = 'ETHEREUM'
       ctRow.appendChild(ctLabel)
       ctRow.appendChild(ctSelect)
-      formFields.appendChild(ctRow)
+      inputContainer.appendChild(ctRow)
 
-      appendFormRow('path', 'Key Path', 'input', {
-        value: "m/44'/60'/0'/0/0",
-        placeholder: "m/44'/60'/0'/0/0",
-      })
-      appendFormRow('prefix', 'prefix (optional, parachain)', 'input', {
-        value: '',
-        placeholder: '(leave empty unless parachain)',
-      })
-      return
+      // path
+      var pathRow = document.createElement('div')
+      pathRow.className = 'form-row'
+      var pathLabel = document.createElement('label')
+      pathLabel.setAttribute('for', 'field-path')
+      pathLabel.textContent = 'Key Path'
+      var pathInput = document.createElement('input')
+      pathInput.id = 'field-path'
+      pathInput.type = 'text'
+      pathInput.value = "m/44'/60'/0'/0/0"
+      pathInput.placeholder = "m/44'/60'/0'/0/0"
+      pathRow.appendChild(pathLabel)
+      pathRow.appendChild(pathInput)
+      inputContainer.appendChild(pathRow)
+
+      // prefix
+      var prefixRow = document.createElement('div')
+      prefixRow.className = 'form-row'
+      var prefixLabel = document.createElement('label')
+      prefixLabel.setAttribute('for', 'field-prefix')
+      prefixLabel.textContent = 'prefix (optional, parachain)'
+      var prefixInput = document.createElement('input')
+      prefixInput.id = 'field-prefix'
+      prefixInput.type = 'text'
+      prefixInput.value = ''
+      prefixInput.placeholder = '(leave empty unless parachain)'
+      prefixRow.appendChild(prefixLabel)
+      prefixRow.appendChild(prefixInput)
+      inputContainer.appendChild(prefixRow)
     }
 
-    if (name === 'getXPUB') {
-      appendFormRow('key', 'Key Path', 'input', {
-        value: "m/44'/60'/0'",
-        placeholder: "m/44'/60'/0'",
+    function _renderV2Inputs () {
+      inputContainer.innerHTML = ''
+
+      // chainId <select> — allChainsMap (m06-01-03 EVM+비-EVM 통합)에서 옵션 생성.
+      // chains.json 로드 전이면 빈 select + placeholder option만 표시 (사용자에게 안내).
+      var chainRow = document.createElement('div')
+      chainRow.className = 'form-row'
+      var chainLabel = document.createElement('label')
+      chainLabel.setAttribute('for', 'field-chainId')
+      chainLabel.textContent = 'Chain ID (CAIP-19)'
+      var chainSelect = document.createElement('select')
+      chainSelect.id = 'field-chainId'
+
+      var chainIds = Object.keys(allChainsMap || {})
+      if (chainIds.length === 0) {
+        // chains.json 미로드 — placeholder만
+        var loadingOpt = document.createElement('option')
+        loadingOpt.value = ''
+        loadingOpt.textContent = '-- loading chains... --'
+        chainSelect.appendChild(loadingOpt)
+      } else {
+        // 빈 선택지 (validation 강제용 — 미선택 시 Send → param_error)
+        var emptyOpt = document.createElement('option')
+        emptyOpt.value = ''
+        emptyOpt.textContent = '-- select chain --'
+        chainSelect.appendChild(emptyOpt)
+        chainIds.forEach(function (cid) {
+          var opt = document.createElement('option')
+          opt.value = cid
+          var entry = allChainsMap[cid]
+          var labelText = cid
+          if (entry && entry.name) labelText = entry.name + ' (' + cid + ')'
+          opt.textContent = labelText
+          chainSelect.appendChild(opt)
+        })
+        // default — eip155:1/slip44:60 (mainnet Ethereum) 또는 eip155:1 우선
+        if (allChainsMap['eip155:1/slip44:60']) {
+          chainSelect.value = 'eip155:1/slip44:60'
+        } else if (allChainsMap['eip155:1']) {
+          chainSelect.value = 'eip155:1'
+        }
+      }
+      chainRow.appendChild(chainLabel)
+      chainRow.appendChild(chainSelect)
+      inputContainer.appendChild(chainRow)
+
+      // keyPath — chainId의 defaultKeyPath 우선, 없으면 ETH default
+      var defaultKeyPath = "m/44'/60'/0'/0/0"
+      var selectedEntry = allChainsMap[chainSelect.value]
+      if (selectedEntry && selectedEntry.defaultKeyPath) {
+        defaultKeyPath = selectedEntry.defaultKeyPath
+      }
+      var keyPathRow = document.createElement('div')
+      keyPathRow.className = 'form-row'
+      var keyPathLabel = document.createElement('label')
+      keyPathLabel.setAttribute('for', 'field-keyPath')
+      keyPathLabel.textContent = 'Key Path'
+      var keyPathInput = document.createElement('input')
+      keyPathInput.id = 'field-keyPath'
+      keyPathInput.type = 'text'
+      keyPathInput.value = defaultKeyPath
+      keyPathInput.placeholder = "m/44'/60'/0'/0/0"
+      keyPathRow.appendChild(keyPathLabel)
+      keyPathRow.appendChild(keyPathInput)
+      inputContainer.appendChild(keyPathRow)
+
+      // chainId change → keyPath default 자동 갱신 (사용자가 명시적으로 수정한 값은 유지하지 않음 — 단순 UX)
+      chainSelect.addEventListener('change', function () {
+        var entry = allChainsMap[chainSelect.value]
+        if (entry && entry.defaultKeyPath) {
+          keyPathInput.value = entry.defaultKeyPath
+        }
       })
-      appendFormRow('bip32name', 'bip32name (optional)', 'input', {
-        value: '',
-        placeholder: '(default "Bitcoin seed")',
-      })
-      return
+
+      // prefix (optional, parachain 등)
+      var prefixRow = document.createElement('div')
+      prefixRow.className = 'form-row'
+      var prefixLabel = document.createElement('label')
+      prefixLabel.setAttribute('for', 'field-prefix')
+      prefixLabel.textContent = 'prefix (optional)'
+      var prefixInput = document.createElement('input')
+      prefixInput.id = 'field-prefix'
+      prefixInput.type = 'text'
+      prefixInput.value = ''
+      prefixInput.placeholder = '(leave empty unless parachain)'
+      prefixRow.appendChild(prefixLabel)
+      prefixRow.appendChild(prefixInput)
+      inputContainer.appendChild(prefixRow)
     }
+
+    // radio change handler — path 전환
+    v1Radio.addEventListener('change', function () {
+      if (v1Radio.checked) _renderV1Inputs()
+    })
+    v2Radio.addEventListener('change', function () {
+      if (v2Radio.checked) _renderV2Inputs()
+    })
+
+    // 초기 렌더 — default v2
+    _renderV2Inputs()
   }
 
   // ── renderBitcoinTxBuilderForm (m11-01-03) ──
@@ -1026,17 +1292,19 @@
   }
 
   function renderSignMessageForm (methodDef) {
-    // chainId (read-only)
-    appendFormRow('chainId', 'Chain ID', 'input', {
+    // chainId — 사용자가 자유 입력 가능 (CAIP-19 pass-through). 같은 family의 chain들을 datalist로 제공.
+    var smFamily = (allChainsMap[methodDef.chainId] || {}).family
+    var smChainIdEl = appendFormRow('chainId', 'Chain ID (CAIP-19)', 'input', {
       value: methodDef.chainId,
-      readOnly: true,
+      datalist: _chainIdOptions(smFamily),
     })
 
-    // keyPath
-    appendFormRow('keyPath', 'Key Path', 'input', {
+    // keyPath — chainId 변경 시 자동으로 그 chain의 defaultKeyPath로 갱신
+    var smKeyPathEl = appendFormRow('keyPath', 'Key Path', 'input', {
       value: CHAIN_KEY_PATH[methodDef.chainId] || "m/44'/60'/0'/0/0",
       placeholder: "m/44'/60'/0'/0/0",
     })
+    _wireKeyPathSync(smChainIdEl, smKeyPathEl)
 
     // message
     appendFormRow('message', 'Message', 'textarea', {
@@ -1095,17 +1363,19 @@
 
   // ── renderSignTxEvmForm ──
   function renderSignTxEvmForm (methodDef) {
-    // chainId (read-only, 트리 선택값)
-    appendFormRow('chainId', 'Chain ID', 'input', {
+    // chainId — 트리 선택값을 default로 두고 사용자가 자유 입력 가능.
+    // EVM family의 모든 chain (Polygon/Kaia/BSC 등)을 datalist로 제공.
+    var evmChainIdEl = appendFormRow('chainId', 'Chain ID (CAIP-19)', 'input', {
       value: methodDef.chainId,
-      readOnly: true,
+      datalist: _chainIdOptions('ethereum'),
     })
 
-    // keyPath (chains.evm.json defaultKeyPath 초기값)
-    appendFormRow('keyPath', 'Key Path', 'input', {
+    // keyPath — chainId 변경 시 자동으로 그 chain의 defaultKeyPath로 갱신 (XDC=m/44'/550' 등)
+    var evmKeyPathEl = appendFormRow('keyPath', 'Key Path', 'input', {
       value: methodDef.defaultKeyPath || "m/44'/60'/0'/0/0",
       placeholder: "m/44'/60'/0'/0/0",
     })
+    _wireKeyPathSync(evmChainIdEl, evmKeyPathEl)
 
     // transaction (JSON textarea)
     var txInput = appendFormRow('transaction', 'Transaction (JSON)', 'textarea', {
@@ -1171,17 +1441,19 @@
   // ── renderSignTxNonEvmForm (m06-01-03) ──
   // 비-EVM family 공용 폼: chainId(read-only) + keyPath + transaction(JSON) + preset selector
   function renderSignTxNonEvmForm (methodDef) {
-    // chainId (read-only)
-    appendFormRow('chainId', 'Chain ID', 'input', {
+    // chainId — 트리 선택값을 default로 두고 사용자가 자유 입력 가능.
+    // 같은 family의 chain (예: Polkadot family의 Polkadot/Astar 등)을 datalist로 제공.
+    var nevmChainIdEl = appendFormRow('chainId', 'Chain ID (CAIP-19)', 'input', {
       value: methodDef.chainId,
-      readOnly: true,
+      datalist: _chainIdOptions(methodDef.family),
     })
 
-    // keyPath (chains.json defaultKeyPath 초기값)
-    appendFormRow('keyPath', 'Key Path', 'input', {
+    // keyPath — chainId 변경 시 자동으로 그 chain의 defaultKeyPath로 갱신 (Astar=m/44'/810' 등)
+    var nevmKeyPathEl = appendFormRow('keyPath', 'Key Path', 'input', {
       value: methodDef.defaultKeyPath || CHAIN_KEY_PATH[methodDef.chainId] || "m/44'/60'/0'/0/0",
       placeholder: "m/44'/60'/0'/0/0",
     })
+    _wireKeyPathSync(nevmChainIdEl, nevmKeyPathEl)
 
     // transaction (JSON textarea)
     var txInput = appendFormRow('transaction', 'Transaction (JSON)', 'textarea', {
@@ -1267,8 +1539,54 @@
     if (opts.readOnly) input.readOnly = true
     row.appendChild(label)
     row.appendChild(input)
+    // datalist: 자동완성 옵션. 사용자는 항목 클릭 또는 직접 타이핑 모두 가능.
+    // option.value = chainId (선택 시 input에 들어가는 값).
+    // textContent + label 둘 다 두면 브라우저 호환성 ↑ (Chrome/Firefox는 label, 일부는 textContent 우선).
+    if (opts.datalist && opts.datalist.length > 0) {
+      var datalist = document.createElement('datalist')
+      datalist.id = 'datalist-' + id
+      opts.datalist.forEach(function (item) {
+        var opt = document.createElement('option')
+        opt.value = item.value
+        if (item.label) {
+          opt.setAttribute('label', item.label)
+          opt.textContent = item.label
+        }
+        datalist.appendChild(opt)
+      })
+      input.setAttribute('list', datalist.id)
+      row.appendChild(datalist)
+    }
     formFields.appendChild(row)
     return input
+  }
+
+  // ── chainId datalist 옵션 빌더 ──
+  // family가 지정되면 같은 family의 chain들만, 없으면 전체 allChainsMap을 옵션으로 제공.
+  // 사용자가 직접 chainId를 타이핑하거나 dropdown에서 선택할 수 있다.
+  function _chainIdOptions (family) {
+    var options = []
+    if (!allChainsMap) return options
+    Object.keys(allChainsMap).forEach(function (cid) {
+      var entry = allChainsMap[cid]
+      if (!entry) return
+      if (family && entry.family !== family) return
+      options.push({ value: cid, label: entry.displayName })
+    })
+    return options
+  }
+
+  // chainId input의 변경(타이핑/datalist 선택)을 keyPath input의 defaultKeyPath로 동기화.
+  // 단순 정책: chainId가 allChainsMap에 있으면 그 defaultKeyPath로 덮어쓴다.
+  // 사용자가 keyPath를 직접 수정한 경우도 덮어씌워질 수 있으나, renderAccountForm과 동일한 단순 UX.
+  function _wireKeyPathSync (chainIdInput, keyPathInput) {
+    if (!chainIdInput || !keyPathInput) return
+    chainIdInput.addEventListener('input', function () {
+      var entry = allChainsMap[chainIdInput.value]
+      if (entry && entry.defaultKeyPath) {
+        keyPathInput.value = entry.defaultKeyPath
+      }
+    })
   }
 
   // ── Connect / Disconnect ──
@@ -1425,6 +1743,13 @@
     var startMs = Date.now()
     var dcent = _getDcent()
 
+    // m11-01-04: getAddress 호출 시작 시 v2 path 안내 배너를 한 번 숨김 (재시도 직후 깨끗한 UI).
+    // unknown_method 에러가 다시 발생하면 .catch에서 다시 표시됨.
+    if (name === 'getAddress') {
+      var bannerResetEl = document.getElementById('getaddress-banner')
+      if (bannerResetEl) bannerResetEl.style.display = 'none'
+    }
+
     // method별 인자 수집 + facade 호출. async IIFE로 sync throw → Promise rejection 통일.
     var callPromise = (function () {
       try {
@@ -1475,6 +1800,30 @@
         }
 
         if (name === 'getAddress') {
+          // m11-01-04: path toggle 분기 — v1 (coinType) vs v2 (chainId).
+          // path 선택은 radio button (`name="getaddress-path"`)로 표현되어 있다.
+          // default=v2 (m11-01-02 facade 신규 시그니처를 default로 노출).
+          var v2RadioEl = document.getElementById('field-getaddress-path-v2')
+          var isV2 = v2RadioEl && v2RadioEl.checked
+
+          if (isV2) {
+            // v2 path: dcent.getAddress({chainId, keyPath, prefix?})
+            var chainIdEl = document.getElementById('field-chainId')
+            var keyPathEl = document.getElementById('field-keyPath')
+            var prefixElV2 = document.getElementById('field-prefix')
+            var chainId = chainIdEl ? chainIdEl.value.trim() : ''
+            var keyPath = keyPathEl ? keyPathEl.value.trim() : ''
+            var prefixRawV2 = prefixElV2 ? prefixElV2.value.trim() : ''
+            var v2Input = { chainId: chainId, keyPath: keyPath }
+            // prefix는 비어있지 않을 때만 전달 (facade는 undefined / null 둘 다 허용하지만
+            // 명시적으로 부재를 표현하기 위해 undefined 사용)
+            if (prefixRawV2 !== '') {
+              v2Input.prefix = prefixRawV2
+            }
+            return dcent.getAddress(v2Input)
+          }
+
+          // v1 path: dcent.getAddress(coinType, path, prefix) — 기존 동작 그대로
           var ctEl = document.getElementById('field-coinType')
           var pathEl = document.getElementById('field-path')
           var prefixEl = document.getElementById('field-prefix')
@@ -1526,6 +1875,19 @@
           (state.device && state.device.firmware),
       })
     }).catch(function (err) {
+      // m11-01-04: getAddress v2 path + sdk가 unknown_method 에러 반환 시 form 상단 안내 배너 표시.
+      // sdk(m11-02 미머지) 상태에서 graceful UX 제공 — 사용자가 v1 path로 수동 fallback 가능.
+      // unknown_method 판정 조건: error.body.error.code가 'unknown_method' 또는 'method_not_supported' 등을 포함
+      if (name === 'getAddress') {
+        var v2RadioElCatch = document.getElementById('field-getaddress-path-v2')
+        var isV2Catch = v2RadioElCatch && v2RadioElCatch.checked
+        if (isV2Catch) {
+          var bannerEl = document.getElementById('getaddress-banner')
+          if (bannerEl && _isUnknownMethodError(err)) {
+            bannerEl.style.display = 'block'
+          }
+        }
+      }
       appendLog({
         method: name,
         request: {},
@@ -1533,6 +1895,40 @@
         latencyMs: Date.now() - startMs,
       })
     })
+  }
+
+  // ── _isUnknownMethodError (m11-01-04) ──
+  // sdk가 v2 payload(getAddress chainId)를 미인식하여 발생하는 unknown_method 에러를 감지한다.
+  // m11-02가 머지되기 전 race 상태에서 getAddress form 상단에 안내 배너를 표시하는 데 사용.
+  //
+  // 감지 대상:
+  //   - dcentException ({header.status:'error', body.error.code: 'unknown_method'})
+  //   - 일반 Error의 message 또는 code 필드에 'unknown_method' / 'method_not_supported' 키워드
+  function _isUnknownMethodError (err) {
+    if (!err) return false
+    // dcentException shape: { body: { error: { code, message } } }
+    if (err.body && err.body.error && typeof err.body.error.code === 'string') {
+      var code = err.body.error.code.toLowerCase()
+      if (code.indexOf('unknown_method') !== -1 || code.indexOf('method_not_supported') !== -1) {
+        return true
+      }
+    }
+    // 일반 Error.code (envelope-less)
+    if (typeof err.code === 'string') {
+      var c2 = err.code.toLowerCase()
+      if (c2.indexOf('unknown_method') !== -1 || c2.indexOf('method_not_supported') !== -1) {
+        return true
+      }
+    }
+    // 일반 Error.message
+    if (typeof err.message === 'string') {
+      var m = err.message.toLowerCase()
+      if (m.indexOf('unknown_method') !== -1 || m.indexOf('method_not_supported') !== -1 ||
+          m.indexOf('unknown method') !== -1) {
+        return true
+      }
+    }
+    return false
   }
 
   // ── handleBitcoinTxAction (m11-01-03) ──

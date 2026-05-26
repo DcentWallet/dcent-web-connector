@@ -47,4 +47,10 @@ export interface V1ResponseBody {
 export interface V1Response {
   header: V1ResponseHeader
   body: V1ResponseBody
+  /**
+   * (Session deviceId, 2026-05-22) sdk가 응답 envelope top-level에 echo한 HW device_id.
+   * dApp이 첫 응답에서 캡처하여 후속 호출의 method param `deviceId`로 사용. transport
+   * 미초기화 / disconnect 후 응답이면 undefined. cross-repo-interface-edit 룰의 양방향 짝.
+   */
+  deviceId?: string
 }

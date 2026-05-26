@@ -42,6 +42,15 @@ export interface CallInput {
    * sign 외 read-only/lifecycle 메서드(getDeviceInfo / info 등)는 chainId가 없을 수 있어 optional.
    */
   chainId?: string
+  /**
+   * (Session deviceId, 2026-05-22) dApp이 이전 응답에서 캡처한 deviceId를 후속 호출에 전달.
+   * PopupTransport의 setPendingDeviceId로 등록되어 sdk handshake params로 송신됨. sdk는
+   * 권한 캐시된 device 중 deviceId 매칭하는 것에 자동 연결 (picker 없음). mismatch면 sdk가
+   * ProviderRpcError(4001)을 envelope.error로 반환 → V1Response failure.
+   *
+   * 미명시 시 기존 흐름 (picker UI). 첫 호출에는 dApp이 deviceId를 모르므로 undefined.
+   */
+  deviceId?: string
   params?: Record<string, unknown>
 }
 
@@ -116,11 +125,25 @@ function cloneV1Response (response: V1Response): V1Response {
  */
 export async function _call (input: CallInput): Promise<V1Response> {
   const queue = _getQueue()
+  const transport = _getTransport()
   const id = _genId()
+
+  // (Session deviceId, 2026-05-22) deviceId hint를 다음 handshake에 전달. PopupTransport의
+  // 첫 send가 sendHandshake를 trigger하기 전 본 setter가 호출되어야 함. 본 _call이 모든
+  // dcent.* method의 단일 entry이므로 setter call site는 1곳으로 충분.
+  // PopupTransport 외 transport 타입은 본 메서드를 가지지 않을 수 있으므로 type guard.
+  if (
+    'setPendingDeviceId' in transport &&
+    typeof (transport as { setPendingDeviceId?: unknown }).setPendingDeviceId === 'function'
+  ) {
+    ;(transport as { setPendingDeviceId: (id: string | undefined) => void }).setPendingDeviceId(
+      input.deviceId,
+    )
+  }
 
   try {
     const envelope = await queue.enqueue(() =>
-      _getTransport().send({
+      transport.send({
         id,
         method: input.method,
         // chainId는 optional — sign API에서만 채워지고 그 외 lifecycle 메서드는 undefined.
@@ -130,7 +153,10 @@ export async function _call (input: CallInput): Promise<V1Response> {
       }),
     )
 
-    // boundary-validation: envelope shape
+    // boundary-validation: envelope shape. (Session deviceId) envelope.deviceId 캐시 — 성공/
+    // 에러 두 경로 모두 응답에 echo.
+    const responseDeviceId = envelope?.deviceId
+
     if (envelope && envelope.error) {
       // popup(sdk PopupListener)이 envelope.error로 실패를 보낸 경우. sdk는 ProviderRpcError의
       // number code (예: -32601 method_not_found, -32603 internal_error, -32602 invalid_params)를
@@ -142,18 +168,23 @@ export async function _call (input: CallInput): Promise<V1Response> {
       const code = typeof rawCode === 'number' ? rawCode : ErrorCode.INTERNAL_ERROR
       const message = envelope.error.message ?? ''
       const providerErr = new ProviderError(code, message, envelope.error.data)
-      return providerErrorToV1(providerErr)
+      const v1Err = providerErrorToV1(providerErr)
+      // (Session deviceId) error 경로에도 deviceId echo — m11-01-XX 패턴 유지.
+      if (responseDeviceId !== undefined) v1Err.deviceId = responseDeviceId
+      return v1Err
     }
 
     const result = envelope?.result
 
-    // 응답이 v1 형식이면 그대로 사용 (단, 매번 새 객체로 복사 — mutation-isolation)
+    let v1: V1Response
     if (isV1ResponseShape(result)) {
-      return cloneV1Response(result)
+      v1 = cloneV1Response(result)
+    } else {
+      v1 = wrapV1Success(result, input.method)
     }
-
-    // raw payload → v1 success로 wrap
-    return wrapV1Success(result, input.method)
+    // (Session deviceId) 응답에 deviceId echo — dApp이 result.deviceId 캡처 가능.
+    if (responseDeviceId !== undefined) v1.deviceId = responseDeviceId
+    return v1
   } catch (err) {
     // PopupTransport.send가 reject한 ProviderError 또는 generic Error
     return providerErrorToV1(err as Error)

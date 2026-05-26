@@ -13,7 +13,7 @@
  */
 
 import { ProviderError } from '../error/ProviderError'
-import { ErrorCode } from '../error/ErrorCode'
+import { v1CodeToErrorCode } from './error'
 import type { V1Response } from './types'
 
 /**
@@ -36,8 +36,12 @@ export function _assertV1Success (response: V1Response): V1Response {
     return response
   }
 
-  // 그 외 failure → throw
+  // 그 외 failure → throw. v1 string code를 v2 ErrorCode (number)로 역매핑해 dApp이
+  // `.catch(e => e.code)`로 JSON-RPC 표준 의미(예: -32601 METHOD_NOT_FOUND)를 받을 수 있게 함.
+  // 매핑 안 되는 code는 INTERNAL_ERROR(-32603) fallback. 원본 v1 string은 data.v1Code에 보관해
+  // v1 호환 정보를 잃지 않도록 함 (provider-security-checklist C6, error-handling-consistency).
   const code = errCode ?? 'internal_error'
   const message = response.body.error?.message ?? `sign failed (${code})`
-  throw new ProviderError(ErrorCode.INTERNAL_ERROR, message, { v1Code: code })
+  const errorCode = v1CodeToErrorCode(code)
+  throw new ProviderError(errorCode, message, { v1Code: code })
 }

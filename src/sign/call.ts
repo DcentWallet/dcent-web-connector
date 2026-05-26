@@ -30,6 +30,8 @@
 import { _getQueue, _getTransport } from '../singleton'
 import { _genId } from './idGen'
 import { providerErrorToV1 } from './error'
+import { ProviderError } from '../error/ProviderError'
+import { ErrorCode } from '../error/ErrorCode'
 import type { V1Response, V1ResponseHeader, V1ResponseBody } from './types'
 
 /** _call 입력 — method 이름 + optional chainId(CAIP-19) + optional params 객체. */
@@ -156,16 +158,18 @@ export async function _call (input: CallInput): Promise<V1Response> {
     const responseDeviceId = envelope?.deviceId
 
     if (envelope && envelope.error) {
-      // popup이 envelope.error로 실패를 보낸 경우 (드물지만 spec 가능)
-      const code = envelope.error.code
+      // popup(sdk PopupListener)이 envelope.error로 실패를 보낸 경우. sdk는 ProviderRpcError의
+      // number code (예: -32601 method_not_found, -32603 internal_error, -32602 invalid_params)를
+      // 그대로 envelope.error.code에 보존해 송신한다. dApp이 보는 v1 string code 의미를
+      // 보존하려면 ProviderError 인스턴스로 wrap해 V2_TO_V1_CODE 테이블을 거쳐야 한다 —
+      // plain Error로 넘기면 'internal_error'로 평탄화되어 -32601 등 JSON-RPC 표준 의미가 유실됨.
+      // 매핑 테이블에 없는 code는 여전히 'internal_error' fallback (V2_TO_V1_CODE 정의 기준).
+      const rawCode = envelope.error.code
+      const code = typeof rawCode === 'number' ? rawCode : ErrorCode.INTERNAL_ERROR
       const message = envelope.error.message ?? ''
-      // ProviderError-equivalent로 매핑 (providerErrorToV1 재사용)
-      // mock된 ProviderError-like 객체 생성 — 구조만 맞추면 매핑 동작
-      const errLike = Object.assign(new Error(message), { code }) as Error & { code: number }
-      // providerErrorToV1는 instanceof ProviderError 검사로 구분하므로 이 경로는 fallback
-      // 'internal_error' 또는 specific code 매핑이 필요하면 별도 헬퍼 사용
-      // 여기서는 일반 Error 경로로 fallback (T-U-ERR-04 동등)
-      const v1Err = providerErrorToV1(errLike)
+      const providerErr = new ProviderError(code, message, envelope.error.data)
+      const v1Err = providerErrorToV1(providerErr)
+      // (Session deviceId) error 경로에도 deviceId echo — m11-01-XX 패턴 유지.
       if (responseDeviceId !== undefined) v1Err.deviceId = responseDeviceId
       return v1Err
     }

@@ -50,6 +50,51 @@ const V2_TO_V1_CODE: Readonly<Record<number, string>> = Object.freeze({
 })
 
 /**
+ * v1 string code → v2 ErrorCode 역매핑.
+ *
+ * V2_TO_V1_CODE의 역방향. `'user_cancel'`은 USER_REJECTED(4001)/DEVICE_USER_CANCELLED(5004)
+ * 두 v2 코드에 매핑되지만, dApp이 보는 v2 의미로는 EIP-1193 표준인 USER_REJECTED(4001)가
+ * canonical — 디바이스 측 cancel을 외부에서 별도 분기할 필요가 적기 때문.
+ *
+ * 매핑 안 되는 v1 code는 INTERNAL_ERROR(-32603)로 fallback. data.v1Code로 원본 보존.
+ */
+const V1_TO_V2_CODE: Readonly<Record<string, ErrorCode>> = Object.freeze({
+  // EIP-1193
+  user_cancel: ErrorCode.USER_REJECTED, // 4001 — DEVICE_USER_CANCELLED(5004)도 'user_cancel'이지만 canonical은 4001
+  unauthorized: ErrorCode.UNAUTHORIZED, // 4100
+  unsupported_method: ErrorCode.UNSUPPORTED_METHOD, // 4200
+  'pop-up_closed': ErrorCode.DISCONNECTED, // 4900
+  chain_disconnected: ErrorCode.CHAIN_DISCONNECTED, // 4901
+  // JSON-RPC 2.0
+  parse_error: ErrorCode.PARSE_ERROR, // -32700
+  invalid_request: ErrorCode.INVALID_REQUEST, // -32600
+  method_not_found: ErrorCode.METHOD_NOT_FOUND, // -32601
+  param_error: ErrorCode.INVALID_PARAMS, // -32602
+  internal_error: ErrorCode.INTERNAL_ERROR, // -32603
+  // D'CENT 5xxx
+  device_not_connected: ErrorCode.DEVICE_NOT_CONNECTED, // 5001
+  device_locked: ErrorCode.DEVICE_LOCKED, // 5002
+  device_timeout: ErrorCode.DEVICE_TIMEOUT, // 5003
+  device_fw_incompatible: ErrorCode.DEVICE_FW_INCOMPATIBLE, // 5005
+  time_out: ErrorCode.TIMEOUT, // 5006
+  protocol_version_mismatch: ErrorCode.PROTOCOL_VERSION_MISMATCH, // 5007
+})
+
+/**
+ * v1 string code를 v2 ErrorCode (number)로 역매핑한다.
+ *
+ * 매핑 안 되는 code는 `ErrorCode.INTERNAL_ERROR`로 fallback. 호출자는 원본 v1 string을
+ * `ProviderError.data.v1Code`에 보관해 호환 정보를 잃지 않도록 함.
+ *
+ * @param v1Code v1 string code (예: 'method_not_found', 'time_out', 'user_cancel')
+ * @returns 대응되는 ErrorCode (number). 매핑 없으면 INTERNAL_ERROR(-32603).
+ */
+export function v1CodeToErrorCode (v1Code: string | undefined | null): ErrorCode {
+  if (typeof v1Code !== 'string') return ErrorCode.INTERNAL_ERROR
+  return V1_TO_V2_CODE[v1Code] ?? ErrorCode.INTERNAL_ERROR
+}
+
+/**
  * ProviderError 또는 일반 Error를 v1 호환 V1Response(failure 형태)로 변환한다.
  *
  * - ProviderError → 매핑 테이블 lookup → 해당 string code, fallback 'internal_error'

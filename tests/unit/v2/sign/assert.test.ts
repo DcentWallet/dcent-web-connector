@@ -8,6 +8,7 @@
 
 import { _assertV1Success } from '../../../../src/sign/assert'
 import { ProviderError } from '../../../../src/error/ProviderError'
+import { ErrorCode } from '../../../../src/error/ErrorCode'
 import type { V1Response } from '../../../../src/sign/types'
 
 describe('_assertV1Success', () => {
@@ -20,7 +21,7 @@ describe('_assertV1Success', () => {
     expect(result).toBe(resp)
   })
 
-  test('T-U-ASSERT-02: failure — throw ProviderError', () => {
+  test('T-U-ASSERT-02: failure — throw ProviderError + v1Code → ErrorCode 역매핑', () => {
     const resp: V1Response = {
       header: { version: '1.0', status: 'failure' },
       body: {
@@ -33,6 +34,43 @@ describe('_assertV1Success', () => {
       _assertV1Success(resp)
     } catch (e) {
       expect((e as Error).message).toMatch(/timed out/)
+      // v1Code 'time_out' → ErrorCode.TIMEOUT(5006). 원본 v1 string은 data.v1Code에 보관.
+      expect((e as ProviderError).code).toBe(ErrorCode.TIMEOUT)
+      expect((e as ProviderError).data).toEqual({ v1Code: 'time_out' })
+    }
+  })
+
+  test('T-U-ASSERT-02b: failure with method_not_found → ProviderError.code === METHOD_NOT_FOUND', () => {
+    const resp: V1Response = {
+      header: { version: '1.0', status: 'failure' },
+      body: {
+        command: 'getAddress',
+        error: { code: 'method_not_found', message: 'unknown method' },
+      },
+    }
+    try {
+      _assertV1Success(resp)
+      throw new Error('expected throw')
+    } catch (e) {
+      expect((e as ProviderError).code).toBe(ErrorCode.METHOD_NOT_FOUND)
+      expect((e as ProviderError).data).toEqual({ v1Code: 'method_not_found' })
+    }
+  })
+
+  test('T-U-ASSERT-02c: failure with 매핑 안 되는 code → INTERNAL_ERROR fallback', () => {
+    const resp: V1Response = {
+      header: { version: '1.0', status: 'failure' },
+      body: {
+        command: 'getAddress',
+        error: { code: 'totally_unknown_code', message: 'mystery' },
+      },
+    }
+    try {
+      _assertV1Success(resp)
+      throw new Error('expected throw')
+    } catch (e) {
+      expect((e as ProviderError).code).toBe(ErrorCode.INTERNAL_ERROR)
+      expect((e as ProviderError).data).toEqual({ v1Code: 'totally_unknown_code' })
     }
   })
 

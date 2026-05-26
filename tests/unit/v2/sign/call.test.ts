@@ -210,7 +210,7 @@ describe('_call — mutation 격리 (T-MUT-RESP)', () => {
 })
 
 describe('_call — envelope.error 분기', () => {
-  test('envelope.error가 채워진 경우 → providerErrorToV1로 매핑된 V1Response 반환', async () => {
+  test('envelope.error code 보존 — TIMEOUT(5006) → time_out (JSON-RPC/EIP-1193 표준 의미 보존)', async () => {
     const { transport } = ensureSingleton()
     jest.spyOn(transport, 'send').mockResolvedValue({
       id: 'req-env-err',
@@ -219,9 +219,42 @@ describe('_call — envelope.error 분기', () => {
 
     const resp: V1Response = await _call({ method: 'info' })
     expect(resp.header.status).toBe('failure')
-    // envelope.error는 generic Error 경로로 fallback → 'internal_error'
-    // (ProviderError-equivalent로 매핑하려면 별도 매퍼 필요 — 현 구현은 fallback)
-    expect(resp.body.error?.code).toBe('internal_error')
+    expect(resp.body.error?.code).toBe('time_out')
     expect(resp.body.error?.message).toBe('envelope timeout')
+  })
+
+  test('envelope.error code 보존 — METHOD_NOT_FOUND(-32601) → method_not_found', async () => {
+    const { transport } = ensureSingleton()
+    jest.spyOn(transport, 'send').mockResolvedValue({
+      id: 'req-env-err-2',
+      error: { code: -32601, message: 'unknown method' },
+    })
+
+    const resp: V1Response = await _call({ method: 'info' })
+    expect(resp.body.error?.code).toBe('method_not_found')
+    expect(resp.body.error?.message).toBe('unknown method')
+  })
+
+  test('envelope.error code 보존 — INVALID_PARAMS(-32602) → param_error', async () => {
+    const { transport } = ensureSingleton()
+    jest.spyOn(transport, 'send').mockResolvedValue({
+      id: 'req-env-err-3',
+      error: { code: -32602, message: 'bad params' },
+    })
+
+    const resp: V1Response = await _call({ method: 'info' })
+    expect(resp.body.error?.code).toBe('param_error')
+  })
+
+  test('envelope.error 매핑 안 되는 code → internal_error fallback', async () => {
+    const { transport } = ensureSingleton()
+    jest.spyOn(transport, 'send').mockResolvedValue({
+      id: 'req-env-err-4',
+      error: { code: 99999, message: 'unknown code' },
+    })
+
+    const resp: V1Response = await _call({ method: 'info' })
+    expect(resp.body.error?.code).toBe('internal_error')
+    expect(resp.body.error?.message).toBe('unknown code')
   })
 })

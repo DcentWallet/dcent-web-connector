@@ -456,6 +456,12 @@
     "defaultKeyPath": "m/44'/354'/0'/0/0"
   },
   {
+    "chainId": "polkadot:9eb76c5184c4ab8679d2d5d819fdf90b/slip44:810",
+    "family": "polkadot",
+    "displayName": "Astar",
+    "defaultKeyPath": "m/44'/810'/0'/0/0"
+  },
+  {
     "chainId": "cosmos:cosmoshub-4/slip44:118",
     "family": "cosmos",
     "displayName": "Cosmos",

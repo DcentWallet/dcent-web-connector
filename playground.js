@@ -232,8 +232,15 @@
             {
               kind: 'method',
               id: 'signMessage:dot:raw',
-              label: 'signMessage (raw)',
+              label: 'signMessage (raw) — Polkadot',
               chainId: 'polkadot:91b171bb158e2d3848fa23a9f1c25182/slip44:354',
+              metaKind: 'raw',
+            },
+            {
+              kind: 'method',
+              id: 'signMessage:dot:raw:astar',
+              label: 'signMessage (raw) — Astar',
+              chainId: 'polkadot:9eb76c5184c4ab8679d2d5d819fdf90b/slip44:810',
               metaKind: 'raw',
             },
           ],
@@ -1285,17 +1292,19 @@
   }
 
   function renderSignMessageForm (methodDef) {
-    // chainId (read-only)
-    appendFormRow('chainId', 'Chain ID', 'input', {
+    // chainId — 사용자가 자유 입력 가능 (CAIP-19 pass-through). 같은 family의 chain들을 datalist로 제공.
+    var smFamily = (allChainsMap[methodDef.chainId] || {}).family
+    var smChainIdEl = appendFormRow('chainId', 'Chain ID (CAIP-19)', 'input', {
       value: methodDef.chainId,
-      readOnly: true,
+      datalist: _chainIdOptions(smFamily),
     })
 
-    // keyPath
-    appendFormRow('keyPath', 'Key Path', 'input', {
+    // keyPath — chainId 변경 시 자동으로 그 chain의 defaultKeyPath로 갱신
+    var smKeyPathEl = appendFormRow('keyPath', 'Key Path', 'input', {
       value: CHAIN_KEY_PATH[methodDef.chainId] || "m/44'/60'/0'/0/0",
       placeholder: "m/44'/60'/0'/0/0",
     })
+    _wireKeyPathSync(smChainIdEl, smKeyPathEl)
 
     // message
     appendFormRow('message', 'Message', 'textarea', {
@@ -1354,17 +1363,19 @@
 
   // ── renderSignTxEvmForm ──
   function renderSignTxEvmForm (methodDef) {
-    // chainId (read-only, 트리 선택값)
-    appendFormRow('chainId', 'Chain ID', 'input', {
+    // chainId — 트리 선택값을 default로 두고 사용자가 자유 입력 가능.
+    // EVM family의 모든 chain (Polygon/Kaia/BSC 등)을 datalist로 제공.
+    var evmChainIdEl = appendFormRow('chainId', 'Chain ID (CAIP-19)', 'input', {
       value: methodDef.chainId,
-      readOnly: true,
+      datalist: _chainIdOptions('ethereum'),
     })
 
-    // keyPath (chains.evm.json defaultKeyPath 초기값)
-    appendFormRow('keyPath', 'Key Path', 'input', {
+    // keyPath — chainId 변경 시 자동으로 그 chain의 defaultKeyPath로 갱신 (XDC=m/44'/550' 등)
+    var evmKeyPathEl = appendFormRow('keyPath', 'Key Path', 'input', {
       value: methodDef.defaultKeyPath || "m/44'/60'/0'/0/0",
       placeholder: "m/44'/60'/0'/0/0",
     })
+    _wireKeyPathSync(evmChainIdEl, evmKeyPathEl)
 
     // transaction (JSON textarea)
     var txInput = appendFormRow('transaction', 'Transaction (JSON)', 'textarea', {
@@ -1430,17 +1441,19 @@
   // ── renderSignTxNonEvmForm (m06-01-03) ──
   // 비-EVM family 공용 폼: chainId(read-only) + keyPath + transaction(JSON) + preset selector
   function renderSignTxNonEvmForm (methodDef) {
-    // chainId (read-only)
-    appendFormRow('chainId', 'Chain ID', 'input', {
+    // chainId — 트리 선택값을 default로 두고 사용자가 자유 입력 가능.
+    // 같은 family의 chain (예: Polkadot family의 Polkadot/Astar 등)을 datalist로 제공.
+    var nevmChainIdEl = appendFormRow('chainId', 'Chain ID (CAIP-19)', 'input', {
       value: methodDef.chainId,
-      readOnly: true,
+      datalist: _chainIdOptions(methodDef.family),
     })
 
-    // keyPath (chains.json defaultKeyPath 초기값)
-    appendFormRow('keyPath', 'Key Path', 'input', {
+    // keyPath — chainId 변경 시 자동으로 그 chain의 defaultKeyPath로 갱신 (Astar=m/44'/810' 등)
+    var nevmKeyPathEl = appendFormRow('keyPath', 'Key Path', 'input', {
       value: methodDef.defaultKeyPath || CHAIN_KEY_PATH[methodDef.chainId] || "m/44'/60'/0'/0/0",
       placeholder: "m/44'/60'/0'/0/0",
     })
+    _wireKeyPathSync(nevmChainIdEl, nevmKeyPathEl)
 
     // transaction (JSON textarea)
     var txInput = appendFormRow('transaction', 'Transaction (JSON)', 'textarea', {
@@ -1526,8 +1539,54 @@
     if (opts.readOnly) input.readOnly = true
     row.appendChild(label)
     row.appendChild(input)
+    // datalist: 자동완성 옵션. 사용자는 항목 클릭 또는 직접 타이핑 모두 가능.
+    // option.value = chainId (선택 시 input에 들어가는 값).
+    // textContent + label 둘 다 두면 브라우저 호환성 ↑ (Chrome/Firefox는 label, 일부는 textContent 우선).
+    if (opts.datalist && opts.datalist.length > 0) {
+      var datalist = document.createElement('datalist')
+      datalist.id = 'datalist-' + id
+      opts.datalist.forEach(function (item) {
+        var opt = document.createElement('option')
+        opt.value = item.value
+        if (item.label) {
+          opt.setAttribute('label', item.label)
+          opt.textContent = item.label
+        }
+        datalist.appendChild(opt)
+      })
+      input.setAttribute('list', datalist.id)
+      row.appendChild(datalist)
+    }
     formFields.appendChild(row)
     return input
+  }
+
+  // ── chainId datalist 옵션 빌더 ──
+  // family가 지정되면 같은 family의 chain들만, 없으면 전체 allChainsMap을 옵션으로 제공.
+  // 사용자가 직접 chainId를 타이핑하거나 dropdown에서 선택할 수 있다.
+  function _chainIdOptions (family) {
+    var options = []
+    if (!allChainsMap) return options
+    Object.keys(allChainsMap).forEach(function (cid) {
+      var entry = allChainsMap[cid]
+      if (!entry) return
+      if (family && entry.family !== family) return
+      options.push({ value: cid, label: entry.displayName })
+    })
+    return options
+  }
+
+  // chainId input의 변경(타이핑/datalist 선택)을 keyPath input의 defaultKeyPath로 동기화.
+  // 단순 정책: chainId가 allChainsMap에 있으면 그 defaultKeyPath로 덮어쓴다.
+  // 사용자가 keyPath를 직접 수정한 경우도 덮어씌워질 수 있으나, renderAccountForm과 동일한 단순 UX.
+  function _wireKeyPathSync (chainIdInput, keyPathInput) {
+    if (!chainIdInput || !keyPathInput) return
+    chainIdInput.addEventListener('input', function () {
+      var entry = allChainsMap[chainIdInput.value]
+      if (entry && entry.defaultKeyPath) {
+        keyPathInput.value = entry.defaultKeyPath
+      }
+    })
   }
 
   // ── Connect / Disconnect ──

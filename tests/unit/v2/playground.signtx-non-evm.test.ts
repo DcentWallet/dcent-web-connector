@@ -628,6 +628,181 @@ describe('_substituteAlgorandSender: placeholder → wallet address', () => {
 })
 
 // ─────────────────────────────────────────────────────────────────────────────
+// T-U-NEVM-XTZ-SUB-*: _substituteTezosSource — Tezos source 필드 치환.
+// taquito {kind:'transaction', source, destination, ...} 의 source 만 치환,
+// destination + 다른 필드 보존.
+// ─────────────────────────────────────────────────────────────────────────────
+describe('_substituteTezosSource: placeholder → wallet tz1 address', () => {
+  const WALLET = 'tz1Wallet11111111111111111111111111111'
+  const PLACEHOLDER = 'tz1burnburnburnburnburnburnburjAYjjX'
+  const DEST = 'tz1Destination22222222222222222222222'
+
+  function subXtz (txObj: unknown, address: string): any {
+    const api = (window as any)._playgroundTestAPI
+    return api._substituteTezosSource(txObj, address)
+  }
+
+  it('T-U-NEVM-XTZ-SUB-01: Tezos 표준 — source 치환 + destination/fee/counter 등 보존', () => {
+    const tx = {
+      kind: 'transaction',
+      source: PLACEHOLDER,
+      fee: '1420',
+      counter: '1',
+      gasLimit: '10307',
+      storageLimit: '257',
+      amount: '1000000',
+      destination: DEST,
+    }
+    const out = subXtz(tx, WALLET)
+    expect(out.source).toBe(WALLET)
+    expect(out.destination).toBe(DEST) // 보존
+    expect(out.kind).toBe('transaction')
+    expect(out.fee).toBe('1420')
+    expect(out.counter).toBe('1')
+  })
+
+  it('T-U-NEVM-XTZ-SUB-02: wm-internal {sender, ...} shape → sender 치환', () => {
+    const tx = { kind: 'transaction', sender: PLACEHOLDER, destination: DEST, amount: '1000000' }
+    const out = subXtz(tx, WALLET)
+    expect(out.sender).toBe(WALLET)
+    expect(out.destination).toBe(DEST)
+  })
+
+  it('T-U-NEVM-XTZ-SUB-03: string payload (forged hex) → no-op (opaque)', () => {
+    const forged = 'a8b0c1d2e3f4a5b6...'
+    expect(subXtz(forged, WALLET)).toBe(forged)
+  })
+
+  it('T-U-NEVM-XTZ-SUB-04: 원본 mutation 금지 (deep clone)', () => {
+    const tx = { kind: 'transaction', source: PLACEHOLDER, destination: DEST }
+    const original = tx.source
+    const out = subXtz(tx, WALLET)
+    expect(out.source).toBe(WALLET)
+    expect(tx.source).toBe(original)
+    expect(out).not.toBe(tx)
+  })
+
+  it('T-U-NEVM-XTZ-SUB-05: dispatcher가 tezos family → Tezos 로직 호출', () => {
+    const tx = { kind: 'transaction', source: PLACEHOLDER, destination: DEST }
+    const api = (window as any)._playgroundTestAPI
+    const out = api._substituteSenderByFamily(tx, 'tezos', WALLET)
+    expect(out.source).toBe(WALLET)
+    expect(out.destination).toBe(DEST)
+  })
+})
+
+// ─────────────────────────────────────────────────────────────────────────────
+// T-U-NEVM-HBAR-SUB-*: _substituteHederaSender — Hedera CryptoTransfer 의
+// transfers[amount<0] entry 의 accountId 만 치환 (sender 측). amount>0 entry (recipient) 보존.
+// 다중 sender/recipient 모두 지원.
+// ─────────────────────────────────────────────────────────────────────────────
+describe('_substituteHederaSender: placeholder → wallet 0.0.X', () => {
+  const WALLET = '0.0.123456'
+  const PLACEHOLDER_SENDER = '0.0.2'
+  const RECIPIENT_A = '0.0.3'
+  const RECIPIENT_B = '0.0.4'
+
+  function subHbar (txObj: unknown, address: string): any {
+    const api = (window as any)._playgroundTestAPI
+    return api._substituteHederaSender(txObj, address)
+  }
+
+  it('T-U-NEVM-HBAR-SUB-01: CryptoTransfer — amount<0 entry 의 accountId 만 치환, amount>0 보존', () => {
+    const tx = {
+      type: 'CryptoTransfer',
+      transfers: [
+        { accountId: PLACEHOLDER_SENDER, amount: -100000000 },
+        { accountId: RECIPIENT_A, amount: 100000000 },
+      ],
+      memo: '',
+      maxTransactionFee: 100000000,
+      transactionValidDuration: 120,
+    }
+    const out = subHbar(tx, WALLET)
+    expect(out.transfers[0].accountId).toBe(WALLET) // sender 치환
+    expect(out.transfers[0].amount).toBe(-100000000) // amount 보존
+    expect(out.transfers[1].accountId).toBe(RECIPIENT_A) // recipient 보존
+    expect(out.maxTransactionFee).toBe(100000000) // 다른 필드 보존
+  })
+
+  it('T-U-NEVM-HBAR-SUB-02: 다중 recipient (amount>0 가 여러 entry) — recipient 모두 보존', () => {
+    const tx = {
+      type: 'CryptoTransfer',
+      transfers: [
+        { accountId: PLACEHOLDER_SENDER, amount: -100000000 },
+        { accountId: RECIPIENT_A, amount: 60000000 },
+        { accountId: RECIPIENT_B, amount: 40000000 },
+      ],
+    }
+    const out = subHbar(tx, WALLET)
+    expect(out.transfers[0].accountId).toBe(WALLET)
+    expect(out.transfers[1].accountId).toBe(RECIPIENT_A)
+    expect(out.transfers[2].accountId).toBe(RECIPIENT_B)
+  })
+
+  it('T-U-NEVM-HBAR-SUB-03: amount 가 string 인 경우도 음수 판별 정상', () => {
+    const tx = {
+      type: 'CryptoTransfer',
+      transfers: [
+        { accountId: PLACEHOLDER_SENDER, amount: '-100000000' },
+        { accountId: RECIPIENT_A, amount: '100000000' },
+      ],
+    }
+    const out = subHbar(tx, WALLET)
+    expect(out.transfers[0].accountId).toBe(WALLET)
+    expect(out.transfers[1].accountId).toBe(RECIPIENT_A)
+  })
+
+  it('T-U-NEVM-HBAR-SUB-04: amount=0 / NaN entry 는 치환 안 함 (보수적)', () => {
+    const tx = {
+      type: 'CryptoTransfer',
+      transfers: [
+        { accountId: '0.0.999', amount: 0 },
+        { accountId: '0.0.998', amount: 'NaN' },
+      ],
+    }
+    const out = subHbar(tx, WALLET)
+    expect(out.transfers[0].accountId).toBe('0.0.999')
+    expect(out.transfers[1].accountId).toBe('0.0.998')
+  })
+
+  it('T-U-NEVM-HBAR-SUB-05: wm-internal {sender, ...} shape → sender 치환', () => {
+    const tx = { type: 'CryptoTransfer', sender: PLACEHOLDER_SENDER, transfers: [] }
+    const out = subHbar(tx, WALLET)
+    expect(out.sender).toBe(WALLET)
+  })
+
+  it('T-U-NEVM-HBAR-SUB-06: 원본 mutation 금지 (deep clone)', () => {
+    const tx = {
+      type: 'CryptoTransfer',
+      transfers: [
+        { accountId: PLACEHOLDER_SENDER, amount: -100000000 },
+        { accountId: RECIPIENT_A, amount: 100000000 },
+      ],
+    }
+    const originalSender = tx.transfers[0].accountId
+    const out = subHbar(tx, WALLET)
+    expect(out.transfers[0].accountId).toBe(WALLET)
+    expect(tx.transfers[0].accountId).toBe(originalSender)
+    expect(out).not.toBe(tx)
+  })
+
+  it('T-U-NEVM-HBAR-SUB-07: dispatcher가 hedera family → Hedera 로직 호출', () => {
+    const tx = {
+      type: 'CryptoTransfer',
+      transfers: [
+        { accountId: PLACEHOLDER_SENDER, amount: -100000000 },
+        { accountId: RECIPIENT_A, amount: 100000000 },
+      ],
+    }
+    const api = (window as any)._playgroundTestAPI
+    const out = api._substituteSenderByFamily(tx, 'hedera', WALLET)
+    expect(out.transfers[0].accountId).toBe(WALLET)
+    expect(out.transfers[1].accountId).toBe(RECIPIENT_A)
+  })
+})
+
+// ─────────────────────────────────────────────────────────────────────────────
 // T-U-NEVM-06: Solana multi-format presets — Case 1 (base58 serialized) + Case 2 (plain
 // JSON with 4 data variants) + Case 3 (wm-internal TransactionCommon) 모두 존재 + shape 가드.
 // connector 는 chain-agnostic opaque pass-through이므로 connector 자체의 변환 책임은 없지만,

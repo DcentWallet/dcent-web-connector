@@ -117,12 +117,78 @@
     return clone
   }
 
-  // family-aware sender substitution dispatcher. 현재 지원: solana / algorand.
-  // 다른 family는 향후 점진 추가 (XRP `Account`, Tron `owner_address`, Conflux `from` 등).
-  // 미지원 family는 원본 그대로 반환 (no-op).
+  // ── Tezos placeholder substitution helper ──
+  // taquito 표준 tx({kind:'transaction', source, fee, counter, gasLimit, storageLimit, amount, destination})
+  // 의 `source` 필드가 sender. dApp이 placeholder("tz1burnburn..." 또는 wm-internal `sender`)를
+  // 보내면 device 서명 후 taquito가 reject — counter / reveal / signer pubkey 매칭 실패.
+  //
+  // 적용 대상: txObj.source (Tezos 표준), txObj.sender (wm-internal)
+  // 보존: txObj.destination, fee, counter, gasLimit, storageLimit, amount, kind 등
+  function _substituteTezosSource (txObj, walletAddress) {
+    if (typeof txObj === 'string') return txObj // opaque (forged hex bytes 등)
+    if (!txObj || typeof txObj !== 'object') return txObj
+    if (!walletAddress || typeof walletAddress !== 'string') return txObj
+    var clone
+    try {
+      clone = JSON.parse(JSON.stringify(txObj))
+    } catch (e) {
+      return txObj
+    }
+    if (Object.prototype.hasOwnProperty.call(clone, 'source')) {
+      clone.source = walletAddress
+    }
+    if (Object.prototype.hasOwnProperty.call(clone, 'sender')) {
+      clone.sender = walletAddress
+    }
+    return clone
+  }
+
+  // ── Hedera placeholder substitution helper ──
+  // Hedera TransferTransaction({type:'CryptoTransfer', transfers:[{accountId, amount}, ...]})의
+  // transfers 배열에서 **amount<0 인 entry가 sender** (HBAR 출금). dApp이 placeholder("0.0.2"
+  // 등)를 보내면 device 서명 후 Hedera SDK가 reject — signer publicKey와 sender accountId 매칭 실패.
+  //
+  // 적용 대상: transfers[].accountId where amount < 0 (sender 측), txObj.sender (wm-internal)
+  // 보존: amount > 0 entry (recipient), memo, maxTransactionFee 등
+  //
+  // 권고 (별도 작업): Hedera는 pubkey raw hex → DER format 변환이 추가로 필요. 본 helper는
+  // accountId 치환만 처리하며 pubkey format 변환은 dApp 또는 wm 단에서 별도 처리.
+  function _substituteHederaSender (txObj, walletAddress) {
+    if (typeof txObj === 'string') return txObj
+    if (!txObj || typeof txObj !== 'object') return txObj
+    if (!walletAddress || typeof walletAddress !== 'string') return txObj
+    var clone
+    try {
+      clone = JSON.parse(JSON.stringify(txObj))
+    } catch (e) {
+      return txObj
+    }
+    if (Array.isArray(clone.transfers)) {
+      clone.transfers.forEach(function (t) {
+        if (!t || typeof t !== 'object') return
+        // amount 가 number / string 모두 가능. 음수면 sender 출금 entry.
+        var amountNum = typeof t.amount === 'number'
+          ? t.amount
+          : typeof t.amount === 'string' ? Number(t.amount) : NaN
+        if (Number.isFinite(amountNum) && amountNum < 0) {
+          t.accountId = walletAddress
+        }
+      })
+    }
+    if (Object.prototype.hasOwnProperty.call(clone, 'sender')) {
+      clone.sender = walletAddress
+    }
+    return clone
+  }
+
+  // family-aware sender substitution dispatcher. 현재 지원: solana / algorand / tezos / hedera.
+  // 다른 family는 향후 점진 추가 (XRP `Account`, Tron `owner_address`, Conflux `from`, Stellar
+  // `source` 등). 미지원 family는 원본 그대로 반환 (no-op).
   function _substituteSenderByFamily (txObj, family, walletAddress) {
     if (family === 'solana') return _substituteSolanaSigner(txObj, walletAddress)
     if (family === 'algorand') return _substituteAlgorandSender(txObj, walletAddress)
+    if (family === 'tezos') return _substituteTezosSource(txObj, walletAddress)
+    if (family === 'hedera') return _substituteHederaSender(txObj, walletAddress)
     return txObj
   }
 
@@ -1535,7 +1601,7 @@
     // 이 버튼은 device 에서 실제 wallet 주소를 fetch 한 뒤 textarea JSON 의 placeholder 를
     // 치환한다. family-aware dispatch — _substituteSenderByFamily 가 처리.
     // 폼 맨 위에 배치 — 사용자가 chainId/keyPath 채운 직후 한 번 클릭하면 끝.
-    var resolverFamilies = { solana: true, algorand: true }
+    var resolverFamilies = { solana: true, algorand: true, tezos: true, hedera: true }
     if (resolverFamilies[methodDef.family]) {
       var resolveRow = document.createElement('div')
       resolveRow.className = 'form-row'
@@ -1549,10 +1615,13 @@
       resolveHint.id = 'resolve-sender-hint'
       resolveHint.style.cssText = 'font-size:10px;color:#888;margin-left:8px;'
       // family 별 안내 문구
-      var senderFieldLabel = methodDef.family === 'solana'
-        ? 'placeholder feePayer/signer 를 wallet pubkey 로 치환'
-        : 'placeholder from(sender) 를 wallet address 로 치환'
-      resolveHint.textContent = senderFieldLabel
+      var senderFieldLabelMap = {
+        solana: 'placeholder feePayer/signer 를 wallet pubkey 로 치환',
+        algorand: 'placeholder from(sender) 를 wallet address 로 치환',
+        tezos: 'placeholder source 를 wallet tz1 주소로 치환',
+        hedera: 'transfers[amount<0] accountId 를 wallet 0.0.X 로 치환',
+      }
+      resolveHint.textContent = senderFieldLabelMap[methodDef.family] || 'sender 치환'
       // family closure capture
       var family = methodDef.family
       resolveBtn.addEventListener('click', function () {
@@ -2701,6 +2770,8 @@
     // placeholder substitution helpers — unit testable
     _substituteSolanaSigner: _substituteSolanaSigner,
     _substituteAlgorandSender: _substituteAlgorandSender,
+    _substituteTezosSource: _substituteTezosSource,
+    _substituteHederaSender: _substituteHederaSender,
     _substituteSenderByFamily: _substituteSenderByFamily,
     onConnect: onConnect,
     getLogEntries: function () { return state.logs },

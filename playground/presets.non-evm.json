@@ -29,12 +29,12 @@
   },
   {
     "id": "sol-transfer",
-    "label": "Solana SOL transfer",
+    "label": "Solana SOL transfer (plain JSON, data: object)",
     "family": "solana",
     "applicableChainIds": [
       "solana:5eykt4UsFv8P8NJdTREpY1vzqKqZKvdp/slip44:501"
     ],
-    "note": "Versioned Transaction (version: 0) format. Edit to/lamports before send.",
+    "note": "Case 2a — plain JSON instructions. SystemProgram.Transfer 의 data 를 {instruction, lamports} 객체로 표현. SystemProgram.Transfer 에만 적용.",
     "sourceUrl": "https://solana-labs.github.io/solana-web3.js/classes/VersionedTransaction.html",
     "transaction": {
       "version": 0,
@@ -60,6 +60,110 @@
           }
         }
       ],
+      "recentBlockhash": "11111111111111111111111111111111"
+    }
+  },
+  {
+    "id": "sol-transfer-base58-serialized",
+    "label": "Solana SOL transfer (base58 serialized — recommended)",
+    "family": "solana",
+    "applicableChainIds": [
+      "solana:5eykt4UsFv8P8NJdTREpY1vzqKqZKvdp/slip44:501"
+    ],
+    "note": "Case 1 — 가장 안정적. dApp 이 @solana/web3.js 로 Transaction 또는 VersionedTransaction 을 만들고 bs58.encode(tx.serialize({requireAllSignatures: false, verifySignatures: false})) 로 직렬화한 base58 문자열. 모든 instruction type 자동 지원.",
+    "sourceUrl": "https://solana-labs.github.io/solana-web3.js/classes/Transaction.html#serialize",
+    "transaction": "4uQeVj5tqViQh7yWWGStvkEG1Zmhx6uasJtWCJziofMMcJzwspspuFyB2WgNHBC4ZBxk5fdtoZUJDrEMy7BUSqi2tFFwhxYpZbJxHB6xRq6FYJgnwQGQS6FShXqYpaSmMUDe2GLrL2cFwczzGgyVdpVbZpgPPpcUFx"
+  },
+  {
+    "id": "sol-transfer-data-hex",
+    "label": "Solana SOL transfer (plain JSON, data: 0x hex)",
+    "family": "solana",
+    "applicableChainIds": [
+      "solana:5eykt4UsFv8P8NJdTREpY1vzqKqZKvdp/slip44:501"
+    ],
+    "note": "Case 2b — plain JSON 의 instruction.data 를 0x-prefixed hex string 으로 표현. SystemProgram.Transfer 의 raw bytes(12 bytes: 4-byte instruction tag + 8-byte little-endian lamports). Token / ATA / Memo 등 SystemProgram.Transfer 외의 모든 instruction 에 권장.",
+    "sourceUrl": "https://solana.com/docs/core/programs",
+    "transaction": {
+      "version": 0,
+      "feePayer": "11111111111111111111111111111111",
+      "instructions": [
+        {
+          "programId": "11111111111111111111111111111111",
+          "keys": [
+            { "pubkey": "11111111111111111111111111111111", "isSigner": true, "isWritable": true },
+            { "pubkey": "11111111111111111111111111111112", "isSigner": false, "isWritable": true }
+          ],
+          "data": "0x0200000040420f0000000000"
+        }
+      ],
+      "recentBlockhash": "11111111111111111111111111111111"
+    }
+  },
+  {
+    "id": "sol-transfer-data-base58",
+    "label": "Solana SOL transfer (plain JSON, data: base58 string)",
+    "family": "solana",
+    "applicableChainIds": [
+      "solana:5eykt4UsFv8P8NJdTREpY1vzqKqZKvdp/slip44:501"
+    ],
+    "note": "Case 2c — plain JSON 의 instruction.data 를 prefix 없는 base58 문자열로 표현. @solana/web3.js bs58.encode 결과와 동일.",
+    "sourceUrl": "https://github.com/cryptocoinjs/bs58",
+    "transaction": {
+      "version": 0,
+      "feePayer": "11111111111111111111111111111111",
+      "instructions": [
+        {
+          "programId": "11111111111111111111111111111111",
+          "keys": [
+            { "pubkey": "11111111111111111111111111111111", "isSigner": true, "isWritable": true },
+            { "pubkey": "11111111111111111111111111111112", "isSigner": false, "isWritable": true }
+          ],
+          "data": "3Bxs411Dtc7pkFQj"
+        }
+      ],
+      "recentBlockhash": "11111111111111111111111111111111"
+    }
+  },
+  {
+    "id": "sol-transfer-data-bytes",
+    "label": "Solana SOL transfer (plain JSON, data: number array)",
+    "family": "solana",
+    "applicableChainIds": [
+      "solana:5eykt4UsFv8P8NJdTREpY1vzqKqZKvdp/slip44:501"
+    ],
+    "note": "Case 2d — plain JSON 의 instruction.data 를 number array (Uint8Array JSON-serializable form) 로 표현. dApp 측에서 Array.from(uint8Array) 결과 그대로 전달.",
+    "sourceUrl": "https://developer.mozilla.org/en-US/docs/Web/JavaScript/Reference/Global_Objects/Uint8Array",
+    "transaction": {
+      "version": 0,
+      "feePayer": "11111111111111111111111111111111",
+      "instructions": [
+        {
+          "programId": "11111111111111111111111111111111",
+          "keys": [
+            { "pubkey": "11111111111111111111111111111111", "isSigner": true, "isWritable": true },
+            { "pubkey": "11111111111111111111111111111112", "isSigner": false, "isWritable": true }
+          ],
+          "data": [2, 0, 0, 0, 64, 66, 15, 0, 0, 0, 0, 0]
+        }
+      ],
+      "recentBlockhash": "11111111111111111111111111111111"
+    }
+  },
+  {
+    "id": "sol-transfer-internal",
+    "label": "Solana SOL transfer (wm-internal TransactionCommon)",
+    "family": "solana",
+    "applicableChainIds": [
+      "solana:5eykt4UsFv8P8NJdTREpY1vzqKqZKvdp/slip44:501"
+    ],
+    "note": "Case 3 — wm-internal TransactionCommon shape ({type, sender, recipient, amount}). 주로 webview/RN 흐름에서 사용 (RN의 wallet-models 가 미리 만든 객체를 그대로 전달). SDK 에서는 거의 안 씀 — 호환성 용 pass-through.",
+    "sourceUrl": "https://github.com/IotrustGitHub/dcent-wallet-models/blob/main/src/common/types/transaction.ts",
+    "transaction": {
+      "type": "transfer",
+      "family": "solana",
+      "sender": "11111111111111111111111111111111",
+      "recipient": "11111111111111111111111111111112",
+      "amount": "1000000",
       "recentBlockhash": "11111111111111111111111111111111"
     }
   },

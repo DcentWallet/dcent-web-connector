@@ -329,7 +329,8 @@ it('T-U-NEVM-04: presets.non-evm.json — wm 등록 family preset 모두 valid J
   presets = JSON.parse(raw)
   expect(Array.isArray(presets)).toBe(true)
   // m09-01-02: tron은 wm 미등록 → 본 PR scope에서 제외 (m09-02에서 추가)
-  expect(presets.length).toBe(5)
+  // Solana multi-format variants 추가 이후 family 별 preset 수가 1개 이상으로 가변 — family 커버리지만 검증.
+  expect(presets.length).toBeGreaterThanOrEqual(5)
 
   // 각 preset의 필수 필드 확인
   const requiredFields = ['id', 'label', 'family', 'applicableChainIds', 'transaction']
@@ -349,8 +350,17 @@ it('T-U-NEVM-04: presets.non-evm.json — wm 등록 family preset 모두 valid J
     p.applicableChainIds.forEach((c: string) => {
       expect(c).toMatch(CAIP19_RE)
     })
-    expect(typeof p.transaction).toBe('object')
+    // Solana Case 1 (base58 serialized full transaction) 은 transaction 이 string —
+    // 나머지 family / Solana Case 2/3 은 object. connector 는 chain-agnostic opaque pass-through.
+    expect(['object', 'string']).toContain(typeof p.transaction)
+    if (typeof p.transaction === 'object') {
+      expect(p.transaction).not.toBeNull()
+    }
   })
+
+  // preset id 는 전역 unique
+  const ids = presets.map((p: any) => p.id)
+  expect(new Set(ids).size).toBe(ids.length)
 
   // family 중복 없이 5개 모두 존재
   const families = presets.map((p: any) => p.family)
@@ -360,6 +370,335 @@ it('T-U-NEVM-04: presets.non-evm.json — wm 등록 family preset 모두 valid J
 
   // tron은 제외되었어야 함 (m09-02 의존)
   expect(families).not.toContain('tron')
+})
+
+// ─────────────────────────────────────────────────────────────────────────────
+// T-U-NEVM-SOL-SUB-01~06: _substituteSolanaSigner helper — placeholder feePayer/signer
+// pubkey 를 wallet address 로 치환. programId / non-signer 키 / recipient 는 보존.
+// dApp 이 placeholder 만 보낼 때 device 서명 후 @solana/web3.js addSignature reject 되는
+// 버그를 playground 단에서 미리 차단.
+// ─────────────────────────────────────────────────────────────────────────────
+describe('_substituteSolanaSigner: placeholder → wallet address', () => {
+  const WALLET = 'GzanoXHkVjQ7tQbXgycJEPpYTfeqXMRTQiH8h3kt7uZh'
+  const PROG = '11111111111111111111111111111111'
+  const PLACEHOLDER_SENDER = '11111111111111111111111111111111'
+  const RECIPIENT = '11111111111111111111111111111112'
+
+  function sub (txObj: unknown, address: string): any {
+    const api = (window as any)._playgroundTestAPI
+    return api._substituteSolanaSigner(txObj, address)
+  }
+
+  it('T-U-NEVM-SOL-SUB-01: Case 2 plain JSON — feePayer + isSigner=true keys → wallet 로 치환', () => {
+    const tx = {
+      version: 0,
+      feePayer: PLACEHOLDER_SENDER,
+      instructions: [
+        {
+          programId: PROG,
+          keys: [
+            { pubkey: PLACEHOLDER_SENDER, isSigner: true, isWritable: true },
+            { pubkey: RECIPIENT, isSigner: false, isWritable: true },
+          ],
+          data: { instruction: 2, lamports: 1000000 },
+        },
+      ],
+      recentBlockhash: '11111111111111111111111111111111',
+    }
+    const out = sub(tx, WALLET)
+    expect(out.feePayer).toBe(WALLET)
+    expect(out.instructions[0].keys[0].pubkey).toBe(WALLET)
+    expect(out.instructions[0].keys[0].isSigner).toBe(true)
+    // recipient (non-signer) 보존
+    expect(out.instructions[0].keys[1].pubkey).toBe(RECIPIENT)
+    expect(out.instructions[0].keys[1].isSigner).toBe(false)
+  })
+
+  it('T-U-NEVM-SOL-SUB-02: SystemProgram programId 는 절대 치환하지 않음', () => {
+    const tx = {
+      feePayer: PLACEHOLDER_SENDER,
+      instructions: [
+        {
+          programId: PROG, // SystemProgram address — 정상 값
+          keys: [{ pubkey: PLACEHOLDER_SENDER, isSigner: true, isWritable: true }],
+          data: '0x02',
+        },
+      ],
+      recentBlockhash: '11111111111111111111111111111111',
+    }
+    const out = sub(tx, WALLET)
+    expect(out.instructions[0].programId).toBe(PROG) // 그대로 유지
+    expect(out.feePayer).toBe(WALLET) // feePayer 만 치환
+  })
+
+  it('T-U-NEVM-SOL-SUB-03: Case 3 wm-internal TransactionCommon — sender 만 치환', () => {
+    const tx = {
+      type: 'transfer',
+      family: 'solana',
+      sender: PLACEHOLDER_SENDER,
+      recipient: RECIPIENT,
+      amount: '1000000',
+      recentBlockhash: '11111111111111111111111111111111',
+    }
+    const out = sub(tx, WALLET)
+    expect(out.sender).toBe(WALLET)
+    expect(out.recipient).toBe(RECIPIENT) // recipient 보존
+    expect(out.type).toBe('transfer')
+  })
+
+  it('T-U-NEVM-SOL-SUB-04: Case 1 base58 serialized string → no-op (opaque)', () => {
+    const base58 = '4uQeVj5tqViQh7yWWGStvkEG1Zmhx6uasJtWCJziofMM'
+    const out = sub(base58, WALLET)
+    expect(out).toBe(base58)
+  })
+
+  it('T-U-NEVM-SOL-SUB-05: 원본 객체 mutation 금지 (deep clone 반환)', () => {
+    const tx = {
+      feePayer: PLACEHOLDER_SENDER,
+      instructions: [
+        {
+          programId: PROG,
+          keys: [{ pubkey: PLACEHOLDER_SENDER, isSigner: true, isWritable: true }],
+        },
+      ],
+    }
+    const originalFeePayer = tx.feePayer
+    const originalPubkey = tx.instructions[0].keys[0].pubkey
+    const out = sub(tx, WALLET)
+    // 반환 객체는 치환됨
+    expect(out.feePayer).toBe(WALLET)
+    expect(out.instructions[0].keys[0].pubkey).toBe(WALLET)
+    // 원본은 보존
+    expect(tx.feePayer).toBe(originalFeePayer)
+    expect(tx.instructions[0].keys[0].pubkey).toBe(originalPubkey)
+    expect(out).not.toBe(tx)
+  })
+
+  it('T-U-NEVM-SOL-SUB-06: 다중 instruction + 다중 signer 모두 치환', () => {
+    const tx = {
+      feePayer: PLACEHOLDER_SENDER,
+      instructions: [
+        {
+          programId: PROG,
+          keys: [
+            { pubkey: PLACEHOLDER_SENDER, isSigner: true, isWritable: true },
+            { pubkey: RECIPIENT, isSigner: false, isWritable: true },
+          ],
+        },
+        {
+          programId: 'TokenkegQfeZyiNwAJbNbGKPFXCWuBvf9Ss623VQ5DA',
+          keys: [
+            { pubkey: PLACEHOLDER_SENDER, isSigner: true, isWritable: true },
+            { pubkey: 'someTokenAccount111111111111111111111111111', isSigner: false, isWritable: true },
+          ],
+        },
+      ],
+    }
+    const out = sub(tx, WALLET)
+    expect(out.feePayer).toBe(WALLET)
+    expect(out.instructions[0].keys[0].pubkey).toBe(WALLET)
+    expect(out.instructions[1].keys[0].pubkey).toBe(WALLET)
+    // 두 번째 instruction 의 programId (Token program) 도 보존
+    expect(out.instructions[1].programId).toBe('TokenkegQfeZyiNwAJbNbGKPFXCWuBvf9Ss623VQ5DA')
+    // non-signer 보존
+    expect(out.instructions[0].keys[1].pubkey).toBe(RECIPIENT)
+    expect(out.instructions[1].keys[1].pubkey).toBe('someTokenAccount111111111111111111111111111')
+  })
+
+  it('T-U-NEVM-SOL-SUB-07: invalid input — null / undefined / number 는 그대로 반환', () => {
+    expect(sub(null, WALLET)).toBe(null)
+    expect(sub(undefined, WALLET)).toBe(undefined)
+    expect(sub(42, WALLET)).toBe(42)
+  })
+
+  it('T-U-NEVM-SOL-SUB-08: empty wallet address → no-op (substitute 실패 시 원본 보존)', () => {
+    const tx = { feePayer: PLACEHOLDER_SENDER, instructions: [] }
+    expect(sub(tx, '')).toBe(tx)
+    expect(sub(tx, null as unknown as string)).toBe(tx)
+  })
+})
+
+// ─────────────────────────────────────────────────────────────────────────────
+// T-U-NEVM-ALGO-SUB-01~05: _substituteAlgorandSender — Algorand 표준 tx 의 from 필드
+// (sender)를 wallet address 로 치환. to (recipient) 와 기타 필드 (amount/fee/firstRound 등) 보존.
+// Solana 와 동일하게 placeholder("ALGORAND7XVFXWDX..." 등) 그대로 보낼 때 algosdk 가 reject.
+// ─────────────────────────────────────────────────────────────────────────────
+describe('_substituteAlgorandSender: placeholder → wallet address', () => {
+  const WALLET = 'GA7XBSV7XYZNAOEDXP2BIBMSDHJWY3MWYHVMSV3LQAQGSVOJV4VRWLI'
+  const PLACEHOLDER_FROM = 'ALGORAND7XVFXWDX5HGMI6TEIIIYNYXATWJDAWTOGCHKZHJV2KLYE5LZQ4'
+  const RECIPIENT = 'RECIPIENT7XVFXWDX5HGMI6TEIIIYNYXATWJDAWTOGCHKZHJV2KLYE5L'
+
+  function subAlgo (txObj: unknown, address: string): any {
+    const api = (window as any)._playgroundTestAPI
+    return api._substituteAlgorandSender(txObj, address)
+  }
+  function subByFamily (txObj: unknown, family: string, address: string): any {
+    const api = (window as any)._playgroundTestAPI
+    return api._substituteSenderByFamily(txObj, family, address)
+  }
+
+  it('T-U-NEVM-ALGO-SUB-01: Algorand 표준 tx — from 필드 치환, to/amount/fee 등 보존', () => {
+    const tx = {
+      type: 'pay',
+      from: PLACEHOLDER_FROM,
+      to: RECIPIENT,
+      amount: 1000000,
+      fee: 1000,
+      firstRound: 1,
+      lastRound: 1000,
+      genesisID: 'mainnet-v1.0',
+      genesisHash: 'wGHE2Pwdvd7S12BL5FaOP20EGYesN73ktiHc0CYz/uo=',
+    }
+    const out = subAlgo(tx, WALLET)
+    expect(out.from).toBe(WALLET)
+    expect(out.to).toBe(RECIPIENT) // recipient 보존
+    expect(out.amount).toBe(1000000)
+    expect(out.fee).toBe(1000)
+    expect(out.firstRound).toBe(1)
+    expect(out.lastRound).toBe(1000)
+    expect(out.genesisID).toBe('mainnet-v1.0')
+  })
+
+  it('T-U-NEVM-ALGO-SUB-02: wm-internal {sender, recipient, amount} shape — sender 치환', () => {
+    const tx = {
+      type: 'pay',
+      family: 'algorand',
+      sender: PLACEHOLDER_FROM,
+      recipient: RECIPIENT,
+      amount: '1000000',
+    }
+    const out = subAlgo(tx, WALLET)
+    expect(out.sender).toBe(WALLET)
+    expect(out.recipient).toBe(RECIPIENT)
+  })
+
+  it('T-U-NEVM-ALGO-SUB-03: string payload (raw bytes msgpack) → no-op (opaque)', () => {
+    const raw = 'gqRzaWfEQH9...' // base64-ish placeholder
+    const out = subAlgo(raw, WALLET)
+    expect(out).toBe(raw)
+  })
+
+  it('T-U-NEVM-ALGO-SUB-04: 원본 객체 mutation 금지 (deep clone)', () => {
+    const tx = { type: 'pay', from: PLACEHOLDER_FROM, to: RECIPIENT, amount: 1000000 }
+    const originalFrom = tx.from
+    const out = subAlgo(tx, WALLET)
+    expect(out.from).toBe(WALLET)
+    expect(tx.from).toBe(originalFrom) // 원본 보존
+    expect(out).not.toBe(tx)
+  })
+
+  it('T-U-NEVM-ALGO-SUB-05: invalid input (null / undefined / number) → 그대로 반환', () => {
+    expect(subAlgo(null, WALLET)).toBe(null)
+    expect(subAlgo(undefined, WALLET)).toBe(undefined)
+    expect(subAlgo(42, WALLET)).toBe(42)
+  })
+
+  // ── family-aware dispatcher 검증 ──
+  it('T-U-NEVM-FAMILY-SUB-01: _substituteSenderByFamily — solana family → Solana 로직 호출', () => {
+    const tx = {
+      feePayer: '11111111111111111111111111111111',
+      instructions: [
+        {
+          programId: '11111111111111111111111111111111',
+          keys: [{ pubkey: '11111111111111111111111111111111', isSigner: true, isWritable: true }],
+        },
+      ],
+    }
+    const out = subByFamily(tx, 'solana', WALLET)
+    expect(out.feePayer).toBe(WALLET)
+    expect(out.instructions[0].keys[0].pubkey).toBe(WALLET)
+    // programId 보존
+    expect(out.instructions[0].programId).toBe('11111111111111111111111111111111')
+  })
+
+  it('T-U-NEVM-FAMILY-SUB-02: _substituteSenderByFamily — algorand family → Algorand 로직 호출', () => {
+    const tx = { type: 'pay', from: PLACEHOLDER_FROM, to: RECIPIENT, amount: 1000000 }
+    const out = subByFamily(tx, 'algorand', WALLET)
+    expect(out.from).toBe(WALLET)
+    expect(out.to).toBe(RECIPIENT)
+  })
+
+  it('T-U-NEVM-FAMILY-SUB-03: _substituteSenderByFamily — 미지원 family (tron/xrp 등) → no-op', () => {
+    const tx = { Account: 'rHb9CJAWyB4rj91VRWn96DkukG4bwdtyTh', Destination: RECIPIENT }
+    const out = subByFamily(tx, 'xrp', WALLET)
+    // 미지원이므로 원본 그대로 반환
+    expect(out).toBe(tx)
+    expect(out.Account).toBe('rHb9CJAWyB4rj91VRWn96DkukG4bwdtyTh')
+  })
+})
+
+// ─────────────────────────────────────────────────────────────────────────────
+// T-U-NEVM-06: Solana multi-format presets — Case 1 (base58 serialized) + Case 2 (plain
+// JSON with 4 data variants) + Case 3 (wm-internal TransactionCommon) 모두 존재 + shape 가드.
+// connector 는 chain-agnostic opaque pass-through이므로 connector 자체의 변환 책임은 없지만,
+// playground 의 preset이 모든 입력 형태를 dApp 개발자에게 제공해야 한다.
+// ─────────────────────────────────────────────────────────────────────────────
+it('T-U-NEVM-06: Solana multi-format presets — Case 1/2a-d/3 모두 존재 + shape 가드', () => {
+  const presetsPath = path.resolve(__dirname, '../../../playground/presets.non-evm.json')
+  const presets: any[] = JSON.parse(fs.readFileSync(presetsPath, 'utf8'))
+
+  const solanaPresets = presets.filter((p) => p.family === 'solana')
+  // Case 1 + Case 2(4 variants) + Case 3 = 6 presets
+  expect(solanaPresets.length).toBeGreaterThanOrEqual(6)
+
+  const byId = Object.fromEntries(solanaPresets.map((p) => [p.id, p]))
+
+  // ── Case 1: base58 serialized full transaction ─────────────────────────────
+  expect(byId).toHaveProperty('sol-transfer-base58-serialized')
+  const case1 = byId['sol-transfer-base58-serialized']
+  expect(typeof case1.transaction).toBe('string')
+  // base58 alphabet (no 0/O/I/l)
+  expect(case1.transaction).toMatch(/^[1-9A-HJ-NP-Za-km-z]+$/)
+  expect(case1.transaction.length).toBeGreaterThan(32)
+
+  // ── Case 2a: plain JSON, data: object ({instruction, lamports}) ───────────
+  expect(byId).toHaveProperty('sol-transfer')
+  const case2a = byId['sol-transfer']
+  expect(typeof case2a.transaction).toBe('object')
+  expect(case2a.transaction.instructions).toBeDefined()
+  expect(Array.isArray(case2a.transaction.instructions)).toBe(true)
+  const c2aData = case2a.transaction.instructions[0].data
+  expect(typeof c2aData).toBe('object')
+  expect(c2aData).toHaveProperty('instruction')
+  expect(c2aData).toHaveProperty('lamports')
+
+  // ── Case 2b: plain JSON, data: 0x hex string ──────────────────────────────
+  expect(byId).toHaveProperty('sol-transfer-data-hex')
+  const case2b = byId['sol-transfer-data-hex']
+  const c2bData = case2b.transaction.instructions[0].data
+  expect(typeof c2bData).toBe('string')
+  expect(c2bData).toMatch(/^0x[0-9a-fA-F]+$/)
+
+  // ── Case 2c: plain JSON, data: base58 string (prefix 없음) ─────────────────
+  expect(byId).toHaveProperty('sol-transfer-data-base58')
+  const case2c = byId['sol-transfer-data-base58']
+  const c2cData = case2c.transaction.instructions[0].data
+  expect(typeof c2cData).toBe('string')
+  expect(c2cData).not.toMatch(/^0x/)
+  expect(c2cData).toMatch(/^[1-9A-HJ-NP-Za-km-z]+$/)
+
+  // ── Case 2d: plain JSON, data: number array (Uint8Array JSON form) ────────
+  expect(byId).toHaveProperty('sol-transfer-data-bytes')
+  const case2d = byId['sol-transfer-data-bytes']
+  const c2dData = case2d.transaction.instructions[0].data
+  expect(Array.isArray(c2dData)).toBe(true)
+  // 모든 원소가 byte (0~255) 정수
+  ;(c2dData as number[]).forEach((b) => {
+    expect(Number.isInteger(b)).toBe(true)
+    expect(b).toBeGreaterThanOrEqual(0)
+    expect(b).toBeLessThanOrEqual(255)
+  })
+
+  // ── Case 3: wm-internal TransactionCommon shape ───────────────────────────
+  expect(byId).toHaveProperty('sol-transfer-internal')
+  const case3 = byId['sol-transfer-internal']
+  expect(typeof case3.transaction).toBe('object')
+  expect(case3.transaction).toHaveProperty('type')
+  expect(case3.transaction).toHaveProperty('sender')
+  expect(case3.transaction).toHaveProperty('recipient')
+  expect(case3.transaction).toHaveProperty('amount')
+  // wm-internal shape 은 instructions 가 없음 (raw transfer fields)
+  expect(case3.transaction.instructions).toBeUndefined()
 })
 
 // ─────────────────────────────────────────────────────────────────────────────

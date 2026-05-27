@@ -38,6 +38,94 @@
 ;(function () {
   'use strict'
 
+  // ── Solana placeholder substitution helper ──
+  // dApp이 보내는 Solana transaction의 feePayer + signer pubkey가 실제 wallet 주소가 아닌
+  // placeholder("11111111111111111111111111111111" = SystemProgram address)면, @solana/web3.js의
+  // VersionedTransaction.addSignature(walletPubkey, sig)에서 "signer가 message의 signer 자리에
+  // 없다"며 reject한다.
+  //
+  // playground는 device에서 실제 wallet 주소를 fetch한 뒤 transaction 객체의 placeholder를
+  // 치환한다 — 단, SystemProgram의 programId는 그대로 두어야 한다 (SystemProgram address가
+  // 정상 값).
+  //
+  // 적용 대상 필드:
+  //   - txObj.feePayer (Case 2 plain JSON)
+  //   - txObj.instructions[*].keys[*].pubkey  ← isSigner: true 인 entry만
+  //   - txObj.sender                          ← Case 3 wm-internal TransactionCommon shape
+  //   ⚠ txObj.instructions[*].programId 는 절대 치환하지 않음 (SystemProgram address가 정상)
+  //
+  // Case 1 (base58 serialized full transaction string) 은 opaque — substitute 불가.
+  // dApp이 직접 wallet 주소로 transaction을 construct해야 한다.
+  //
+  // 반환: 새 객체 (deep clone via JSON, 원본 보존). string 또는 substitute 불가 케이스는 그대로 반환.
+  function _substituteSolanaSigner (txObj, walletAddress) {
+    if (typeof txObj === 'string') return txObj // Case 1 opaque
+    if (!txObj || typeof txObj !== 'object') return txObj
+    if (!walletAddress || typeof walletAddress !== 'string') return txObj
+    var clone
+    try {
+      clone = JSON.parse(JSON.stringify(txObj))
+    } catch (e) {
+      return txObj
+    }
+    // Case 2: plain JSON {version, feePayer, instructions, recentBlockhash}
+    if (Object.prototype.hasOwnProperty.call(clone, 'feePayer')) {
+      clone.feePayer = walletAddress
+    }
+    if (Array.isArray(clone.instructions)) {
+      clone.instructions.forEach(function (ins) {
+        if (!ins || !Array.isArray(ins.keys)) return
+        // programId 는 건드리지 않음 — SystemProgram address("11111111111111111111111111111111") 는 정상 값
+        ins.keys.forEach(function (k) {
+          if (k && k.isSigner === true) {
+            k.pubkey = walletAddress
+          }
+        })
+      })
+    }
+    // Case 3: wm-internal TransactionCommon {type, sender, recipient, amount, ...}
+    if (Object.prototype.hasOwnProperty.call(clone, 'sender')) {
+      clone.sender = walletAddress
+    }
+    return clone
+  }
+
+  // ── Algorand placeholder substitution helper ──
+  // Algorand 표준 tx({type:'pay', from, to, amount, fee, firstRound, lastRound, ...})는
+  // `from` 필드가 sender. dApp이 placeholder("ALGORAND7XVFXWDX5..." 등)를 보내면 device
+  // 서명 후 algosdk의 signTransaction이 reject한다 — sender pubkey 와 derived address 가
+  // 일치해야 함.
+  //
+  // 적용 대상: txObj.from (Algorand 표준), txObj.sender (wm-internal)
+  // 보존: txObj.to (recipient), 기타 모든 필드
+  function _substituteAlgorandSender (txObj, walletAddress) {
+    if (typeof txObj === 'string') return txObj // opaque (msgpack-encoded raw bytes)
+    if (!txObj || typeof txObj !== 'object') return txObj
+    if (!walletAddress || typeof walletAddress !== 'string') return txObj
+    var clone
+    try {
+      clone = JSON.parse(JSON.stringify(txObj))
+    } catch (e) {
+      return txObj
+    }
+    if (Object.prototype.hasOwnProperty.call(clone, 'from')) {
+      clone.from = walletAddress
+    }
+    if (Object.prototype.hasOwnProperty.call(clone, 'sender')) {
+      clone.sender = walletAddress
+    }
+    return clone
+  }
+
+  // family-aware sender substitution dispatcher. 현재 지원: solana / algorand.
+  // 다른 family는 향후 점진 추가 (XRP `Account`, Tron `owner_address`, Conflux `from` 등).
+  // 미지원 family는 원본 그대로 반환 (no-op).
+  function _substituteSenderByFamily (txObj, family, walletAddress) {
+    if (family === 'solana') return _substituteSolanaSigner(txObj, walletAddress)
+    if (family === 'algorand') return _substituteAlgorandSender(txObj, walletAddress)
+    return txObj
+  }
+
   // ── b08-01: v1 호환 envelope unwrap helper ──
   // facade가 resolve로 돌려준 failure 응답을 throw로 변환한다.
   // src/sign/assert.ts:_assertV1Success와 유사하지만 다른 정책 — playground 인라인 버전은
@@ -1441,6 +1529,40 @@
   // ── renderSignTxNonEvmForm (m06-01-03) ──
   // 비-EVM family 공용 폼: chainId(read-only) + keyPath + transaction(JSON) + preset selector
   function renderSignTxNonEvmForm (methodDef) {
+    // ── Sender resolver button (form 맨 위) ─────────────────────────────────
+    // dApp이 보내는 transaction 의 sender 필드가 실제 wallet 주소가 아닌 placeholder 면
+    // device 서명 후 family-별 라이브러리(@solana/web3.js / algosdk 등)가 reject 한다.
+    // 이 버튼은 device 에서 실제 wallet 주소를 fetch 한 뒤 textarea JSON 의 placeholder 를
+    // 치환한다. family-aware dispatch — _substituteSenderByFamily 가 처리.
+    // 폼 맨 위에 배치 — 사용자가 chainId/keyPath 채운 직후 한 번 클릭하면 끝.
+    var resolverFamilies = { solana: true, algorand: true }
+    if (resolverFamilies[methodDef.family]) {
+      var resolveRow = document.createElement('div')
+      resolveRow.className = 'form-row'
+      resolveRow.style.cssText = 'margin-bottom:8px;padding:6px;background:#f7f7f7;border-radius:4px;'
+      var resolveBtn = document.createElement('button')
+      resolveBtn.id = 'btn-resolve-sender'
+      resolveBtn.type = 'button'
+      resolveBtn.textContent = '🔑 Resolve sender from device'
+      resolveBtn.style.cssText = 'font-size:11px;padding:4px 8px;'
+      var resolveHint = document.createElement('span')
+      resolveHint.id = 'resolve-sender-hint'
+      resolveHint.style.cssText = 'font-size:10px;color:#888;margin-left:8px;'
+      // family 별 안내 문구
+      var senderFieldLabel = methodDef.family === 'solana'
+        ? 'placeholder feePayer/signer 를 wallet pubkey 로 치환'
+        : 'placeholder from(sender) 를 wallet address 로 치환'
+      resolveHint.textContent = senderFieldLabel
+      // family closure capture
+      var family = methodDef.family
+      resolveBtn.addEventListener('click', function () {
+        _resolveSenderFromDeviceClick(family, resolveHint)
+      })
+      resolveRow.appendChild(resolveBtn)
+      resolveRow.appendChild(resolveHint)
+      formFields.appendChild(resolveRow)
+    }
+
     // chainId — 트리 선택값을 default로 두고 사용자가 자유 입력 가능.
     // 같은 family의 chain (예: Polkadot family의 Polkadot/Astar 등)을 datalist로 제공.
     var nevmChainIdEl = appendFormRow('chainId', 'Chain ID (CAIP-19)', 'input', {
@@ -1500,7 +1622,13 @@
         var preset = nonEvmPresetsMap[presetId]
         if (!preset) return
         var txEl = document.getElementById('field-transaction')
-        if (txEl) txEl.value = JSON.stringify(preset.transaction, null, 2)
+        if (!txEl) return
+        // preset.transaction 이 string (Case 1 base58 serialized) 이면 그대로, object 이면 pretty JSON
+        if (typeof preset.transaction === 'string') {
+          txEl.value = preset.transaction
+        } else {
+          txEl.value = JSON.stringify(preset.transaction, null, 2)
+        }
       })
       presetRow.appendChild(presetLabel)
       presetRow.appendChild(presetSelect)
@@ -1510,7 +1638,13 @@
       if (firstPreset) {
         presetSelect.value = firstPreset.id
         var txAutoEl = document.getElementById('field-transaction')
-        if (txAutoEl) txAutoEl.value = JSON.stringify(firstPreset.transaction, null, 2)
+        if (txAutoEl) {
+          if (typeof firstPreset.transaction === 'string') {
+            txAutoEl.value = firstPreset.transaction
+          } else {
+            txAutoEl.value = JSON.stringify(firstPreset.transaction, null, 2)
+          }
+        }
       }
     } else {
       var noPresetEl2 = document.createElement('p')
@@ -1518,6 +1652,90 @@
       noPresetEl2.textContent = 'No presets available for this chain. Enter transaction JSON manually.'
       formFields.appendChild(noPresetEl2)
     }
+
+  }
+
+  // Sender resolver — button click handler (family-aware).
+  // chainId + keyPath 로 device 에서 wallet 주소를 받아 transaction JSON 의 placeholder 를 치환.
+  // 지원: solana (feePayer + signer pubkey), algorand (from / sender).
+  // 미지원 family는 호출 자체가 불가능 (버튼이 렌더링 안 됨).
+  // string payload (Solana Case 1 base58 / Algorand msgpack raw bytes) 는 opaque → hint 안내.
+  function _resolveSenderFromDeviceClick (family, hintEl) {
+    var chainIdEl = document.getElementById('field-chainId')
+    var keyPathEl = document.getElementById('field-keyPath')
+    var txEl = document.getElementById('field-transaction')
+    if (!chainIdEl || !keyPathEl || !txEl) return
+    var chainId = chainIdEl.value.trim()
+    var keyPath = keyPathEl.value.trim()
+    var txRaw = txEl.value.trim()
+
+    function setHint (msg, isError) {
+      if (!hintEl) return
+      hintEl.textContent = msg
+      hintEl.style.color = isError ? '#c33' : '#0a7'
+    }
+
+    if (!state.connected) {
+      setHint('⚠ device 미연결 — connect 먼저', true)
+      return
+    }
+    if (!chainId || !keyPath) {
+      setHint('⚠ chainId / keyPath 가 비어있음', true)
+      return
+    }
+    if (!txRaw) {
+      setHint('⚠ transaction 이 비어있음', true)
+      return
+    }
+
+    var txObj
+    var isStringPayload = false
+    // string payload 식별: 첫 글자가 [ 또는 { 가 아니면 JSON 객체/배열 아님 (Solana base58 / Algorand raw bytes)
+    if (!/^[[{]/.test(txRaw)) {
+      isStringPayload = true
+    } else {
+      try {
+        txObj = JSON.parse(txRaw)
+      } catch (e) {
+        setHint('⚠ transaction JSON parse 실패', true)
+        return
+      }
+    }
+
+    if (isStringPayload) {
+      var opaqueMsg = family === 'solana'
+        ? '⚠ base58 serialized 는 opaque — dApp 측에서 wallet pubkey 로 직접 construct 해야 함'
+        : '⚠ serialized raw bytes 는 opaque — dApp 측에서 wallet address 로 직접 construct 해야 함'
+      setHint(opaqueMsg, true)
+      return
+    }
+
+    var dcent = _getDcent()
+    if (!dcent || typeof dcent.getAddress !== 'function') {
+      setHint('⚠ dcent.getAddress unavailable', true)
+      return
+    }
+    setHint('… fetching wallet address …', false)
+    // v2 path 우선 (m11-01-02 facade 신규 시그니처)
+    var p
+    try {
+      p = dcent.getAddress({ chainId: chainId, keyPath: keyPath })
+    } catch (syncErr) {
+      setHint('⚠ getAddress sync error: ' + (syncErr && syncErr.message), true)
+      return
+    }
+    Promise.resolve(p).then(_unwrapV1Envelope).then(function (result) {
+      var address = result && (result.address || result.pubkey || result)
+      if (typeof address !== 'string' || !address) {
+        setHint('⚠ getAddress 응답에서 address 추출 실패', true)
+        return
+      }
+      var substituted = _substituteSenderByFamily(txObj, family, address)
+      txEl.value = JSON.stringify(substituted, null, 2)
+      setHint('✓ substituted to ' + address.slice(0, 8) + '…' + address.slice(-4), false)
+    }).catch(function (err) {
+      setHint('⚠ getAddress 실패: ' + ((err && err.message) || String(err)), true)
+    })
   }
 
   function appendFormRow (id, labelText, type, opts) {
@@ -2480,6 +2698,10 @@
     appendLog: appendLog,
     // b08-01: envelope unwrap helper + popup-only onConnect 검증용 노출
     _unwrapV1Envelope: _unwrapV1Envelope,
+    // placeholder substitution helpers — unit testable
+    _substituteSolanaSigner: _substituteSolanaSigner,
+    _substituteAlgorandSender: _substituteAlgorandSender,
+    _substituteSenderByFamily: _substituteSenderByFamily,
     onConnect: onConnect,
     getLogEntries: function () { return state.logs },
     clearLogs: function () {

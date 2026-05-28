@@ -1,459 +1,903 @@
 [
   {
-    "chainId": "eip155:1/slip44:60",
+    "chainId": "eip155:1",
     "family": "ethereum",
     "displayName": "Ethereum",
     "defaultKeyPath": "m/44'/60'/0'/0/0"
   },
   {
-    "chainId": "eip155:30/slip44:60",
+    "chainId": "eip155:16",
+    "family": "ethereum",
+    "displayName": "Flare Network Coston",
+    "defaultKeyPath": "m/44'/60'/0'/0/0",
+    "isTestnet": true
+  },
+  {
+    "chainId": "eip155:30",
     "family": "ethereum",
     "displayName": "RSK Smart Bitcoin",
     "defaultKeyPath": "m/44'/60'/0'/0/0"
   },
   {
-    "chainId": "eip155:8217/slip44:60",
+    "chainId": "eip155:31",
+    "family": "ethereum",
+    "displayName": "RSK Testnet",
+    "defaultKeyPath": "m/44'/60'/0'/0/0",
+    "isTestnet": true
+  },
+  {
+    "chainId": "eip155:8217",
     "family": "ethereum",
     "displayName": "Kaia",
     "defaultKeyPath": "m/44'/60'/0'/0/0"
   },
   {
-    "chainId": "eip155:61/slip44:60",
+    "chainId": "eip155:1001",
+    "family": "ethereum",
+    "displayName": "Kaia Kairos",
+    "defaultKeyPath": "m/44'/60'/0'/0/0",
+    "isTestnet": true
+  },
+  {
+    "chainId": "eip155:61",
     "family": "ethereum",
     "displayName": "Ethereum Classic",
     "defaultKeyPath": "m/44'/60'/0'/0/0"
   },
   {
-    "chainId": "eip155:256/slip44:60",
+    "chainId": "eip155:256",
     "family": "ethereum",
     "displayName": "Luniverse",
     "defaultKeyPath": "m/44'/60'/0'/0/0"
   },
   {
-    "chainId": "eip155:50/slip44:60",
+    "chainId": "eip155:50",
     "family": "ethereum",
     "displayName": "XDC (XinFin)",
     "defaultKeyPath": "m/44'/550'/0'/0/0"
   },
   {
-    "chainId": "eip155:56/slip44:60",
+    "chainId": "eip155:51",
+    "family": "ethereum",
+    "displayName": "XDC Apothem",
+    "defaultKeyPath": "m/44'/550'/0'/0/0",
+    "isTestnet": true
+  },
+  {
+    "chainId": "eip155:56",
     "family": "ethereum",
     "displayName": "Binance Smart Chain",
     "defaultKeyPath": "m/44'/60'/0'/0/0"
   },
   {
-    "chainId": "eip155:10/slip44:60",
+    "chainId": "eip155:97",
+    "family": "ethereum",
+    "displayName": "BSC Testnet",
+    "defaultKeyPath": "m/44'/60'/0'/0/0",
+    "isTestnet": true
+  },
+  {
+    "chainId": "eip155:10",
     "family": "ethereum",
     "displayName": "Optimism",
     "defaultKeyPath": "m/44'/60'/0'/0/0"
   },
   {
-    "chainId": "eip155:11/slip44:60",
+    "chainId": "eip155:11",
     "family": "ethereum",
     "displayName": "Metadium",
     "defaultKeyPath": "m/44'/60'/0'/0/0"
   },
   {
-    "chainId": "eip155:14/slip44:60",
+    "chainId": "eip155:14",
     "family": "ethereum",
     "displayName": "Flare Network",
     "defaultKeyPath": "m/44'/60'/0'/0/0"
   },
   {
-    "chainId": "eip155:19/slip44:60",
+    "chainId": "eip155:19",
     "family": "ethereum",
     "displayName": "Songbird Canary-Network",
     "defaultKeyPath": "m/44'/60'/0'/0/0"
   },
   {
-    "chainId": "eip155:25/slip44:60",
+    "chainId": "eip155:25",
     "family": "ethereum",
     "displayName": "Cronos",
     "defaultKeyPath": "m/44'/60'/0'/0/0"
   },
   {
-    "chainId": "eip155:66/slip44:60",
+    "chainId": "eip155:66",
     "family": "ethereum",
     "displayName": "OKX Chain",
     "defaultKeyPath": "m/44'/60'/0'/0/0"
   },
   {
-    "chainId": "eip155:100/slip44:60",
+    "chainId": "eip155:100",
     "family": "ethereum",
     "displayName": "Gnosis",
     "defaultKeyPath": "m/44'/60'/0'/0/0"
   },
   {
-    "chainId": "eip155:246/slip44:60",
+    "chainId": "eip155:246",
     "family": "ethereum",
     "displayName": "Energy Web Chain",
     "defaultKeyPath": "m/44'/60'/0'/0/0"
   },
   {
-    "chainId": "eip155:248/slip44:60",
+    "chainId": "eip155:248",
     "family": "ethereum",
     "displayName": "Oasys",
     "defaultKeyPath": "m/44'/60'/0'/0/0"
   },
   {
-    "chainId": "eip155:250/slip44:60",
+    "chainId": "eip155:250",
     "family": "ethereum",
     "displayName": "Fantom Opera",
     "defaultKeyPath": "m/44'/60'/0'/0/0"
   },
   {
-    "chainId": "eip155:255/slip44:60",
+    "chainId": "eip155:255",
     "family": "ethereum",
     "displayName": "Kroma",
     "defaultKeyPath": "m/44'/60'/0'/0/0"
   },
   {
-    "chainId": "eip155:288/slip44:60",
+    "chainId": "eip155:288",
     "family": "ethereum",
     "displayName": "Boba",
     "defaultKeyPath": "m/44'/60'/0'/0/0"
   },
   {
-    "chainId": "eip155:321/slip44:60",
+    "chainId": "eip155:321",
     "family": "ethereum",
     "displayName": "KCC",
     "defaultKeyPath": "m/44'/60'/0'/0/0"
   },
   {
-    "chainId": "eip155:592/slip44:60",
+    "chainId": "eip155:592",
     "family": "ethereum",
     "displayName": "Astar EVM",
     "defaultKeyPath": "m/44'/60'/0'/0/0"
   },
   {
-    "chainId": "eip155:2017/slip44:60",
+    "chainId": "eip155:2017",
     "family": "ethereum",
     "displayName": "Orbit Chain",
     "defaultKeyPath": "m/44'/60'/0'/0/0"
   },
   {
-    "chainId": "eip155:7518/slip44:60",
+    "chainId": "eip155:7518",
     "family": "ethereum",
     "displayName": "MEVerse",
     "defaultKeyPath": "m/44'/60'/0'/0/0"
   },
   {
-    "chainId": "eip155:8453/slip44:60",
+    "chainId": "eip155:8453",
     "family": "ethereum",
     "displayName": "Base",
     "defaultKeyPath": "m/44'/60'/0'/0/0"
   },
   {
-    "chainId": "eip155:42161/slip44:60",
+    "chainId": "eip155:42161",
     "family": "ethereum",
     "displayName": "Arbitrum One",
     "defaultKeyPath": "m/44'/60'/0'/0/0"
   },
   {
-    "chainId": "eip155:42220/slip44:60",
+    "chainId": "eip155:42220",
     "family": "ethereum",
     "displayName": "Celo",
     "defaultKeyPath": "m/44'/60'/0'/0/0"
   },
   {
-    "chainId": "eip155:43114/slip44:60",
+    "chainId": "eip155:43114",
     "family": "ethereum",
     "displayName": "Avalanche C-Chain",
     "defaultKeyPath": "m/44'/60'/0'/0/0"
   },
   {
-    "chainId": "eip155:1666600000/slip44:60",
+    "chainId": "eip155:1666600000",
     "family": "ethereum",
     "displayName": "Harmony",
     "defaultKeyPath": "m/44'/60'/0'/0/0"
   },
   {
-    "chainId": "eip155:11297108109/slip44:60",
+    "chainId": "eip155:11297108109",
     "family": "ethereum",
     "displayName": "Palm",
     "defaultKeyPath": "m/44'/60'/0'/0/0"
   },
   {
-    "chainId": "eip155:137/slip44:60",
+    "chainId": "eip155:12",
+    "family": "ethereum",
+    "displayName": "Metadium Testnet",
+    "defaultKeyPath": "m/44'/60'/0'/0/0",
+    "isTestnet": true
+  },
+  {
+    "chainId": "eip155:2358",
+    "family": "ethereum",
+    "displayName": "Kroma Sepolia",
+    "defaultKeyPath": "m/44'/60'/0'/0/0",
+    "isTestnet": true
+  },
+  {
+    "chainId": "eip155:11155111",
+    "family": "ethereum",
+    "displayName": "Sepolia Testnet",
+    "defaultKeyPath": "m/44'/60'/0'/0/0",
+    "isTestnet": true
+  },
+  {
+    "chainId": "eip155:1666700000",
+    "family": "ethereum",
+    "displayName": "Harmony Testnet",
+    "defaultKeyPath": "m/44'/60'/0'/0/0",
+    "isTestnet": true
+  },
+  {
+    "chainId": "eip155:80002",
+    "family": "ethereum",
+    "displayName": "Polygon Amoy",
+    "defaultKeyPath": "m/44'/60'/0'/0/0",
+    "isTestnet": true
+  },
+  {
+    "chainId": "eip155:137",
     "family": "ethereum",
     "displayName": "Polygon",
     "defaultKeyPath": "m/44'/60'/0'/0/0"
   },
   {
-    "chainId": "conflux:cfx/slip44:503",
+    "chainId": "conflux:cfx",
     "family": "conflux",
     "displayName": "Conflux",
     "defaultKeyPath": "m/44'/60'/0'"
   },
   {
-    "chainId": "eip155:3776/slip44:60",
+    "chainId": "eip155:3776",
     "family": "ethereum",
     "displayName": "Astar zkEVM",
     "defaultKeyPath": "m/44'/60'/0'/0/0"
   },
   {
-    "chainId": "eip155:612/slip44:60",
+    "chainId": "eip155:612",
     "family": "ethereum",
     "displayName": "EIOB Chain",
     "defaultKeyPath": "m/44'/60'/0'/0/0"
   },
   {
-    "chainId": "eip155:4613/slip44:60",
+    "chainId": "eip155:4613",
     "family": "ethereum",
     "displayName": "VERY Mainnet",
     "defaultKeyPath": "m/44'/60'/0'/0/0"
   },
   {
-    "chainId": "eip155:37/slip44:60",
+    "chainId": "eip155:37",
     "family": "ethereum",
     "displayName": "XPLA",
     "defaultKeyPath": "m/44'/60'/0'/0/0"
   },
   {
-    "chainId": "eip155:81/slip44:60",
+    "chainId": "eip155:81",
     "family": "ethereum",
     "displayName": "Japan Open Chain",
     "defaultKeyPath": "m/44'/60'/0'/0/0"
   },
   {
-    "chainId": "eip155:1625/slip44:60",
+    "chainId": "eip155:1625",
     "family": "ethereum",
     "displayName": "Gravity Alpha",
     "defaultKeyPath": "m/44'/60'/0'/0/0"
   },
   {
-    "chainId": "eip155:102030/slip44:60",
+    "chainId": "eip155:10081",
+    "family": "ethereum",
+    "displayName": "JOC Testnet",
+    "defaultKeyPath": "m/44'/60'/0'/0/0",
+    "isTestnet": true
+  },
+  {
+    "chainId": "eip155:13505",
+    "family": "ethereum",
+    "displayName": "Gravity Sepolia Testnet",
+    "defaultKeyPath": "m/44'/60'/0'/0/0",
+    "isTestnet": true
+  },
+  {
+    "chainId": "eip155:102030",
     "family": "ethereum",
     "displayName": "Creditcoin EVM",
     "defaultKeyPath": "m/44'/60'/0'/0/0"
   },
   {
-    "chainId": "eip155:314/slip44:60",
+    "chainId": "eip155:102031",
+    "family": "ethereum",
+    "displayName": "Creditcoin EVM Testnet",
+    "defaultKeyPath": "m/44'/60'/0'/0/0",
+    "isTestnet": true
+  },
+  {
+    "chainId": "eip155:314",
     "family": "ethereum",
     "displayName": "Filecoin EVM",
     "defaultKeyPath": "m/44'/60'/0'/0/0"
   },
   {
-    "chainId": "eip155:1689/slip44:60",
+    "chainId": "eip155:314159",
+    "family": "ethereum",
+    "displayName": "Filecoin EVM Calibration Testnet",
+    "defaultKeyPath": "m/44'/60'/0'/0/0",
+    "isTestnet": true
+  },
+  {
+    "chainId": "eip155:338",
+    "family": "ethereum",
+    "displayName": "Cronos Testnet",
+    "defaultKeyPath": "m/44'/60'/0'/0/0",
+    "isTestnet": true
+  },
+  {
+    "chainId": "eip155:1689",
     "family": "ethereum",
     "displayName": "NERO",
     "defaultKeyPath": "m/44'/60'/0'/0/0"
   },
   {
-    "chainId": "eip155:146/slip44:60",
+    "chainId": "eip155:146",
     "family": "ethereum",
     "displayName": "Sonic",
     "defaultKeyPath": "m/44'/60'/0'/0/0"
   },
   {
-    "chainId": "eip155:22776/slip44:60",
+    "chainId": "eip155:22776",
     "family": "ethereum",
     "displayName": "MAP Protocol",
     "defaultKeyPath": "m/44'/60'/0'/0/0"
   },
   {
-    "chainId": "eip155:1868/slip44:60",
+    "chainId": "eip155:10143",
+    "family": "ethereum",
+    "displayName": "Monad Testnet",
+    "defaultKeyPath": "m/44'/60'/0'/0/0",
+    "isTestnet": true
+  },
+  {
+    "chainId": "eip155:1868",
     "family": "ethereum",
     "displayName": "Soneium",
     "defaultKeyPath": "m/44'/60'/0'/0/0"
   },
   {
-    "chainId": "eip155:534352/slip44:60",
+    "chainId": "eip155:534352",
     "family": "ethereum",
     "displayName": "Scroll",
     "defaultKeyPath": "m/44'/60'/0'/0/0"
   },
   {
-    "chainId": "eip155:41923/slip44:60",
+    "chainId": "eip155:41923",
     "family": "ethereum",
     "displayName": "Edu Chain",
     "defaultKeyPath": "m/44'/60'/0'/0/0"
   },
   {
-    "chainId": "eip155:5050/slip44:60",
+    "chainId": "eip155:656476",
+    "family": "ethereum",
+    "displayName": "Edu Chain Testnet",
+    "defaultKeyPath": "m/44'/60'/0'/0/0",
+    "isTestnet": true
+  },
+  {
+    "chainId": "eip155:5050",
     "family": "ethereum",
     "displayName": "Skate",
     "defaultKeyPath": "m/44'/60'/0'/0/0"
   },
   {
-    "chainId": "eip155:888888888/slip44:60",
+    "chainId": "eip155:888888888",
     "family": "ethereum",
     "displayName": "Ancient8",
     "defaultKeyPath": "m/44'/60'/0'/0/0"
   },
   {
-    "chainId": "eip155:88888/slip44:60",
+    "chainId": "eip155:88888",
     "family": "ethereum",
     "displayName": "Chiliz",
     "defaultKeyPath": "m/44'/60'/0'/0/0"
   },
   {
-    "chainId": "eip155:167000/slip44:60",
+    "chainId": "eip155:167000",
     "family": "ethereum",
     "displayName": "Taiko Alethia",
     "defaultKeyPath": "m/44'/60'/0'/0/0"
   },
   {
-    "chainId": "eip155:80094/slip44:60",
+    "chainId": "eip155:80094",
     "family": "ethereum",
     "displayName": "Berachain",
     "defaultKeyPath": "m/44'/60'/0'/0/0"
   },
   {
-    "chainId": "eip155:1514/slip44:60",
+    "chainId": "eip155:1449000",
+    "family": "ethereum",
+    "displayName": "XRPL EVM Testnet",
+    "defaultKeyPath": "m/44'/60'/0'/0/0",
+    "isTestnet": true
+  },
+  {
+    "chainId": "eip155:1514",
     "family": "ethereum",
     "displayName": "Story Network",
     "defaultKeyPath": "m/44'/60'/0'/0/0"
   },
   {
-    "chainId": "eip155:1440000/slip44:60",
+    "chainId": "eip155:123420001114",
+    "family": "ethereum",
+    "displayName": "Basecamp Testnet",
+    "defaultKeyPath": "m/44'/60'/0'/0/0",
+    "isTestnet": true
+  },
+  {
+    "chainId": "eip155:1440000",
     "family": "ethereum",
     "displayName": "XRPL EVM",
     "defaultKeyPath": "m/44'/60'/0'/0/0"
   },
   {
-    "chainId": "eip155:169/slip44:60",
+    "chainId": "eip155:169",
     "family": "ethereum",
     "displayName": "Manta Pacific",
     "defaultKeyPath": "m/44'/60'/0'/0/0"
   },
   {
-    "chainId": "eip155:20250217/slip44:60",
+    "chainId": "eip155:20250217",
     "family": "ethereum",
     "displayName": "Xphere",
     "defaultKeyPath": "m/44'/60'/0'/0/0"
   },
   {
-    "chainId": "eip155:999/slip44:60",
+    "chainId": "eip155:84532",
+    "family": "ethereum",
+    "displayName": "Base Sepolia Testnet",
+    "defaultKeyPath": "m/44'/60'/0'/0/0",
+    "isTestnet": true
+  },
+  {
+    "chainId": "eip155:999",
     "family": "ethereum",
     "displayName": "HyperEVM",
     "defaultKeyPath": "m/44'/60'/0'/0/0"
   },
   {
-    "chainId": "eip155:484/slip44:60",
+    "chainId": "eip155:484",
     "family": "ethereum",
     "displayName": "Camp Mainnet",
     "defaultKeyPath": "m/44'/60'/0'/0/0"
   },
   {
-    "chainId": "eip155:6985385/slip44:60",
+    "chainId": "eip155:6985385",
     "family": "ethereum",
     "displayName": "Humanity Protocol",
     "defaultKeyPath": "m/44'/60'/0'/0/0"
   },
   {
-    "chainId": "eip155:210000/slip44:60",
+    "chainId": "eip155:2201",
+    "family": "ethereum",
+    "displayName": "Stable Testnet",
+    "defaultKeyPath": "m/44'/60'/0'/0/0",
+    "isTestnet": true
+  },
+  {
+    "chainId": "eip155:210000",
     "family": "ethereum",
     "displayName": "JuChain",
     "defaultKeyPath": "m/44'/60'/0'/0/0"
   },
   {
-    "chainId": "eip155:50104/slip44:60",
+    "chainId": "eip155:50104",
     "family": "ethereum",
     "displayName": "Sophon",
     "defaultKeyPath": "m/44'/60'/0'/0/0"
   },
   {
-    "chainId": "eip155:4352/slip44:60",
+    "chainId": "eip155:4352",
     "family": "ethereum",
     "displayName": "MemeCore",
     "defaultKeyPath": "m/44'/60'/0'/0/0"
   },
   {
-    "chainId": "eip155:98866/slip44:60",
+    "chainId": "eip155:1439",
+    "family": "ethereum",
+    "displayName": "Injective Testnet",
+    "defaultKeyPath": "m/44'/60'/0'/0/0",
+    "isTestnet": true
+  },
+  {
+    "chainId": "eip155:98866",
     "family": "ethereum",
     "displayName": "Plume",
     "defaultKeyPath": "m/44'/60'/0'/0/0"
   },
   {
-    "chainId": "eip155:1776/slip44:60",
+    "chainId": "eip155:1776",
     "family": "ethereum",
     "displayName": "Injective",
     "defaultKeyPath": "m/44'/60'/0'/0/0"
   },
   {
-    "chainId": "eip155:143/slip44:60",
+    "chainId": "eip155:904",
+    "family": "ethereum",
+    "displayName": "Ault Mainnet",
+    "defaultKeyPath": "m/44'/60'/0'/0/0"
+  },
+  {
+    "chainId": "eip155:143",
     "family": "ethereum",
     "displayName": "Monad Mainnet",
     "defaultKeyPath": "m/44'/60'/0'/0/0"
   },
   {
-    "chainId": "eip155:7300/slip44:60",
+    "chainId": "eip155:2731",
+    "family": "ethereum",
+    "displayName": "TIME Testnet",
+    "defaultKeyPath": "m/44'/60'/0'/0/0",
+    "isTestnet": true
+  },
+  {
+    "chainId": "eip155:20250616",
+    "family": "ethereum",
+    "displayName": "LK Testnet",
+    "defaultKeyPath": "m/44'/60'/0'/0/0",
+    "isTestnet": true
+  },
+  {
+    "chainId": "eip155:7300",
     "family": "ethereum",
     "displayName": "XPLAVerse",
     "defaultKeyPath": "m/44'/60'/0'/0/0"
   },
   {
-    "chainId": "eip155:204/slip44:60",
+    "chainId": "eip155:2225",
+    "family": "ethereum",
+    "displayName": "XPLAVerse Testnet",
+    "defaultKeyPath": "m/44'/60'/0'/0/0",
+    "isTestnet": true
+  },
+  {
+    "chainId": "eip155:204",
     "family": "ethereum",
     "displayName": "opBNB",
     "defaultKeyPath": "m/44'/60'/0'/0/0"
   },
   {
-    "chainId": "bip122:000000000019d6689c085ae165831e93/slip44:0",
+    "chainId": "eip155:5611",
+    "family": "ethereum",
+    "displayName": "opBNB Testnet",
+    "defaultKeyPath": "m/44'/60'/0'/0/0",
+    "isTestnet": true
+  },
+  {
+    "chainId": "eip155:9372",
+    "family": "ethereum",
+    "displayName": "Oasys Testnet",
+    "defaultKeyPath": "m/44'/60'/0'/0/0",
+    "isTestnet": true
+  },
+  {
+    "chainId": "eip155:42069",
+    "family": "ethereum",
+    "displayName": "DSRV Testnet",
+    "defaultKeyPath": "m/44'/60'/0'/0/0",
+    "isTestnet": true
+  },
+  {
+    "chainId": "eip155:47",
+    "family": "ethereum",
+    "displayName": "XPLA Testnet",
+    "defaultKeyPath": "m/44'/60'/0'/0/0",
+    "isTestnet": true
+  },
+  {
+    "chainId": "eip155:688689",
+    "family": "ethereum",
+    "displayName": "Pharos Atlantic Testnet",
+    "defaultKeyPath": "m/44'/60'/0'/0/0",
+    "isTestnet": true
+  },
+  {
+    "chainId": "bip122:000000000019d6689c085ae165831e93",
     "family": "bitcoin",
     "displayName": "Bitcoin",
     "defaultKeyPath": "m/84'/0'/0'/0/0"
   },
   {
-    "chainId": "bip122:000000000000000000651ef99cb9fcbe/slip44:145",
+    "chainId": "bip122:000000000933ea01ad0ee984209779ba",
+    "family": "bitcoin",
+    "displayName": "Bitcoin Testnet",
+    "defaultKeyPath": "m/84'/1'/0'/0/0",
+    "isTestnet": true
+  },
+  {
+    "chainId": "bip122:000000000000000000651ef99cb9fcbe",
     "family": "bitcoin",
     "displayName": "Bitcoin Cash",
     "defaultKeyPath": "m/84'/145'/0'/0/0"
   },
   {
-    "chainId": "bip122:12a765e31ffd4059bada1e25190f6e98/slip44:2",
+    "chainId": "bip122:000000000019d6689c085ae165831e93/slip44:145",
+    "family": "bitcoin",
+    "displayName": "eCash",
+    "defaultKeyPath": "m/84'/145'/0'/0/0"
+  },
+  {
+    "chainId": "bip122:00040fe8ec8471911baa1db1266ea15d/slip44:133",
+    "family": "bitcoin",
+    "displayName": "Zcash",
+    "defaultKeyPath": "m/84'/133'/0'/0/0"
+  },
+  {
+    "chainId": "bip122:12a765e31ffd4059bada1e25190f6e98",
     "family": "bitcoin",
     "displayName": "Litecoin",
     "defaultKeyPath": "m/84'/2'/0'/0/0"
   },
   {
-    "chainId": "bip122:1a91e3dace36e2be3bf030a65679fe82/slip44:3",
+    "chainId": "bip122:00000000e9fba3b4a12d04c0a48d70d5/slip44:156",
+    "family": "bitcoin",
+    "displayName": "Bitcoin Gold",
+    "defaultKeyPath": "m/84'/156'/0'/0/0"
+  },
+  {
+    "chainId": "bip122:00000000e0494ef974d8afb784e1bdeb/slip44:1",
+    "family": "bitcoin",
+    "displayName": "BitGold Testnet",
+    "defaultKeyPath": "m/84'/1'/0'/0/0",
+    "isTestnet": true
+  },
+  {
+    "chainId": "bip122:00000ffd590b1485b3caadc19b22e637/slip44:5",
+    "family": "bitcoin",
+    "displayName": "Dash",
+    "defaultKeyPath": "m/84'/5'/0'/0/0"
+  },
+  {
+    "chainId": "bip122:00000bafbc94add76cb75e2ec9289483/slip44:1",
+    "family": "bitcoin",
+    "displayName": "Dash Testnet",
+    "defaultKeyPath": "m/84'/1'/0'/0/0",
+    "isTestnet": true
+  },
+  {
+    "chainId": "bip122:7497ea1b465eb39f1c8f507bc877078f/slip44:20",
+    "family": "bitcoin",
+    "displayName": "DigiByte",
+    "defaultKeyPath": "m/84'/20'/0'/0/0"
+  },
+  {
+    "chainId": "bip122:fabe7dc4cf82e888f7afd9a1c7e05d10/slip44:1",
+    "family": "bitcoin",
+    "displayName": "DigiByte Testnet",
+    "defaultKeyPath": "m/84'/20'/0'/0/0",
+    "isTestnet": true
+  },
+  {
+    "chainId": "bip122:0000006b444bc2f2ffe627be9d9e7e7a/slip44:175",
+    "family": "bitcoin",
+    "displayName": "Ravencoin",
+    "defaultKeyPath": "m/84'/175'/0'/0/0"
+  },
+  {
+    "chainId": "bip122:000000b3e9edd0f7e8c60f9cf47ce5cc/slip44:1",
+    "family": "bitcoin",
+    "displayName": "Ravencoin Testnet",
+    "defaultKeyPath": "m/84'/175'/0'/0/0",
+    "isTestnet": true
+  },
+  {
+    "chainId": "bip122:1a91e3dace36e2be3bf030a65679fe82",
     "family": "bitcoin",
     "displayName": "Dogecoin",
     "defaultKeyPath": "m/84'/3'/0'/0/0"
   },
   {
-    "chainId": "xrpl:0/slip44:144",
+    "chainId": "bip122:0007104ccda289427919efc39dc9e4d4/slip44:121",
+    "family": "bitcoin",
+    "displayName": "Horizen",
+    "defaultKeyPath": "m/84'/121'/0'/0/0"
+  },
+  {
+    "chainId": "xrpl:0",
     "family": "xrp",
     "displayName": "XRPL",
     "defaultKeyPath": "m/44'/144'/0'/0/0"
   },
   {
-    "chainId": "cosmos:Binance-Chain-Tigris/slip44:714",
+    "chainId": "xrpl:1",
+    "family": "xrp",
+    "displayName": "XRP Testnet",
+    "defaultKeyPath": "m/44'/144'/0'/0/0",
+    "isTestnet": true
+  },
+  {
+    "chainId": "cosmos:Binance-Chain-Tigris",
     "family": "cosmos",
     "displayName": "Binance coin",
     "defaultKeyPath": "m/44'/714'/0'/0/0"
   },
   {
-    "chainId": "stellar:pubnet/slip44:148",
+    "chainId": "cosmos:Binance-Chain-Ganges/slip44:714",
+    "family": "cosmos",
+    "displayName": "Binance Testnet",
+    "defaultKeyPath": "m/44'/714'/0'/0/0",
+    "isTestnet": true
+  },
+  {
+    "chainId": "stellar:pubnet",
     "family": "stellar",
     "displayName": "Stellar",
     "defaultKeyPath": "m/44'/148'/0'"
   },
   {
-    "chainId": "hedera:mainnet/slip44:3030",
+    "chainId": "stellar:testnet",
+    "family": "stellar",
+    "displayName": "Stellar Testnet",
+    "defaultKeyPath": "m/44'/148'/0'",
+    "isTestnet": true
+  },
+  {
+    "chainId": "tron:0x2b6653dc",
+    "family": "tron",
+    "displayName": "TRON",
+    "defaultKeyPath": "m/44'/195'/0'/0/0"
+  },
+  {
+    "chainId": "tron:0x941250dc/slip44:195",
+    "family": "tron",
+    "displayName": "TRON Testnet",
+    "defaultKeyPath": "m/44'/195'/0'/0/0",
+    "isTestnet": true
+  },
+  {
+    "chainId": "cip34:1-764824073",
+    "family": "cardano",
+    "displayName": "Cardano",
+    "defaultKeyPath": "m/1852'/1815'/0'/0/0"
+  },
+  {
+    "chainId": "cip34:0-2",
+    "family": "cardano",
+    "displayName": "Cardano Testnet",
+    "defaultKeyPath": "m/1852'/1815'/0'/0/0",
+    "isTestnet": true
+  },
+  {
+    "chainId": "hedera:mainnet",
     "family": "hedera",
     "displayName": "Hedera Hashgraph",
     "defaultKeyPath": "m/44'/3030'/0'"
   },
   {
-    "chainId": "stacks:1/slip44:5757",
+    "chainId": "hedera:testnet",
+    "family": "hedera",
+    "displayName": "Hedera Testnet",
+    "defaultKeyPath": "m/44'/3030'/0'",
+    "isTestnet": true
+  },
+  {
+    "chainId": "stacks:1",
     "family": "stacks",
     "displayName": "Stacks",
     "defaultKeyPath": "m/44'/5757'/0'/0/0"
   },
   {
-    "chainId": "solana:5eykt4UsFv8P8NJdTREpY1vzqKqZKvdp/slip44:501",
+    "chainId": "stacks:2147483648",
+    "family": "stacks",
+    "displayName": "Stacks Testnet",
+    "defaultKeyPath": "m/44'/5757'/0'/0/0",
+    "isTestnet": true
+  },
+  {
+    "chainId": "solana:5eykt4UsFv8P8NJdTREpY1vzqKqZKvdp",
     "family": "solana",
     "displayName": "Solana",
     "defaultKeyPath": "m/44'/501'/0'"
   },
   {
-    "chainId": "polkadot:91b171bb158e2d3848fa23a9f1c25182/slip44:354",
+    "chainId": "polkadot:91b171bb158e2d3848fa23a9f1c25182",
     "family": "polkadot",
     "displayName": "Polkadot",
     "defaultKeyPath": "m/44'/354'/0'/0/0"
+  },
+  {
+    "chainId": "cosmos:cosmoshub-4",
+    "family": "cosmos",
+    "displayName": "Cosmos",
+    "defaultKeyPath": "m/44'/118'/0'/0/0"
+  },
+  {
+    "chainId": "tezos:NetXdQprcVkpaWU",
+    "family": "tezos",
+    "displayName": "Tezos",
+    "defaultKeyPath": "m/44'/1729'/0'/0'"
+  },
+  {
+    "chainId": "tezos:NetXnHfVqm9iesp",
+    "family": "tezos",
+    "displayName": "Tezos Testnet",
+    "defaultKeyPath": "m/44'/1729'/0'/0'",
+    "isTestnet": true
+  },
+  {
+    "chainId": "vechain:b1ac3413d346d43539627e6be7ec1b4a",
+    "family": "vechain",
+    "displayName": "VeChain",
+    "defaultKeyPath": "m/44'/60'/0'/0/0"
+  },
+  {
+    "chainId": "near:mainnet/slip44:397",
+    "family": "near",
+    "displayName": "NEAR Protocol",
+    "defaultKeyPath": "m/44'/397'/0'"
+  },
+  {
+    "chainId": "near:testnet/slip44:397",
+    "family": "near",
+    "displayName": "NEAR Testnet",
+    "defaultKeyPath": "m/44'/397'/0'",
+    "isTestnet": true
+  },
+  {
+    "chainId": "cosmos:coreum-mainnet-1",
+    "family": "cosmos",
+    "displayName": "TX",
+    "defaultKeyPath": "m/44'/990'/0'/0/0"
+  },
+  {
+    "chainId": "cosmos:coreum-testnet-1",
+    "family": "cosmos",
+    "displayName": "Coreum Testnet",
+    "defaultKeyPath": "m/44'/990'/0'/0/0",
+    "isTestnet": true
+  },
+  {
+    "chainId": "cosmos:hippo-protocol-1/slip44:118",
+    "family": "cosmos",
+    "displayName": "Hippo Protocol",
+    "defaultKeyPath": "m/44'/118'/0'/0/0"
+  },
+  {
+    "chainId": "cosmos:hippo-protocol-testnet-1/slip44:118",
+    "family": "cosmos",
+    "displayName": "Hippo Protocol Testnet",
+    "defaultKeyPath": "m/44'/118'/0'/0/0",
+    "isTestnet": true
+  },
+  {
+    "chainId": "havah:mainnet/slip44:858",
+    "family": "havah",
+    "displayName": "Havah",
+    "defaultKeyPath": "m/44'/858'/0'/0/0"
+  },
+  {
+    "chainId": "havah:testnet/slip44:858",
+    "family": "havah",
+    "displayName": "Havah Testnet",
+    "defaultKeyPath": "m/44'/858'/0'/0/0",
+    "isTestnet": true
+  },
+  {
+    "chainId": "algorand:wGHE2Pwdvd7S12BL5FaOP20EGYesN73k",
+    "family": "algorand",
+    "displayName": "Algorand",
+    "defaultKeyPath": "m/44'/283'/0'/0/0"
+  },
+  {
+    "chainId": "algorand:SGO1GKSzyE7IEPItTxCByw9x8FmnrCDe",
+    "family": "algorand",
+    "displayName": "Algorand Testnet",
+    "defaultKeyPath": "m/44'/283'/0'/0/0",
+    "isTestnet": true
   },
   {
     "chainId": "polkadot:9eb76c5184c4ab8679d2d5d819fdf90b/slip44:810",
@@ -462,43 +906,73 @@
     "defaultKeyPath": "m/44'/810'/0'/0/0"
   },
   {
-    "chainId": "cosmos:cosmoshub-4/slip44:118",
-    "family": "cosmos",
-    "displayName": "Cosmos",
-    "defaultKeyPath": "m/44'/118'/0'/0/0"
+    "chainId": "polkadot:ddb89643205c8fe1c79afeb31f48d50f/slip44:810",
+    "family": "polkadot",
+    "displayName": "Shibuya",
+    "defaultKeyPath": "m/44'/810'/0'/0/0",
+    "isTestnet": true
   },
   {
-    "chainId": "tezos:NetXdQprcVkpaWU/slip44:1729",
-    "family": "tezos",
-    "displayName": "Tezos",
-    "defaultKeyPath": "m/44'/1729'/0'/0'"
+    "chainId": "xahau:mainnet/slip44:144",
+    "family": "xahau",
+    "displayName": "Xahau",
+    "defaultKeyPath": "m/44'/144'/0'/0/0"
   },
   {
-    "chainId": "vechain:b1ac3413d346d43539627e6be7ec1b4a/slip44:818",
-    "family": "vechain",
-    "displayName": "VeChain",
-    "defaultKeyPath": "m/44'/60'/0'/0/0"
+    "chainId": "xahau:testnet/slip44:21337",
+    "family": "xahau",
+    "displayName": "Xahau Testnet",
+    "defaultKeyPath": "m/44'/21337'/0'/0/0",
+    "isTestnet": true
   },
   {
-    "chainId": "cosmos:coreum-mainnet-1/slip44:990",
-    "family": "cosmos",
-    "displayName": "TX",
-    "defaultKeyPath": "m/44'/990'/0'/0/0"
+    "chainId": "polkadot:6673c7e2c2b7bde45a60c71ef70d9c7c/slip44:354",
+    "family": "polkadot",
+    "displayName": "Creditcoin",
+    "defaultKeyPath": "m/44'/354'/0'/0/0"
   },
   {
-    "chainId": "algorand:wGHE2Pwdvd7S12BL5FaOP20EGYesN73k/slip44:283",
-    "family": "algorand",
-    "displayName": "Algorand",
-    "defaultKeyPath": "m/44'/283'/0'/0/0"
+    "chainId": "polkadot:8a2e8af69a7892d2e60a77e3df4e0fa0/slip44:354",
+    "family": "polkadot",
+    "displayName": "Creditcoin Testnet",
+    "defaultKeyPath": "m/44'/354'/0'/0/0",
+    "isTestnet": true
   },
   {
-    "chainId": "fil:f/slip44:461",
+    "chainId": "fil:f",
     "family": "fil",
     "displayName": "Filecoin",
     "defaultKeyPath": "m/44'/461'/0'/0/0"
   },
   {
-    "chainId": "tron:0x2b6653dc/slip44:195",
+    "chainId": "fil:t",
+    "family": "fil",
+    "displayName": "Filecoin Calibration Testnet",
+    "defaultKeyPath": "m/44'/461'/0'/0/0",
+    "isTestnet": true
+  },
+  {
+    "chainId": "constellation:mainnet/slip44:1137",
+    "family": "constellation",
+    "displayName": "Constellation",
+    "defaultKeyPath": "m/44'/1137'/0'/0/0"
+  },
+  {
+    "chainId": "constellation:testnet/slip44:1137",
+    "family": "constellation",
+    "displayName": "Constellation Testnet",
+    "defaultKeyPath": "m/44'/1137'/0'/0/0",
+    "isTestnet": true
+  },
+  {
+    "chainId": "solana:EtWTRABZaYq6iMfeYKouRu166VU2xqa1",
+    "family": "solana",
+    "displayName": "Solana Devnet",
+    "defaultKeyPath": "m/44'/501'/0'",
+    "isTestnet": true
+  },
+  {
+    "chainId": "tron:mainnet",
     "family": "tron",
     "displayName": "Tron",
     "defaultKeyPath": "m/44'/195'/0'/0/0"

@@ -27,7 +27,7 @@
     "unit-v2-e2e:slowmo": "E2E_HEADLESS=false E2E_SLOWMO=100 jest --config jest.v2-e2e.config.js --runInBand",
     "unit-v2-e2e:devtools": "E2E_HEADLESS=false E2E_DEVTOOLS=true jest --config jest.v2-e2e.config.js --runInBand",
     "extract-chains": "node scripts/extract-chains.js",
-    "lint": "eslint --ext .js src-v1 tests playground.js",
+    "lint": "eslint --ext .js src-v1 tests playground.js scripts",
     "lint:fix": "eslint --ext .js src-v1 tests playground.js --fix",
     "tsc": "tsc --noEmit"
   },

@@ -4,9 +4,19 @@
     "label": "Bitcoin native-segwit transfer",
     "family": "bitcoin",
     "applicableChainIds": [
-      "bip122:000000000019d6689c085ae165831e93/slip44:0"
+      "bip122:000000000019d6689c085ae165831e93",
+      "bip122:000000000019d6689c085ae165831e93/slip44:145",
+      "bip122:000000000000000000651ef99cb9fcbe",
+      "bip122:00040fe8ec8471911baa1db1266ea15d/slip44:133",
+      "bip122:12a765e31ffd4059bada1e25190f6e98",
+      "bip122:00000000e9fba3b4a12d04c0a48d70d5/slip44:156",
+      "bip122:00000ffd590b1485b3caadc19b22e637/slip44:5",
+      "bip122:7497ea1b465eb39f1c8f507bc877078f/slip44:20",
+      "bip122:0000006b444bc2f2ffe627be9d9e7e7a/slip44:175",
+      "bip122:1a91e3dace36e2be3bf030a65679fe82",
+      "bip122:0007104ccda289427919efc39dc9e4d4/slip44:121"
     ],
-    "note": "P2WPKH native SegWit output. Amounts in satoshi. Edit inputs/outputs before send.",
+    "note": "P2WPKH native SegWit output. Amounts in satoshi. Edit inputs/outputs before send. Note: signTransaction -32601 expected — wm BitcoinAPIImpl not yet registered via WalletConnect. Layer 1 (getAddress) passes for all bitcoin-family chains.",
     "sourceUrl": "https://github.com/bitcoinjs/bitcoinjs-lib/blob/master/test/transaction_builder.spec.js",
     "transaction": {
       "inputs": [
@@ -32,7 +42,7 @@
     "label": "Solana SOL transfer (plain JSON, data: object)",
     "family": "solana",
     "applicableChainIds": [
-      "solana:5eykt4UsFv8P8NJdTREpY1vzqKqZKvdp/slip44:501"
+      "solana:5eykt4UsFv8P8NJdTREpY1vzqKqZKvdp"
     ],
     "note": "Case 2a — plain JSON instructions. SystemProgram.Transfer 의 data 를 {instruction, lamports} 객체로 표현. SystemProgram.Transfer 에만 적용.",
     "sourceUrl": "https://solana-labs.github.io/solana-web3.js/classes/VersionedTransaction.html",
@@ -68,7 +78,7 @@
     "label": "Solana SOL transfer (base58 serialized — recommended)",
     "family": "solana",
     "applicableChainIds": [
-      "solana:5eykt4UsFv8P8NJdTREpY1vzqKqZKvdp/slip44:501"
+      "solana:5eykt4UsFv8P8NJdTREpY1vzqKqZKvdp"
     ],
     "note": "Case 1 — 가장 안정적. dApp 이 @solana/web3.js 로 Transaction 또는 VersionedTransaction 을 만들고 bs58.encode(tx.serialize({requireAllSignatures: false, verifySignatures: false})) 로 직렬화한 base58 문자열. 모든 instruction type 자동 지원.",
     "sourceUrl": "https://solana-labs.github.io/solana-web3.js/classes/Transaction.html#serialize",
@@ -79,7 +89,7 @@
     "label": "Solana SOL transfer (plain JSON, data: 0x hex)",
     "family": "solana",
     "applicableChainIds": [
-      "solana:5eykt4UsFv8P8NJdTREpY1vzqKqZKvdp/slip44:501"
+      "solana:5eykt4UsFv8P8NJdTREpY1vzqKqZKvdp"
     ],
     "note": "Case 2b — plain JSON 의 instruction.data 를 0x-prefixed hex string 으로 표현. SystemProgram.Transfer 의 raw bytes(12 bytes: 4-byte instruction tag + 8-byte little-endian lamports). Token / ATA / Memo 등 SystemProgram.Transfer 외의 모든 instruction 에 권장.",
     "sourceUrl": "https://solana.com/docs/core/programs",
@@ -104,7 +114,7 @@
     "label": "Solana SOL transfer (plain JSON, data: base58 string)",
     "family": "solana",
     "applicableChainIds": [
-      "solana:5eykt4UsFv8P8NJdTREpY1vzqKqZKvdp/slip44:501"
+      "solana:5eykt4UsFv8P8NJdTREpY1vzqKqZKvdp"
     ],
     "note": "Case 2c — plain JSON 의 instruction.data 를 prefix 없는 base58 문자열로 표현. @solana/web3.js bs58.encode 결과와 동일.",
     "sourceUrl": "https://github.com/cryptocoinjs/bs58",
@@ -129,7 +139,7 @@
     "label": "Solana SOL transfer (plain JSON, data: number array)",
     "family": "solana",
     "applicableChainIds": [
-      "solana:5eykt4UsFv8P8NJdTREpY1vzqKqZKvdp/slip44:501"
+      "solana:5eykt4UsFv8P8NJdTREpY1vzqKqZKvdp"
     ],
     "note": "Case 2d — plain JSON 의 instruction.data 를 number array (Uint8Array JSON-serializable form) 로 표현. dApp 측에서 Array.from(uint8Array) 결과 그대로 전달.",
     "sourceUrl": "https://developer.mozilla.org/en-US/docs/Web/JavaScript/Reference/Global_Objects/Uint8Array",
@@ -154,7 +164,7 @@
     "label": "Solana SOL transfer (wm-internal TransactionCommon)",
     "family": "solana",
     "applicableChainIds": [
-      "solana:5eykt4UsFv8P8NJdTREpY1vzqKqZKvdp/slip44:501"
+      "solana:5eykt4UsFv8P8NJdTREpY1vzqKqZKvdp"
     ],
     "note": "Case 3 — wm-internal TransactionCommon shape ({type, sender, recipient, amount}). 주로 webview/RN 흐름에서 사용 (RN의 wallet-models 가 미리 만든 객체를 그대로 전달). SDK 에서는 거의 안 씀 — 호환성 용 pass-through.",
     "sourceUrl": "https://github.com/IotrustGitHub/dcent-wallet-models/blob/main/src/common/types/transaction.ts",
@@ -172,10 +182,30 @@
     "label": "XRP Payment",
     "family": "xrp",
     "applicableChainIds": [
-      "xrpl:0/slip44:144"
+      "xrpl:0"
     ],
     "note": "XRP Ledger Payment transaction. Edit Destination/Amount before send.",
     "sourceUrl": "https://js.xrpl.org/interfaces/Payment.html",
+    "transaction": {
+      "TransactionType": "Payment",
+      "Account": "rHb9CJAWyB4rj91VRWn96DkukG4bwdtyTh",
+      "Destination": "rPT1Sjq2YGrBMTttX4GZHjKu9dyfzbpAYe",
+      "Amount": "1000000",
+      "Fee": "12",
+      "Sequence": 1,
+      "Flags": 0
+    }
+  },
+  {
+    "id": "xahau-payment",
+    "label": "Xahau XAH Payment",
+    "family": "xahau",
+    "applicableChainIds": [
+      "xahau:mainnet/slip44:144",
+      "xahau:testnet/slip44:21337"
+    ],
+    "note": "Xahau (XRPL sidechain) payment transaction. Uses same shape as XRP Ledger. Note: signTransaction -32601 expected — wm XahauAPIImpl not yet registered via WalletConnect. Layer 1 getAddress passes.",
+    "sourceUrl": "https://xahau.network/",
     "transaction": {
       "TransactionType": "Payment",
       "Account": "rHb9CJAWyB4rj91VRWn96DkukG4bwdtyTh",
@@ -191,9 +221,9 @@
     "label": "Hedera HBAR transfer",
     "family": "hedera",
     "applicableChainIds": [
-      "hedera:mainnet/slip44:3030"
+      "hedera:mainnet"
     ],
-    "note": "Hedera TransferTransaction (CryptoTransfer). Edit accountId/amount before send.",
+    "note": "Hedera TransferTransaction (CryptoTransfer). Edit accountId/amount before send. Note: signTransaction -32601 expected — wm HederaAPIImpl not yet registered via WalletConnect. Layer 1 getAddress passes.",
     "sourceUrl": "https://docs.hedera.com/hedera/sdks-and-apis/sdks/cryptocurrency/transfer-cryptocurrency",
     "transaction": {
       "type": "CryptoTransfer",
@@ -217,9 +247,9 @@
     "label": "Stellar XLM payment",
     "family": "stellar",
     "applicableChainIds": [
-      "stellar:pubnet/slip44:148"
+      "stellar:pubnet"
     ],
-    "note": "Stellar Operation.payment for native XLM. Edit destination/amount before send.",
+    "note": "Stellar Operation.payment for native XLM. Edit destination/amount before send. Note: signTransaction -32601 expected — wm StellarAPIImpl not yet registered via WalletConnect. Layer 1 getAddress passes.",
     "sourceUrl": "https://stellar.github.io/js-stellar-sdk/Operation.payment.html",
     "transaction": {
       "type": "payment",
@@ -234,6 +264,157 @@
       },
       "fee": 100,
       "sequenceNumber": "0"
+    }
+  },
+  {
+    "id": "ada-transfer",
+    "label": "Cardano ADA transfer",
+    "family": "cardano",
+    "applicableChainIds": [
+      "cip34:1-764824073",
+      "cip34:0-2"
+    ],
+    "note": "Minimal ADA payment (TransactionCommon shape). Edit sender/recipient before send. Note: signTransaction -32601 expected — wm CardanoAPIImpl not yet registered via WalletConnect. Layer 1 getAddress passes.",
+    "sourceUrl": "https://cips.cardano.org/cips/cip30/",
+    "transaction": {
+      "type": "transfer",
+      "family": "cardano",
+      "sender": "addr1qy2z6xu9y07vkdnx26jq06l7jqnmhv8jh2v8sth47pltfq4vnv7mhjy7p2d3zf9p9xr2hq4wv3wgdl8p2c8kpv7lgfqcmfr7p",
+      "recipient": "addr1qy2z6xu9y07vkdnx26jq06l7jqnmhv8jh2v8sth47pltfq4vnv7mhjy7p2d3zf9p9xr2hq4wv3wgdl8p2c8kpv7lgfqcmfr7p",
+      "amount": "1000000"
+    }
+  },
+  {
+    "id": "near-transfer",
+    "label": "NEAR Protocol transfer",
+    "family": "near",
+    "applicableChainIds": [
+      "near:mainnet/slip44:397",
+      "near:testnet/slip44:397"
+    ],
+    "note": "NEAR Protocol transfer (UnionTransaction shape). blockHash and publicKey required. Note: signTransaction -32601 expected — wm NearAPIImpl not yet registered via WalletConnect. Layer 1 getAddress passes.",
+    "sourceUrl": "https://docs.near.org/concepts/basics/transactions/overview",
+    "transaction": {
+      "type": "transfer",
+      "family": "near",
+      "key": "NEAR",
+      "symbol": "NEAR",
+      "decimals": 24,
+      "optionParam": "",
+      "sender": "sender.near",
+      "recipient": "receiver.near",
+      "amount": "1000000000000000000000000",
+      "blockHash": "GJp9NRJGBnXqWJAKFxkzD8p9cJTiSNi1J3UWKVBbcfRw",
+      "publicKey": "ed25519:11111111111111111111111111111111"
+    }
+  },
+  {
+    "id": "dot-transfer",
+    "label": "Polkadot DOT transfer",
+    "family": "polkadot",
+    "applicableChainIds": [
+      "polkadot:91b171bb158e2d3848fa23a9f1c25182",
+      "polkadot:9eb76c5184c4ab8679d2d5d819fdf90b/slip44:810",
+      "polkadot:6673c7e2c2b7bde45a60c71ef70d9c7c/slip44:354"
+    ],
+    "note": "Polkadot balances.transfer extrinsic (TransactionCommon shape). Edit sender/recipient before send.",
+    "sourceUrl": "https://polkadot.js.org/docs/substrate/extrinsics/#transferdest-multiaddress-value-compact",
+    "transaction": {
+      "type": "transfer",
+      "family": "polkadot",
+      "sender": "5GrwvaEF5zXb26Fz9rcQpDWS57CtERHpNehXCPcNoHGKutQY",
+      "recipient": "5FHneW46xGXgs5mUiveU4sbTyGBzmstUspZC92UhjJM694ty",
+      "amount": "1000000000"
+    }
+  },
+  {
+    "id": "xtz-transfer",
+    "label": "Tezos XTZ transfer",
+    "family": "tezos",
+    "applicableChainIds": [
+      "tezos:NetXdQprcVkpaWU",
+      "tezos:NetXnHfVqm9iesp"
+    ],
+    "note": "Tezos transaction op (UnionTransaction shape). key/symbol/decimals required by wm TezosAPIImpl.",
+    "sourceUrl": "https://tezos.gitlab.io/shell/rpc.html",
+    "transaction": {
+      "type": "transfer",
+      "family": "tezos",
+      "key": "XTZ",
+      "symbol": "XTZ",
+      "decimals": 6,
+      "optionParam": "",
+      "hexNonce": "0000000000000000",
+      "revealed": false,
+      "sender": "tz1VSUr8wwNhLAzempoch5d6hLRiTh8Cjcjb",
+      "recipient": "tz1aSkwEot3L2kmUanuneWHL7zayzaovkujr",
+      "amount": "1000000"
+    }
+  },
+  {
+    "id": "atom-transfer",
+    "label": "Cosmos ATOM transfer (MsgSend)",
+    "family": "cosmos",
+    "applicableChainIds": [
+      "cosmos:cosmoshub-4",
+      "cosmos:coreum-mainnet-1",
+      "cosmos:hippo-protocol-1/slip44:118"
+    ],
+    "note": "Cosmos MsgSend transaction (UnionTransaction shape). accountNumber/sequence/pubKey/chainId required. Note: signTransaction may return -32601 for families where wm CosmosAPIImpl dispatch is not yet registered.",
+    "sourceUrl": "https://docs.cosmos.network/api",
+    "transaction": {
+      "type": "transfer",
+      "family": "cosmos",
+      "key": "ATOM",
+      "symbol": "ATOM",
+      "decimals": 6,
+      "optionParam": "",
+      "sender": "cosmos1qnk2n4nlkpw9xfqntladh74er2xa62wm7p7p5z",
+      "recipient": "cosmos1ht3qs0a8fgg04y2w8u7k9z7vefkf38qnmqjvmq",
+      "amount": "1000000",
+      "accountNumber": "12345",
+      "sequence": "0",
+      "pubKey": "A0000000000000000000000000000000000000000000",
+      "pubKeyType": "/cosmos.crypto.secp256k1.PubKey",
+      "chainId": "cosmoshub-4",
+      "signature": "",
+      "txRaw": "",
+      "feeRate": { "low": "0.01", "average": "0.025", "high": "0.04" }
+    }
+  },
+  {
+    "id": "vet-transfer",
+    "label": "VeChain VET transfer",
+    "family": "vechain",
+    "applicableChainIds": [
+      "vechain:b1ac3413d346d43539627e6be7ec1b4a"
+    ],
+    "note": "VeChain clauses transaction (TransactionCommon shape). Edit sender/recipient before send.",
+    "sourceUrl": "https://docs.vechain.org/how-to-run-a-node/custom-network",
+    "transaction": {
+      "type": "transfer",
+      "family": "vechain",
+      "sender": "0x7567D83b7b8d80ADdCb281A71d54Fc7B3364ffed",
+      "recipient": "0xd3ae78222BEADB038203bE21eD5ce7C9B1BfF602",
+      "amount": "1000000000000000000"
+    }
+  },
+  {
+    "id": "dag-transfer",
+    "label": "Constellation DAG transfer",
+    "family": "constellation",
+    "applicableChainIds": [
+      "constellation:mainnet/slip44:1137",
+      "constellation:testnet/slip44:1137"
+    ],
+    "note": "Constellation DAG transfer (TransactionCommon shape). Note: signTransaction -32601 expected — wm ConstellationAPIImpl not yet registered via WalletConnect. Layer 1 getAddress passes.",
+    "sourceUrl": "https://docs.constellationnetwork.io/",
+    "transaction": {
+      "type": "transfer",
+      "family": "constellation",
+      "sender": "DAG0000000000000000000000000000000000000000",
+      "recipient": "DAG0000000000000000000000000000000000000001",
+      "amount": "100000000"
     }
   }
 ]

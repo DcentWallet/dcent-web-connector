@@ -6,6 +6,7 @@ import {
 } from './MessageTransport'
 import { ProviderError } from '../error/ProviderError'
 import { ErrorCode } from '../error/ErrorCode'
+import { toWireTransport } from '../sign/_sanitizeTransportOption'
 
 /**
  * PopupTransport 옵션
@@ -80,6 +81,13 @@ export class PopupTransport implements MessageTransport {
    * 같은 popup 세션 도중 reuse하는 후속 send에는 영향 없음(handshake는 1회만 fire).
    */
   private pendingDeviceId: string | undefined = undefined
+  /**
+   * (m09-04-03) caller가 다음 handshake 시점에 sdk로 전달할 transport 힌트.
+   * popup lifecycle 단위 first-wins (audit R12): handshake는 첫 send에서만 1회 fire.
+   * 두 번째 sign 호출 시 setPendingTransport가 다시 호출되어도 handshakePromise가 이미
+   * 존재하므로 ensureHandshake가 새 handshake를 보내지 않음 → transport 변경 silent ignore.
+   */
+  private pendingTransport: 'hid' | 'ble' | undefined = undefined
   private stateHandlers: Set<(state: TransportState) => void> = new Set()
   private messageListener: ((event: MessageEvent) => void) | null = null
   private closePollingInterval: ReturnType<typeof setInterval> | null = null
@@ -202,6 +210,21 @@ export class PopupTransport implements MessageTransport {
    */
   setPendingDeviceId (deviceId: string | undefined): void {
     this.pendingDeviceId = deviceId
+  }
+
+  /**
+   * (m09-04-03) 다음 handshake에 sdk로 전달할 transport 힌트를 설정.
+   *
+   * 호출 시점: 첫 send 호출이 handshake를 trigger하기 전에 _call이 본 method로 설정.
+   * popup lifecycle 단위 first-wins (audit R12): handshakePromise가 이미 생성된 후에는
+   * 본 setter가 호출되어도 ensureHandshake가 기존 Promise를 재사용하므로 transport 변경이
+   * 실제로는 반영되지 않음 (silent ignore). 이는 의도된 동작 — popup 내 transport 재변경은
+   * application error로 간주.
+   *
+   * @param transport 설정할 transport 힌트. undefined로 호출하면 hint 비우기 (sdk picker 흐름).
+   */
+  setPendingTransport (transport: 'hid' | 'ble' | undefined): void {
+    this.pendingTransport = transport
   }
 
   async close (): Promise<void> {
@@ -455,11 +478,18 @@ export class PopupTransport implements MessageTransport {
       // (Session deviceId, 2026-05-22) pendingDeviceId 가 있으면 handshake params 에 포함.
       // sdk가 권한 캐시된 device 중 deviceId 매칭하는 것을 chooser 없이 자동 연결한다.
       // mismatch 시 ProviderRpcError(4001) — sdk envelope.error로 변환되어 send promise reject.
+      // (m09-04-03) pendingTransport를 toWireTransport로 변환하여 항상 동봉 (undefined → 'auto').
+      // sdk가 'auto'를 받으면 picker UI fallback, 'hid'/'ble'를 받으면 즉시 connect.
       const handshakeParams: {
         version: string
         clientName: string
         deviceId?: string
-      } = { version: this.protocolVersion, clientName: 'connector' }
+        transport: 'hid' | 'ble' | 'auto'
+      } = {
+        version: this.protocolVersion,
+        clientName: 'connector',
+        transport: toWireTransport(this.pendingTransport),
+      }
       if (this.pendingDeviceId) {
         handshakeParams.deviceId = this.pendingDeviceId
       }

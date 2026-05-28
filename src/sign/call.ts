@@ -51,6 +51,12 @@ export interface CallInput {
    * 미명시 시 기존 흐름 (picker UI). 첫 호출에는 dApp이 deviceId를 모르므로 undefined.
    */
   deviceId?: string
+  /**
+   * (m09-04-03) sanitize된 transport 힌트. PopupTransport의 setPendingTransport로 등록되어
+   * sdk handshake params.transport로 송신됨. popup lifecycle 단위 first-wins (audit R12).
+   * undefined 시 toWireTransport에서 'auto'로 변환 → sdk picker UI fallback.
+   */
+  transport?: 'hid' | 'ble'
   params?: Record<string, unknown>
 }
 
@@ -138,6 +144,17 @@ export async function _call (input: CallInput): Promise<V1Response> {
   ) {
     ;(transport as { setPendingDeviceId: (id: string | undefined) => void }).setPendingDeviceId(
       input.deviceId,
+    )
+  }
+
+  // (m09-04-03) transport 힌트를 다음 handshake에 전달. popup lifecycle 단위 first-wins.
+  // setPendingTransport가 있는 transport(PopupTransport)에만 적용.
+  if (
+    'setPendingTransport' in transport &&
+    typeof (transport as { setPendingTransport?: unknown }).setPendingTransport === 'function'
+  ) {
+    ;(transport as { setPendingTransport: (t: 'hid' | 'ble' | undefined) => void }).setPendingTransport(
+      input.transport,
     )
   }
 

@@ -54,6 +54,45 @@
     #btn-disconnect { background: #dc2626; color: #fff; display: none; }
     #btn-disconnect:hover { background: #b91c1c; }
 
+    /* ── DeviceId bar (m12-03) ── */
+    #deviceid-bar {
+      background: #1a1a2e;
+      border-bottom: 1px solid #2a2a40;
+      padding: 6px 16px;
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      flex-shrink: 0;
+      font-size: 12px;
+      color: #aaa;
+    }
+    #deviceid-bar label { font-size: 11px; font-weight: 600; color: #aaa; white-space: nowrap; }
+    #deviceid-bar input[type="text"] {
+      flex: 1;
+      background: #2a2a3e;
+      color: #e2e8f0;
+      border: 1px solid #444;
+      border-radius: 4px;
+      padding: 4px 8px;
+      font-size: 12px;
+      font-family: monospace;
+      min-width: 0;
+    }
+    #deviceid-bar input[type="text"]:focus { outline: none; border-color: #4f46e5; }
+    #deviceid-bar input[type="text"]::placeholder { color: #666; font-style: italic; }
+    #deviceid-bar input[type="checkbox"] { cursor: pointer; }
+    #deviceid-bar button {
+      padding: 3px 8px;
+      border: 1px solid #444;
+      border-radius: 4px;
+      background: #2a2a3e;
+      color: #ccc;
+      font-size: 11px;
+      cursor: pointer;
+      white-space: nowrap;
+    }
+    #deviceid-bar button:hover { background: #3a3a50; border-color: #666; }
+
     /* ── Transport selector (m09-04-03) ── */
     #transport-selector {
       display: flex;
@@ -276,6 +315,15 @@
   </div>
   <button id="btn-connect">Connect</button>
   <button id="btn-disconnect">Disconnect</button>
+</div>
+
+<!-- DeviceId sticky bar (m12-03) -->
+<div id="deviceid-bar">
+  <input type="checkbox" id="chk-use-deviceid" title="Include deviceId in all API calls">
+  <label for="chk-use-deviceid">deviceId</label>
+  <input type="text" id="input-deviceid" placeholder="(capture from first response)" autocomplete="off" spellcheck="false">
+  <button id="btn-copy-deviceid" title="Copy deviceId to clipboard">Copy</button>
+  <button id="btn-clear-deviceid" title="Clear cached deviceId">Clear</button>
 </div>
 
 <!-- Main: Sidebar + Log -->

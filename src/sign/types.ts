@@ -4,6 +4,10 @@
  * v1의 `messageReceive` 핸들러가 dApp에 돌려주던 payload(`{header, body}`) 구조와 1:1 호환.
  * dApp이 v2 통합 sign API를 호출할 때 받는 응답이 v1 시절과 동일한 shape을 갖도록 보장한다.
  *
+ * **m12-03**: V1Response를 generic으로 확장해 `body.parameter`에 typed narrow를 지원.
+ * 기존 호출자는 default `TParam = Record<string, unknown>`으로 backward-compat.
+ * `CallOptions` / `DeviceInfoPayload` 신설.
+ *
  * 룰 준수:
  *   - mutation-isolation: V1Response는 매 호출마다 새 객체로 생성 (call.ts 참조)
  *   - boundary-validation: header/body 필드 존재 여부는 호출자 또는 _assertV1Success가 검증
@@ -24,12 +28,17 @@ export interface V1ResponseHeader {
 }
 /* eslint-enable camelcase */
 
-/** 응답 본문 — v1 dcent.call() 응답의 `body` 필드 형태. */
-export interface V1ResponseBody {
+/**
+ * 응답 본문 — v1 dcent.call() 응답의 `body` 필드 형태.
+ *
+ * **m12-03**: `parameter` 필드를 generic `TParam`으로 typed.
+ * 기존 호출자는 default `Record<string, unknown>`으로 backward-compat.
+ */
+export interface V1ResponseBody<TParam = Record<string, unknown>> {
   /** command 종류 — 'transaction' / 'getAddress' / 'getDeviceInfo' 등 */
   command?: string
   /** 성공 응답 페이로드 — signed_tx / address / device_id 등 */
-  parameter?: Record<string, unknown>
+  parameter?: TParam
   /** 실패 응답 — code/message 쌍 */
   error?: {
     code: string
@@ -43,10 +52,13 @@ export interface V1ResponseBody {
  * v1 시절 dApp이 받던 `{header, body}` 구조와 1:1 동등.
  * v2에서는 underlying transport가 JSON-RPC 2.0 envelope을 사용하지만,
  * connector facade가 이 envelope을 V1Response로 매핑하여 dApp 호환성을 유지한다.
+ *
+ * **m12-03**: Generic `TParam` 지원 — `getDeviceInfo()`의 반환 타입을
+ * `V1Response<DeviceInfoPayload>`로 narrow 가능. 기존 호출자는 default로 동작.
  */
-export interface V1Response {
+export interface V1Response<TParam = Record<string, unknown>> {
   header: V1ResponseHeader
-  body: V1ResponseBody
+  body: V1ResponseBody<TParam>
   /**
    * (Session deviceId, 2026-05-22) sdk가 응답 envelope top-level에 echo한 HW device_id.
    * dApp이 첫 응답에서 캡처하여 후속 호출의 method param `deviceId`로 사용. transport
@@ -54,3 +66,50 @@ export interface V1Response {
    */
   deviceId?: string
 }
+
+/**
+ * dApp-facing 메서드 옵션 — deviceId (m12-03).
+ *
+ * HIGH / MEDIUM priority facade 메서드의 마지막 optional 인자.
+ * dApp이 이전 응답 `V1Response.deviceId` 에서 캡처한 값을 전달하면
+ * `_call` → PopupTransport.setPendingDeviceId → sdk handshake로 전달되어
+ * 특정 디바이스에 자동 연결 (picker 없음).
+ *
+ * 미명시 시 기존 흐름 (picker UI 또는 이전 session binding).
+ */
+export interface CallOptions {
+  deviceId?: string
+}
+
+/* eslint-disable camelcase */
+/**
+ * D'CENT 디바이스 정보 응답 payload (m12-03).
+ *
+ * `getDeviceInfo()` 응답의 `body.parameter` shape.
+ * 모든 필드는 optional — b11-02(sdk)가 미SHIPPED이면 새 필드가 wire에 없어도 graceful.
+ * race-safe-cross-repo exemption에 따라 옛 sdk 응답에서는 새 필드가 `undefined`로 들어온다.
+ *
+ * mutation-isolation: coin_list 배열은 V1Response가 call.ts에서 매 호출마다 새 객체로
+ * 생성되므로 caller mutation은 내부 상태를 오염시키지 않는다 (T-SEC-MUT-01).
+ */
+export interface DeviceInfoPayload {
+  /** 하드웨어 device_id — 연결된 디바이스 고유 식별자 */
+  device_id?: string
+  /** 펌웨어 버전 (예: 'v2.8.1') */
+  fw_version?: string
+  /** KSM 버전 (보안 칩 펌웨어) */
+  ksm_version?: string
+  /** 디바이스 상태 (예: 'initialised') */
+  state?: string
+  /** 등록된 코인 리스트 */
+  coin_list?: Array<{ name: string }>
+  /** 지문 등록 정보 */
+  fingerprint?: { max: number; enrolled: number }
+  /** 사용자 설정 레이블 */
+  label?: string
+  /** 연결 타입 */
+  connectType?: 'usb' | 'ble'
+  /** 디바이스 부착 여부 */
+  isAttached?: boolean
+}
+/* eslint-enable camelcase */

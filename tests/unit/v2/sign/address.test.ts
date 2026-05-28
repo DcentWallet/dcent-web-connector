@@ -28,7 +28,7 @@
  */
 
 import { Buffer } from 'buffer'
-import { getAddress, getXPUB, type GetAddressV2Input } from '../../../../src/sign/address'
+import { getAddress, getXPUB, type GetAddressV2Input, _sanitizeAddressFormat } from '../../../../src/sign/address'
 import { ensureSingleton, _resetForTesting } from '../../../../src/singleton'
 
 beforeEach(() => {
@@ -369,5 +369,190 @@ describe('getAddress chain isolation — connector-chain-addition-isolation 룰'
       // chain enum / PREFIX_TO_METHOD / chain-prefixed switch 추가 없이 chain-agnostic
       expect(sendSpy.mock.calls[i][0].method).toBe('getAddress')
     }
+  })
+})
+
+// ──────────────────────────────────────────────────────────────────────────
+// m09-04-09 — addressFormat field (BTC family multi-variant dispatch)
+// ──────────────────────────────────────────────────────────────────────────
+
+describe('getAddress v2 — addressFormat field (m09-04-09)', () => {
+  test('T-U-ADF-V2-01: addressFormat segwit-native → envelope.params.addressFormat 동행', async () => {
+    const { transport } = ensureSingleton()
+    const sendSpy = jest.spyOn(transport, 'send').mockResolvedValue({
+      id: 'adf-r1',
+      result: { address: 'bc1q...' },
+    })
+
+    await getAddress({
+      chainId: 'bip122:000000000019d6689c085ae165831e93',
+      keyPath: "m/84'/0'/0'/0/0",
+      addressFormat: 'segwit-native',
+    })
+
+    const callArg = sendSpy.mock.calls[0][0] as any
+    expect(callArg.params.addressFormat).toBe('segwit-native')
+    expect(callArg.method).toBe('getAddress')
+  })
+
+  test('T-U-ADF-V2-02: addressFormat undefined → envelope.params에 addressFormat 필드 부재', async () => {
+    const { transport } = ensureSingleton()
+    const sendSpy = jest.spyOn(transport, 'send').mockResolvedValue({
+      id: 'adf-r2',
+      result: { address: '1abc...' },
+    })
+
+    await getAddress({
+      chainId: 'bip122:000000000019d6689c085ae165831e93',
+      keyPath: "m/44'/0'/0'/0/0",
+    })
+
+    const callArg = sendSpy.mock.calls[0][0] as any
+    expect(callArg.params).not.toHaveProperty('addressFormat')
+  })
+
+  test('T-U-ADF-V2-03: addressFormat invalid string → param_error throw', async () => {
+    await expect(
+      getAddress({
+        chainId: 'bip122:000000000019d6689c085ae165831e93',
+        keyPath: "m/44'/0'/0'/0/0",
+        addressFormat: 'invalid' as any,
+      }),
+    ).rejects.toEqual(expectV1Error('param_error'))
+  })
+
+  test('T-U-ADF-V2-04: addressFormat number → param_error throw', async () => {
+    await expect(
+      getAddress({
+        chainId: 'bip122:000000000019d6689c085ae165831e93',
+        keyPath: "m/44'/0'/0'/0/0",
+        addressFormat: 123 as any,
+      }),
+    ).rejects.toEqual(expectV1Error('param_error'))
+  })
+
+  test('T-U-ADF-V2-05: addressFormat null → envelope.params에 addressFormat 필드 부재', async () => {
+    const { transport } = ensureSingleton()
+    const sendSpy = jest.spyOn(transport, 'send').mockResolvedValue({
+      id: 'adf-r5',
+      result: { address: '1abc...' },
+    })
+
+    await getAddress({
+      chainId: 'bip122:000000000019d6689c085ae165831e93',
+      keyPath: "m/44'/0'/0'/0/0",
+      addressFormat: null as any,
+    })
+
+    const callArg = sendSpy.mock.calls[0][0] as any
+    expect(callArg.params).not.toHaveProperty('addressFormat')
+  })
+
+  test('T-U-ADF-V2-06: prototype pollution — __proto__ 키가 sanitize를 통과하지 않음', () => {
+    // _sanitizeAddressFormat은 string 타입 + enum 포함 여부 검사로 prototype 키 차단
+    // __proto__, constructor, prototype은 ADDRESS_FORMAT_VALUES 목록에 없으므로 param_error
+    expect(() => _sanitizeAddressFormat('__proto__')).toThrow()
+    expect(() => _sanitizeAddressFormat('constructor')).toThrow()
+    expect(() => _sanitizeAddressFormat('prototype')).toThrow()
+  })
+
+  test('T-U-ADF-V2-07: v1 getAddress("bitcoin", path) → v1 path 그대로, addressFormat 없음 (v1 불변)', async () => {
+    const { transport } = ensureSingleton()
+    const sendSpy = jest.spyOn(transport, 'send').mockResolvedValue({
+      id: 'adf-r7',
+      result: { address: '1abc...' },
+    })
+
+    // v1 coinType='bitcoin' (BITCOIN enum 값) — 유효한 v1 coinType
+    await getAddress('bitcoin', "m/44'/0'/0'/0/0")
+
+    const callArg = sendSpy.mock.calls[0][0] as any
+    // v1 path는 coinType 기반으로 params 구성 — addressFormat 없음
+    expect(callArg.params).toHaveProperty('coinType', 'bitcoin')
+    expect(callArg.params).not.toHaveProperty('addressFormat')
+    // v1 path는 chainId 필드도 없음
+    expect(callArg.chainId).toBeUndefined()
+  })
+
+  test('T-U-ADF-V2-08: AddressFormat type이 dcent-web-connector에서 import type 가능', () => {
+    // TypeScript 컴파일 타임 검증 — import type { AddressFormat } from 'dcent-web-connector'
+    // 런타임에는 _sanitizeAddressFormat으로 enum 동작 검증
+    const validFormats: import('../../../../src/sign/address').AddressFormat[] = [
+      'legacy',
+      'segwit-wrapped',
+      'segwit-native',
+      'taproot',
+    ]
+    // 4개 모두 _sanitizeAddressFormat을 통과해야 함
+    for (const fmt of validFormats) {
+      expect(_sanitizeAddressFormat(fmt)).toBe(fmt)
+    }
+  })
+
+  test('T-U-ADF-V2-01.b: addressFormat legacy → envelope.params.addressFormat 동행', async () => {
+    const { transport } = ensureSingleton()
+    const sendSpy = jest.spyOn(transport, 'send').mockResolvedValue({
+      id: 'adf-r1b',
+      result: { address: '1abc...' },
+    })
+
+    await getAddress({
+      chainId: 'bip122:000000000019d6689c085ae165831e93',
+      keyPath: "m/44'/0'/0'/0/0",
+      addressFormat: 'legacy',
+    })
+
+    const callArg = sendSpy.mock.calls[0][0] as any
+    expect(callArg.params.addressFormat).toBe('legacy')
+  })
+})
+
+// ──────────────────────────────────────────────────────────────────────────
+// m09-04-09 — _sanitizeAddressFormat 단위 테스트
+// ──────────────────────────────────────────────────────────────────────────
+
+describe('_sanitizeAddressFormat — unit (m09-04-09)', () => {
+  test('valid: "legacy" → "legacy" 반환', () => {
+    expect(_sanitizeAddressFormat('legacy')).toBe('legacy')
+  })
+
+  test('valid: "segwit-wrapped" → "segwit-wrapped" 반환', () => {
+    expect(_sanitizeAddressFormat('segwit-wrapped')).toBe('segwit-wrapped')
+  })
+
+  test('valid: "segwit-native" → "segwit-native" 반환', () => {
+    expect(_sanitizeAddressFormat('segwit-native')).toBe('segwit-native')
+  })
+
+  test('valid: "taproot" → "taproot" 반환', () => {
+    expect(_sanitizeAddressFormat('taproot')).toBe('taproot')
+  })
+
+  test('undefined → undefined 반환 (optional 필드)', () => {
+    expect(_sanitizeAddressFormat(undefined)).toBeUndefined()
+  })
+
+  test('null → undefined 반환 (optional 필드)', () => {
+    expect(_sanitizeAddressFormat(null)).toBeUndefined()
+  })
+
+  test('number → param_error throw', () => {
+    expect(() => _sanitizeAddressFormat(0)).toThrow()
+    expect(() => _sanitizeAddressFormat(42)).toThrow()
+  })
+
+  test('boolean → param_error throw', () => {
+    expect(() => _sanitizeAddressFormat(true)).toThrow()
+  })
+
+  test('unknown string → param_error throw', () => {
+    expect(() => _sanitizeAddressFormat('BITCOIN')).toThrow()
+    expect(() => _sanitizeAddressFormat('p2pkh')).toThrow()
+    expect(() => _sanitizeAddressFormat('')).toThrow()
+  })
+
+  test('object → param_error throw', () => {
+    expect(() => _sanitizeAddressFormat({})).toThrow()
+    expect(() => _sanitizeAddressFormat([])).toThrow()
   })
 })

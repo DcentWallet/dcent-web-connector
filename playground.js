@@ -574,6 +574,19 @@
     return state._testDcent || window.dcent
   }
 
+  // ── Transport option helper (m09-04-03) ──
+  // #select-transport 값을 읽어 dcent.sign()의 transport 옵션으로 전달할 값 반환.
+  // '' (auto/default) → undefined (옵션 미전달 = 기존 동작 유지, backward compat)
+  // 'hid' | 'ble' → string 그대로 반환
+  // connector-chain-addition-isolation: transport는 chain과 직교, chain-specific 분기 없음.
+  function _getTransportOption () {
+    var el = document.getElementById('select-transport')
+    if (!el) return undefined
+    var val = el.value
+    if (val === 'hid' || val === 'ble') return val
+    return undefined // '' → undefined: 옵션 미전달 (dcent.sign이 'auto' handshake 전송)
+  }
+
   // ── Build Tree DOM ──
   function buildTree () {
     treePanel.innerHTML = ''
@@ -2374,11 +2387,11 @@
         // m09-04-01/DC-2221: NEW sign schema { method, chainId, payload } — OLD { chain, payload } 금지.
         // connector-chain-addition-isolation: bsChainId는 사용자 입력 그대로 pass-through (chain enum 없음).
         // b08-01: _unwrapV1Envelope이 success → body.parameter unwrap, failure → throw로 변환.
-        dcent.sign({
-          method: 'signTransaction',
-          chainId: bsChainId,
-          payload: { keyPath: bsKeyPath, transaction: builtTx },
-        }).then(_unwrapV1Envelope).then(function (result) {
+        // m09-04-03: transport 옵션 — #select-transport 선택값. undefined이면 미전달 (backward compat).
+        var bsTransport = _getTransportOption()
+        var bsSignInput = { method: 'signTransaction', chainId: bsChainId, payload: { keyPath: bsKeyPath, transaction: builtTx } }
+        if (bsTransport !== undefined) bsSignInput.transport = bsTransport
+        dcent.sign(bsSignInput).then(_unwrapV1Envelope).then(function (result) {
           appendLog({
             method: 'signTransaction',
             chainId: bsChainId,
@@ -2456,7 +2469,11 @@
     // method는 intent literal ('signMessage'), chainId(CAIP-19)는 top-level, payload에는 chainId 제거.
     var dcent = _getDcent()
     // b08-01: _unwrapV1Envelope이 success → body.parameter unwrap, failure → throw로 변환
-    dcent.sign({ method: 'signMessage', chainId: chainId, payload: { keyPath: keyPath, message: message, meta: metaObj } }).then(_unwrapV1Envelope).then(function (result) {
+    // m09-04-03: transport 옵션 — #select-transport 선택값. undefined이면 미전달 (backward compat).
+    var smTransport = _getTransportOption()
+    var smSignInput = { method: 'signMessage', chainId: chainId, payload: { keyPath: keyPath, message: message, meta: metaObj } }
+    if (smTransport !== undefined) smSignInput.transport = smTransport
+    dcent.sign(smSignInput).then(_unwrapV1Envelope).then(function (result) {
       appendLog({
         method: 'signMessage',
         chainId: chainId,
@@ -2520,7 +2537,11 @@
     // sdk resolveChainId가 wallet-models registry로 currency 결정.
     var dcent = _getDcent()
     // b08-01: _unwrapV1Envelope이 success → body.parameter unwrap, failure → throw로 변환
-    dcent.sign({ method: 'signTransaction', chainId: chainId, payload: { keyPath: keyPath, transaction: txObj } }).then(_unwrapV1Envelope).then(function (result) {
+    // m09-04-03: transport 옵션 — #select-transport 선택값. undefined이면 미전달 (backward compat).
+    var evmTransport = _getTransportOption()
+    var evmSignInput = { method: 'signTransaction', chainId: chainId, payload: { keyPath: keyPath, transaction: txObj } }
+    if (evmTransport !== undefined) evmSignInput.transport = evmTransport
+    dcent.sign(evmSignInput).then(_unwrapV1Envelope).then(function (result) {
       appendLog({
         method: 'signTransaction',
         chainId: chainId,
@@ -2584,7 +2605,11 @@
     // bip122/solana/xrpl/cosmos/stellar/hedera 등 비-EVM도 동일 패턴. chains.json의 chainId가 이미 CAIP-19.
     var dcent = _getDcent()
     // b08-01: _unwrapV1Envelope이 success → body.parameter unwrap, failure → throw로 변환
-    dcent.sign({ method: 'signTransaction', chainId: chainId, payload: { keyPath: keyPath, transaction: txObj } }).then(_unwrapV1Envelope).then(function (result) {
+    // m09-04-03: transport 옵션 — #select-transport 선택값. undefined이면 미전달 (backward compat).
+    var nonEvmTransport = _getTransportOption()
+    var nonEvmSignInput = { method: 'signTransaction', chainId: chainId, payload: { keyPath: keyPath, transaction: txObj } }
+    if (nonEvmTransport !== undefined) nonEvmSignInput.transport = nonEvmTransport
+    dcent.sign(nonEvmSignInput).then(_unwrapV1Envelope).then(function (result) {
       appendLog({
         method: 'signTransaction',
         chainId: chainId,

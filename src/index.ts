@@ -112,6 +112,8 @@ export type { UnitConvertResult } from './utils/unitConverter'
 // === 새 named exports (m08-01-02 — sign / V1 호환) ===
 export { sign } from './sign'
 export type { SignInput, V1Response, V1ResponseHeader, V1ResponseBody } from './sign'
+// m12-03: CallOptions + DeviceInfoPayload public re-export
+export type { CallOptions, DeviceInfoPayload } from './sign'
 // internal helpers (sibling module이 사용)
 export { _call, _genId, _sanitizeMethod, _sanitizeChainId, _assertV1Success, providerErrorToV1 } from './sign'
 export type { CallInput } from './sign'

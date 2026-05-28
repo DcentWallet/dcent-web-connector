@@ -14,8 +14,8 @@
 export { sign } from './sign'
 export type { SignInput } from './sign'
 
-// V1 호환 응답 타입
-export type { V1Response, V1ResponseHeader, V1ResponseBody } from './types'
+// V1 호환 응답 타입 + m12-03 신규 타입
+export type { V1Response, V1ResponseHeader, V1ResponseBody, CallOptions, DeviceInfoPayload } from './types'
 
 // internal helpers — sibling module이 사용. 이름 prefix `_`로 표기.
 export { _call } from './call'

@@ -27,6 +27,7 @@
 import { _call } from './call'
 import { _sanitizeMethod, _sanitizeChainId } from './sanitize'
 import { _validateSignPayload } from './_validateSignPayload'
+import { _sanitizeTransportOption } from './_sanitizeTransportOption'
 import type { V1Response } from './types'
 
 export type { SignPayload } from './_validateSignPayload'
@@ -54,6 +55,20 @@ export interface SignInput {
    * (code 4001). 미명시 시 기존 picker 흐름.
    */
   deviceId?: string
+  /**
+   * (m09-04-03) per-call HW transport 힌트. 명시 시 sdk popup이 picker UI를 skip하고
+   * 해당 transport로 즉시 connect한다. 미명시 시 sdk picker UI fallback.
+   *
+   * - 'hid': WebHID 강제
+   * - 'ble': WebBLE 강제
+   * - undefined: sdk picker UI (기본)
+   *
+   * 같은 popup lifecycle 내 두 번째 호출의 transport 옵션은 silent ignore (first-wins).
+   * connector-chain-addition-isolation: transport는 chain과 직교 (모든 chain 공통).
+   *
+   * @throws ProviderError(INVALID_PARAMS) — invalid 값('webusb', null, '' 등)
+   */
+  transport?: 'hid' | 'ble'
 }
 
 /**
@@ -99,6 +114,8 @@ export async function sign (input: SignInput): Promise<V1Response> {
   const safeMethod = _sanitizeMethod(input.method)
   const safeChainId = _sanitizeChainId(input.chainId)
   _validateSignPayload(safeChainId, input.payload)
+  // (m09-04-03) transport 옵션 sanitize — 'hid' | 'ble' | undefined (INVALID_PARAMS throw 가능)
+  const safeTransport = _sanitizeTransportOption(input.transport)
   // (Session deviceId, 2026-05-22) deviceId hint를 _call로 전달. _call이 PopupTransport
   // .setPendingDeviceId로 등록 + handshake에 echo. dApp이 sign({..., deviceId})로 호출하면
   // sdk가 자동 cached connect 시도.
@@ -107,5 +124,6 @@ export async function sign (input: SignInput): Promise<V1Response> {
     chainId: safeChainId,
     params: input.payload,
     deviceId: input.deviceId,
+    transport: safeTransport,
   })
 }

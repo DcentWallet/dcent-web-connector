@@ -486,10 +486,11 @@ describe('PopupTransport', () => {
         (c: unknown[]) => (c[0] as { method?: string })?.method === '_handshake',
       )
       expect(handshakeCalls.length).toBe(1)
-      const handshakeMsg = handshakeCalls[0][0] as { id: string; method: string; params: { version: string; clientName: string } }
+      const handshakeMsg = handshakeCalls[0][0] as { id: string; method: string; params: { version: string; clientName: string; transport: string } }
       expect(handshakeMsg.id.startsWith('_handshake_')).toBe(true)
       expect(handshakeMsg.method).toBe('_handshake')
-      expect(handshakeMsg.params).toEqual({ version: '2.0', clientName: 'connector' })
+      // m09-04-03: transport 필드가 항상 포함됨 (옵션 미명시 시 'auto')
+      expect(handshakeMsg.params).toEqual({ version: '2.0', clientName: 'connector', transport: 'auto' })
       expect(handshakeCalls[0][1]).toBe(DEFAULT_ORIGIN)
 
       await transport.close()

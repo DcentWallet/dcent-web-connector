@@ -65,6 +65,7 @@
   "homepage": "https://github.com/DcentWallet/dcent-web-connector#readme",
   "author": "IoTrust Co. Ltd.,",
   "devDependencies": {
+    "dcent-web-connector-v1": "npm:dcent-web-connector@0.16.0",
     "@babel/core": "^7.6.0",
     "@babel/preset-env": "^7.6.0",
     "@babel/preset-react": "^7.9.4",

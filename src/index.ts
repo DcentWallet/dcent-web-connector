@@ -133,6 +133,8 @@ export {
 export type { SyncAccountInfo, BitcoinTxObject, BitcoinTxParameter } from './sign'
 // m11-01-02: v2 chainId facade input type for getAddress overload
 export type { GetAddressV2Input } from './sign'
+// m09-04-09: addressFormat enum for BTC family multi-variant dispatch
+export type { AddressFormat } from './sign'
 // v1 validator helpers — dApp 표면 1:1 보존 (v1 typo `getCzonePrifix` 포함)
 export {
   isAvaliableCoinType,

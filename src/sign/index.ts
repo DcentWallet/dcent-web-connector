@@ -30,6 +30,8 @@ export { info, getDeviceInfo, getAccountInfo } from './info'
 export { getAddress, getXPUB } from './address'
 // m11-01-02: v2 chainId facade input type for getAddress
 export type { GetAddressV2Input } from './address'
+// m09-04-09: addressFormat enum type for BTC family multi-variant dispatch
+export type { AddressFormat } from './address'
 export { setLabel, syncAccount, selectAddress } from './configure'
 export type { SyncAccountInfo } from './configure'
 export {

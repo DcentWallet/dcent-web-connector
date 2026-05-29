@@ -94,9 +94,11 @@ function buildDefaultKeyPath (family, bip44CoinType, derivationFormat) {
     case 'stellar':
       return `m/44'/${bip44CoinType}'/0'`
     case 'cardano':
-      // CIP-1852: m/1852'/1815'/0'/0/0 (role 0 = external chain)
-      // bip44CoinType=1815 → path reflects CIP-1852 standard
-      return `m/1852'/${bip44CoinType}'/0'/0/0`
+      // D'CENT firmware는 BIP-44 (m/44'/1815'/0'/0/0) 컨벤션 사용.
+      // wm CARDANO entry에는 derivationFormat 필드 부재 — 디바이스 firmware 컨벤션이
+      // 결정. CIP-1852(m/1852'/...)는 일반 Cardano wallet 표준이지만 D'CENT는 미지원.
+      // 잘못된 path 전송 시 디바이스가 default 사용 → 응답 주소 mismatch 위험 (BTC 패턴).
+      return `m/44'/${bip44CoinType}'/0'/0/0`
     case 'near':
       return `m/44'/${bip44CoinType}'/0'`
     case 'tezos':

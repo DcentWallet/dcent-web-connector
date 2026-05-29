@@ -762,13 +762,13 @@
     "chainId": "cip34:1-764824073",
     "family": "cardano",
     "displayName": "Cardano",
-    "defaultKeyPath": "m/1852'/1815'/0'/0/0"
+    "defaultKeyPath": "m/44'/1815'/0'/0/0"
   },
   {
     "chainId": "cip34:0-2",
     "family": "cardano",
     "displayName": "Cardano Testnet",
-    "defaultKeyPath": "m/1852'/1815'/0'/0/0",
+    "defaultKeyPath": "m/44'/1815'/0'/0/0",
     "isTestnet": true
   },
   {

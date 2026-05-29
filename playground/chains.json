@@ -759,13 +759,13 @@
     "isTestnet": true
   },
   {
-    "chainId": "cip34:1-764824073/slip44:1815",
+    "chainId": "cip34:1-764824073",
     "family": "cardano",
     "displayName": "Cardano",
     "defaultKeyPath": "m/1852'/1815'/0'/0/0"
   },
   {
-    "chainId": "cip34:0-2/slip44:1815",
+    "chainId": "cip34:0-2",
     "family": "cardano",
     "displayName": "Cardano Testnet",
     "defaultKeyPath": "m/1852'/1815'/0'/0/0",
@@ -972,7 +972,7 @@
     "isTestnet": true
   },
   {
-    "chainId": "tron:mainnet/slip44:195",
+    "chainId": "tron:mainnet",
     "family": "tron",
     "displayName": "Tron",
     "defaultKeyPath": "m/44'/195'/0'/0/0"

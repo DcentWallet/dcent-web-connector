@@ -308,8 +308,8 @@
     "label": "Cardano ADA transfer",
     "family": "cardano",
     "applicableChainIds": [
-      "cip34:1-764824073/slip44:1815",
-      "cip34:0-2/slip44:1815"
+      "cip34:1-764824073",
+      "cip34:0-2"
     ],
     "note": "Minimal ADA payment (TransactionCommon shape). Edit sender/recipient before send. Note: signTransaction -32601 expected — wm CardanoAPIImpl not yet registered via WalletConnect. Layer 1 getAddress passes.",
     "sourceUrl": "https://cips.cardano.org/cips/cip30/",

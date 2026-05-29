@@ -240,22 +240,17 @@ function parseFamilyTs (tsPath) {
     // m09-04-10: testnet も포함 (isTestnet skip 제거 — isTestnet 필드를 출력에 보존)
     if (!displayName) continue
 
-    // CAIP-19 normalize: chainId가 /slip44:N suffix를 갖지 않고 bip44CoinType이
-    // 알려져 있으면 append. chainIdentifier 소스(cip34, native chainRef) 같이
-    // wm registry가 slip44를 별도 필드로 두는 경우 chainId 단독으로는 CAIP-19가
-    // 불완전 — bip44CoinType으로 보강해 chains.json 전체 일관성 확보.
-    let finalChainId = chainId
-    if (!chainId.includes('/slip44:') && bip44CoinType !== null) {
-      finalChainId = `${chainId}/slip44:${bip44CoinType}`
-    }
-
-    if (seen.has(finalChainId)) continue
-    seen.add(finalChainId)
+    // chainId는 wm source 그대로 사용 — slip44 append normalize 안 함.
+    // 이전 fix(2026-05-29 CAIP-19 normalize)는 chainIdentifier.value(cip34/tron static)에
+    // /slip44 append했으나, wm `_buildChainIdMultiLookupMap` key는 원본 value (slip44 없음)
+    // 이므로 lookup miss → "Unknown chainId" 회귀. chains.json은 wm key와 정확 매칭 필요.
+    if (seen.has(chainId)) continue
+    seen.add(chainId)
 
     const defaultKeyPath = buildDefaultKeyPath(family, bip44CoinType, derivationFormat)
     if (!defaultKeyPath) continue
 
-    const entry = { chainId: finalChainId, family, displayName, defaultKeyPath }
+    const entry = { chainId, family, displayName, defaultKeyPath }
     if (isTestnet) entry.isTestnet = true
     chains.push(entry)
   }
@@ -319,8 +314,8 @@ function parseFamilyJs (jsPath) {
 // m09-04-10: TRX-TESTNET chainIdentifier value를 함께 static 등록
 const TRON_STATIC = [
   {
-    // CAIP-19 형식 일관성 (T-DATA-01) — slip44:195 (TRX SLIP-0044) suffix 포함
-    chainId: 'tron:mainnet/slip44:195',
+    // wm `tron:mainnet` 단일 chainId (slip44 없음 — chainIdentifier.value 기반)
+    chainId: 'tron:mainnet',
     family: 'tron',
     displayName: 'Tron',
     defaultKeyPath: "m/44'/195'/0'/0/0",

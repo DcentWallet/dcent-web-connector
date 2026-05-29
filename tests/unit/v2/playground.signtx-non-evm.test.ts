@@ -339,7 +339,9 @@ it('T-U-NEVM-04: presets.non-evm.json — wm 등록 family preset 모두 valid J
   // CAIP-19 정규식: namespace:reference/slip44:N
   // CAIP-2 namespace는 spec상 3-8 chars 권장이나 wm registry는 더 긴 namespace 사용
   // (예: 'constellation' 13 chars). regex를 16까지 widening.
-  const CAIP19_RE = /^[-a-z0-9]{3,16}:[-_a-zA-Z0-9]{1,32}\/slip44:\d+$/
+  // /slip44:N suffix는 optional — wm chainIdentifier.value 일부 chain(cip34, tron static)이
+  // slip44 별도 필드로 두고 chainId 자체에는 미포함. chains.json은 wm key와 정확 매칭하므로 동일.
+  const CAIP19_RE = /^[-a-z0-9]{3,16}:[-_a-zA-Z0-9]{1,32}(\/slip44:\d+)?$/
 
   presets.forEach((p: any) => {
     requiredFields.forEach((field) => {
@@ -891,7 +893,9 @@ it('T-DATA-01: chains.json — 모든 entry chainId가 CAIP-19 형식 (namespace
 
   // CAIP-2 namespace는 spec상 3-8 chars 권장이나 wm registry는 더 긴 namespace 사용
   // (예: 'constellation' 13 chars). regex를 16까지 widening.
-  const CAIP19_RE = /^[-a-z0-9]{3,16}:[-_a-zA-Z0-9]{1,32}\/slip44:\d+$/
+  // /slip44:N suffix는 optional — wm chainIdentifier.value 일부 chain(cip34, tron static)이
+  // slip44 별도 필드로 두고 chainId 자체에는 미포함. chains.json은 wm key와 정확 매칭하므로 동일.
+  const CAIP19_RE = /^[-a-z0-9]{3,16}:[-_a-zA-Z0-9]{1,32}(\/slip44:\d+)?$/
 
   chains.forEach((c: any) => {
     expect(typeof c.chainId).toBe('string')

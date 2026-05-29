@@ -69,9 +69,9 @@ test('T-U-EXTRACT-02b: chainIdentifier multi-line block → chainId = value, cor
 
 // ── T-U-EXTRACT-03: chainIdentifier (type=cip34) → family = cardano ───────────
 test('T-U-EXTRACT-03: chainIdentifier cip34 → family = cardano, CIP-1852 derivation path', () => {
-  // Cardano mainnet: chainIdentifier value 'cip34:1-764824073' + bip44CoinType 1815
-  // → CAIP-19 normalize 후 'cip34:1-764824073/slip44:1815'
-  const ada = chains.find((c: any) => c.chainId === 'cip34:1-764824073/slip44:1815')
+  // Cardano mainnet: chainIdentifier value 'cip34:1-764824073' — wm source 그대로
+  // (slip44 append normalize 안 함 — wm `_buildChainIdMultiLookupMap` key가 원본 사용)
+  const ada = chains.find((c: any) => c.chainId === 'cip34:1-764824073')
   expect(ada).toBeDefined()
   expect(ada.family).toBe('cardano')
   expect(ada.displayName).toBe('Cardano')
@@ -79,8 +79,8 @@ test('T-U-EXTRACT-03: chainIdentifier cip34 → family = cardano, CIP-1852 deriv
   expect(ada.defaultKeyPath).toBe("m/1852'/1815'/0'/0/0")
   expect(ada.isTestnet).toBeUndefined()
 
-  // Cardano testnet: chainIdentifier 'cip34:0-2' → CAIP-19 'cip34:0-2/slip44:1815'
-  const adaTest = chains.find((c: any) => c.chainId === 'cip34:0-2/slip44:1815')
+  // Cardano testnet: chainIdentifier 'cip34:0-2' — wm source 그대로
+  const adaTest = chains.find((c: any) => c.chainId === 'cip34:0-2')
   expect(adaTest).toBeDefined()
   expect(adaTest.family).toBe('cardano')
   expect(adaTest.isTestnet).toBe(true)
@@ -130,9 +130,10 @@ test('T-U-EXTRACT-06: duplicate chainId (bitcoin variant) → only first entry i
 
 // ── T-U-EXTRACT-07: new namespace → correct family mapping ────────────────────
 test('T-U-EXTRACT-07: all 5 new namespaces map to correct families', () => {
-  // CAIP-19 normalize: cip34는 wm registry에 slip44가 별도 필드 → normalize 후 /slip44:1815 append
+  // chainIdentifier.value는 wm source 그대로 사용 (slip44 append 안 함 — wm lookup map key 매칭 위해)
+  // near/havah/xahau/constellation은 wm source가 이미 /slip44 포함, cip34만 미포함
   const expectedFamilyMap: Record<string, string> = {
-    'cip34:1-764824073/slip44:1815':          'cardano',
+    'cip34:1-764824073':                      'cardano',
     'near:mainnet/slip44:397':                'near',
     'havah:mainnet/slip44:858':               'havah',
     'xahau:mainnet/slip44:144':               'xahau',

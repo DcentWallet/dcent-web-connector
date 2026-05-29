@@ -337,7 +337,9 @@ it('T-U-NEVM-04: presets.non-evm.json — wm 등록 family preset 모두 valid J
   const expectedFamilies = ['bitcoin', 'solana', 'xrp', 'hedera', 'stellar']
 
   // CAIP-19 정규식: namespace:reference/slip44:N
-  const CAIP19_RE = /^[-a-z0-9]{3,8}:[-_a-zA-Z0-9]{1,32}\/slip44:\d+$/
+  // CAIP-2 namespace는 spec상 3-8 chars 권장이나 wm registry는 더 긴 namespace 사용
+  // (예: 'constellation' 13 chars). regex를 16까지 widening.
+  const CAIP19_RE = /^[-a-z0-9]{3,16}:[-_a-zA-Z0-9]{1,32}\/slip44:\d+$/
 
   presets.forEach((p: any) => {
     requiredFields.forEach((field) => {
@@ -887,7 +889,9 @@ it('T-DATA-01: chains.json — 모든 entry chainId가 CAIP-19 형식 (namespace
   expect(Array.isArray(chains)).toBe(true)
   expect(chains.length).toBeGreaterThan(0)
 
-  const CAIP19_RE = /^[-a-z0-9]{3,8}:[-_a-zA-Z0-9]{1,32}\/slip44:\d+$/
+  // CAIP-2 namespace는 spec상 3-8 chars 권장이나 wm registry는 더 긴 namespace 사용
+  // (예: 'constellation' 13 chars). regex를 16까지 widening.
+  const CAIP19_RE = /^[-a-z0-9]{3,16}:[-_a-zA-Z0-9]{1,32}\/slip44:\d+$/
 
   chains.forEach((c: any) => {
     expect(typeof c.chainId).toBe('string')

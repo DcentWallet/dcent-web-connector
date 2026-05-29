@@ -4,16 +4,16 @@
     "label": "Bitcoin native-segwit transfer",
     "family": "bitcoin",
     "applicableChainIds": [
-      "bip122:000000000019d6689c085ae165831e93",
+      "bip122:000000000019d6689c085ae165831e93/slip44:0",
       "bip122:000000000019d6689c085ae165831e93/slip44:145",
-      "bip122:000000000000000000651ef99cb9fcbe",
+      "bip122:000000000000000000651ef99cb9fcbe/slip44:145",
       "bip122:00040fe8ec8471911baa1db1266ea15d/slip44:133",
-      "bip122:12a765e31ffd4059bada1e25190f6e98",
+      "bip122:12a765e31ffd4059bada1e25190f6e98/slip44:2",
       "bip122:00000000e9fba3b4a12d04c0a48d70d5/slip44:156",
       "bip122:00000ffd590b1485b3caadc19b22e637/slip44:5",
       "bip122:7497ea1b465eb39f1c8f507bc877078f/slip44:20",
       "bip122:0000006b444bc2f2ffe627be9d9e7e7a/slip44:175",
-      "bip122:1a91e3dace36e2be3bf030a65679fe82",
+      "bip122:1a91e3dace36e2be3bf030a65679fe82/slip44:3",
       "bip122:0007104ccda289427919efc39dc9e4d4/slip44:121"
     ],
     "note": "P2WPKH native SegWit output. Amounts in satoshi. Edit inputs/outputs before send. Note: signTransaction -32601 expected — wm BitcoinAPIImpl not yet registered via WalletConnect. Layer 1 (getAddress) passes for all bitcoin-family chains.",
@@ -42,7 +42,7 @@
     "label": "Solana SOL transfer (plain JSON, data: object)",
     "family": "solana",
     "applicableChainIds": [
-      "solana:5eykt4UsFv8P8NJdTREpY1vzqKqZKvdp"
+      "solana:5eykt4UsFv8P8NJdTREpY1vzqKqZKvdp/slip44:501"
     ],
     "note": "Case 2a — plain JSON instructions. SystemProgram.Transfer 의 data 를 {instruction, lamports} 객체로 표현. SystemProgram.Transfer 에만 적용.",
     "sourceUrl": "https://solana-labs.github.io/solana-web3.js/classes/VersionedTransaction.html",
@@ -78,7 +78,7 @@
     "label": "Solana SOL transfer (base58 serialized — recommended)",
     "family": "solana",
     "applicableChainIds": [
-      "solana:5eykt4UsFv8P8NJdTREpY1vzqKqZKvdp"
+      "solana:5eykt4UsFv8P8NJdTREpY1vzqKqZKvdp/slip44:501"
     ],
     "note": "Case 1 — 가장 안정적. dApp 이 @solana/web3.js 로 Transaction 또는 VersionedTransaction 을 만들고 bs58.encode(tx.serialize({requireAllSignatures: false, verifySignatures: false})) 로 직렬화한 base58 문자열. 모든 instruction type 자동 지원.",
     "sourceUrl": "https://solana-labs.github.io/solana-web3.js/classes/Transaction.html#serialize",
@@ -89,7 +89,7 @@
     "label": "Solana SOL transfer (plain JSON, data: 0x hex)",
     "family": "solana",
     "applicableChainIds": [
-      "solana:5eykt4UsFv8P8NJdTREpY1vzqKqZKvdp"
+      "solana:5eykt4UsFv8P8NJdTREpY1vzqKqZKvdp/slip44:501"
     ],
     "note": "Case 2b — plain JSON 의 instruction.data 를 0x-prefixed hex string 으로 표현. SystemProgram.Transfer 의 raw bytes(12 bytes: 4-byte instruction tag + 8-byte little-endian lamports). Token / ATA / Memo 등 SystemProgram.Transfer 외의 모든 instruction 에 권장.",
     "sourceUrl": "https://solana.com/docs/core/programs",
@@ -100,8 +100,16 @@
         {
           "programId": "11111111111111111111111111111111",
           "keys": [
-            { "pubkey": "11111111111111111111111111111111", "isSigner": true, "isWritable": true },
-            { "pubkey": "11111111111111111111111111111112", "isSigner": false, "isWritable": true }
+            {
+              "pubkey": "11111111111111111111111111111111",
+              "isSigner": true,
+              "isWritable": true
+            },
+            {
+              "pubkey": "11111111111111111111111111111112",
+              "isSigner": false,
+              "isWritable": true
+            }
           ],
           "data": "0x0200000040420f0000000000"
         }
@@ -114,7 +122,7 @@
     "label": "Solana SOL transfer (plain JSON, data: base58 string)",
     "family": "solana",
     "applicableChainIds": [
-      "solana:5eykt4UsFv8P8NJdTREpY1vzqKqZKvdp"
+      "solana:5eykt4UsFv8P8NJdTREpY1vzqKqZKvdp/slip44:501"
     ],
     "note": "Case 2c — plain JSON 의 instruction.data 를 prefix 없는 base58 문자열로 표현. @solana/web3.js bs58.encode 결과와 동일.",
     "sourceUrl": "https://github.com/cryptocoinjs/bs58",
@@ -125,8 +133,16 @@
         {
           "programId": "11111111111111111111111111111111",
           "keys": [
-            { "pubkey": "11111111111111111111111111111111", "isSigner": true, "isWritable": true },
-            { "pubkey": "11111111111111111111111111111112", "isSigner": false, "isWritable": true }
+            {
+              "pubkey": "11111111111111111111111111111111",
+              "isSigner": true,
+              "isWritable": true
+            },
+            {
+              "pubkey": "11111111111111111111111111111112",
+              "isSigner": false,
+              "isWritable": true
+            }
           ],
           "data": "3Bxs411Dtc7pkFQj"
         }
@@ -139,7 +155,7 @@
     "label": "Solana SOL transfer (plain JSON, data: number array)",
     "family": "solana",
     "applicableChainIds": [
-      "solana:5eykt4UsFv8P8NJdTREpY1vzqKqZKvdp"
+      "solana:5eykt4UsFv8P8NJdTREpY1vzqKqZKvdp/slip44:501"
     ],
     "note": "Case 2d — plain JSON 의 instruction.data 를 number array (Uint8Array JSON-serializable form) 로 표현. dApp 측에서 Array.from(uint8Array) 결과 그대로 전달.",
     "sourceUrl": "https://developer.mozilla.org/en-US/docs/Web/JavaScript/Reference/Global_Objects/Uint8Array",
@@ -150,10 +166,31 @@
         {
           "programId": "11111111111111111111111111111111",
           "keys": [
-            { "pubkey": "11111111111111111111111111111111", "isSigner": true, "isWritable": true },
-            { "pubkey": "11111111111111111111111111111112", "isSigner": false, "isWritable": true }
+            {
+              "pubkey": "11111111111111111111111111111111",
+              "isSigner": true,
+              "isWritable": true
+            },
+            {
+              "pubkey": "11111111111111111111111111111112",
+              "isSigner": false,
+              "isWritable": true
+            }
           ],
-          "data": [2, 0, 0, 0, 64, 66, 15, 0, 0, 0, 0, 0]
+          "data": [
+            2,
+            0,
+            0,
+            0,
+            64,
+            66,
+            15,
+            0,
+            0,
+            0,
+            0,
+            0
+          ]
         }
       ],
       "recentBlockhash": "11111111111111111111111111111111"
@@ -164,7 +201,7 @@
     "label": "Solana SOL transfer (wm-internal TransactionCommon)",
     "family": "solana",
     "applicableChainIds": [
-      "solana:5eykt4UsFv8P8NJdTREpY1vzqKqZKvdp"
+      "solana:5eykt4UsFv8P8NJdTREpY1vzqKqZKvdp/slip44:501"
     ],
     "note": "Case 3 — wm-internal TransactionCommon shape ({type, sender, recipient, amount}). 주로 webview/RN 흐름에서 사용 (RN의 wallet-models 가 미리 만든 객체를 그대로 전달). SDK 에서는 거의 안 씀 — 호환성 용 pass-through.",
     "sourceUrl": "https://github.com/IotrustGitHub/dcent-wallet-models/blob/main/src/common/types/transaction.ts",
@@ -182,7 +219,7 @@
     "label": "XRP Payment",
     "family": "xrp",
     "applicableChainIds": [
-      "xrpl:0"
+      "xrpl:0/slip44:144"
     ],
     "note": "XRP Ledger Payment transaction. Edit Destination/Amount before send.",
     "sourceUrl": "https://js.xrpl.org/interfaces/Payment.html",
@@ -221,7 +258,7 @@
     "label": "Hedera HBAR transfer",
     "family": "hedera",
     "applicableChainIds": [
-      "hedera:mainnet"
+      "hedera:mainnet/slip44:3030"
     ],
     "note": "Hedera TransferTransaction (CryptoTransfer). Edit accountId/amount before send. Note: signTransaction -32601 expected — wm HederaAPIImpl not yet registered via WalletConnect. Layer 1 getAddress passes.",
     "sourceUrl": "https://docs.hedera.com/hedera/sdks-and-apis/sdks/cryptocurrency/transfer-cryptocurrency",
@@ -247,7 +284,7 @@
     "label": "Stellar XLM payment",
     "family": "stellar",
     "applicableChainIds": [
-      "stellar:pubnet"
+      "stellar:pubnet/slip44:148"
     ],
     "note": "Stellar Operation.payment for native XLM. Edit destination/amount before send. Note: signTransaction -32601 expected — wm StellarAPIImpl not yet registered via WalletConnect. Layer 1 getAddress passes.",
     "sourceUrl": "https://stellar.github.io/js-stellar-sdk/Operation.payment.html",
@@ -271,8 +308,8 @@
     "label": "Cardano ADA transfer",
     "family": "cardano",
     "applicableChainIds": [
-      "cip34:1-764824073",
-      "cip34:0-2"
+      "cip34:1-764824073/slip44:1815",
+      "cip34:0-2/slip44:1815"
     ],
     "note": "Minimal ADA payment (TransactionCommon shape). Edit sender/recipient before send. Note: signTransaction -32601 expected — wm CardanoAPIImpl not yet registered via WalletConnect. Layer 1 getAddress passes.",
     "sourceUrl": "https://cips.cardano.org/cips/cip30/",
@@ -313,7 +350,7 @@
     "label": "Polkadot DOT transfer",
     "family": "polkadot",
     "applicableChainIds": [
-      "polkadot:91b171bb158e2d3848fa23a9f1c25182",
+      "polkadot:91b171bb158e2d3848fa23a9f1c25182/slip44:354",
       "polkadot:9eb76c5184c4ab8679d2d5d819fdf90b/slip44:810",
       "polkadot:6673c7e2c2b7bde45a60c71ef70d9c7c/slip44:354"
     ],
@@ -332,8 +369,8 @@
     "label": "Tezos XTZ transfer",
     "family": "tezos",
     "applicableChainIds": [
-      "tezos:NetXdQprcVkpaWU",
-      "tezos:NetXnHfVqm9iesp"
+      "tezos:NetXdQprcVkpaWU/slip44:1729",
+      "tezos:NetXnHfVqm9iesp/slip44:1729"
     ],
     "note": "Tezos transaction op (UnionTransaction shape). key/symbol/decimals required by wm TezosAPIImpl.",
     "sourceUrl": "https://tezos.gitlab.io/shell/rpc.html",
@@ -356,8 +393,8 @@
     "label": "Cosmos ATOM transfer (MsgSend)",
     "family": "cosmos",
     "applicableChainIds": [
-      "cosmos:cosmoshub-4",
-      "cosmos:coreum-mainnet-1",
+      "cosmos:cosmoshub-4/slip44:118",
+      "cosmos:coreum-mainnet-1/slip44:990",
       "cosmos:hippo-protocol-1/slip44:118"
     ],
     "note": "Cosmos MsgSend transaction (UnionTransaction shape). accountNumber/sequence/pubKey/chainId required. Note: signTransaction may return -32601 for families where wm CosmosAPIImpl dispatch is not yet registered.",
@@ -379,7 +416,11 @@
       "chainId": "cosmoshub-4",
       "signature": "",
       "txRaw": "",
-      "feeRate": { "low": "0.01", "average": "0.025", "high": "0.04" }
+      "feeRate": {
+        "low": "0.01",
+        "average": "0.025",
+        "high": "0.04"
+      }
     }
   },
   {
@@ -387,7 +428,7 @@
     "label": "VeChain VET transfer",
     "family": "vechain",
     "applicableChainIds": [
-      "vechain:b1ac3413d346d43539627e6be7ec1b4a"
+      "vechain:b1ac3413d346d43539627e6be7ec1b4a/slip44:818"
     ],
     "note": "VeChain clauses transaction (TransactionCommon shape). Edit sender/recipient before send.",
     "sourceUrl": "https://docs.vechain.org/how-to-run-a-node/custom-network",

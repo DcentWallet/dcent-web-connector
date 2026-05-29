@@ -153,9 +153,12 @@ function parseFamilyTs (tsPath) {
     let chainId = null
     const caip19Match = line.match(/caip19:\s*['"]([^'"]+)['"]/)
     if (caip19Match) {
-      const caip19Full = caip19Match[1]
-      // namespace:chainRef/slip44:N → namespace:chainRef (caip19는 suffix 제거)
-      chainId = caip19Full.replace(/\/slip44:\d+$/, '')
+      // wm source caip19 값을 그대로 사용 (CAIP-19 full string 보존).
+      // 이전에는 /slip44:N suffix를 제거해 CAIP-2로 강등했으나, 이로 인해
+      // chains.json EVM이 `eip155:1` (CAIP-2), 다른 family는 mixed가 되어
+      // single source의 일관성이 깨짐. wm _buildChainIdLookupMap도 full string
+      // 기반이라 strip 없이 그대로 mirror하는 게 맞다.
+      chainId = caip19Match[1]
     }
 
     // ── pivot 2: chainIdentifier 단일 라인 (value 포함) ──
@@ -236,13 +239,23 @@ function parseFamilyTs (tsPath) {
 
     // m09-04-10: testnet も포함 (isTestnet skip 제거 — isTestnet 필드를 출력에 보존)
     if (!displayName) continue
-    if (seen.has(chainId)) continue
-    seen.add(chainId)
+
+    // CAIP-19 normalize: chainId가 /slip44:N suffix를 갖지 않고 bip44CoinType이
+    // 알려져 있으면 append. chainIdentifier 소스(cip34, native chainRef) 같이
+    // wm registry가 slip44를 별도 필드로 두는 경우 chainId 단독으로는 CAIP-19가
+    // 불완전 — bip44CoinType으로 보강해 chains.json 전체 일관성 확보.
+    let finalChainId = chainId
+    if (!chainId.includes('/slip44:') && bip44CoinType !== null) {
+      finalChainId = `${chainId}/slip44:${bip44CoinType}`
+    }
+
+    if (seen.has(finalChainId)) continue
+    seen.add(finalChainId)
 
     const defaultKeyPath = buildDefaultKeyPath(family, bip44CoinType, derivationFormat)
     if (!defaultKeyPath) continue
 
-    const entry = { chainId, family, displayName, defaultKeyPath }
+    const entry = { chainId: finalChainId, family, displayName, defaultKeyPath }
     if (isTestnet) entry.isTestnet = true
     chains.push(entry)
   }
@@ -306,7 +319,8 @@ function parseFamilyJs (jsPath) {
 // m09-04-10: TRX-TESTNET chainIdentifier value를 함께 static 등록
 const TRON_STATIC = [
   {
-    chainId: 'tron:mainnet',
+    // CAIP-19 형식 일관성 (T-DATA-01) — slip44:195 (TRX SLIP-0044) suffix 포함
+    chainId: 'tron:mainnet/slip44:195',
     family: 'tron',
     displayName: 'Tron',
     defaultKeyPath: "m/44'/195'/0'/0/0",

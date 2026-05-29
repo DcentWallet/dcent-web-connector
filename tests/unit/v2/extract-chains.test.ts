@@ -22,17 +22,17 @@ const CHAINS_JSON_PATH = path.join(CONNECTOR_ROOT, 'playground', 'chains.json')
 // Load chains once for all tests
 const chains: any[] = JSON.parse(fs.readFileSync(CHAINS_JSON_PATH, 'utf8'))
 
-// ── T-U-EXTRACT-01: caip19-only entry → correct chainId and family ─────────────
-test('T-U-EXTRACT-01: caip19-only entry → chainId stripped of /slip44 suffix, family correct', () => {
-  // Ethereum mainnet: caip19 = 'eip155:1/slip44:60' → chainId = 'eip155:1'
-  const eth = chains.find((c: any) => c.chainId === 'eip155:1')
+// ── T-U-EXTRACT-01: caip19 entry → full CAIP-19 chainId, family correct ────────
+test('T-U-EXTRACT-01: caip19 entry → chainId preserves full CAIP-19 (including /slip44), family correct', () => {
+  // Ethereum mainnet: caip19 = 'eip155:1/slip44:60' → chainId 동일 (full CAIP-19 보존)
+  const eth = chains.find((c: any) => c.chainId === 'eip155:1/slip44:60')
   expect(eth).toBeDefined()
   expect(eth.family).toBe('ethereum')
   expect(eth.displayName).toBeTruthy()
-  // caip19 suffix stripped — no /slip44 in chainId
-  expect(eth.chainId).not.toContain('/slip44')
-  // XRPL mainnet (non-EVM caip19): xrpl:0/slip44:144 → xrpl:0
-  const xrp = chains.find((c: any) => c.chainId === 'xrpl:0')
+  // EVM은 /slip44 suffix를 보존 (presets.evm.json / playground.js 컨벤션과 일치)
+  expect(eth.chainId).toContain('/slip44')
+  // XRPL mainnet (non-EVM caip19): xrpl:0/slip44:144 → 동일 유지
+  const xrp = chains.find((c: any) => c.chainId === 'xrpl:0/slip44:144')
   expect(xrp).toBeDefined()
   expect(xrp.family).toBe('xrp')
 })
@@ -69,8 +69,9 @@ test('T-U-EXTRACT-02b: chainIdentifier multi-line block → chainId = value, cor
 
 // ── T-U-EXTRACT-03: chainIdentifier (type=cip34) → family = cardano ───────────
 test('T-U-EXTRACT-03: chainIdentifier cip34 → family = cardano, CIP-1852 derivation path', () => {
-  // Cardano mainnet: chainIdentifier = { type: 'cip34', value: 'cip34:1-764824073' }
-  const ada = chains.find((c: any) => c.chainId === 'cip34:1-764824073')
+  // Cardano mainnet: chainIdentifier value 'cip34:1-764824073' + bip44CoinType 1815
+  // → CAIP-19 normalize 후 'cip34:1-764824073/slip44:1815'
+  const ada = chains.find((c: any) => c.chainId === 'cip34:1-764824073/slip44:1815')
   expect(ada).toBeDefined()
   expect(ada.family).toBe('cardano')
   expect(ada.displayName).toBe('Cardano')
@@ -78,8 +79,8 @@ test('T-U-EXTRACT-03: chainIdentifier cip34 → family = cardano, CIP-1852 deriv
   expect(ada.defaultKeyPath).toBe("m/1852'/1815'/0'/0/0")
   expect(ada.isTestnet).toBeUndefined()
 
-  // Cardano testnet: chainIdentifier = { type: 'cip34', value: 'cip34:0-2' }
-  const adaTest = chains.find((c: any) => c.chainId === 'cip34:0-2')
+  // Cardano testnet: chainIdentifier 'cip34:0-2' → CAIP-19 'cip34:0-2/slip44:1815'
+  const adaTest = chains.find((c: any) => c.chainId === 'cip34:0-2/slip44:1815')
   expect(adaTest).toBeDefined()
   expect(adaTest.family).toBe('cardano')
   expect(adaTest.isTestnet).toBe(true)
@@ -110,7 +111,7 @@ test('T-U-EXTRACT-05: testnet entries are included with isTestnet=true field', (
   expect(dagTest.isTestnet).toBe(true)
 
   // Mainnet entries should not have isTestnet field
-  const ethMain = chains.find((c: any) => c.chainId === 'eip155:1')
+  const ethMain = chains.find((c: any) => c.chainId === 'eip155:1/slip44:60')
   expect(ethMain).toBeDefined()
   expect(ethMain.isTestnet).toBeUndefined()
 })
@@ -129,8 +130,9 @@ test('T-U-EXTRACT-06: duplicate chainId (bitcoin variant) → only first entry i
 
 // ── T-U-EXTRACT-07: new namespace → correct family mapping ────────────────────
 test('T-U-EXTRACT-07: all 5 new namespaces map to correct families', () => {
+  // CAIP-19 normalize: cip34는 wm registry에 slip44가 별도 필드 → normalize 후 /slip44:1815 append
   const expectedFamilyMap: Record<string, string> = {
-    'cip34:1-764824073':                      'cardano',
+    'cip34:1-764824073/slip44:1815':          'cardano',
     'near:mainnet/slip44:397':                'near',
     'havah:mainnet/slip44:858':               'havah',
     'xahau:mainnet/slip44:144':               'xahau',

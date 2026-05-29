@@ -1245,6 +1245,35 @@
         }
       })
 
+      // addressFormat (optional, m09-04-09)
+      // BTC family처럼 같은 chainId가 multi-variant currency (BITCOIN legacy vs BTC-SEGWIT)를
+      // 공유하는 경우 명시적 disambiguation. 누락 시 wm resolver가 default(현재 legacy)
+      // 사용하지만 디바이스 표시 주소와 SDK 응답 주소가 불일치할 수 있음 (HW smoke 2026-05-29).
+      // 사용자가 legacy/segwit-native 둘 다 테스트할 수 있도록 dropdown 제공.
+      var afRow = document.createElement('div')
+      afRow.className = 'form-row'
+      var afLabel = document.createElement('label')
+      afLabel.setAttribute('for', 'field-addressFormat')
+      afLabel.textContent = 'addressFormat (optional)'
+      var afSelect = document.createElement('select')
+      afSelect.id = 'field-addressFormat'
+      var afOptions = [
+        { value: '', label: '(default — wm resolver 결정)' },
+        { value: 'legacy', label: 'legacy (P2PKH — 1xxx / mxxx)' },
+        { value: 'segwit-native', label: 'segwit-native (P2WPKH bech32 — bc1q / tb1q)' },
+        { value: 'segwit-wrapped', label: 'segwit-wrapped (P2SH-P2WPKH — 3xxx / 2xxx)' },
+        { value: 'taproot', label: 'taproot (P2TR bech32m — bc1p)' },
+      ]
+      afOptions.forEach(function (o) {
+        var opt = document.createElement('option')
+        opt.value = o.value
+        opt.textContent = o.label
+        afSelect.appendChild(opt)
+      })
+      afRow.appendChild(afLabel)
+      afRow.appendChild(afSelect)
+      inputContainer.appendChild(afRow)
+
       // prefix (optional, parachain 등)
       var prefixRow = document.createElement('div')
       prefixRow.className = 'form-row'
@@ -2163,18 +2192,24 @@
           var isV2 = v2RadioEl && v2RadioEl.checked
 
           if (isV2) {
-            // v2 path: dcent.getAddress({chainId, keyPath, prefix?})
+            // v2 path: dcent.getAddress({chainId, keyPath, prefix?, addressFormat?})
             var chainIdEl = document.getElementById('field-chainId')
             var keyPathEl = document.getElementById('field-keyPath')
             var prefixElV2 = document.getElementById('field-prefix')
+            var addressFormatEl = document.getElementById('field-addressFormat')
             var chainId = chainIdEl ? chainIdEl.value.trim() : ''
             var keyPath = keyPathEl ? keyPathEl.value.trim() : ''
             var prefixRawV2 = prefixElV2 ? prefixElV2.value.trim() : ''
+            var addressFormatRaw = addressFormatEl ? addressFormatEl.value.trim() : ''
             var v2Input = { chainId: chainId, keyPath: keyPath }
             // prefix는 비어있지 않을 때만 전달 (facade는 undefined / null 둘 다 허용하지만
             // 명시적으로 부재를 표현하기 위해 undefined 사용)
             if (prefixRawV2 !== '') {
               v2Input.prefix = prefixRawV2
+            }
+            // addressFormat 선택 시만 전달 (default empty = wm resolver 결정)
+            if (addressFormatRaw !== '') {
+              v2Input.addressFormat = addressFormatRaw
             }
             // m12-03: deviceId inject into v2 input object
             if (deviceIdOpt) v2Input.deviceId = deviceIdOpt

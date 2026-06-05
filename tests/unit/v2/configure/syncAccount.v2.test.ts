@@ -1,26 +1,29 @@
 /**
- * setLabel / syncAccount / selectAddress 단위 테스트
+ * syncAccount v2 단위 테스트 (m09-04-12)
  *
- * setLabel: m08-01-02.5 (변경 없음)
- *   T-U-LABEL-01/02: setLabel valid + invalid 4종
+ * T-U-SYNC-00: 비배열 입력 → param_error throw
+ * T-U-SYNC-01: v2 native account {chainId, keyPath, label} → _call, coin_group 검증 미호출
+ * T-U-SYNC-02: v2 token account (contractAddress 포함) → forward
+ * T-U-SYNC-03: invalid chainId → param_error throw
+ * T-U-SYNC-04: keyPath BIP44 형식 위반 → param_error throw
+ * T-U-SYNC-05: keyPath 누락 → param_error throw
+ * T-U-SYNC-06: label regex 위반 → param_error throw
+ * T-U-SYNC-07: contractAddress 형식 위반 → param_error throw
+ * T-SEC-WHITE-01: unknown 필드 → known-fields만 통과, drop 확인
+ * T-SEC-WHITE-02: invalid 타입 contractAddress(숫자) → throw
+ * T-SEC-WHITE-03: __proto__ own-key(JSON.parse) → forbidden key throw, prototype 오염 없음
+ * T-SEC-WHITE-04: constructor own-key → forbidden key throw
+ * T-SEC-INHERIT-01: 상속(prototype) 속성은 수집 안 됨 → own-key 부재로 throw
+ * T-U-SYNC-08: 비객체 항목(null/숫자/문자열/배열) → param_error throw
+ * T-U-SYNC-09: contractAddress 빈 문자열('') → throw (silent drop 금지)
  *
- * syncAccount: **v2 전환 (m09-04-12)**
- *   T-U-SYNC-00: 비배열 입력 → param_error throw
- *   T-U-SYNC-01: v2 native account 정상 → _call
- *   T-U-SYNC-02: v2 token account (contractAddress 포함) → _call
- *   T-U-SYNC-03: invalid chainId → param_error throw
- *   T-U-SYNC-04: keyPath BIP44 형식 위반 → param_error throw
- *   T-U-SYNC-05: keyPath 누락 → param_error throw
- *   T-U-SYNC-06: label regex 위반 → param_error throw
- *   T-U-SYNC-07: contractAddress 형식 위반 → param_error throw
- *   T-SEC-WHITE-01: unknown 필드 + __proto__ → known-fields만 전달, prototype 오염 없음
- *   T-SEC-WHITE-02: invalid 타입 필드(contractAddress=숫자) → throw
- *
- * selectAddress: m08-01-02.5 (변경 없음)
- *   T-U-SEL-01/02: array + non-array
+ * connector-chain-addition-isolation: coin_group/coin_name 검증 제거 확인 포함.
+ * dapp-input-sanitization: whitelist + __proto__/constructor 차단 + 상속 속성 무시.
+ * boundary-validation: 항목별 비객체 가드.
+ * error-handling-consistency: 빈 문자열 contractAddress는 silent drop 아닌 throw.
  */
 
-import { setLabel, syncAccount, selectAddress } from '../../../../src/sign/configure'
+import { syncAccount } from '../../../../src/sign/configure'
 import { ensureSingleton, _resetForTesting } from '../../../../src/singleton'
 
 beforeEach(() => {
@@ -31,59 +34,6 @@ afterAll(() => {
   _resetForTesting()
 })
 
-// ──────────────────────────────────────────────
-// setLabel (m08-01-02.5 — 변경 없음)
-// ──────────────────────────────────────────────
-describe('setLabel — m08-01-02.5', () => {
-  test('T-U-LABEL-01: valid label "valid_label-2" → _call', async () => {
-    const { transport } = ensureSingleton()
-    const sendSpy = jest.spyOn(transport, 'send').mockResolvedValue({
-      id: 'r1',
-      result: { ok: true },
-    })
-
-    await setLabel('valid_label-2')
-
-    expect(sendSpy).toHaveBeenCalledTimes(1)
-    expect(sendSpy.mock.calls[0][0].method).toBe('setLabel')
-    expect(sendSpy.mock.calls[0][0].params).toEqual({ label: 'valid_label-2' })
-  })
-
-  test('T-U-LABEL-02a: too short ("a") → param_error throw', () => {
-    expect(() => setLabel('a')).toThrow(
-      expect.objectContaining({
-        body: { error: { code: 'param_error', message: 'Invalid Label : a' } },
-      }),
-    )
-  })
-
-  test('T-U-LABEL-02b: too long (15 chars) → param_error throw', () => {
-    const long15 = 'A'.repeat(15)
-    expect(() => setLabel(long15)).toThrow(
-      expect.objectContaining({ body: { error: { code: 'param_error', message: `Invalid Label : ${long15}` } } }),
-    )
-  })
-
-  test('T-U-LABEL-02c: 한글 → param_error throw', () => {
-    expect(() => setLabel('한글라벨')).toThrow(
-      expect.objectContaining({
-        body: { error: { code: 'param_error', message: 'Invalid Label : 한글라벨' } },
-      }),
-    )
-  })
-
-  test('T-U-LABEL-02d: 공백 포함 → param_error throw', () => {
-    expect(() => setLabel('has space')).toThrow(
-      expect.objectContaining({
-        body: { error: { code: 'param_error', message: 'Invalid Label : has space' } },
-      }),
-    )
-  })
-})
-
-// ──────────────────────────────────────────────
-// syncAccount v2 (m09-04-12)
-// ──────────────────────────────────────────────
 describe('syncAccount v2 — m09-04-12', () => {
   test('T-U-SYNC-00: 비배열 입력(null/object/string) → param_error throw', () => {
     expect(() => syncAccount(null as unknown as [])).toThrow(
@@ -179,7 +129,7 @@ describe('syncAccount v2 — m09-04-12', () => {
     )
   })
 
-  test('T-SEC-WHITE-01: unknown 필드 + __proto__ 포함 → known-fields만 전달, prototype 오염 없음', async () => {
+  test('T-SEC-WHITE-01: unknown 필드 + __proto__ → known-fields만 전달, prototype 오염 없음', async () => {
     const { transport } = ensureSingleton()
     const sendSpy = jest.spyOn(transport, 'send').mockResolvedValue({
       id: 'sw1',
@@ -215,31 +165,74 @@ describe('syncAccount v2 — m09-04-12', () => {
       expect.objectContaining({ body: expect.objectContaining({ error: expect.objectContaining({ code: 'param_error' }) }) }),
     )
   })
-})
 
-// ──────────────────────────────────────────────
-// selectAddress (m08-01-02.5 — 변경 없음)
-// ──────────────────────────────────────────────
-describe('selectAddress — m08-01-02.5', () => {
-  test('T-U-SEL-01: array → _call', async () => {
-    const { transport } = ensureSingleton()
-    const sendSpy = jest.spyOn(transport, 'send').mockResolvedValue({
-      id: 'sa1',
-      result: { ok: true },
-    })
-
-    await selectAddress(['addr1', 'addr2'])
-
-    expect(sendSpy).toHaveBeenCalledTimes(1)
-    expect(sendSpy.mock.calls[0][0].method).toBe('selectAddress')
-    expect(sendSpy.mock.calls[0][0].params).toEqual({ addresses: ['addr1', 'addr2'] })
+  test('T-SEC-WHITE-03: __proto__ own-key(JSON.parse) → forbidden key throw + prototype 오염 없음', () => {
+    // 객체 리터럴 {__proto__:...}는 prototype을 설정할 뿐 own-key가 아니므로
+    // 실제 own-enumerable __proto__ 키는 JSON.parse로만 주입 가능
+    const malicious = JSON.parse(
+      '{"chainId":"eip155:1","keyPath":"m/44\'/60\'/0\'/0/0","label":"myETH","__proto__":{"polluted":true}}',
+    )
+    expect(() => syncAccount([malicious])).toThrow(
+      expect.objectContaining({ body: expect.objectContaining({ error: expect.objectContaining({ code: 'param_error' }) }) }),
+    )
+    expect((Object.prototype as Record<string, unknown>).polluted).toBeUndefined()
   })
 
-  test('T-U-SEL-02: non-array → param_error throw', () => {
-    expect(() => selectAddress('notarray' as unknown as string[])).toThrow(
-      expect.objectContaining({
-        body: { error: { code: 'param_error', message: 'addresses is not array' } },
-      }),
+  test('T-SEC-WHITE-04: constructor own-key → forbidden key param_error throw', () => {
+    const malicious = JSON.parse(
+      '{"chainId":"eip155:1","keyPath":"m/44\'/60\'/0\'/0/0","label":"myETH","constructor":{"x":1}}',
+    )
+    expect(() => syncAccount([malicious])).toThrow(
+      expect.objectContaining({ body: expect.objectContaining({ error: expect.objectContaining({ code: 'param_error' }) }) }),
+    )
+  })
+
+  test('T-SEC-INHERIT-01: 상속(prototype) 속성은 수집 안 됨 → own-key 부재로 throw', () => {
+    // chainId/keyPath/label을 prototype 체인에만 둔 객체 → own-enumerable 아님 →
+    // sanitizer 스냅샷에 수집되지 않아 chainId 누락으로 throw
+    const proto = { chainId: 'eip155:1', keyPath: "m/44'/60'/0'/0/0", label: 'myETH' }
+    const inherited = Object.create(proto) as { chainId: string; keyPath: string; label: string }
+    expect(() => syncAccount([inherited])).toThrow(
+      expect.objectContaining({ body: expect.objectContaining({ error: expect.objectContaining({ code: 'param_error' }) }) }),
+    )
+  })
+
+  test('T-U-SYNC-08: 비객체 항목(null/숫자/문자열/배열) → param_error throw', () => {
+    for (const bad of [null, 42, 'str', ['nested']]) {
+      expect(() =>
+        syncAccount([bad as unknown as { chainId: string; keyPath: string; label: string }]),
+      ).toThrow(
+        expect.objectContaining({ body: expect.objectContaining({ error: expect.objectContaining({ code: 'param_error' }) }) }),
+      )
+    }
+  })
+
+  test('T-U-SYNC-09: contractAddress 빈 문자열 → param_error throw (silent drop 금지)', () => {
+    expect(() =>
+      syncAccount([{
+        chainId: 'eip155:1',
+        contractAddress: '',
+        keyPath: "m/44'/60'/0'/0/0",
+        label: 'myToken',
+      }]),
+    ).toThrow(
+      expect.objectContaining({ body: expect.objectContaining({ error: expect.objectContaining({ code: 'param_error' }) }) }),
+    )
+  })
+
+  test('T-U-SYNC-10: keyPath 키 자체 누락(undefined) → param_error throw', () => {
+    expect(() =>
+      syncAccount([{ chainId: 'eip155:1', label: 'myETH' } as unknown as { chainId: string; keyPath: string; label: string }]),
+    ).toThrow(
+      expect.objectContaining({ body: { error: { code: 'param_error', message: 'keyPath required' } } }),
+    )
+  })
+
+  test('T-U-SYNC-11: label 키 자체 누락(undefined) → 빈 라벨로 간주되어 param_error throw', () => {
+    expect(() =>
+      syncAccount([{ chainId: 'eip155:1', keyPath: "m/44'/60'/0'/0/0" } as unknown as { chainId: string; keyPath: string; label: string }]),
+    ).toThrow(
+      expect.objectContaining({ body: { error: { code: 'param_error', message: 'Invalid Label - ' } } }),
     )
   })
 })

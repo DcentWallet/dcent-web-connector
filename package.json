@@ -8,6 +8,7 @@
   "files": [
     "dist/v2/",
     "src/",
+    "doc/",
     "playground.js",
     "index-v2.html",
     "MIGRATION-v1-to-v2.md",

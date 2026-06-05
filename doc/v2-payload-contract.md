@@ -90,7 +90,7 @@ const result = await dcent.sign({
 
 **지원:** `signTransaction` ✅ (full-CBOR 지원, m02-05-35/36/37 MERGED_TO_EPIC) | `signMessage` ⚠️ -32601 (m02-05-30 전)
 
-**chainId 예시:** `cip34:1-764824073` (mainnet), `cip34:0-1` (testnet)
+**chainId 예시:** `cip34:1-764824073` (mainnet), `cip34:0-2` (testnet)
 
 **signTransaction payload (simple transfer):**
 
@@ -292,7 +292,7 @@ const result = await dcent.sign({
 
 **지원:** `signTransaction` ✅ (EVM 호환) | `signMessage` ✅
 
-**chainId 예시:** `eip155:256/slip44:60` (Havah mainnet)
+**chainId 예시:** `havah:mainnet/slip44:858` (mainnet), `havah:testnet/slip44:858` (testnet)
 
 **signTransaction payload:** EVM shape와 동일 (Ethereum 섹션 참조)
 

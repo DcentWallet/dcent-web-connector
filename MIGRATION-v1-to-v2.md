@@ -430,3 +430,5 @@ v1 path-only sign 흐름(선택지 1, 2)은 v2에서도 그대로 동작한다 �
 
 playground는 dApp이 작성하는 패턴과 동일한 호출 흐름을 사용하며, v1 wrapper 호환 + v2 통합 sign API 양쪽 사용 예시를 한 페이지에서 확인할 수 있다.
 
+**모든 family(chain)의 per-family payload contract 상세 스펙:** [doc/v2-payload-contract.md](./doc/v2-payload-contract.md)
+

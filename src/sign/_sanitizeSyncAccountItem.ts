@@ -53,14 +53,18 @@ export function _sanitizeSyncAccountItem (raw: unknown): V2SyncAccountInfo {
     throw dcentException('param_error', 'invalid account item: must be a plain object')
   }
 
-  // own-enumerable만 읽어 prototype 오염 차단
-  const o = raw as Record<string, unknown>
+  const src = raw as Record<string, unknown>
 
-  // forbidden key 명시 차단 (방어 2중화 — toString 우회 패턴)
-  for (const k of Object.keys(o)) {
+  // own-enumerable 키만 null-prototype 스냅샷으로 복사한다.
+  //  - 상속(prototype 체인) 속성은 애초에 수집 대상에서 제외 → whitelist 정확성 보장
+  //  - forbidden key(__proto__/constructor/prototype)는 명시 차단
+  //  - 이후 검증/추출은 모두 이 스냅샷(o)에서만 읽으므로 o.chainId 등이 상속값을 집어오지 않음
+  const o: Record<string, unknown> = Object.create(null)
+  for (const k of Object.keys(src)) {
     if (FORBIDDEN_KEYS.has(k.toLowerCase())) {
       throw dcentException('param_error', `forbidden key: ${k}`)
     }
+    o[k] = src[k]
   }
 
   // chainId — _sanitizeChainId가 형식 whitelist + throw (ProviderError).
@@ -73,7 +77,9 @@ export function _sanitizeSyncAccountItem (raw: unknown): V2SyncAccountInfo {
     throw dcentException('param_error', e instanceof Error ? e.message : 'invalid chainId')
   }
 
-  // keyPath — BIP44 형식 (chain-agnostic)
+  // keyPath — chain-agnostic key path 형식만 검사 (BIP32 "m/" prefix + 숫자 컴포넌트).
+  // 엄격한 BIP44 5-component 강제는 하지 않는다 — 체인마다 depth가 다르므로(connector-chain-addition-isolation)
+  // 실제 path 유효성 판정은 wm/sdk에 위임. 여기서는 형식 위반만 거른다.
   const rawKeyPath = o.keyPath
   if (rawKeyPath === undefined || rawKeyPath === null || rawKeyPath === '') {
     throw dcentException('param_error', 'keyPath required')
@@ -93,10 +99,14 @@ export function _sanitizeSyncAccountItem (raw: unknown): V2SyncAccountInfo {
   // known-fields only output (unknown fields silently dropped)
   const out: V2SyncAccountInfo = { chainId, keyPath, label }
 
-  // contractAddress — optional. 존재 시 형식 검증
-  if (o.contractAddress !== undefined && o.contractAddress !== null && o.contractAddress !== '') {
+  // contractAddress — optional. 키가 없거나(undefined/null) 토큰이 아닌 경우 omit.
+  // 단, 키가 명시적으로 존재하는데 빈 문자열이거나 형식 위반이면 throw —
+  // 빈 문자열을 silent drop하면 caller의 실수(토큰 의도인데 주소 누락)가 native-coin 계정으로
+  // 둔갑한다 (error-handling-consistency: 검증 실패는 throw, silent return 금지).
+  if (Object.prototype.hasOwnProperty.call(o, 'contractAddress') &&
+      o.contractAddress !== undefined && o.contractAddress !== null) {
     const ca = String(o.contractAddress)
-    if (!CONTRACT_ADDR_REGEX.test(ca)) {
+    if (ca === '' || !CONTRACT_ADDR_REGEX.test(ca)) {
       throw dcentException('param_error', 'invalid contractAddress: ' + ca)
     }
     out.contractAddress = ca

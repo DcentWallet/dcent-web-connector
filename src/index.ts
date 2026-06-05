@@ -133,7 +133,9 @@ export {
   addBitcoinTransactionOutput,
 } from './sign'
 // m09-04-12: SyncAccountInfo(v1) removed — replaced by V2SyncAccountInfo(chainId/keyPath)
-export type { V2SyncAccountInfo, BitcoinTxObject, BitcoinTxParameter } from './sign'
+// getAccountInfo v2 return types(V2AccountInfo / AccountListV2Payload)도 루트 배럴에서 노출 —
+// src/sign/index.ts와 public API 표면 일치 (cross-repo-interface-edit)
+export type { V2SyncAccountInfo, V2AccountInfo, AccountListV2Payload, BitcoinTxObject, BitcoinTxParameter } from './sign'
 // m11-01-02: v2 chainId facade input type for getAddress overload
 export type { GetAddressV2Input } from './sign'
 // m09-04-09: addressFormat enum for BTC family multi-variant dispatch

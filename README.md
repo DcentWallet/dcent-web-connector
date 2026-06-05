@@ -89,3 +89,5 @@ open index-v2.html
 - **Form (B1 pattern)** — per-method input form with boundary validation
 
 > Note: `index-v2.html` and `playground.js` are included in the npm tarball as a living reference for v0.16.0 → v2 migration. See [MIGRATION-v1-to-v2.md](./MIGRATION-v1-to-v2.md) for details.
+>
+> **Per-family payload contract (all 20 chain families):** [doc/v2-payload-contract.md](./doc/v2-payload-contract.md)

@@ -70,15 +70,15 @@ describe('[v2 e2e] playground account/device APIs', () => {
       ;(window as any).dcent = (window as any).dcent || {}
       ;(window as any).dcent.coinType = mockDcent.coinType
 
-      // account presets — fixture (시연용 1개로 충분)
+      // account presets — fixture (시연용 1개로 충분) — v2 shape (m09-04-12)
       api.simulateAccountPresetsLoad([
         {
           id: 'syncAccount:multi',
           label: 'Multi (ETH + BTC)',
           applicableMethodIds: ['account:syncAccount'],
           value: [
-            { coin_group: 'EVM', coin_name: 'ETHEREUM', label: 'ETH-1' },
-            { coin_group: 'BITCOIN', coin_name: 'BITCOIN', label: 'BTC-1' },
+            { chainId: 'eip155:1', keyPath: "m/44'/60'/0'/0/0", label: 'ETH-1' },
+            { chainId: 'bip122:000000000019d6689c085ae165831e934ff763ae46b', keyPath: "m/44'/0'/0'/0/0", label: 'BTC-1' },
           ],
         },
       ])
@@ -109,11 +109,12 @@ describe('[v2 e2e] playground account/device APIs', () => {
       expect(handle).not.toBeNull()
     }
 
-    // 그룹 label 확인
+    // 그룹 label 확인 — Device API 그룹 + Account API 그룹 분리 (m09-04-12)
     const labels = await page.$$eval('.tree-group-label', (els: Element[]) =>
       els.map((e) => (e.textContent || '').trim())
     )
-    expect(labels).toContain('Account / Device')
+    expect(labels).toContain('Device API')
+    expect(labels).toContain('Account API')
   }, 30000)
 
   // ────────────────────────────────────────────────────────
@@ -150,11 +151,11 @@ describe('[v2 e2e] playground account/device APIs', () => {
     await page.click('[data-method-id="account:syncAccount"]')
     // preset select에서 multi 선택 (HTML select element 값 변경 후 change 이벤트 dispatch)
     await page.select('#field-preset', 'syncAccount:multi')
-    // textarea가 채워졌는지 확인
+    // textarea가 채워졌는지 확인 — v2 shape (m09-04-12)
     const taValue = await page.$eval('#field-accountInfosJson', (el: HTMLTextAreaElement) => el.value)
-    expect(taValue).toContain('coin_group')
-    expect(taValue).toContain('ETHEREUM')
-    expect(taValue).toContain('BITCOIN')
+    expect(taValue).toContain('chainId')
+    expect(taValue).toContain('eip155:1')
+    expect(taValue).toContain('bip122:')
 
     await page.click('#btn-send')
     await new Promise((r) => setTimeout(r, 200))
@@ -164,10 +165,10 @@ describe('[v2 e2e] playground account/device APIs', () => {
     expect(syncCall).toBeDefined()
     expect(Array.isArray(syncCall.args[0])).toBe(true)
     expect(syncCall.args[0].length).toBe(2)
-    // sanitize: known fields only
+    // sanitize: known fields only — v2 shape (m09-04-12)
     expect(syncCall.args[0][0]).toEqual({
-      coin_group: 'EVM',
-      coin_name: 'ETHEREUM',
+      chainId: 'eip155:1',
+      keyPath: "m/44'/60'/0'/0/0",
       label: 'ETH-1',
     })
 

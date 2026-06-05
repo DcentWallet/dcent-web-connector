@@ -14,8 +14,8 @@
 export { sign } from './sign'
 export type { SignInput } from './sign'
 
-// V1 호환 응답 타입 + m12-03 신규 타입
-export type { V1Response, V1ResponseHeader, V1ResponseBody, CallOptions, DeviceInfoPayload } from './types'
+// V1 호환 응답 타입 + m12-03 신규 타입 + m09-04-12 v2 account 타입
+export type { V1Response, V1ResponseHeader, V1ResponseBody, CallOptions, DeviceInfoPayload, V2SyncAccountInfo, V2AccountInfo, AccountListV2Payload } from './types'
 
 // internal helpers — sibling module이 사용. 이름 prefix `_`로 표기.
 export { _call } from './call'
@@ -33,7 +33,7 @@ export type { GetAddressV2Input } from './address'
 // m09-04-09: addressFormat enum type for BTC family multi-variant dispatch
 export type { AddressFormat } from './address'
 export { setLabel, syncAccount, selectAddress } from './configure'
-export type { SyncAccountInfo } from './configure'
+// m09-04-12: SyncAccountInfo(v1) removed — V2SyncAccountInfo re-exported from ./types above
 export {
   getBitcoinTransactionObject,
   addBitcoinTransactionInput,

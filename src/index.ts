@@ -132,7 +132,8 @@ export {
   addBitcoinTransactionInput,
   addBitcoinTransactionOutput,
 } from './sign'
-export type { SyncAccountInfo, BitcoinTxObject, BitcoinTxParameter } from './sign'
+// m09-04-12: SyncAccountInfo(v1) removed — replaced by V2SyncAccountInfo(chainId/keyPath)
+export type { V2SyncAccountInfo, BitcoinTxObject, BitcoinTxParameter } from './sign'
 // m11-01-02: v2 chainId facade input type for getAddress overload
 export type { GetAddressV2Input } from './sign'
 // m09-04-09: addressFormat enum for BTC family multi-variant dispatch

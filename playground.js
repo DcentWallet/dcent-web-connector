@@ -1011,7 +1011,7 @@
       }
       var ta = appendFormRow('accountInfosJson', 'accountInfos (JSON array)', 'textarea', {
         value: '',
-        placeholder: '[{"coin_group":"EVM","coin_name":"ETHEREUM","label":"ETH-1"}]',
+        placeholder: '[{"chainId":"eip155:1","keyPath":"m/44\'/60\'/0\'/0/0","label":"ETH-1"}]',
       })
       if (ta) ta.rows = 8
       return
@@ -1521,9 +1521,10 @@
     }
   }
 
-  // ── sanitize helper for syncAccount (m11-01-01) ──
+  // ── sanitize helper for syncAccount (m09-04-12: v2 전환) ──
   // dapp-input-sanitization 룰: known fields whitelist만 추출, __proto__ / unknown key silent drop.
-  // playground 로컬 helper (connector src/sign/sanitize.ts는 string scalar 전용으로 다른 용도).
+  // v2 wire: {chainId, keyPath, label, contractAddress?}. v1 {coin_group, coin_name} 제거.
+  // playground 로컬 helper — 실제 검증은 connector의 _sanitizeSyncAccountItem이 담당.
   function _sanitizeSyncAccountInfos (parsed) {
     if (!Array.isArray(parsed)) {
       throw new Error('accountInfos must be an array')
@@ -1532,11 +1533,16 @@
       if (!a || typeof a !== 'object') {
         throw new Error('each account entry must be an object')
       }
-      return {
-        coin_group: String(a.coin_group == null ? '' : a.coin_group),
-        coin_name: String(a.coin_name == null ? '' : a.coin_name),
+      var out = {
+        chainId: String(a.chainId == null ? '' : a.chainId),
+        keyPath: String(a.keyPath == null ? '' : a.keyPath),
         label: String(a.label == null ? '' : a.label),
       }
+      // contractAddress — optional, include only if present and non-empty
+      if (a.contractAddress != null && a.contractAddress !== '') {
+        out.contractAddress = String(a.contractAddress)
+      }
+      return out
     })
   }
 

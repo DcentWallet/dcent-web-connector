@@ -83,6 +83,64 @@ export interface CallOptions {
 
 /* eslint-disable camelcase */
 /**
+ * v2 account wire — syncAccount 입력 항목 (m09-04-12).
+ *
+ * connector-chain-addition-isolation: chainId는 chain-agnostic whitelist 형식 검증만.
+ * 실제 chain resolve는 sdk/wm(m09-03-21)에 위임.
+ *
+ * dapp-input-sanitization: _sanitizeSyncAccountItem이 known-fields만 통과.
+ */
+export interface V2SyncAccountInfo {
+  /** chain-level CAIP-2 chainId (예: 'eip155:1', 'bip122:000000000019d6689c085ae165831e93').
+   *  token도 chain part만 (contractAddress로 asset 구분). */
+  chainId: string
+  /** token asset일 때만 존재. native coin은 생략. */
+  contractAddress?: string
+  /** BIP44 key path (예: "m/44'/60'/0'/0/0"). */
+  keyPath: string
+  /** D'CENT 지갑 표시 레이블. */
+  label: string
+}
+
+/**
+ * v2 account wire — getAccountInfo 응답 항목 (m09-04-12).
+ *
+ * sdk(m09-03-21)가 enrich한 결과 shape. connector는 응답을 forward만 — 타입 narrow 전용.
+ *
+ * mutation-isolation: V1Response가 call.ts에서 매 호출마다 새 객체로 생성.
+ */
+export type V2AccountInfo =
+  | {
+      /** resolve 성공 — chainId 확인됨 */
+      chainId: string
+      /** token이면 asset-level CAIP-19 (예: 'eip155:1/erc20:0x...'). native이면 undefined. */
+      caip19?: string
+      /** token asset address. native이면 undefined. */
+      contractAddress?: string
+      /** 디바이스 address_path */
+      keyPath: string
+      /** D'CENT 레이블 */
+      label: string
+      unresolved?: false
+    }
+  | {
+      /** resolve 실패 (custom coin / 미등록 / collision) */
+      chainId: null
+      unresolved: true
+      /** 디바이스 raw 응답 (v1 shape 보존) */
+      raw: { coin_group: string; coin_name: string; address_path: string; label: string }
+    }
+
+/**
+ * getAccountInfo 응답 body.parameter shape (m09-04-12).
+ */
+export interface AccountListV2Payload {
+  account: V2AccountInfo[]
+}
+/* eslint-enable camelcase */
+
+/* eslint-disable camelcase */
+/**
  * D'CENT 디바이스 정보 응답 payload (m12-03).
  *
  * `getDeviceInfo()` 응답의 `body.parameter` shape.

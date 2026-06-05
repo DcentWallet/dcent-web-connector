@@ -133,12 +133,12 @@ describe('T-U-DEVID-FAC-* — facade deviceId wiring (Layer B)', () => {
     expect(spy.mock.calls[0][0].method).toBe('getAccountInfo')
   })
 
-  test('T-U-DEVID-FAC-04b: syncAccount(infos, {deviceId:"X"}) → _call', async () => {
+  test('T-U-DEVID-FAC-04b: syncAccount(infos, {deviceId:"X"}) → _call (v2 shape)', async () => {
     const { transport } = ensureSingleton()
     const spy = jest.spyOn(transport, 'send').mockResolvedValue({ id: 'r4b', result: {} })
 
     await syncAccount(
-      [{ coin_group: 'ETHEREUM', coin_name: 'ETHEREUM', label: 'mywallet' }],
+      [{ chainId: 'eip155:1', keyPath: "m/44'/60'/0'/0/0", label: 'mywallet' }],
       { deviceId: 'D-005' },
     )
 

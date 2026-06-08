@@ -91,8 +91,8 @@ export interface CallOptions {
  * dapp-input-sanitization: _sanitizeSyncAccountItem이 known-fields만 통과.
  */
 export interface V2SyncAccountInfo {
-  /** chain-level CAIP-2 chainId (예: 'eip155:1', 'bip122:000000000019d6689c085ae165831e93').
-   *  token도 chain part만 (contractAddress로 asset 구분). */
+  /** CAIP-19 chainId (예: 'eip155:1/slip44:60', 'bip122:000000000019d6689c085ae165831e93/slip44:0').
+   *  token도 부모 체인의 CAIP-19를 그대로 두고 asset은 contractAddress로 구분. */
   chainId: string
   /** token asset일 때만 존재. native coin은 생략. */
   contractAddress?: string
@@ -111,10 +111,9 @@ export interface V2SyncAccountInfo {
  */
 export type V2AccountInfo =
   | {
-      /** resolve 성공 — chainId 확인됨 */
+      /** resolve 성공 — CAIP-19 chainId. native는 자산 caip19(예 'eip155:1/slip44:60'),
+       *  token은 부모 체인 caip19. 자산 구분은 contractAddress (별도 caip19 필드 없음). */
       chainId: string
-      /** token이면 asset-level CAIP-19 (예: 'eip155:1/erc20:0x...'). native이면 undefined. */
-      caip19?: string
       /** token asset address. native이면 undefined. */
       contractAddress?: string
       /** 디바이스 address_path */

@@ -4,7 +4,7 @@
     "label": "Ethereum (single)",
     "applicableMethodIds": ["account:syncAccount"],
     "value": [
-      { "chainId": "eip155:1", "keyPath": "m/44'/60'/0'/0/0", "label": "ETH-1" }
+      { "chainId": "eip155:1/slip44:60", "keyPath": "m/44'/60'/0'/0/0", "label": "ETH-1" }
     ]
   },
   {
@@ -12,7 +12,7 @@
     "label": "Bitcoin (single)",
     "applicableMethodIds": ["account:syncAccount"],
     "value": [
-      { "chainId": "bip122:000000000019d6689c085ae165831e934ff763ae46b", "keyPath": "m/44'/0'/0'/0/0", "label": "BTC-1" }
+      { "chainId": "bip122:000000000019d6689c085ae165831e93/slip44:0", "keyPath": "m/44'/0'/0'/0/0", "label": "BTC-1" }
     ]
   },
   {
@@ -20,8 +20,8 @@
     "label": "Multi (ETH + BTC)",
     "applicableMethodIds": ["account:syncAccount"],
     "value": [
-      { "chainId": "eip155:1", "keyPath": "m/44'/60'/0'/0/0", "label": "ETH-1" },
-      { "chainId": "bip122:000000000019d6689c085ae165831e934ff763ae46b", "keyPath": "m/44'/0'/0'/0/0", "label": "BTC-1" }
+      { "chainId": "eip155:1/slip44:60", "keyPath": "m/44'/60'/0'/0/0", "label": "ETH-1" },
+      { "chainId": "bip122:000000000019d6689c085ae165831e93/slip44:0", "keyPath": "m/44'/0'/0'/0/0", "label": "BTC-1" }
     ]
   }
 ]

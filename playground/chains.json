@@ -970,11 +970,5 @@
     "displayName": "Solana Devnet",
     "defaultKeyPath": "m/44'/501'/0'",
     "isTestnet": true
-  },
-  {
-    "chainId": "tron:mainnet",
-    "family": "tron",
-    "displayName": "Tron",
-    "defaultKeyPath": "m/44'/195'/0'/0/0"
   }
 ]

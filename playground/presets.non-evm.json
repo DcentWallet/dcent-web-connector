@@ -290,7 +290,7 @@
     "sourceUrl": "https://stellar.github.io/js-stellar-sdk/Operation.payment.html",
     "transaction": {
       "type": "payment",
-      "destination": "GAAZI4TCR3TY5OJHCTJC2A4QSY6CJWJH5IAJTGKIN2ER7LBNVKOCCWN",
+      "destination": "GDQP2KPQGKIHYJGXNUIYOMHARUARCA7DJT5FO2FFOOKY3B2WSQHG4W37",
       "asset": {
         "code": "XLM",
         "issuer": null
@@ -343,101 +343,6 @@
       "amount": "1000000000000000000000000",
       "blockHash": "GJp9NRJGBnXqWJAKFxkzD8p9cJTiSNi1J3UWKVBbcfRw",
       "publicKey": "ed25519:11111111111111111111111111111111"
-    }
-  },
-  {
-    "id": "dot-transfer",
-    "label": "Polkadot DOT transfer",
-    "family": "polkadot",
-    "applicableChainIds": [
-      "polkadot:91b171bb158e2d3848fa23a9f1c25182/slip44:354",
-      "polkadot:9eb76c5184c4ab8679d2d5d819fdf90b/slip44:810",
-      "polkadot:6673c7e2c2b7bde45a60c71ef70d9c7c/slip44:354"
-    ],
-    "note": "Polkadot balances.transfer extrinsic (TransactionCommon shape). Edit sender/recipient before send.",
-    "sourceUrl": "https://polkadot.js.org/docs/substrate/extrinsics/#transferdest-multiaddress-value-compact",
-    "transaction": {
-      "type": "transfer",
-      "family": "polkadot",
-      "sender": "5GrwvaEF5zXb26Fz9rcQpDWS57CtERHpNehXCPcNoHGKutQY",
-      "recipient": "5FHneW46xGXgs5mUiveU4sbTyGBzmstUspZC92UhjJM694ty",
-      "amount": "1000000000"
-    }
-  },
-  {
-    "id": "xtz-transfer",
-    "label": "Tezos XTZ transfer",
-    "family": "tezos",
-    "applicableChainIds": [
-      "tezos:NetXdQprcVkpaWU/slip44:1729",
-      "tezos:NetXnHfVqm9iesp/slip44:1729"
-    ],
-    "note": "Tezos transaction op (UnionTransaction shape). key/symbol/decimals required by wm TezosAPIImpl.",
-    "sourceUrl": "https://tezos.gitlab.io/shell/rpc.html",
-    "transaction": {
-      "type": "transfer",
-      "family": "tezos",
-      "key": "XTZ",
-      "symbol": "XTZ",
-      "decimals": 6,
-      "optionParam": "",
-      "hexNonce": "0000000000000000",
-      "revealed": false,
-      "sender": "tz1VSUr8wwNhLAzempoch5d6hLRiTh8Cjcjb",
-      "recipient": "tz1aSkwEot3L2kmUanuneWHL7zayzaovkujr",
-      "amount": "1000000"
-    }
-  },
-  {
-    "id": "atom-transfer",
-    "label": "Cosmos ATOM transfer (MsgSend)",
-    "family": "cosmos",
-    "applicableChainIds": [
-      "cosmos:cosmoshub-4/slip44:118",
-      "cosmos:coreum-mainnet-1/slip44:990",
-      "cosmos:hippo-protocol-1/slip44:118"
-    ],
-    "note": "Cosmos MsgSend transaction (UnionTransaction shape). accountNumber/sequence/pubKey/chainId required. Note: signTransaction may return -32601 for families where wm CosmosAPIImpl dispatch is not yet registered.",
-    "sourceUrl": "https://docs.cosmos.network/api",
-    "transaction": {
-      "type": "transfer",
-      "family": "cosmos",
-      "key": "ATOM",
-      "symbol": "ATOM",
-      "decimals": 6,
-      "optionParam": "",
-      "sender": "cosmos1qnk2n4nlkpw9xfqntladh74er2xa62wm7p7p5z",
-      "recipient": "cosmos1ht3qs0a8fgg04y2w8u7k9z7vefkf38qnmqjvmq",
-      "amount": "1000000",
-      "accountNumber": "12345",
-      "sequence": "0",
-      "pubKey": "A0000000000000000000000000000000000000000000",
-      "pubKeyType": "/cosmos.crypto.secp256k1.PubKey",
-      "chainId": "cosmoshub-4",
-      "signature": "",
-      "txRaw": "",
-      "feeRate": {
-        "low": "0.01",
-        "average": "0.025",
-        "high": "0.04"
-      }
-    }
-  },
-  {
-    "id": "vet-transfer",
-    "label": "VeChain VET transfer",
-    "family": "vechain",
-    "applicableChainIds": [
-      "vechain:b1ac3413d346d43539627e6be7ec1b4a/slip44:818"
-    ],
-    "note": "VeChain clauses transaction (TransactionCommon shape). Edit sender/recipient before send.",
-    "sourceUrl": "https://docs.vechain.org/how-to-run-a-node/custom-network",
-    "transaction": {
-      "type": "transfer",
-      "family": "vechain",
-      "sender": "0x7567D83b7b8d80ADdCb281A71d54Fc7B3364ffed",
-      "recipient": "0xd3ae78222BEADB038203bE21eD5ce7C9B1BfF602",
-      "amount": "1000000000000000000"
     }
   },
   {

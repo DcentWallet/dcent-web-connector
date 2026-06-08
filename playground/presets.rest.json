@@ -10,8 +10,8 @@
     "sourceUrl": "https://github.com/algorand/js-algorand-sdk",
     "transaction": {
       "type": "pay",
-      "from": "ALGORAND7XVFXWDX5HGMI6TEIIIYNYXATWJDAWTOGCHKZHJV2KLYE5LZQ4",
-      "to": "ALGORAND7XVFXWDX5HGMI6TEIIIYNYXATWJDAWTOGCHKZHJV2KLYE5LZQ4",
+      "from": "Y76M3MSY6DKBRHBL7C3NNDXGS5IIMQVQVUAB6MP4XEMMGVF2QWNPL226CA",
+      "to": "737777777777777777777777777777777777777777777777777UFEJ2CI",
       "amount": 1000000,
       "fee": 1000,
       "firstRound": 1,
@@ -47,7 +47,9 @@
     "label": "Cosmos ATOM transfer",
     "family": "cosmos",
     "applicableChainIds": [
-      "cosmos:cosmoshub-4/slip44:118"
+      "cosmos:cosmoshub-4/slip44:118",
+      "cosmos:coreum-mainnet-1/slip44:990",
+      "cosmos:hippo-protocol-1/slip44:118"
     ],
     "note": "Cosmos Hub MsgSend (cosmjs StdSignDoc). amount 단위는 uatom (1 ATOM = 1,000,000). fromAddress/toAddress/amount 수정 후 송금.",
     "sourceUrl": "https://github.com/cosmos/cosmjs",
@@ -59,14 +61,20 @@
             "fromAddress": "cosmos1qpe9h7lndhg27gpsxq8r43kytt7uzkfrxvqhnq",
             "toAddress": "cosmos1qpe9h7lndhg27gpsxq8r43kytt7uzkfrxvqhnq",
             "amount": [
-              { "denom": "uatom", "amount": "1000000" }
+              {
+                "denom": "uatom",
+                "amount": "1000000"
+              }
             ]
           }
         }
       ],
       "fee": {
         "amount": [
-          { "denom": "uatom", "amount": "5000" }
+          {
+            "denom": "uatom",
+            "amount": "5000"
+          }
         ],
         "gas": "200000"
       },
@@ -102,7 +110,9 @@
     "label": "Polkadot DOT transfer",
     "family": "polkadot",
     "applicableChainIds": [
-      "polkadot:91b171bb158e2d3848fa23a9f1c25182/slip44:354"
+      "polkadot:91b171bb158e2d3848fa23a9f1c25182/slip44:354",
+      "polkadot:9eb76c5184c4ab8679d2d5d819fdf90b/slip44:810",
+      "polkadot:6673c7e2c2b7bde45a60c71ef70d9c7c/slip44:354"
     ],
     "note": "Polkadot balances.transfer extrinsic. args[1] 단위는 Planck (1 DOT = 10^10 Planck). args[0] 수신자 주소 + args[1] 금액 수정 후 송금.",
     "sourceUrl": "https://github.com/polkadot-js/api",
@@ -147,7 +157,8 @@
     "label": "Tezos XTZ transfer",
     "family": "tezos",
     "applicableChainIds": [
-      "tezos:NetXdQprcVkpaWU/slip44:1729"
+      "tezos:NetXdQprcVkpaWU/slip44:1729",
+      "tezos:NetXnHfVqm9iesp/slip44:1729"
     ],
     "note": "Tezos transaction operation (taquito). amount 단위는 mutez (1 XTZ = 1,000,000). source/destination/amount 수정 후 송금.",
     "sourceUrl": "https://github.com/ecadlabs/taquito",

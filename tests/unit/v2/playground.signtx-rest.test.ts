@@ -5,8 +5,8 @@
  * 신규 8 family(algorand / conflux / cosmos / fil / polkadot / stacks / tezos / vechain)
  * 트리 빌드 / 폼 렌더링 / preset 적용 흐름을 검증.
  *
- * T-U-REST-01: NON_EVM_FAMILIES 14 family 포함 (ethereum 제외 전부 — 6 기존 + 8 신규)
- * T-U-REST-02: FAMILY_LABELS 15 family 매핑 (ethereum + 14 non-EVM) + 알 수 없는 family는 트리 그룹 미생성
+ * T-U-REST-01: NON_EVM_FAMILIES 19 family 포함 (ethereum 제외 전부 — 6 기존 + 8 신규 + 5 누락보강)
+ * T-U-REST-02: FAMILY_LABELS 20 family 매핑 (ethereum + 19 non-EVM) + 알 수 없는 family는 트리 그룹 미생성
  * T-U-REST-03: 15 family inject 시 트리 method 노드 수 = 입력 chain 수 + 정적 method 수 (R4=a)
  * T-U-REST-04: presets.rest.json — 8 entry × 7 필드 모두 valid + transaction object
  * T-U-REST-05: preset 부재 family chain 노드는 트리에 노출되되 textarea 자동 채움 없음
@@ -86,18 +86,20 @@ afterEach(() => {
 })
 
 // ─────────────────────────────────────────────────────────────────────────────
-// T-U-REST-01: NON_EVM_FAMILIES 가 13 family 포함 (ethereum 제외 전부)
+// T-U-REST-01: NON_EVM_FAMILIES 가 19 family 포함 (ethereum 제외 전부)
 // ─────────────────────────────────────────────────────────────────────────────
-it('T-U-REST-01: NON_EVM_FAMILIES 가 14 family 포함 (ethereum 제외 전부)', () => {
+it('T-U-REST-01: NON_EVM_FAMILIES 가 19 family 포함 (ethereum 제외 전부)', () => {
   const api = (window as any)._playgroundTestAPI
   const families = api.NON_EVM_FAMILIES as string[]
 
-  // 기존 6 family + 신규 8 family = 14 family (ethereum 제외)
-  expect(families).toHaveLength(14)
+  // 기존 6 family + 신규 8 family + 누락보강 5 family = 19 family (ethereum 제외)
+  expect(families).toHaveLength(19)
   // 기존 6 family (Child 1-3 covered)
   expect(families).toEqual(expect.arrayContaining(['bitcoin', 'solana', 'xrp', 'hedera', 'stellar', 'tron']))
   // 신규 8 family (m06-01-04)
   expect(families).toEqual(expect.arrayContaining(['algorand', 'conflux', 'cosmos', 'fil', 'polkadot', 'stacks', 'tezos', 'vechain']))
+  // 누락보강 5 family — chains.json엔 있으나 트리에서 빠져있던 family
+  expect(families).toEqual(expect.arrayContaining(['cardano', 'constellation', 'near', 'xahau', 'havah']))
   // ethereum은 EVM 그룹이므로 NON_EVM_FAMILIES에서 제외
   expect(families).not.toContain('ethereum')
 })
@@ -105,16 +107,22 @@ it('T-U-REST-01: NON_EVM_FAMILIES 가 14 family 포함 (ethereum 제외 전부)'
 // ─────────────────────────────────────────────────────────────────────────────
 // T-U-REST-02: FAMILY_LABELS 미등록 family는 family명 그대로 fallback (deriveFamily fallback 동작)
 // ─────────────────────────────────────────────────────────────────────────────
-it('T-U-REST-02: FAMILY_LABELS — 15 family 매핑 + 알 수 없는 family는 트리 그룹 미생성', () => {
+it('T-U-REST-02: FAMILY_LABELS — 20 family 매핑 + 알 수 없는 family는 트리 그룹 미생성', () => {
   const api = (window as any)._playgroundTestAPI
   const labels = api.FAMILY_LABELS as Record<string, string>
 
-  // 15 family 모두 매핑됨 (ethereum + 14 non-EVM)
-  expect(Object.keys(labels)).toHaveLength(15)
+  // 20 family 모두 매핑됨 (ethereum + 19 non-EVM)
+  expect(Object.keys(labels)).toHaveLength(20)
   expect(labels.ethereum).toBe('Ethereum (EIP-155)')
   expect(labels.algorand).toBe('Algorand')
   expect(labels.cosmos).toBe('Cosmos (cosmjs)')
   expect(labels.vechain).toBe('VeChain')
+  // 누락보강 5 family 표시명
+  expect(labels.cardano).toBe('Cardano')
+  expect(labels.constellation).toBe('Constellation (DAG)')
+  expect(labels.near).toBe('NEAR')
+  expect(labels.xahau).toBe('Xahau')
+  expect(labels.havah).toBe('Havah')
 
   // 미등록 family는 NON_EVM_FAMILIES에 없으므로 트리 그룹 미생성
   // (extract-chains.js의 deriveFamily fallback과 동일한 정책을 페이지 레벨에서도 보존)

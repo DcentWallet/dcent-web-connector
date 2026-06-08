@@ -268,13 +268,20 @@
     stacks: 'Stacks',
     tezos: 'Tezos',
     vechain: 'VeChain',
+    // 누락 family 5개 추가 (chains.json엔 있으나 트리에서 빠져있던 family)
+    cardano: 'Cardano',
+    constellation: 'Constellation (DAG)',
+    near: 'NEAR',
+    xahau: 'Xahau',
+    havah: 'Havah',
   }
 
   // ── NON_EVM_FAMILIES: 비-EVM family 목록 (트리 그룹 생성 순서) ──
-  // m06-01-03 추가, m06-01-04 신규 8 family 추가 (ethereum 제외 13개 family)
+  // m06-01-03 추가, m06-01-04 신규 8 family 추가, 누락 5 family 추가 (ethereum 제외 19개 family)
   var NON_EVM_FAMILIES = [
     'bitcoin', 'solana', 'xrp', 'hedera', 'stellar', 'tron',
     'algorand', 'conflux', 'cosmos', 'fil', 'polkadot', 'stacks', 'tezos', 'vechain',
+    'cardano', 'constellation', 'near', 'xahau', 'havah',
   ]
 
   // ── chainId → default keyPath lookup (chains.json runtime data) ──

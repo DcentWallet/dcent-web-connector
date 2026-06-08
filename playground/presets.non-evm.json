@@ -362,5 +362,25 @@
       "recipient": "DAG0000000000000000000000000000000000000001",
       "amount": "100000000"
     }
+  },
+  {
+    "id": "havah-transfer",
+    "label": "Havah HVH transfer",
+    "family": "havah",
+    "applicableChainIds": [
+      "havah:mainnet/slip44:858",
+      "havah:testnet/slip44:858"
+    ],
+    "note": "Havah(ICON 계열) ICON-native wire payload {from,to,value,stepLimit,nid,nonce}. wm havah/wire-convert.ts가 HavahTransaction으로 변환 — stepLimit 제공 시 preparedFee 생성(self-contained, popup-bridge preparedFee 크래시 회피). value=0xDE0B6B3A7640001(1 HVH + 1 loop, >MAX_SAFE_INTEGER 정밀도 회귀 방지). self address(from==to) — asset risk 0.",
+    "sourceUrl": "https://docs.havah.io/",
+    "transaction": {
+      "from": "hx99bc2f9ee6aea6f9ed252e3dc48f6a7fdc9e916c",
+      "to": "hx99bc2f9ee6aea6f9ed252e3dc48f6a7fdc9e916c",
+      "value": "0xDE0B6B3A7640001",
+      "stepLimit": "0x186a0",
+      "nid": "0x100",
+      "nonce": "0x1",
+      "version": "0x3"
+    }
   }
 ]

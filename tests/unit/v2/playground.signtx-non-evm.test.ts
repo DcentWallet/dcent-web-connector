@@ -335,8 +335,8 @@ it('T-U-NEVM-04: presets.non-evm.json — wm 등록 family preset 모두 valid J
   // 각 preset의 필수 필드 확인
   const requiredFields = ['id', 'label', 'family', 'applicableChainIds', 'transaction']
   // 누락보강(P1)으로 NON_EVM_FAMILIES에 추가된 xahau/cardano/near/constellation preset이
-  // orphan에서 활성화됨 → expectedFamilies에 포함.
-  const expectedFamilies = ['bitcoin', 'solana', 'xrp', 'hedera', 'stellar', 'xahau', 'cardano', 'near', 'constellation']
+  // orphan에서 활성화됨 + havah preset 신규 추가 → expectedFamilies에 포함.
+  const expectedFamilies = ['bitcoin', 'solana', 'xrp', 'hedera', 'stellar', 'xahau', 'cardano', 'near', 'constellation', 'havah']
 
   // CAIP-19 정규식: namespace:reference/slip44:N
   // CAIP-2 namespace는 spec상 3-8 chars 권장이나 wm registry는 더 긴 namespace 사용

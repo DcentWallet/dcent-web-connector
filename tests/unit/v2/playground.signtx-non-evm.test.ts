@@ -958,3 +958,104 @@ it('T-U-NEVM-05: 알 수 없는 family chain은 트리 non-EVM 그룹에 포함�
   expect(document.querySelector('[data-method-id^="signTx:stellar:"]')).not.toBeNull()
   expect(document.querySelector('[data-method-id^="signTx:tron:"]')).not.toBeNull()
 })
+
+// ─────────────────────────────────────────────────────────────────────────────
+// T-U-NEVM-NEWFAM-01~03: 누락보강 5 family(cardano/constellation/near/xahau/havah)
+// signTransaction 트리 노드 생성 + preset 자동 채움 + getAddress chainId select 도달성.
+//
+// 배경: NON_EVM_FAMILIES 배열 membership(T-U-REST-01)만으로는 실제 트리/폼 도달성을
+// 보장하지 않는다. 5개 family를 배열에만 추가하고 simulateNonEvmLoad/buildTree 경로가
+// 깨지면 membership 테스트는 통과해도 사용자는 노드를 클릭할 수 없다. 이 describe는
+// DOM 레벨에서 signTransaction(노드+preset)과 getAddress(chainId select) 양쪽 도달성을
+// 검증해 그 공백을 메운다.
+// ─────────────────────────────────────────────────────────────────────────────
+describe('누락보강 5 family — signTx/getAddress 도달성', () => {
+  // chains.json의 실제 chainId 사용 (havah preset applicableChainIds와 정확 매칭)
+  const NEW_FAMILY_CHAINS = [
+    { chainId: 'cip34:1-764824073', family: 'cardano', displayName: 'Cardano', defaultKeyPath: "m/1852'/1815'/0'/0/0" },
+    { chainId: 'constellation:mainnet/slip44:1137', family: 'constellation', displayName: 'Constellation', defaultKeyPath: "m/44'/1137'/0'/0/0" },
+    { chainId: 'near:mainnet/slip44:397', family: 'near', displayName: 'NEAR', defaultKeyPath: "m/44'/397'/0'" },
+    { chainId: 'xahau:mainnet/slip44:144', family: 'xahau', displayName: 'Xahau', defaultKeyPath: "m/44'/144'/0'/0/0" },
+    { chainId: 'havah:mainnet/slip44:858', family: 'havah', displayName: 'Havah', defaultKeyPath: "m/44'/858'/0'/0/0" },
+  ]
+  // 실제 presets.non-evm.json 로드 — orphan 활성화 4개(ada/dag/near/xahau) + havah preset 포함
+  const REAL_NON_EVM_PRESETS: any[] = JSON.parse(
+    fs.readFileSync(
+      path.resolve(__dirname, '../../../playground/presets.non-evm.json'),
+      'utf8'
+    )
+  )
+
+  function connectStub(api: any): void {
+    const mockDcent = {
+      sign: jest.fn().mockResolvedValue({ header: { status: 'success' }, body: { parameter: {} } }),
+      getDeviceInfo: jest.fn().mockResolvedValue({ header: { status: 'success' }, body: { parameter: {} } }),
+      popupWindowClose: jest.fn(),
+      setConnectionListener: jest.fn(),
+    }
+    api.simulateConnect(mockDcent, null, { model: 'Bio', firmware: '3.0' })
+  }
+
+  it('T-U-NEVM-NEWFAM-01: 5 family 모두 signTx 트리 DOM 노드로 생성된다', () => {
+    const api = (window as any)._playgroundTestAPI
+    api.simulateNonEvmLoad(NEW_FAMILY_CHAINS, REAL_NON_EVM_PRESETS)
+
+    ;['cardano', 'constellation', 'near', 'xahau', 'havah'].forEach((fam) => {
+      const node = document.querySelector(`[data-method-id^="signTx:${fam}:"]`)
+      expect(node).not.toBeNull()
+    })
+  })
+
+  it('T-U-NEVM-NEWFAM-02: preset 보유 family 클릭 시 textarea 자동 채움 (havah=ICON-native + preparedFee self-contained)', () => {
+    const api = (window as any)._playgroundTestAPI
+    api.simulateNonEvmLoad(NEW_FAMILY_CHAINS, REAL_NON_EVM_PRESETS)
+    connectStub(api)
+
+    // 5개 모두 preset 보유 → 클릭 시 textarea valid JSON으로 채워짐
+    NEW_FAMILY_CHAINS.forEach((c) => {
+      const node = document.querySelector(
+        `[data-method-id="signTx:${c.family}:${c.chainId}"]`
+      ) as HTMLElement
+      expect(node).not.toBeNull()
+      node.click()
+      const txEl = document.getElementById('field-transaction') as HTMLTextAreaElement
+      expect(txEl).not.toBeNull()
+      const txValue = txEl.value.trim()
+      expect(txValue.length).toBeGreaterThan(0)
+      expect(() => JSON.parse(txValue)).not.toThrow()
+    })
+
+    // havah: ICON-native shape + stepLimit 단언
+    // (stepLimit 제공 시 wm havah/wire-convert.ts convertTransaction이 preparedFee를
+    //  생성 → popup-bridge가 prepareTransaction 미경유여도 preparedFee undefined deref
+    //  크래시(cosmos 패턴) 회피. 이 preset의 핵심 invariant.)
+    const havahNode = document.querySelector(
+      '[data-method-id="signTx:havah:havah:mainnet/slip44:858"]'
+    ) as HTMLElement
+    havahNode.click()
+    const havahTx = JSON.parse(
+      (document.getElementById('field-transaction') as HTMLTextAreaElement).value
+    )
+    expect(havahTx.from).toBeDefined()
+    expect(havahTx.to).toBeDefined()
+    expect(havahTx.value).toBeDefined()
+    expect(havahTx.stepLimit).toBeDefined()
+  })
+
+  it('T-U-NEVM-NEWFAM-03: getAddress v2 chainId select에 5개 신규 chainId가 포함된다', () => {
+    const api = (window as any)._playgroundTestAPI
+    api.simulateNonEvmLoad(NEW_FAMILY_CHAINS, REAL_NON_EVM_PRESETS)
+
+    // account:getAddress 노드 클릭 → v2 폼 렌더(default path=v2) → allChainsMap 기반 chainId select 빌드
+    const getAddrNode = document.querySelector('[data-method-id="account:getAddress"]') as HTMLElement
+    expect(getAddrNode).not.toBeNull()
+    getAddrNode.click()
+
+    const chainSelect = document.getElementById('field-chainId') as HTMLSelectElement
+    expect(chainSelect).not.toBeNull()
+    const optionValues = Array.from(chainSelect.options).map((o) => o.value)
+    NEW_FAMILY_CHAINS.forEach((c) => {
+      expect(optionValues).toContain(c.chainId)
+    })
+  })
+})

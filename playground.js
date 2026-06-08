@@ -1250,6 +1250,9 @@
       // 공유하는 경우 명시적 disambiguation. 누락 시 wm resolver가 default(현재 legacy)
       // 사용하지만 디바이스 표시 주소와 SDK 응답 주소가 불일치할 수 있음 (HW smoke 2026-05-29).
       // 사용자가 legacy/segwit-native 둘 다 테스트할 수 있도록 dropdown 제공.
+      // segwit-wrapped(P2SH-P2WPKH) / taproot(P2TR)는 AddressFormat 타입엔 있으나 wm registry에
+      // 대응 currency가 아직 없어 resolveCurrencyByChainIdAndFormat이 undefined → sdk 4901.
+      // 따라서 현재 사용 가능한 legacy/segwit-native만 노출 (wm이 variant 추가 시 재등록).
       var afRow = document.createElement('div')
       afRow.className = 'form-row'
       var afLabel = document.createElement('label')
@@ -1261,8 +1264,6 @@
         { value: '', label: '(default — wm resolver 결정)' },
         { value: 'legacy', label: 'legacy (P2PKH — 1xxx / mxxx)' },
         { value: 'segwit-native', label: 'segwit-native (P2WPKH bech32 — bc1q / tb1q)' },
-        { value: 'segwit-wrapped', label: 'segwit-wrapped (P2SH-P2WPKH — 3xxx / 2xxx)' },
-        { value: 'taproot', label: 'taproot (P2TR bech32m — bc1p)' },
       ]
       afOptions.forEach(function (o) {
         var opt = document.createElement('option')

@@ -2,7 +2,7 @@
   {
     "id": "evm-transfer-1559",
     "label": "EVM transfer (EIP-1559)",
-    "note": "Template only — chainId는 선택 노드에서 주입(체인 무관 EIP-1559 transfer). 전체 EVM 체인 커버. edit nonce/maxFeePerGas before send",
+    "note": "Template only — chainId는 선택 노드에서 주입(체인 무관 EIP-1559 transfer). chains.evm.json 전체 EVM 체인(64개) 커버. edit nonce/maxFeePerGas before send",
     "applicableChainIds": [
       "eip155:1/slip44:60",
       "eip155:30/slip44:60",

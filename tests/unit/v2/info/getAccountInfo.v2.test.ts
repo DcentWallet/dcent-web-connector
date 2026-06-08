@@ -28,7 +28,6 @@ describe('getAccountInfo v2 — m09-04-12', () => {
     // sdk(m09-03-21)가 enrich한 응답 shape 시뮬레이션
     const v2Account = {
       chainId: 'eip155:1',
-      caip19: undefined,
       contractAddress: undefined,
       keyPath: "m/44'/60'/0'/0/0",
       label: 'myETH',

@@ -49,24 +49,12 @@
     "applicableChainIds": [
       "cosmos:cosmoshub-4/slip44:118"
     ],
-    "note": "Cosmos Hub MsgSend (cosmjs StdSignDoc). amount 단위는 uatom (1 ATOM = 1,000,000). fromAddress/toAddress/amount 수정 후 송금.",
+    "note": "Cosmos Hub MsgSend — wm 기대 형식은 Amino SignDoc (msgs[].type + from_address/to_address/chain_id snake_case). amount 단위 uatom (1 ATOM = 1,000,000). from_address/to_address/amount 수정 후 송금.",
     "sourceUrl": "https://github.com/cosmos/cosmjs",
     "transaction": {
-      "msgs": [
-        {
-          "typeUrl": "/cosmos.bank.v1beta1.MsgSend",
-          "value": {
-            "fromAddress": "cosmos1qpe9h7lndhg27gpsxq8r43kytt7uzkfrxvqhnq",
-            "toAddress": "cosmos1qpe9h7lndhg27gpsxq8r43kytt7uzkfrxvqhnq",
-            "amount": [
-              {
-                "denom": "uatom",
-                "amount": "1000000"
-              }
-            ]
-          }
-        }
-      ],
+      "chain_id": "cosmoshub-4",
+      "account_number": "0",
+      "sequence": "0",
       "fee": {
         "amount": [
           {
@@ -76,10 +64,22 @@
         ],
         "gas": "200000"
       },
-      "memo": "",
-      "chainId": "cosmoshub-4",
-      "accountNumber": "0",
-      "sequence": "0"
+      "msgs": [
+        {
+          "type": "cosmos-sdk/MsgSend",
+          "value": {
+            "from_address": "cosmos1qpe9h7lndhg27gpsxq8r43kytt7uzkfrxvqhnq",
+            "to_address": "cosmos1qpe9h7lndhg27gpsxq8r43kytt7uzkfrxvqhnq",
+            "amount": [
+              {
+                "denom": "uatom",
+                "amount": "1000000"
+              }
+            ]
+          }
+        }
+      ],
+      "memo": ""
     }
   },
   {

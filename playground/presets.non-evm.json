@@ -323,13 +323,12 @@
   },
   {
     "id": "near-transfer",
-    "label": "NEAR Protocol transfer",
+    "label": "NEAR Protocol transfer (mainnet)",
     "family": "near",
     "applicableChainIds": [
-      "near:mainnet/slip44:397",
-      "near:testnet/slip44:397"
+      "near:mainnet/slip44:397"
     ],
-    "note": "NEAR Protocol transfer (UnionTransaction shape). blockHash and publicKey required. Note: signTransaction -32601 expected — wm NearAPIImpl not yet registered via WalletConnect. Layer 1 getAddress passes.",
+    "note": "NEAR mainnet transfer. NEAR 서명은 sender 계정의 access-key public_key를 view_access_key_list RPC로 조회하므로 sender는 on-chain 존재 계정이어야 함. sender.near는 mainnet 존재 계정이라 통과. blockHash/publicKey는 prepareTransaction이 RPC로 덮어쓰므로 preset값은 placeholder. 2026-06-09: testnet은 near-transfer-testnet으로 분리(동일 sender가 testnet엔 없어 'Invalid public key size (0)' 발생했었음).",
     "sourceUrl": "https://docs.near.org/concepts/basics/transactions/overview",
     "transaction": {
       "type": "transfer",
@@ -340,6 +339,29 @@
       "optionParam": "",
       "sender": "sender.near",
       "recipient": "receiver.near",
+      "amount": "1000000000000000000000000",
+      "blockHash": "GJp9NRJGBnXqWJAKFxkzD8p9cJTiSNi1J3UWKVBbcfRw",
+      "publicKey": "ed25519:11111111111111111111111111111111"
+    }
+  },
+  {
+    "id": "near-transfer-testnet",
+    "label": "NEAR Protocol transfer (testnet)",
+    "family": "near",
+    "applicableChainIds": [
+      "near:testnet/slip44:397"
+    ],
+    "note": "NEAR testnet transfer. ⚠️ sender는 testnet에 활성화(존재)된 실제 계정이어야 함 — NEAR 서명은 view_access_key_list RPC로 sender의 access-key public_key를 받아오므로 미존재 계정이면 'Invalid public key size (0), must be 32' 발생. 'sender.testnet'은 placeholder — wallet.testnet.near.org + faucet로 활성화한 본인 *.testnet 계정(또는 디바이스 NEAR testnet 계정 활성화 후)으로 교체할 것. mainnet은 near-transfer 사용. blockHash/publicKey는 RPC가 덮어씀.",
+    "sourceUrl": "https://docs.near.org/concepts/basics/transactions/overview",
+    "transaction": {
+      "type": "transfer",
+      "family": "near",
+      "key": "NEAR-TESTNET",
+      "symbol": "NEARt",
+      "decimals": 24,
+      "optionParam": "",
+      "sender": "sender.testnet",
+      "recipient": "receiver.testnet",
       "amount": "1000000000000000000000000",
       "blockHash": "GJp9NRJGBnXqWJAKFxkzD8p9cJTiSNi1J3UWKVBbcfRw",
       "publicKey": "ed25519:11111111111111111111111111111111"

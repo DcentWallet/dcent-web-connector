@@ -27,11 +27,11 @@
     "applicableChainIds": [
       "conflux:cfx/slip44:503"
     ],
-    "note": "Conflux Core Space 송금 트랜잭션 (EVM 호환). chainId 1029 = Conflux Hydra mainnet. from/to/value 수정 후 송금.",
+    "note": "Conflux Core Space 송금 트랜잭션. chainId 1029 = Conflux mainnet. 2026-06-09 HW smoke: hex to(40/41 모두)에서 기기 SYSTEM HALT(coin-ethereum transaction.c:3164, CONFLUX_FINISH). 가설 — 펌웨어는 to를 CIP-37 base32(cfx:)로 기대(sw-proxy convertConfluxAddressToHex가 cfx:/0x 둘 다 받지만 실기기는 base32 경로 기대 추정). → to/from을 실제 cfx: 메인넷 주소로 교체 후 재검증.",
     "sourceUrl": "https://github.com/Conflux-Chain/js-conflux-sdk",
     "transaction": {
-      "from": "0x1B25fB6E9579B5fC7BAc3D80Bc1bAd3e63CB9b14",
-      "to": "0x1A2b4cF52dc1B6d0D0e3c4C3B5b3A0cF52dc1B6d0",
+      "from": "cfx:acf2rcsh8payyxpg6xj7b0ztswwh81ute60tsw35j7",
+      "to": "cfx:acf2rcsh8payyxpg6xj7b0ztswwh81ute60tsw35j7",
       "value": "0x10",
       "gas": "0x5208",
       "gasPrice": "0x3b9aca00",

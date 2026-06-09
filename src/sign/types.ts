@@ -103,6 +103,24 @@ export interface V2SyncAccountInfo {
 }
 
 /**
+ * 진화하는 account-info 부가 메타데이터 (forward-compat 확장점) — SYNC(sdk accountV2 V2AccountMeta).
+ *
+ * **connector 변경 최소화 목적**: connector는 dApp이 npm으로 가져가는 패키지라 재배포가 어렵다.
+ * sdk(웹 배포)가 account-info에 추가하는 device-파생/진화 값들을 이 bag에 모아두면, sdk가 새 키를
+ * 추가해도 index signature가 이미 수용하므로 connector 타입을 다시 수정·재배포할 필요가 없다.
+ * (known 키는 문서화 목적의 optional 필드.) connector는 forward만 하므로 의미 해석 불필요.
+ */
+export interface V2AccountMeta {
+  /** wm 미등록 커스텀 토큰. true면 chainId는 deviceStoreId에서 derive한 부모 체인이며,
+   *  풀 contractAddress는 device가 coin_name을 15자 truncate하여 복원 불가. native와 구분용. */
+  customToken?: true
+  /** customToken일 때 device coin_name(EVM: 15자 contract truncate, SPL 등: 토큰 이름) 표시 힌트. */
+  deviceCoinName?: string
+  /** forward-compat: 추후 sdk가 추가하는 account-info 부가값. connector 재배포 없이 확장. */
+  [key: string]: unknown
+}
+
+/**
  * v2 account wire — getAccountInfo 응답 항목 (m09-04-12).
  *
  * sdk(m09-03-21)가 enrich한 결과 shape. connector는 응답을 forward만 — 타입 narrow 전용.
@@ -120,6 +138,8 @@ export type V2AccountInfo =
       keyPath: string
       /** D'CENT 레이블 */
       label: string
+      /** 진화하는 부가 메타데이터(customToken 등). sdk가 새 키를 넣어도 connector 수정 불필요. */
+      meta?: V2AccountMeta
       unresolved?: false
     }
   | {

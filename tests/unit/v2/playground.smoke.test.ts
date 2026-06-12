@@ -78,12 +78,13 @@ it('T-U-01: 트리 DOM에 12개 non-placeholder method node가 렌더링된다',
   // countMethodNodes: placeholder 제외 카운트
   // m11-01-01: Account/Device(8) + signMessage(4) = 12
   // m11-01-03: Bitcoin Tx Builder(4) 추가 → 16
+  // DC-2309 (b11-01): signMessage 비-EVM family 3종(sol/tron/dot) + Astar → 4→8 → 20
   const count = api.countMethodNodes()
-  expect(count).toBe(16)
+  expect(count).toBe(20)
 
-  // DOM에는 placeholder 포함 17개 .tree-item (EVM 체인 로드 전 placeholder 1개 추가)
+  // DOM에는 placeholder 포함 21개 .tree-item (EVM 체인 로드 전 placeholder 1개 추가)
   const domItems = document.querySelectorAll('.tree-item')
-  expect(domItems.length).toBe(17) // 16 non-placeholder + 1 EVM loading placeholder
+  expect(domItems.length).toBe(21) // 20 non-placeholder + 1 EVM loading placeholder
 })
 
 // ─────────────────────────────────────────────────────────

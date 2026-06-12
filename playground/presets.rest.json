@@ -194,5 +194,38 @@
       "dependsOn": null,
       "nonce": "0x0"
     }
+  },
+  {
+    "id": "trx-transfer",
+    "label": "TRON TRX transfer",
+    "family": "tron",
+    "applicableChainIds": [
+      "tron:0x2b6653dc/slip44:195"
+    ],
+    "note": "TRON TRX 송금 — TronWeb-native shape (raw_data.contract[0].type=TransferContract, wm tron/wire-convert.js). amount 단위 SUN (1 TRX = 1e6 SUN). owner_address/to_address 는 base58(T...) 또는 hex(41...) 모두 허용. ref_block_*/expiration/timestamp 는 wm 가 getNodeInfo 로 재생성하므로 정적 placeholder OK. owner_address==to_address self-send (asset-risk 0). 수정 후 송금.",
+    "sourceUrl": "https://github.com/tronprotocol/tronweb",
+    "transaction": {
+      "raw_data": {
+        "contract": [
+          {
+            "type": "TransferContract",
+            "parameter": {
+              "value": {
+                "owner_address": "TJRabPrwbZy45sbavfcjinPJC18kjpRTv8",
+                "to_address": "TJRabPrwbZy45sbavfcjinPJC18kjpRTv8",
+                "amount": 1000000
+              },
+              "type_url": "type.googleapis.com/protocol.TransferContract"
+            }
+          }
+        ],
+        "ref_block_bytes": "0000",
+        "ref_block_hash": "0000000000000000",
+        "expiration": 0,
+        "timestamp": 0
+      },
+      "raw_data_hex": "",
+      "fee_limit": 0
+    }
   }
 ]

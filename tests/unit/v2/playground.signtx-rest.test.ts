@@ -174,13 +174,13 @@ it('T-U-REST-03: 14 family inject 시 method 노드 수 = chains 항목 수 (트
 })
 
 // ─────────────────────────────────────────────────────────────────────────────
-// T-U-REST-04: presets.rest.json — 8 entry × 7 필드 모두 valid + transaction object
+// T-U-REST-04: presets.rest.json — 9 entry × 7 필드 모두 valid + transaction object
 // ─────────────────────────────────────────────────────────────────────────────
-it('T-U-REST-04: presets.rest.json — 8 entry × 7 필드 모두 valid + transaction object', () => {
+it('T-U-REST-04: presets.rest.json — 9 entry × 7 필드 모두 valid + transaction object', () => {
   expect(Array.isArray(SAMPLE_REST_PRESETS)).toBe(true)
-  expect(SAMPLE_REST_PRESETS).toHaveLength(8)
+  expect(SAMPLE_REST_PRESETS).toHaveLength(9)
 
-  const expectedFamilies = ['algorand', 'conflux', 'cosmos', 'fil', 'polkadot', 'stacks', 'tezos', 'vechain']
+  const expectedFamilies = ['algorand', 'conflux', 'cosmos', 'fil', 'polkadot', 'stacks', 'tezos', 'vechain', 'tron']
   const requiredFields = ['id', 'label', 'family', 'applicableChainIds', 'note', 'sourceUrl', 'transaction']
 
   SAMPLE_REST_PRESETS.forEach((p: any) => {
@@ -194,9 +194,9 @@ it('T-U-REST-04: presets.rest.json — 8 entry × 7 필드 모두 valid + transa
     expect(p.sourceUrl).toMatch(/^https?:\/\//) // valid URL
   })
 
-  // family 중복 없음 (8 family 정확히 1 entry씩)
+  // family 중복 없음 (9 family 정확히 1 entry씩)
   const families = SAMPLE_REST_PRESETS.map((p: any) => p.family)
-  expect(new Set(families).size).toBe(8)
+  expect(new Set(families).size).toBe(9)
   expectedFamilies.forEach((fam) => expect(families).toContain(fam))
 })
 

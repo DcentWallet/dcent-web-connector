@@ -260,7 +260,7 @@
     "applicableChainIds": [
       "hedera:mainnet/slip44:3030"
     ],
-    "note": "Hedera TransferTransaction (CryptoTransfer). Edit accountId/amount before send. Note: signTransaction -32601 expected — wm HederaAPIImpl not yet registered via WalletConnect. Layer 1 getAddress passes.",
+    "note": "Hedera TransferTransaction (CryptoTransfer). transfers는 음수(sender)/양수(recipient) amount 쌍, 합=0. amount 단위 tinybar (1 HBAR = 1e8). ⚠️ Hedera accountId(0.0.x)는 키에서 파생 불가(계정 생성 시 할당) → transfers[].accountId를 디바이스 실 Hedera 계정으로 교체해야 서명 유효(self-send 시 양쪽 동일). 현재 0.0.2/0.0.3은 treasury/node placeholder. wm convertTransaction은 통과(static node + time fallback, 노드 hard-dep 없음) — 실서명 검증은 짝 m09-04-13(swproxy e2e).",
     "sourceUrl": "https://docs.hedera.com/hedera/sdks-and-apis/sdks/cryptocurrency/transfer-cryptocurrency",
     "transaction": {
       "type": "CryptoTransfer",

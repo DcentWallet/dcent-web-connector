@@ -375,14 +375,14 @@
       "constellation:mainnet/slip44:1137",
       "constellation:testnet/slip44:1137"
     ],
-    "note": "Constellation DAG transfer (TransactionCommon shape). Note: signTransaction -32601 expected — wm ConstellationAPIImpl not yet registered via WalletConnect. Layer 1 getAddress passes.",
+    "note": "Constellation DAG transfer — wire source/destination shape (wm constellation/wire-convert.js convertTransaction). amount 단위 DATUM (1 DAG = 1e8). source/destination 수정 후 송금. signTransaction -32601 expected — wm ConstellationAPIImpl 미등록(WalletConnect 라우팅 갭, preset 값 문제 아님). Layer 1 getAddress passes.",
     "sourceUrl": "https://docs.constellationnetwork.io/",
     "transaction": {
       "type": "transfer",
-      "family": "constellation",
-      "sender": "DAG0000000000000000000000000000000000000000",
-      "recipient": "DAG0000000000000000000000000000000000000001",
-      "amount": "100000000"
+      "source": "DAG0000000000000000000000000000000000000000",
+      "destination": "DAG0000000000000000000000000000000000000001",
+      "amount": "100000000",
+      "fee": "0"
     }
   },
   {

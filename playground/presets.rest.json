@@ -49,7 +49,7 @@
     "applicableChainIds": [
       "cosmos:cosmoshub-4/slip44:118"
     ],
-    "note": "Cosmos Hub MsgSend — wm 기대 형식 Amino SignDoc (msgs[].type + from_address/to_address/chain_id snake_case). amount 단위 uatom (1 ATOM = 1e6). ⚠️ from_address는 디바이스 실 cosmoshub 계정이어야 서명 성공(self-send 시 to_address 동일). account_number/sequence/pub_key는 sign 시 wm가 live REST로 덮어쓰므로 preset의 '0'은 placeholder — sender가 on-chain 미존재면 404. 현재 from/to는 placeholder. 실서명 검증은 짝 m09-04-13(swproxy e2e).",
+    "note": "Cosmos Hub MsgSend — wm 기대 형식 Amino SignDoc (msgs[].type + from_address/to_address/chain_id snake_case). amount 단위 uatom (1 ATOM = 1e6). ⚠️ from_address는 디바이스 실 cosmoshub 계정이어야 서명 성공(self-send 시 to_address 동일). account_number/sequence/pub_key는 sign 시 wm가 live REST로 덮어쓰므로 preset의 '0'은 placeholder — sender가 on-chain 미존재면 404. 현재 from/to=cosmos1n9a7x46880h6qrtjmvwxrlgt0yprj702kcv0hr (디바이스 self-send). 실서명 검증은 짝 m09-04-13(swproxy e2e).",
     "sourceUrl": "https://github.com/cosmos/cosmjs",
     "transaction": {
       "chain_id": "cosmoshub-4",
@@ -68,8 +68,8 @@
         {
           "type": "cosmos-sdk/MsgSend",
           "value": {
-            "from_address": "cosmos1qpe9h7lndhg27gpsxq8r43kytt7uzkfrxvqhnq",
-            "to_address": "cosmos1qpe9h7lndhg27gpsxq8r43kytt7uzkfrxvqhnq",
+            "from_address": "cosmos1n9a7x46880h6qrtjmvwxrlgt0yprj702kcv0hr",
+            "to_address": "cosmos1n9a7x46880h6qrtjmvwxrlgt0yprj702kcv0hr",
             "amount": [
               {
                 "denom": "uatom",
@@ -110,12 +110,12 @@
     "applicableChainIds": [
       "polkadot:91b171bb158e2d3848fa23a9f1c25182/slip44:354"
     ],
-    "note": "Polkadot balances.transfer extrinsic. args[0]=수신자 주소, args[1]=금액(Planck, 1 DOT = 1e10). ⚠️ wm convertTransaction은 method/args[0]/args[1]만 소비 — era/specVersion/transactionVersion/blockHash/genesisHash는 무시(dead, sign 시 wm가 live getPolkadotApi로 nonce/fee/era 재도출). sender 계정은 keyPath에서 도출(노드 도달 필요). args[0]의 15oF...는 polkadot-js 테스트 주소 → 디바이스 DOT 실주소(self-send)로 교체 권장. 실서명 검증은 짝 m09-04-13(swproxy e2e).",
+    "note": "Polkadot balances.transfer extrinsic. args[0]=수신자 주소, args[1]=금액(Planck, 1 DOT = 1e10). ⚠️ wm convertTransaction은 method/args[0]/args[1]만 소비 — era/specVersion/transactionVersion/blockHash/genesisHash는 무시(dead, sign 시 wm가 live getPolkadotApi로 nonce/fee/era 재도출). sender 계정은 keyPath에서 도출(노드 도달 필요). args[0]은 디바이스 DOT 자기 주소 14dyYY72MDtfxAAjFnqwCR3YihV5UrqzMjEAf1ABXJ4vzLZj (self-send). 실서명 검증은 짝 m09-04-13(swproxy e2e).",
     "sourceUrl": "https://github.com/polkadot-js/api",
     "transaction": {
       "method": "balances.transfer",
       "args": [
-        "15oF4uVJwmo4TdGW7VfQxNLavjCXviqxT9S1MgbjMNHr6Sp5",
+        "14dyYY72MDtfxAAjFnqwCR3YihV5UrqzMjEAf1ABXJ4vzLZj",
         "1000000000000"
       ],
       "era": "0x00",

@@ -1,7 +1,7 @@
 [
   {
     "id": "btc-transfer",
-    "label": "Bitcoin native-segwit transfer",
+    "label": "Bitcoin legacy (P2PKH) transfer",
     "family": "bitcoin",
     "applicableChainIds": [
       "bip122:000000000019d6689c085ae165831e93/slip44:0",
@@ -16,25 +16,25 @@
       "bip122:1a91e3dace36e2be3bf030a65679fe82/slip44:3",
       "bip122:0007104ccda289427919efc39dc9e4d4/slip44:121"
     ],
-    "note": "P2WPKH native SegWit output. Amounts in satoshi. Edit inputs/outputs before send. Note: signTransaction -32601 expected — wm BitcoinAPIImpl not yet registered via WalletConnect. Layer 1 (getAddress) passes for all bitcoin-family chains.",
+    "note": "Bitcoin legacy P2PKH 송금 — wm bitcoin/wire-convert.js 기대 shape (inputs[].rawTransaction(prev tx hex)/index/txType/keyPath + outputs[].txType/amount/addresses[]). amount 단위 satoshi. 값은 BTC mainnet(slip44:0, m/44'/0') 기준 — 타 bitcoin-family 체인은 keyPath coinType + 주소 수정 후 송금. ⚠️ wm 0.7.14 기준 legacy(m/44' P2PKH)만 sign 가능: segwit-native(m/84')·taproot(m/86')는 synthesizeAccount BIP44 게이트로 차단(P2TR은 wm 명시 제외 — crypto-currencies.ts:328). segwit/taproot sign은 wm 게이트 완화 후 별도 preset 추가.",
     "sourceUrl": "https://github.com/bitcoinjs/bitcoinjs-lib/blob/master/test/transaction_builder.spec.js",
     "transaction": {
       "inputs": [
         {
-          "txid": "0000000000000000000000000000000000000000000000000000000000000001",
-          "vout": 0,
-          "amount": 100000,
+          "rawTransaction": "0100000001abcdef0123456789abcdef0123456789abcdef0123456789abcdef0123456789000000006a47304402200000000000000000000000000000000000000000000000000000000000000000022000000000000000000000000000000000000000000000000000000000000000000121020000000000000000000000000000000000000000000000000000000000000000ffffffff0140420f00000000001976a914000000000000000000000000000000000000000088ac00000000",
+          "index": 0,
+          "txType": "p2pkh",
+          "keyPath": "m/44'/0'/0'/0/0",
           "sequence": 4294967295
         }
       ],
       "outputs": [
         {
-          "address": "bc1qar0srrr7xfkvy5l643lydnw9re59gtzzwf5mdq",
-          "amount": 90000
+          "txType": "p2pkh",
+          "amount": 990000,
+          "addresses": ["1A1zP1eP5QGefi2DMPTfTL5SLmv7DivfNa"]
         }
-      ],
-      "feeRate": 10,
-      "locktime": 0
+      ]
     }
   },
   {

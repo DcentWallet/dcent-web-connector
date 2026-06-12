@@ -609,102 +609,102 @@
     "chainId": "bip122:000000000019d6689c085ae165831e93/slip44:0",
     "family": "bitcoin",
     "displayName": "Bitcoin",
-    "defaultKeyPath": "m/84'/0'/0'/0/0"
+    "defaultKeyPath": "m/44'/0'/0'/0/0"
   },
   {
     "chainId": "bip122:000000000933ea01ad0ee984209779ba/slip44:0",
     "family": "bitcoin",
     "displayName": "Bitcoin Testnet",
-    "defaultKeyPath": "m/84'/1'/0'/0/0",
+    "defaultKeyPath": "m/44'/1'/0'/0/0",
     "isTestnet": true
   },
   {
     "chainId": "bip122:000000000000000000651ef99cb9fcbe/slip44:145",
     "family": "bitcoin",
     "displayName": "Bitcoin Cash",
-    "defaultKeyPath": "m/84'/145'/0'/0/0"
+    "defaultKeyPath": "m/44'/145'/0'/0/0"
   },
   {
     "chainId": "bip122:000000000019d6689c085ae165831e93/slip44:145",
     "family": "bitcoin",
     "displayName": "eCash",
-    "defaultKeyPath": "m/84'/145'/0'/0/0"
+    "defaultKeyPath": "m/44'/145'/0'/0/0"
   },
   {
     "chainId": "bip122:00040fe8ec8471911baa1db1266ea15d/slip44:133",
     "family": "bitcoin",
     "displayName": "Zcash",
-    "defaultKeyPath": "m/84'/133'/0'/0/0"
+    "defaultKeyPath": "m/44'/133'/0'/0/0"
   },
   {
     "chainId": "bip122:12a765e31ffd4059bada1e25190f6e98/slip44:2",
     "family": "bitcoin",
     "displayName": "Litecoin",
-    "defaultKeyPath": "m/84'/2'/0'/0/0"
+    "defaultKeyPath": "m/44'/2'/0'/0/0"
   },
   {
     "chainId": "bip122:00000000e9fba3b4a12d04c0a48d70d5/slip44:156",
     "family": "bitcoin",
     "displayName": "Bitcoin Gold",
-    "defaultKeyPath": "m/84'/156'/0'/0/0"
+    "defaultKeyPath": "m/44'/156'/0'/0/0"
   },
   {
     "chainId": "bip122:00000000e0494ef974d8afb784e1bdeb/slip44:1",
     "family": "bitcoin",
     "displayName": "BitGold Testnet",
-    "defaultKeyPath": "m/84'/1'/0'/0/0",
+    "defaultKeyPath": "m/44'/1'/0'/0/0",
     "isTestnet": true
   },
   {
     "chainId": "bip122:00000ffd590b1485b3caadc19b22e637/slip44:5",
     "family": "bitcoin",
     "displayName": "Dash",
-    "defaultKeyPath": "m/84'/5'/0'/0/0"
+    "defaultKeyPath": "m/44'/5'/0'/0/0"
   },
   {
     "chainId": "bip122:00000bafbc94add76cb75e2ec9289483/slip44:1",
     "family": "bitcoin",
     "displayName": "Dash Testnet",
-    "defaultKeyPath": "m/84'/1'/0'/0/0",
+    "defaultKeyPath": "m/44'/1'/0'/0/0",
     "isTestnet": true
   },
   {
     "chainId": "bip122:7497ea1b465eb39f1c8f507bc877078f/slip44:20",
     "family": "bitcoin",
     "displayName": "DigiByte",
-    "defaultKeyPath": "m/84'/20'/0'/0/0"
+    "defaultKeyPath": "m/44'/20'/0'/0/0"
   },
   {
     "chainId": "bip122:fabe7dc4cf82e888f7afd9a1c7e05d10/slip44:1",
     "family": "bitcoin",
     "displayName": "DigiByte Testnet",
-    "defaultKeyPath": "m/84'/20'/0'/0/0",
+    "defaultKeyPath": "m/44'/20'/0'/0/0",
     "isTestnet": true
   },
   {
     "chainId": "bip122:0000006b444bc2f2ffe627be9d9e7e7a/slip44:175",
     "family": "bitcoin",
     "displayName": "Ravencoin",
-    "defaultKeyPath": "m/84'/175'/0'/0/0"
+    "defaultKeyPath": "m/44'/175'/0'/0/0"
   },
   {
     "chainId": "bip122:000000b3e9edd0f7e8c60f9cf47ce5cc/slip44:1",
     "family": "bitcoin",
     "displayName": "Ravencoin Testnet",
-    "defaultKeyPath": "m/84'/175'/0'/0/0",
+    "defaultKeyPath": "m/44'/175'/0'/0/0",
     "isTestnet": true
   },
   {
     "chainId": "bip122:1a91e3dace36e2be3bf030a65679fe82/slip44:3",
     "family": "bitcoin",
     "displayName": "Dogecoin",
-    "defaultKeyPath": "m/84'/3'/0'/0/0"
+    "defaultKeyPath": "m/44'/3'/0'/0/0"
   },
   {
     "chainId": "bip122:0007104ccda289427919efc39dc9e4d4/slip44:121",
     "family": "bitcoin",
     "displayName": "Horizen",
-    "defaultKeyPath": "m/84'/121'/0'/0/0"
+    "defaultKeyPath": "m/44'/121'/0'/0/0"
   },
   {
     "chainId": "xrpl:0/slip44:144",

@@ -43,6 +43,16 @@ describe('getBitcoinTransactionObject — m09-04-15 (flat)', () => {
       }),
     )
   })
+
+  test('T-U-TXBLD-02b: 비-string coinType(null/undefined/number/object) → coin_type_error (raw TypeError 방지)', () => {
+    const COIN_TYPE_ERROR = expect.objectContaining({
+      body: expect.objectContaining({ error: expect.objectContaining({ code: 'coin_type_error' }) }),
+    })
+    expect(() => getBitcoinTransactionObject(null as unknown as string)).toThrow(COIN_TYPE_ERROR)
+    expect(() => getBitcoinTransactionObject(undefined as unknown as string)).toThrow(COIN_TYPE_ERROR)
+    expect(() => getBitcoinTransactionObject(123 as unknown as string)).toThrow(COIN_TYPE_ERROR)
+    expect(() => getBitcoinTransactionObject({} as unknown as string)).toThrow(COIN_TYPE_ERROR)
+  })
 })
 
 describe('addBitcoinTransactionInput — m09-04-15 (flat)', () => {
@@ -155,6 +165,18 @@ describe('add 시점 boundary validation (T-U-TXBLD-VAL)', () => {
     const tx = getBitcoinTransactionObject('BITCOIN')
     expect(() => addBitcoinTransactionOutput(tx, 'p2pkh', '1', '')).toThrow(PARAM_ERROR)
     expect(() => addBitcoinTransactionOutput(tx, 'p2pkh', '1', 123 as unknown as string)).toThrow(PARAM_ERROR)
+  })
+
+  test('T-U-TXBLD-VAL-07: add* transaction 컨테이너 malformed(null/v1 nested/비배열) → param_error (raw TypeError 방지)', () => {
+    // null / 비객체
+    expect(() => addBitcoinTransactionInput(null as unknown as never, 'raw', 0, 'p2pkh', 'm/0')).toThrow(PARAM_ERROR)
+    expect(() => addBitcoinTransactionOutput(undefined as unknown as never, 'p2pkh', '1', 'addr')).toThrow(PARAM_ERROR)
+    // pre-migration v1 nested envelope (inputs/outputs 없음)
+    const v1nested = { request: { body: { parameter: { input: [], output: [] } } } } as unknown as never
+    expect(() => addBitcoinTransactionInput(v1nested, 'raw', 0, 'p2pkh', 'm/0')).toThrow(PARAM_ERROR)
+    expect(() => addBitcoinTransactionOutput(v1nested, 'p2pkh', '1', 'addr')).toThrow(PARAM_ERROR)
+    // inputs/outputs가 배열이 아님
+    expect(() => addBitcoinTransactionInput({ inputs: {}, outputs: [] } as unknown as never, 'raw', 0, 'p2pkh', 'm/0')).toThrow(PARAM_ERROR)
   })
 
   test('T-U-TXBLD-VAL-06: value=0 (number/string) 경계는 정상 통과 (over-reject 방지)', () => {

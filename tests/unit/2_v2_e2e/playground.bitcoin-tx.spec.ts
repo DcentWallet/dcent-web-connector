@@ -165,7 +165,7 @@ describe('[v2 e2e] playground bitcoin tx builder', () => {
   }, 30000)
 
   // ────────────────────────────────────────────────────────
-  // T-E2E-03: btx:addInput → inputs=1, current.parameter.input.length === 1
+  // T-E2E-03: btx:addInput → inputs=1, current.inputs.length === 1 (flat)
   // ────────────────────────────────────────────────────────
   it('T-E2E-03: btx:addInput → inputs=1', async () => {
     await setupPlaygroundWithSpy()
@@ -266,7 +266,7 @@ describe('[v2 e2e] playground bitcoin tx builder', () => {
     expect(signArg.payload).toBeDefined()
     expect(signArg.payload.keyPath).toBe("m/84'/0'/0'/0/0")
     expect(signArg.payload.transaction).toBeDefined()
-    // m09-04-15: builder nested envelope → bitcoinTxToWire flat wire 송신. payload.transaction은
+    // m09-04-15: builder가 flat wire를 직접 생성하여 변환 없이 송신. payload.transaction은
     // flat {inputs[],outputs[]} (nested request.body.parameter 아님).
     expect(signArg.payload.transaction.inputs.length).toBe(1)
     expect(signArg.payload.transaction.outputs.length).toBe(1)

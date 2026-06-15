@@ -79,15 +79,31 @@ function isValidSatoshi (value: unknown): boolean {
 }
 
 /**
+ * add* 진입 시 transaction 컨테이너가 유효한 flat wire 객체인지 검증 (boundary-validation).
+ * null / 비객체 / inputs·outputs 비배열(예: pre-migration v1 nested 객체)이면 raw TypeError 대신
+ * dcentException('param_error') throw — breaking 마이그레이션 경계에서 명확한 에러 보장.
+ */
+function assertWireTxContainer (transaction: unknown, fn: string): asserts transaction is BitcoinWireTransaction {
+  const t = transaction as { inputs?: unknown; outputs?: unknown } | null
+  if (!t || typeof t !== 'object' || !Array.isArray(t.inputs) || !Array.isArray(t.outputs)) {
+    throw dcentException(
+      'param_error',
+      `${fn}: transaction must be a BitcoinWireTransaction (call getBitcoinTransactionObject first)`,
+    )
+  }
+}
+
+/**
  * 빈 v2 flat wire transaction을 생성한다 (builder 시작점).
  *
  * @param coinType BITCOIN/BITCOIN_TESTNET/MONACOIN/MONACOIN_TESTNET 중 하나 (검증용 — flat wire에는 미저장.
  *                 chainId(CAIP-19)는 `dcent.sign` 호출 시 별도 전달)
  * @returns 빈 inputs/outputs를 가진 BitcoinWireTransaction (매 호출 새 객체 — mutation-isolation)
- * @throws dcentException('coin_type_error') Bitcoin tx 호환 coinType이 아닌 경우
+ * @throws dcentException('coin_type_error') Bitcoin tx 호환 coinType이 아닌 경우(비-string 포함)
  */
 export function getBitcoinTransactionObject (coinType: string): BitcoinWireTransaction {
-  if (!isBitcoinTxCoinType(coinType)) {
+  // typeof 가드: 비-string coinType이 isBitcoinTxCoinType 내부 .toLowerCase()에서 raw TypeError 내지 않도록.
+  if (typeof coinType !== 'string' || !isBitcoinTxCoinType(coinType)) {
     throw dcentException('coin_type_error', 'not supported coin type')
   }
   return { inputs: [], outputs: [] }
@@ -111,6 +127,7 @@ export function addBitcoinTransactionInput (
   type: string,
   key: string,
 ): BitcoinWireTransaction {
+  assertWireTxContainer(transaction, 'addBitcoinTransactionInput')
   if (typeof prevTx !== 'string') {
     throw dcentException('param_error', 'addBitcoinTransactionInput: prevTx must be a string')
   }
@@ -151,6 +168,7 @@ export function addBitcoinTransactionOutput (
   value: number | string,
   to: string,
 ): BitcoinWireTransaction {
+  assertWireTxContainer(transaction, 'addBitcoinTransactionOutput')
   if (typeof type !== 'string' || !WIRE_OUTPUT_TX_TYPES.includes(type)) {
     throw dcentException(
       'param_error',

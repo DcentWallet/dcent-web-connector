@@ -72,7 +72,7 @@ describe('[v2 e2e] playground bitcoin tx builder', () => {
         },
         popupWindowClose: () => {},
         setConnectionListener: () => {},
-        // expose enum for renderBitcoinTxBuilderForm — keys must match isBitcoinTxCoinType whitelist
+        // (v2 btx는 coinType 미사용 — 이 enum은 inert. getAddress v1-path 재사용 대비로만 잔존)
         coinType: {
           BITCOIN: 'bitcoin',
           BITCOIN_TESTNET: 'bitcoin_testnet',

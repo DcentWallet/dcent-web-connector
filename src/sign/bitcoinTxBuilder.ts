@@ -21,7 +21,7 @@
  * 룰 준수:
  *   - boundary-validation / dapp-input-sanitization: 각 add 시점에 필드 type/값 검증 (fail-fast).
  *     unsupported txType(p2pk/multisig/p2tr) / 비-satoshi amount / malformed 인자 → param_error throw.
- *   - error-handling-consistency: 검증 실패는 dcentException('param_error'), coinType는 'coin_type_error'.
+ *   - error-handling-consistency: 검증 실패는 모두 dcentException('param_error') (v2 builder는 coinType 미사용 — m09-04-15).
  *   - mutation-isolation (T-MUT-TX-01/02): getBitcoinTransactionObject는 매 호출마다 새 객체 반환.
  *     add*는 명시적 in-place mutation (v1 1:1 chaining) — 두 별도 호출 결과는 서로 독립.
  *   - connector-chain-addition-isolation: bitcoin 전용 builder surface 안에서만 동작. sign.ts/_call 미터치.

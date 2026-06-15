@@ -2500,14 +2500,18 @@
         // b08-01: _unwrapV1Envelope이 success → body.parameter unwrap, failure → throw로 변환.
         // m09-04-03: transport 옵션 — #select-transport 선택값. undefined이면 미전달 (backward compat).
         var bsTransport = _getTransportOption()
-        var bsSignInput = { method: 'signTransaction', chainId: bsChainId, payload: { keyPath: bsKeyPath, transaction: builtTx } }
+        // m09-04-15: builder의 v1 nested envelope → wm v2 flat wire 변환 후 송신.
+        // dcent.bitcoinTxToWire가 nested→flat(이미 flat이면 pass-through). unsupported txType/
+        // malformed 입력은 dcentException throw → 아래 try/catch(syncErr)가 log + UI 표시.
+        var bsWireTx = dcent.bitcoinTxToWire(builtTx)
+        var bsSignInput = { method: 'signTransaction', chainId: bsChainId, payload: { keyPath: bsKeyPath, transaction: bsWireTx } }
         if (bsTransport !== undefined) bsSignInput.transport = bsTransport
         dcent.sign(bsSignInput).then(_unwrapV1Envelope).then(function (result) {
           appendLog({
             method: 'signTransaction',
             chainId: bsChainId,
             keyPath: bsKeyPath,
-            request: { chainId: bsChainId, keyPath: bsKeyPath, transaction: builtTx },
+            request: { chainId: bsChainId, keyPath: bsKeyPath, transaction: bsWireTx },
             response: result,
             latencyMs: Date.now() - startMs,
             deviceFirmware: state.device && state.device.firmware,
@@ -2517,7 +2521,7 @@
             method: 'signTransaction',
             chainId: bsChainId,
             keyPath: bsKeyPath,
-            request: { chainId: bsChainId, keyPath: bsKeyPath, transaction: builtTx },
+            request: { chainId: bsChainId, keyPath: bsKeyPath, transaction: bsWireTx },
             error: normalizeError(err),
             latencyMs: Date.now() - startMs,
           })

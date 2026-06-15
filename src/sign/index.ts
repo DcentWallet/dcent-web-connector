@@ -38,8 +38,17 @@ export {
   getBitcoinTransactionObject,
   addBitcoinTransactionInput,
   addBitcoinTransactionOutput,
+  // m09-04-15: v1 nested envelope → wm v2 flat wire 변환
+  bitcoinTxToWire,
 } from './bitcoinTxBuilder'
 export type { BitcoinTxObject, BitcoinTxParameter } from './bitcoinTxBuilder'
+// m09-04-15: flat wire transaction 계약 타입 (wm BitcoinWireTransaction 1:1)
+export type {
+  BitcoinWireTransaction,
+  BitcoinWireInput,
+  BitcoinWireOutput,
+  BitcoinWireTxType,
+} from './bitcoinTxBuilder'
 
 // v1 validator helpers — 보존. dApp 표면 1:1 유지.
 export {

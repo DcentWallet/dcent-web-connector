@@ -73,6 +73,26 @@ describe('[v2 e2e] playground bitcoin tx builder', () => {
           tx.request.body.parameter.output.push({ type, value, to })
           return tx
         },
+        // m09-04-15: v1 nested envelope → wm v2 flat wire 변환 (실 bitcoinTxToWire 매핑 미러).
+        // 이미 flat이면 pass-through, nested면 request.body.parameter.input/output → {inputs,outputs}.
+        bitcoinTxToWire: (tx: any) => {
+          calls.push({ method: 'bitcoinTxToWire', args: [tx] })
+          if (tx && Array.isArray(tx.inputs) && Array.isArray(tx.outputs)) return tx
+          const p = tx && tx.request && tx.request.body && tx.request.body.parameter
+          return {
+            inputs: (p && p.input ? p.input : []).map((i: any) => ({
+              rawTransaction: i.prev_tx,
+              index: i.utxo_idx,
+              txType: i.type,
+              keyPath: i.key,
+            })),
+            outputs: (p && p.output ? p.output : []).map((o: any) => ({
+              txType: o.type,
+              amount: String(o.value),
+              addresses: [o.to],
+            })),
+          }
+        },
         sign: (input: any) => {
           calls.push({ method: 'sign', args: [input] })
           return Promise.resolve({
@@ -275,8 +295,13 @@ describe('[v2 e2e] playground bitcoin tx builder', () => {
     expect(signArg.payload).toBeDefined()
     expect(signArg.payload.keyPath).toBe("m/84'/0'/0'/0/0")
     expect(signArg.payload.transaction).toBeDefined()
-    expect(signArg.payload.transaction.request.body.parameter.input.length).toBe(1)
-    expect(signArg.payload.transaction.request.body.parameter.output.length).toBe(1)
+    // m09-04-15: builder nested envelope → bitcoinTxToWire flat wire 송신. payload.transaction은
+    // flat {inputs[],outputs[]} (nested request.body.parameter 아님).
+    expect(signArg.payload.transaction.inputs.length).toBe(1)
+    expect(signArg.payload.transaction.outputs.length).toBe(1)
+    // nested v1 envelope 잔재 금지 — flat wire만 송신
+    expect(signArg.payload.transaction.request).toBeUndefined()
+    expect(signArg.payload.transaction.inputs[0].rawTransaction).toBeDefined()
     // OLD shape 절대 금지 (DC-2221)
     expect(signArg.chain).toBeUndefined()
 

@@ -149,3 +149,141 @@ export function addBitcoinTransactionOutput (
   parameter.output.push({ type, value, to })
   return transaction
 }
+
+// ───────────────────────────────────────────────────────────────────────────
+// m09-04-15: v1 nested envelope → wm v2 flat wire 변환 (`bitcoinTxToWire`)
+//
+// builder 3함수(`getBitcoinTransactionObject`/`addBitcoinTransactionInput`/
+// `addBitcoinTransactionOutput`)는 v1 `request.body.parameter.input[]/output[]`
+// (snake_case) nested envelope를 만든다. 그러나 wm v2 wire(`signTransactionFromWire`의
+// BITCOIN family `convertWireTransaction`)는 flat `{ inputs[], outputs[] }` shape를
+// 기대한다 (wm README-bitcoin-wire.md §2). 두 shape가 달라 builder 산출물을 그대로
+// `dcent.sign(...)` payload.transaction에 실으면 wm가 `outputs.length === 0`으로 보고
+// `-32602 'must have at least 1 output'`로 거부한다.
+//
+// `bitcoinTxToWire`는 이 nested envelope를 flat wire로 변환하는 **호출부 opt-in** 함수다.
+// connector의 `sign.ts`/`_call`은 chain-agnostic을 유지(미수정)하고, bitcoin 전용 변환은
+// 이 builder surface 안에서만 일어난다 (`connector-chain-addition-isolation` 글로브 미터치).
+// ───────────────────────────────────────────────────────────────────────────
+
+/** wm BITCOIN family wire txType (wm README-bitcoin-wire.md §2). p2tr/p2pk/multisig 의도적 제외. */
+export type BitcoinWireTxType = 'p2pkh' | 'p2sh' | 'p2wpkh' | 'p2wsh'
+
+/** flat wire input — wm `BitcoinWireInput` 1:1 (snake_case 아님 — wm 계약). */
+export interface BitcoinWireInput {
+  /** 이전 tx raw hex. v1 `prev_tx` 대응. */
+  rawTransaction: string
+  /** prevout index (0-origin, non-neg integer). v1 `utxo_idx` 대응. */
+  index: number
+  /** script type. v1 `type` 대응. */
+  txType: BitcoinWireTxType
+  /** BIP32 signing path. v1 `key` 대응. */
+  keyPath: string
+  /** (선택) nSequence/RBF. v1 미노출 → 항상 생략. */
+  sequence?: number
+}
+
+/** flat wire output — wm `BitcoinWireOutput` 1:1. */
+export interface BitcoinWireOutput {
+  /** script type 또는 'change'. v1 `type` 대응. */
+  txType: BitcoinWireTxType | 'change'
+  /** Satoshi 단위 금액 문자열. v1 `value` 대응 (단위 변환 없음 — satoshi 계약). */
+  amount: string
+  /** 수신 주소 배열. v1 `to`(단일) → `[to]`. */
+  addresses: string[]
+}
+
+/** flat wire transaction — wm `BitcoinWireTransaction` 1:1. */
+export interface BitcoinWireTransaction {
+  inputs: BitcoinWireInput[]
+  outputs: BitcoinWireOutput[]
+  /** (선택) auto-fetch 경량 payload용 계정 레벨 keyPath. 명시 inputs 경로에서는 무시됨. */
+  keyPath?: string
+}
+
+// wm `wire-convert.ts:37` VALID_TX_TYPES와 1:1. p2pk/multisig/p2tr은 wm가 거부하므로
+// 변환 단계에서 conservative reject(명확한 throw — silent 매핑 금지, error-handling-consistency).
+const WIRE_INPUT_TX_TYPES: readonly string[] = ['p2pkh', 'p2sh', 'p2wpkh', 'p2wsh']
+const WIRE_OUTPUT_TX_TYPES: readonly string[] = ['p2pkh', 'p2sh', 'p2wpkh', 'p2wsh', 'change']
+
+/**
+ * v1 builder nested envelope를 wm v2 flat wire transaction으로 변환한다.
+ *
+ * 호출부(playground `btx:buildAndSign` / 실 dApp)가
+ * `dcent.sign({ payload: { transaction: bitcoinTxToWire(builtTx) } })` 형태로 사용한다.
+ *
+ * - **nested → flat**: `request.body.parameter.input[]/output[]`(snake_case)를
+ *   `{ inputs[], outputs[] }`(wm 계약)로 매핑. `prev_tx→rawTransaction`, `utxo_idx→index`,
+ *   `type→txType`, `key→keyPath`, `value→amount(satoshi 문자열)`, `to→addresses:[to]`.
+ * - **pass-through**: 입력이 이미 flat(`inputs`/`outputs` 배열 보유)이면 변환 없이 그대로 반환
+ *   (m09-04-14 preset 경로 회귀 0).
+ * - **conservative reject**: input/output `type`이 wm wire 유효 집합 밖(`p2pk`/`multisig`/`p2tr` 등)
+ *   이면 `param_error` throw (boundary-validation + error-handling-consistency).
+ * - **malformed reject**: flat도 nested도 아닌 입력(`null`/`undefined`/`{}`/garbage)이면
+ *   `param_error` throw (boundary-validation — silent 빈 wire 금지).
+ *
+ * 출력 구성 검증(non-change destination 정확히 1개 + change ≤1, 다중 dest 금지)은
+ * 변환 책임이 아니라 wm `convertWireTransaction`이 강제한다(R9 위임). 본 함수는 shape만 변환한다.
+ *
+ * @param txObject builder가 만든 v1 nested envelope, 또는 이미 flat인 wire transaction
+ * @returns flat `BitcoinWireTransaction`
+ * @throws dcentException('param_error') unsupported txType / malformed 입력
+ */
+export function bitcoinTxToWire (txObject: unknown): BitcoinWireTransaction {
+  if (txObject === null || typeof txObject !== 'object') {
+    throw dcentException('param_error', 'bitcoinTxToWire: transaction must be a non-null object')
+  }
+
+  const obj = txObject as {
+    inputs?: unknown
+    outputs?: unknown
+    request?: { body?: { parameter?: BitcoinTxParameter } }
+  }
+
+  // EC2: 이미 flat인 wire transaction → 변환 없이 pass-through.
+  if (Array.isArray(obj.inputs) && Array.isArray(obj.outputs)) {
+    return txObject as BitcoinWireTransaction
+  }
+
+  // nested v1 envelope (`request.body.parameter`) 인지 확인.
+  const parameter = obj.request?.body?.parameter
+  if (!parameter || typeof parameter !== 'object') {
+    // EC6: flat도 nested도 아닌 malformed 입력.
+    throw dcentException(
+      'param_error',
+      'bitcoinTxToWire: not a Bitcoin tx envelope (missing request.body.parameter) nor a flat wire transaction (missing inputs/outputs arrays)',
+    )
+  }
+
+  const inputs: BitcoinWireInput[] = (parameter.input ?? []).map((i, idx) => {
+    if (!WIRE_INPUT_TX_TYPES.includes(i.type)) {
+      throw dcentException(
+        'param_error',
+        `bitcoinTxToWire: unsupported input[${idx}].type '${i.type}' (expected one of ${WIRE_INPUT_TX_TYPES.join('/')})`,
+      )
+    }
+    return {
+      rawTransaction: i.prev_tx,
+      index: i.utxo_idx,
+      txType: i.type as BitcoinWireTxType,
+      keyPath: i.key,
+    }
+  })
+
+  const outputs: BitcoinWireOutput[] = (parameter.output ?? []).map((o, idx) => {
+    if (!WIRE_OUTPUT_TX_TYPES.includes(o.type)) {
+      throw dcentException(
+        'param_error',
+        `bitcoinTxToWire: unsupported output[${idx}].type '${o.type}' (expected one of ${WIRE_OUTPUT_TX_TYPES.join('/')})`,
+      )
+    }
+    return {
+      txType: o.type as BitcoinWireTxType | 'change',
+      // satoshi 계약 (검증됨: builder value = satoshi). 단위 변환 없이 문자열화만.
+      amount: String(o.value),
+      addresses: [o.to],
+    }
+  })
+
+  return { inputs, outputs }
+}

@@ -207,6 +207,58 @@ const WIRE_INPUT_TX_TYPES: readonly string[] = ['p2pkh', 'p2sh', 'p2wpkh', 'p2ws
 const WIRE_OUTPUT_TX_TYPES: readonly string[] = ['p2pkh', 'p2sh', 'p2wpkh', 'p2wsh', 'change']
 
 /**
+ * satoshi 값 검증 — number는 safe integer(≥0), string은 canonical 10진 정수 문자열.
+ * `1.5`/`-1`/`'1.5'`/`'abc'`/공백/대형(1e21) 등 비-satoshi 값을 거부한다.
+ */
+function isValidSatoshi (value: unknown): boolean {
+  return (
+    (typeof value === 'number' && Number.isSafeInteger(value) && value >= 0) ||
+    (typeof value === 'string' && /^(0|[1-9]\d*)$/.test(value))
+  )
+}
+
+// 이미 flat인 wire의 필드 검증 (wm `BitcoinWireTransaction` 계약). nested 변환과 flat pass-through
+// 모두 dApp이 구성할 수 있는 untrusted 입력이므로 동일 shape 계약을 강제한다 (cross-review r3).
+// hex/BIP32 regex 같은 format 검증은 wm `convertWireTransaction` 책임(R9) — 여기서는 shape(타입)만.
+function assertFlatWireInput (item: unknown, idx: number): void {
+  if (!item || typeof item !== 'object') {
+    throw dcentException('param_error', `bitcoinTxToWire: inputs[${idx}] must be a non-null object`)
+  }
+  const i = item as Record<string, unknown>
+  if (typeof i.rawTransaction !== 'string') {
+    throw dcentException('param_error', `bitcoinTxToWire: inputs[${idx}].rawTransaction must be a string`)
+  }
+  if (typeof i.index !== 'number' || !Number.isInteger(i.index) || i.index < 0) {
+    throw dcentException('param_error', `bitcoinTxToWire: inputs[${idx}].index must be a non-negative integer`)
+  }
+  if (typeof i.txType !== 'string' || !WIRE_INPUT_TX_TYPES.includes(i.txType)) {
+    throw dcentException('param_error', `bitcoinTxToWire: unsupported inputs[${idx}].txType '${String(i.txType)}' (expected one of ${WIRE_INPUT_TX_TYPES.join('/')})`)
+  }
+  if (typeof i.keyPath !== 'string' || i.keyPath.length === 0) {
+    throw dcentException('param_error', `bitcoinTxToWire: inputs[${idx}].keyPath must be a non-empty string`)
+  }
+  if (i.sequence !== undefined && (typeof i.sequence !== 'number' || !Number.isInteger(i.sequence) || i.sequence < 0 || i.sequence > 0xffffffff)) {
+    throw dcentException('param_error', `bitcoinTxToWire: inputs[${idx}].sequence must be a uint32 (0..0xFFFFFFFF)`)
+  }
+}
+
+function assertFlatWireOutput (item: unknown, idx: number): void {
+  if (!item || typeof item !== 'object') {
+    throw dcentException('param_error', `bitcoinTxToWire: outputs[${idx}] must be a non-null object`)
+  }
+  const o = item as Record<string, unknown>
+  if (typeof o.txType !== 'string' || !WIRE_OUTPUT_TX_TYPES.includes(o.txType)) {
+    throw dcentException('param_error', `bitcoinTxToWire: unsupported outputs[${idx}].txType '${String(o.txType)}' (expected one of ${WIRE_OUTPUT_TX_TYPES.join('/')})`)
+  }
+  if (!isValidSatoshi(o.amount)) {
+    throw dcentException('param_error', `bitcoinTxToWire: outputs[${idx}].amount must be a non-negative integer satoshi (number or canonical decimal string)`)
+  }
+  if (!Array.isArray(o.addresses) || o.addresses.length === 0 || !o.addresses.every((a) => typeof a === 'string' && a.length > 0)) {
+    throw dcentException('param_error', `bitcoinTxToWire: outputs[${idx}].addresses must be a non-empty array of non-empty strings`)
+  }
+}
+
+/**
  * v1 builder nested envelope를 wm v2 flat wire transaction으로 변환한다.
  *
  * 호출부(playground `btx:buildAndSign` / 실 dApp)가
@@ -215,8 +267,10 @@ const WIRE_OUTPUT_TX_TYPES: readonly string[] = ['p2pkh', 'p2sh', 'p2wpkh', 'p2w
  * - **nested → flat**: `request.body.parameter.input[]/output[]`(snake_case)를
  *   `{ inputs[], outputs[] }`(wm 계약)로 매핑. `prev_tx→rawTransaction`, `utxo_idx→index`,
  *   `type→txType`, `key→keyPath`, `value→amount(satoshi 문자열)`, `to→addresses:[to]`.
- * - **pass-through**: 입력이 이미 flat(`inputs`/`outputs` 배열 보유)이면 변환 없이 그대로 반환
- *   (m09-04-14 preset 경로 회귀 0).
+ * - **pass-through**: 입력이 이미 flat(`inputs`/`outputs` 배열 보유)이면 변환 없이 반환.
+ *   단 flat wire도 dApp이 구성할 수 있는 untrusted 입력이므로 nested와 동일하게 필드 shape를
+ *   검증한 뒤 통과시킨다 (cross-review r3 — 무검증 pass-through로 malformed wire 누출 방지).
+ *   m09-04-14 preset의 valid flat wire는 그대로 통과 (회귀 0).
  * - **conservative reject**: input/output `type`이 wm wire 유효 집합 밖(`p2pk`/`multisig`/`p2tr` 등)
  *   이면 `param_error` throw (boundary-validation + error-handling-consistency).
  * - **malformed reject**: flat도 nested도 아닌 입력(`null`/`undefined`/`{}`/garbage)이면
@@ -243,8 +297,11 @@ export function bitcoinTxToWire (txObject: unknown): BitcoinWireTransaction {
     request?: { body?: { parameter?: { input?: unknown; output?: unknown } } }
   }
 
-  // EC2: 이미 flat인 wire transaction → 변환 없이 pass-through.
+  // EC2: 이미 flat인 wire transaction → 필드 shape 검증 후 pass-through.
+  // flat wire도 untrusted dApp 입력이므로 무검증 통과하지 않는다 (cross-review r3).
   if (Array.isArray(obj.inputs) && Array.isArray(obj.outputs)) {
+    obj.inputs.forEach(assertFlatWireInput)
+    obj.outputs.forEach(assertFlatWireOutput)
     return txObject as BitcoinWireTransaction
   }
 
@@ -307,13 +364,10 @@ export function bitcoinTxToWire (txObject: unknown): BitcoinWireTransaction {
         `bitcoinTxToWire: unsupported output[${idx}].type '${String(o.type)}' (expected one of ${WIRE_OUTPUT_TX_TYPES.join('/')})`,
       )
     }
-    // value는 satoshi(비음수 정수)만 허용 — number는 safe integer(≥0), string은 canonical 10진 정수 문자열.
-    // `1.5`/`-1`/`'1.5'`/`'abc'`/공백 등 비-satoshi 값이 `amount:'1e+21'`/`'abc'` 같은 invalid wire로
-    // 흘러가지 않도록 변환 단계에서 차단 (boundary-validation — wm BigNumber NaN 도달 전에 거부).
-    const validValue =
-      (typeof o.value === 'number' && Number.isSafeInteger(o.value) && o.value >= 0) ||
-      (typeof o.value === 'string' && /^(0|[1-9]\d*)$/.test(o.value))
-    if (!validValue) {
+    // value는 satoshi(비음수 정수)만 허용 (isValidSatoshi). `1.5`/`-1`/`'1.5'`/`'abc'`/공백/대형 등
+    // 비-satoshi 값이 `amount:'1e+21'`/`'abc'` 같은 invalid wire로 흘러가지 않도록 차단
+    // (boundary-validation — wm BigNumber NaN 도달 전에 거부).
+    if (!isValidSatoshi(o.value)) {
       throw dcentException('param_error', `bitcoinTxToWire: output[${idx}].value must be a non-negative integer satoshi (number or canonical decimal string)`)
     }
     if (typeof o.to !== 'string' || o.to.length === 0) {

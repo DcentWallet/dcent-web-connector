@@ -235,6 +235,34 @@ describe('bitcoinTxToWire — field-level boundary validation (T-U-SHIM-09)', ()
     expect(bitcoinTxToWire(base({ type: 'p2pkh', value: '0', to: 'addr' })).outputs[0].amount).toBe('0')
     expect(bitcoinTxToWire(base({ type: 'p2pkh', value: 200000, to: 'addr' })).outputs[0].amount).toBe('200000')
   })
+
+  test('T-U-SHIM-09g: flat pass-through도 필드 검증 — malformed flat wire → param_error throw (round-3)', () => {
+    const validIn = { rawTransaction: 'abcd', index: 0, txType: 'p2pkh', keyPath: "m/44'/0'/0'/0/0" }
+    const validOut = { txType: 'p2pkh', amount: '100000', addresses: ['addr'] }
+    const flat = (input: unknown, output: unknown) => ({ inputs: [input], outputs: [output] })
+
+    // malformed flat INPUT
+    expect(() => bitcoinTxToWire(flat({ ...validIn, rawTransaction: 123 }, validOut))).toThrow(PARAM_ERROR)
+    expect(() => bitcoinTxToWire(flat({ ...validIn, index: -1 }, validOut))).toThrow(PARAM_ERROR)
+    expect(() => bitcoinTxToWire(flat({ ...validIn, txType: 'p2pk' }, validOut))).toThrow(PARAM_ERROR)
+    expect(() => bitcoinTxToWire(flat({ ...validIn, keyPath: '' }, validOut))).toThrow(PARAM_ERROR)
+    expect(() => bitcoinTxToWire(flat(null, validOut))).toThrow(PARAM_ERROR)
+    // malformed flat OUTPUT
+    expect(() => bitcoinTxToWire(flat(validIn, { ...validOut, txType: 'multisig' }))).toThrow(PARAM_ERROR)
+    expect(() => bitcoinTxToWire(flat(validIn, { ...validOut, amount: '1.5' }))).toThrow(PARAM_ERROR)
+    expect(() => bitcoinTxToWire(flat(validIn, { ...validOut, addresses: [] }))).toThrow(PARAM_ERROR)
+    expect(() => bitcoinTxToWire(flat(validIn, { ...validOut, addresses: [''] }))).toThrow(PARAM_ERROR)
+    expect(() => bitcoinTxToWire(flat(validIn, { txType: 'p2pkh', amount: '1' }))).toThrow(PARAM_ERROR) // addresses 누락
+  })
+
+  test('T-U-SHIM-09h: valid flat wire는 검증 통과 후 pass-through (회귀 방지)', () => {
+    const flat = {
+      inputs: [{ rawTransaction: 'abcd', index: 0, txType: 'p2wpkh', keyPath: "m/84'/0'/0'/0/0", sequence: 4294967293 }],
+      outputs: [{ txType: 'p2wpkh', amount: '100000', addresses: ['bc1qexample'] }],
+    }
+    // 검증 통과 + 동일 reference 반환 (pass-through 의미 보존)
+    expect(bitcoinTxToWire(flat)).toBe(flat)
+  })
 })
 
 describe('bitcoinTxToWire — export 표면 (T-U-SHIM-08)', () => {

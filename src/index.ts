@@ -43,8 +43,6 @@ import {
   getBitcoinTransactionObject,
   addBitcoinTransactionInput,
   addBitcoinTransactionOutput,
-  // m09-04-15: v1 nested envelope → wm v2 flat wire 변환
-  bitcoinTxToWire,
   // m08-01-02.5: v1 validator helpers (export 표면 보존 — v1 typo 포함)
   isAvaliableCoinType,
   isCzoneCoinType,
@@ -133,8 +131,6 @@ export {
   getBitcoinTransactionObject,
   addBitcoinTransactionInput,
   addBitcoinTransactionOutput,
-  // m09-04-15: v1 nested envelope → wm v2 flat wire 변환
-  bitcoinTxToWire,
 } from './sign'
 // m09-04-15: flat wire transaction 계약 타입 (wm BitcoinWireTransaction 1:1)
 export type {
@@ -146,7 +142,7 @@ export type {
 // m09-04-12: SyncAccountInfo(v1) removed — replaced by V2SyncAccountInfo(chainId/keyPath)
 // getAccountInfo v2 return types(V2AccountInfo / AccountListV2Payload)도 루트 배럴에서 노출 —
 // src/sign/index.ts와 public API 표면 일치 (cross-repo-interface-edit)
-export type { V2SyncAccountInfo, V2AccountInfo, AccountListV2Payload, BitcoinTxObject, BitcoinTxParameter } from './sign'
+export type { V2SyncAccountInfo, V2AccountInfo, AccountListV2Payload } from './sign'
 // m11-01-02: v2 chainId facade input type for getAddress overload
 export type { GetAddressV2Input } from './sign'
 // m09-04-09: addressFormat enum for BTC family multi-variant dispatch
@@ -199,8 +195,6 @@ const dcent = {
   getBitcoinTransactionObject,
   addBitcoinTransactionInput,
   addBitcoinTransactionOutput,
-  // m09-04-15: v1 nested envelope → wm v2 flat wire 변환 (default 객체 멤버 — dApp이 dcent.bitcoinTxToWire 접근)
-  bitcoinTxToWire,
   // m08-01-02.5: v1 validator helpers (dApp 표면 1:1 보존 — v1 typo 포함)
   isAvaliableCoinType,
   isCzoneCoinType,

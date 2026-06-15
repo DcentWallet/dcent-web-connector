@@ -34,14 +34,12 @@ export type { GetAddressV2Input } from './address'
 export type { AddressFormat } from './address'
 export { setLabel, syncAccount, selectAddress } from './configure'
 // m09-04-12: SyncAccountInfo(v1) removed — V2SyncAccountInfo re-exported from ./types above
+// m09-04-15: builder가 v2 flat BitcoinWireTransaction을 직접 생성 (별도 변환 함수 없음)
 export {
   getBitcoinTransactionObject,
   addBitcoinTransactionInput,
   addBitcoinTransactionOutput,
-  // m09-04-15: v1 nested envelope → wm v2 flat wire 변환
-  bitcoinTxToWire,
 } from './bitcoinTxBuilder'
-export type { BitcoinTxObject, BitcoinTxParameter } from './bitcoinTxBuilder'
 // m09-04-15: flat wire transaction 계약 타입 (wm BitcoinWireTransaction 1:1)
 export type {
   BitcoinWireTransaction,

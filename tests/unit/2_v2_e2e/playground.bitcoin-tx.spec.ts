@@ -45,53 +45,22 @@ describe('[v2 e2e] playground bitcoin tx builder', () => {
       const api = (window as any)._playgroundTestAPI
       const calls: Array<{ method: string; args: any[] }> = []
 
-      // facade builder들은 동기 — v1 1:1 port. mock도 동기.
-      const mockBuildTx = () => ({
-        request: {
-          header: { version: '1.0', request_to: '' },
-          body: {
-            command: 'transaction',
-            parameter: { version: 1, locktime: 0, input: [], output: [] },
-          },
-        },
-      })
-
+      // m09-04-15: builder가 v2 flat wire(BitcoinWireTransaction = {inputs[],outputs[]})를 직접 생성.
+      // mock도 실 builder의 flat 매핑을 미러 (별도 변환 함수 없음).
       const mockDcent = {
         getBitcoinTransactionObject: (coinType: string) => {
           calls.push({ method: 'getBitcoinTransactionObject', args: [coinType] })
-          const tx = mockBuildTx()
-          tx.request.header.request_to = coinType
-          return tx
+          return { inputs: [], outputs: [] } as any
         },
         addBitcoinTransactionInput: (tx: any, prevTx: string, utxoIdx: number, type: string, key: string) => {
           calls.push({ method: 'addBitcoinTransactionInput', args: [tx, prevTx, utxoIdx, type, key] })
-          tx.request.body.parameter.input.push({ prev_tx: prevTx, utxo_idx: utxoIdx, type, key })
+          tx.inputs.push({ rawTransaction: prevTx, index: utxoIdx, txType: type, keyPath: key })
           return tx
         },
         addBitcoinTransactionOutput: (tx: any, type: string, value: any, to: string) => {
           calls.push({ method: 'addBitcoinTransactionOutput', args: [tx, type, value, to] })
-          tx.request.body.parameter.output.push({ type, value, to })
+          tx.outputs.push({ txType: type, amount: String(value), addresses: [to] })
           return tx
-        },
-        // m09-04-15: v1 nested envelope → wm v2 flat wire 변환 (실 bitcoinTxToWire 매핑 미러).
-        // 이미 flat이면 pass-through, nested면 request.body.parameter.input/output → {inputs,outputs}.
-        bitcoinTxToWire: (tx: any) => {
-          calls.push({ method: 'bitcoinTxToWire', args: [tx] })
-          if (tx && Array.isArray(tx.inputs) && Array.isArray(tx.outputs)) return tx
-          const p = tx && tx.request && tx.request.body && tx.request.body.parameter
-          return {
-            inputs: (p && p.input ? p.input : []).map((i: any) => ({
-              rawTransaction: i.prev_tx,
-              index: i.utxo_idx,
-              txType: i.type,
-              keyPath: i.key,
-            })),
-            outputs: (p && p.output ? p.output : []).map((o: any) => ({
-              txType: o.type,
-              amount: String(o.value),
-              addresses: [o.to],
-            })),
-          }
         },
         sign: (input: any) => {
           calls.push({ method: 'sign', args: [input] })
@@ -223,7 +192,8 @@ describe('[v2 e2e] playground bitcoin tx builder', () => {
 
     const btxState = await page.evaluate(() => (window as any)._playgroundTestAPI.getBitcoinTxState())
     expect(btxState.inputs).toBe(1)
-    expect(btxState.current.request.body.parameter.input.length).toBe(1)
+    // m09-04-15: builder가 flat wire 직접 생성 — current는 {inputs[],outputs[]} (nested 아님)
+    expect(btxState.current.inputs.length).toBe(1)
   }, 30000)
 
   // ────────────────────────────────────────────────────────
@@ -254,7 +224,8 @@ describe('[v2 e2e] playground bitcoin tx builder', () => {
 
     const btxState = await page.evaluate(() => (window as any)._playgroundTestAPI.getBitcoinTxState())
     expect(btxState.outputs).toBe(1)
-    expect(btxState.current.request.body.parameter.output.length).toBe(1)
+    // m09-04-15: flat wire — current.outputs (nested parameter.output 아님)
+    expect(btxState.current.outputs.length).toBe(1)
   }, 30000)
 
   // ────────────────────────────────────────────────────────

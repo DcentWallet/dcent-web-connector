@@ -48,8 +48,9 @@ describe('[v2 e2e] playground bitcoin tx builder', () => {
       // m09-04-15: builder가 v2 flat wire(BitcoinWireTransaction = {inputs[],outputs[]})를 직접 생성.
       // mock도 실 builder의 flat 매핑을 미러 (별도 변환 함수 없음).
       const mockDcent = {
-        getBitcoinTransactionObject: (coinType: string) => {
-          calls.push({ method: 'getBitcoinTransactionObject', args: [coinType] })
+        // m09-04-15 RE-AUDIT: v2는 인자 없음(coinType 제거). 실제 전달 인자를 그대로 기록.
+        getBitcoinTransactionObject: (...args: unknown[]) => {
+          calls.push({ method: 'getBitcoinTransactionObject', args })
           return { inputs: [], outputs: [] } as any
         },
         addBitcoinTransactionInput: (tx: any, prevTx: string, utxoIdx: number, type: string, key: string) => {
@@ -141,21 +142,22 @@ describe('[v2 e2e] playground bitcoin tx builder', () => {
     await setupPlaygroundWithSpy()
 
     await page.click('[data-method-id="btx:new"]')
-    // default coinType BITCOIN, default chainId
+    // v2: coinType 폼 없음 — default chainId만 (코인은 chainId가 결정)
     await page.click('#btn-send')
     await new Promise((r) => setTimeout(r, 200))
 
     const calls = await page.evaluate(() => (window as any)._mockCalls as any[])
     const newCall = calls.find((c) => c.method === 'getBitcoinTransactionObject')
     expect(newCall).toBeDefined()
-    // facade는 coinType enum value(소문자) 전달
-    expect(newCall.args[0]).toBe('bitcoin')
+    // facade는 v2에서 인자 없음(coinType 제거, RE-AUDIT 2026-06-15) — playground는 무인자 호출
+    expect(newCall.args).toEqual([])
 
     const btxState = await page.evaluate(() => (window as any)._playgroundTestAPI.getBitcoinTxState())
     expect(btxState.current).not.toBeNull()
     expect(btxState.inputs).toBe(0)
     expect(btxState.outputs).toBe(0)
-    expect(btxState.coinType).toBe('BITCOIN')
+    // v2: state.coinType 제거 — chainId(default)만 보유
+    expect(btxState.chainId).toContain('bip122:')
 
     // state note text 확인 (re-select method to re-render note from current state)
     await page.click('[data-method-id="btx:new"]')

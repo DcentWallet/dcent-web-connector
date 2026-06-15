@@ -549,9 +549,8 @@
     _testDcent: null,
     // m11-01-03: bitcoin tx builder 누적 상태 (session 동안 유지, localStorage 미사용)
     bitcoinTx: {
-      current: null, // BitcoinTxObject | null (facade가 반환한 nested envelope)
-      coinType: null, // 'BITCOIN' / 'BITCOIN_TESTNET' / 'MONACOIN' / 'MONACOIN_TESTNET'
-      chainId: null, // 'bip122:.../slip44:0' (Build & Sign 시 사용)
+      current: null, // BitcoinWireTransaction | null (facade가 반환한 v2 flat wire {inputs,outputs})
+      chainId: null, // 'bip122:.../slip44:0' (Build & Sign 시 사용 — v2는 coinType 미사용, chainId가 코인 결정)
       inputs: 0, // count for UI
       outputs: 0,
     },
@@ -1313,7 +1312,7 @@
   // ── renderBitcoinTxBuilderForm (m11-01-03) ──
   // Bitcoin transaction builder의 4 method form 빌더.
   // methodDef.id는 'btx:{action}' 형식으로 분기 — action별 input 구성이 다르다.
-  //   - btx:new           → coinType select (+ chainId/keyPath text)
+  //   - btx:new           → chainId text (v2: coinType 폼 없음 — 코인은 chainId가 결정)
   //   - btx:addInput      → prev_tx / utxo_idx / type (p2pkh/p2pk/p2sh/p2wpkh) / key 입력
   //   - btx:addOutput     → type (p2pkh/p2pk/p2sh/p2wpkh/change) / value / to
   //   - btx:buildAndSign  → 누적된 tx로 dcent.sign({method:'signTransaction', chainId, payload}) 호출
@@ -1367,26 +1366,7 @@
     }
 
     if (action === 'new') {
-      // coinType <select> — isBitcoinTxCoinType 화이트리스트 (BITCOIN/BITCOIN_TESTNET/MONACOIN/MONACOIN_TESTNET)
-      var ctKeys = ['BITCOIN', 'BITCOIN_TESTNET', 'MONACOIN', 'MONACOIN_TESTNET']
-      var ctRow = document.createElement('div')
-      ctRow.className = 'form-row'
-      var ctLabel = document.createElement('label')
-      ctLabel.setAttribute('for', 'field-coinType')
-      ctLabel.textContent = 'coinType'
-      var ctSelect = document.createElement('select')
-      ctSelect.id = 'field-coinType'
-      ctKeys.forEach(function (k) {
-        var opt = document.createElement('option')
-        opt.value = k
-        opt.textContent = k
-        ctSelect.appendChild(opt)
-      })
-      ctSelect.value = 'BITCOIN'
-      ctRow.appendChild(ctLabel)
-      ctRow.appendChild(ctSelect)
-      formFields.appendChild(ctRow)
-
+      // v2: coinType 없음. getBitcoinTransactionObject()는 무인자 — 코인은 chainId가 결정한다.
       // chainId — Build & Sign 단계에서 사용. 사용자가 직접 입력 가능 (CAIP-19 pass-through).
       appendFormRow('chainId', 'Chain ID (CAIP-19, for Build & Sign)', 'input', {
         value: 'bip122:000000000019d6689c085ae165831e93/slip44:0',
@@ -1484,7 +1464,7 @@
   function _renderBitcoinTxStateText () {
     var b = state.bitcoinTx
     if (!b.current) return 'Current tx: (none — call getBitcoinTransactionObject first)'
-    return 'Current tx: ' + (b.coinType || '?') + ' | ' + b.inputs + ' inputs / ' + b.outputs + ' outputs'
+    return 'Current tx: ' + (b.chainId || '?') + ' | ' + b.inputs + ' inputs / ' + b.outputs + ' outputs'
   }
 
   function _updateBitcoinTxStateDisplay () {
@@ -1495,8 +1475,7 @@
   // preset 적용 — action별로 다른 필드를 채운다 (form selector 변경 시 호출)
   function _applyBitcoinTxPreset (action, preset) {
     if (action === 'new') {
-      var ctSel = document.getElementById('field-coinType')
-      if (ctSel && preset.coinType) ctSel.value = preset.coinType
+      // v2: coinType 폼 없음 — chainId만 적용 (preset.coinType는 무시)
       var chainIdEl = document.getElementById('field-chainId')
       if (chainIdEl && preset.chainId) chainIdEl.value = preset.chainId
       return
@@ -2356,28 +2335,18 @@
 
     try {
       if (action === 'new') {
-        var ctEl = document.getElementById('field-coinType')
         var chainIdEl = document.getElementById('field-chainId')
-        var coinTypeKey = ctEl ? ctEl.value : ''
-        // facade의 isBitcoinTxCoinType은 key 또는 value 모두 toLowerCase 비교로 매치하므로 그대로 전달
-        // 단 coinType enum이 노출되어 있으면 key → value 변환 (일관성)
-        var coinTypeValue = coinTypeKey
-        var coinTypeEnum = (window.dcent && window.dcent.coinType) || {}
-        if (coinTypeEnum[coinTypeKey] !== undefined) {
-          coinTypeValue = coinTypeEnum[coinTypeKey]
-        }
         var chainId = chainIdEl ? chainIdEl.value.trim() : ''
-        // facade 호출 — coinType 미지원 시 dcentException throw
-        var txObj = dcent.getBitcoinTransactionObject(coinTypeValue)
+        // facade 호출 — v2는 무인자. 코인은 sign 시 chainId가 결정 (coinType 미사용).
+        var txObj = dcent.getBitcoinTransactionObject()
         state.bitcoinTx.current = txObj
-        state.bitcoinTx.coinType = coinTypeKey
         state.bitcoinTx.chainId = chainId
         state.bitcoinTx.inputs = 0
         state.bitcoinTx.outputs = 0
         _updateBitcoinTxStateDisplay()
         appendLog({
           method: 'getBitcoinTransactionObject',
-          request: { coinType: coinTypeValue },
+          request: { chainId: chainId },
           response: txObj,
           latencyMs: Date.now() - startMs,
         })
@@ -3097,7 +3066,6 @@
     getBitcoinTxState: function () { return state.bitcoinTx },
     resetBitcoinTxState: function () {
       state.bitcoinTx.current = null
-      state.bitcoinTx.coinType = null
       state.bitcoinTx.chainId = null
       state.bitcoinTx.inputs = 0
       state.bitcoinTx.outputs = 0

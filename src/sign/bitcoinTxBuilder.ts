@@ -5,7 +5,7 @@
  * wm v2 wire가 기대하는 **flat `BitcoinWireTransaction`**(`{ inputs[], outputs[] }`)을 직접 누적한다.
  * dApp은 별도 변환 없이 builder 산출물을 그대로 송신한다:
  *
- *   const tx = dcent.getBitcoinTransactionObject('BITCOIN')
+ *   const tx = dcent.getBitcoinTransactionObject()
  *   dcent.addBitcoinTransactionInput(tx, prevTxHex, utxoIdx, 'p2wpkh', keyPath)
  *   dcent.addBitcoinTransactionOutput(tx, 'p2wpkh', '200000', toAddress)
  *   await dcent.sign({ method: 'signTransaction', chainId: 'bip122:.../slip44:0', payload: { keyPath, transaction: tx } })
@@ -28,7 +28,6 @@
  *   - 출력 구성 검증(non-change dest 1개 + change ≤1) / hex·BIP32 format은 wm convertWireTransaction 위임(R9).
  */
 
-import { isBitcoinTxCoinType } from './coinTypeValidators'
 import { dcentException } from '../v1/dcent-exception'
 
 /** wm BITCOIN family wire txType (wm wire-convert.ts:37 VALID_TX_TYPES). p2tr/p2pk/multisig 의도적 제외. */
@@ -96,16 +95,13 @@ function assertWireTxContainer (transaction: unknown, fn: string): asserts trans
 /**
  * 빈 v2 flat wire transaction을 생성한다 (builder 시작점).
  *
- * @param coinType BITCOIN/BITCOIN_TESTNET/MONACOIN/MONACOIN_TESTNET 중 하나 (검증용 — flat wire에는 미저장.
- *                 chainId(CAIP-19)는 `dcent.sign` 호출 시 별도 전달)
+ * 코인 식별자는 wire에 싣지 않는다 — 실제 코인은 `dcent.sign` 호출 시 chainId(CAIP-19)가 결정한다.
+ * v1의 `coinType` 인자는 v2에서 검증-후-폐기(vestigial)였고 chainId 라우팅과 비일관 + 불일치 footgun을
+ * 야기하므로 제거했다 (m09-04-15 RE-AUDIT 2026-06-15). 코인 호환성 검증은 sign 시점 chainId가 담당.
+ *
  * @returns 빈 inputs/outputs를 가진 BitcoinWireTransaction (매 호출 새 객체 — mutation-isolation)
- * @throws dcentException('coin_type_error') Bitcoin tx 호환 coinType이 아닌 경우(비-string 포함)
  */
-export function getBitcoinTransactionObject (coinType: string): BitcoinWireTransaction {
-  // typeof 가드: 비-string coinType이 isBitcoinTxCoinType 내부 .toLowerCase()에서 raw TypeError 내지 않도록.
-  if (typeof coinType !== 'string' || !isBitcoinTxCoinType(coinType)) {
-    throw dcentException('coin_type_error', 'not supported coin type')
-  }
+export function getBitcoinTransactionObject (): BitcoinWireTransaction {
   return { inputs: [], outputs: [] }
 }
 

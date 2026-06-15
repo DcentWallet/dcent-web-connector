@@ -4,8 +4,7 @@
  * builder(getBitcoinTransactionObject/addBitcoinTransactionInput/addBitcoinTransactionOutput)가
  * wm v2 flat wire(BitcoinWireTransaction = {inputs[],outputs[]})를 직접 누적한다. 별도 변환 함수 없음.
  *
- * T-U-TXBLD-01: getBitcoinTransactionObject → 빈 {inputs:[],outputs:[]}
- * T-U-TXBLD-02: invalid coinType → coin_type_error throw
+ * T-U-TXBLD-01: getBitcoinTransactionObject() (인자 없음) → 빈 {inputs:[],outputs:[]}
  * T-U-TXBLD-03: addInput → flat {rawTransaction,index,txType,keyPath}
  * T-U-TXBLD-04: addOutput → flat {txType,amount,addresses:[to]}
  * T-U-TXBLD-05: 다건 push + chaining (단일 dest + change)
@@ -28,36 +27,21 @@ const PARAM_ERROR = expect.objectContaining({
   }),
 })
 
-describe('getBitcoinTransactionObject — m09-04-15 (flat)', () => {
-  test('T-U-TXBLD-01: BITCOIN — 빈 flat wire {inputs:[],outputs:[]} 생성', () => {
-    const tx = getBitcoinTransactionObject('BITCOIN')
+describe('getBitcoinTransactionObject — m09-04-15 (flat, no-arg)', () => {
+  test('T-U-TXBLD-01: 인자 없이 빈 flat wire {inputs:[],outputs:[]} 생성', () => {
+    const tx = getBitcoinTransactionObject()
     expect(tx).toEqual({ inputs: [], outputs: [] })
     // nested v1 envelope 잔재 없음
     expect(tx).not.toHaveProperty('request')
   })
 
-  test('T-U-TXBLD-02: invalid coinType → coin_type_error throw', () => {
-    expect(() => getBitcoinTransactionObject('ETHEREUM')).toThrow(
-      expect.objectContaining({
-        body: { error: { code: 'coin_type_error', message: 'not supported coin type' } },
-      }),
-    )
-  })
-
-  test('T-U-TXBLD-02b: 비-string coinType(null/undefined/number/object) → coin_type_error (raw TypeError 방지)', () => {
-    const COIN_TYPE_ERROR = expect.objectContaining({
-      body: expect.objectContaining({ error: expect.objectContaining({ code: 'coin_type_error' }) }),
-    })
-    expect(() => getBitcoinTransactionObject(null as unknown as string)).toThrow(COIN_TYPE_ERROR)
-    expect(() => getBitcoinTransactionObject(undefined as unknown as string)).toThrow(COIN_TYPE_ERROR)
-    expect(() => getBitcoinTransactionObject(123 as unknown as string)).toThrow(COIN_TYPE_ERROR)
-    expect(() => getBitcoinTransactionObject({} as unknown as string)).toThrow(COIN_TYPE_ERROR)
-  })
+  // T-U-TXBLD-02/02b (coinType 검증) 제거 — m09-04-15 RE-AUDIT 2026-06-15:
+  //   coinType 인자 제거로 coin_type_error 분기 소멸. 코인 호환성은 sign 시 chainId가 담당.
 })
 
 describe('addBitcoinTransactionInput — m09-04-15 (flat)', () => {
   test('T-U-TXBLD-03: input flat shape {rawTransaction,index,txType,keyPath}', () => {
-    const tx = getBitcoinTransactionObject('BITCOIN')
+    const tx = getBitcoinTransactionObject()
     addBitcoinTransactionInput(tx, 'deadbeefRawHex', 1, 'p2pkh', "m/44'/0'/0'/0/0")
 
     expect(tx.inputs).toHaveLength(1)
@@ -73,7 +57,7 @@ describe('addBitcoinTransactionInput — m09-04-15 (flat)', () => {
   })
 
   test('T-U-TXBLD-05a: 다건 input push + chaining — length === N', () => {
-    const tx = getBitcoinTransactionObject('BITCOIN')
+    const tx = getBitcoinTransactionObject()
     const ret = addBitcoinTransactionInput(tx, 'tx1', 0, 'p2pkh', 'm/0')
     addBitcoinTransactionInput(tx, 'tx2', 1, 'p2sh', 'm/1')
     expect(ret).toBe(tx) // chaining: 같은 객체 반환
@@ -84,7 +68,7 @@ describe('addBitcoinTransactionInput — m09-04-15 (flat)', () => {
 
 describe('addBitcoinTransactionOutput — m09-04-15 (flat)', () => {
   test('T-U-TXBLD-04: output flat shape {txType,amount,addresses:[to]}', () => {
-    const tx = getBitcoinTransactionObject('BITCOIN')
+    const tx = getBitcoinTransactionObject()
     addBitcoinTransactionOutput(tx, 'p2pkh', '100000', '1A1zP1eP5QGefi2DMPTfTL5SLmv7DivfNa')
 
     expect(tx.outputs).toHaveLength(1)
@@ -96,7 +80,7 @@ describe('addBitcoinTransactionOutput — m09-04-15 (flat)', () => {
   })
 
   test('T-U-TXBLD-05b: 단일 dest + change — output 2건', () => {
-    const tx = getBitcoinTransactionObject('BITCOIN')
+    const tx = getBitcoinTransactionObject()
     addBitcoinTransactionOutput(tx, 'p2pkh', '150000', 'destAddr')
     addBitcoinTransactionOutput(tx, 'change', '40000', 'changeAddr')
     expect(tx.outputs).toHaveLength(2)
@@ -105,7 +89,7 @@ describe('addBitcoinTransactionOutput — m09-04-15 (flat)', () => {
   })
 
   test('T-U-TXBLD-04b: amount는 satoshi 문자열 — number/string 입력 모두 String화', () => {
-    const tx = getBitcoinTransactionObject('BITCOIN')
+    const tx = getBitcoinTransactionObject()
     addBitcoinTransactionOutput(tx, 'p2pkh', 200000, 'addr') // number
     addBitcoinTransactionOutput(tx, 'p2pkh', '200000', 'addr') // string
     expect(tx.outputs[0].amount).toBe('200000')
@@ -117,7 +101,7 @@ describe('addBitcoinTransactionOutput — m09-04-15 (flat)', () => {
 describe('wm BitcoinWireTransaction 계약 (T-U-TXBLD-06)', () => {
   const BIP32_PATH_RE = /^m(\/\d+'?)+$/
   test('T-U-TXBLD-06: builder 산출물이 wm flat 계약 충족 (txType/keyPath/satoshi)', () => {
-    const tx = getBitcoinTransactionObject('BITCOIN')
+    const tx = getBitcoinTransactionObject()
     addBitcoinTransactionInput(tx, 'raw', 0, 'p2wpkh', "m/84'/0'/0'/0/0")
     addBitcoinTransactionOutput(tx, 'p2wpkh', '200000', 'bc1qexample')
     expect(['p2pkh', 'p2sh', 'p2wpkh', 'p2wsh']).toContain(tx.inputs[0].txType)
@@ -129,13 +113,13 @@ describe('wm BitcoinWireTransaction 계약 (T-U-TXBLD-06)', () => {
 
 describe('add 시점 boundary validation (T-U-TXBLD-VAL)', () => {
   test('T-U-TXBLD-VAL-01: addInput unsupported type(p2pk/multisig) → param_error', () => {
-    const tx = getBitcoinTransactionObject('BITCOIN')
+    const tx = getBitcoinTransactionObject()
     expect(() => addBitcoinTransactionInput(tx, 'raw', 0, 'p2pk', 'm/0')).toThrow(PARAM_ERROR)
     expect(() => addBitcoinTransactionInput(tx, 'raw', 0, 'multisig', 'm/0')).toThrow(PARAM_ERROR)
   })
 
   test('T-U-TXBLD-VAL-02: addInput malformed 인자 → param_error + state 미오염', () => {
-    const tx = getBitcoinTransactionObject('BITCOIN')
+    const tx = getBitcoinTransactionObject()
     expect(() => addBitcoinTransactionInput(tx, 123 as unknown as string, 0, 'p2pkh', 'm/0')).toThrow(PARAM_ERROR)
     expect(() => addBitcoinTransactionInput(tx, 'raw', -1, 'p2pkh', 'm/0')).toThrow(PARAM_ERROR)
     expect(() => addBitcoinTransactionInput(tx, 'raw', 1.5, 'p2pkh', 'm/0')).toThrow(PARAM_ERROR)
@@ -145,13 +129,13 @@ describe('add 시점 boundary validation (T-U-TXBLD-VAL)', () => {
   })
 
   test('T-U-TXBLD-VAL-03: addOutput unsupported type(p2pk/multisig) → param_error', () => {
-    const tx = getBitcoinTransactionObject('BITCOIN')
+    const tx = getBitcoinTransactionObject()
     expect(() => addBitcoinTransactionOutput(tx, 'p2pk', '1', 'addr')).toThrow(PARAM_ERROR)
     expect(() => addBitcoinTransactionOutput(tx, 'multisig', '1', 'addr')).toThrow(PARAM_ERROR)
   })
 
   test('T-U-TXBLD-VAL-04: addOutput 비-satoshi value → param_error', () => {
-    const tx = getBitcoinTransactionObject('BITCOIN')
+    const tx = getBitcoinTransactionObject()
     expect(() => addBitcoinTransactionOutput(tx, 'p2pkh', 1.5, 'addr')).toThrow(PARAM_ERROR)
     expect(() => addBitcoinTransactionOutput(tx, 'p2pkh', -1, 'addr')).toThrow(PARAM_ERROR)
     expect(() => addBitcoinTransactionOutput(tx, 'p2pkh', 1e21, 'addr')).toThrow(PARAM_ERROR)
@@ -162,7 +146,7 @@ describe('add 시점 boundary validation (T-U-TXBLD-VAL)', () => {
   })
 
   test('T-U-TXBLD-VAL-05: addOutput malformed to → param_error', () => {
-    const tx = getBitcoinTransactionObject('BITCOIN')
+    const tx = getBitcoinTransactionObject()
     expect(() => addBitcoinTransactionOutput(tx, 'p2pkh', '1', '')).toThrow(PARAM_ERROR)
     expect(() => addBitcoinTransactionOutput(tx, 'p2pkh', '1', 123 as unknown as string)).toThrow(PARAM_ERROR)
   })
@@ -180,7 +164,7 @@ describe('add 시점 boundary validation (T-U-TXBLD-VAL)', () => {
   })
 
   test('T-U-TXBLD-VAL-06: value=0 (number/string) 경계는 정상 통과 (over-reject 방지)', () => {
-    const tx = getBitcoinTransactionObject('BITCOIN')
+    const tx = getBitcoinTransactionObject()
     addBitcoinTransactionOutput(tx, 'p2pkh', 0, 'addr')
     addBitcoinTransactionOutput(tx, 'p2pkh', '0', 'addr')
     expect(tx.outputs[0].amount).toBe('0')
@@ -190,16 +174,16 @@ describe('add 시점 boundary validation (T-U-TXBLD-VAL)', () => {
 
 describe('Mutation isolation — m09-04-15', () => {
   test('T-MUT-TX-01: 두 번 호출 → 서로 다른 객체 + 분리된 inputs/outputs 배열', () => {
-    const tx1 = getBitcoinTransactionObject('BITCOIN')
-    const tx2 = getBitcoinTransactionObject('BITCOIN')
+    const tx1 = getBitcoinTransactionObject()
+    const tx2 = getBitcoinTransactionObject()
     expect(tx1).not.toBe(tx2)
     expect(tx1.inputs).not.toBe(tx2.inputs)
     expect(tx1.outputs).not.toBe(tx2.outputs)
   })
 
   test('T-MUT-TX-02: tx1 push가 tx2에 영향 없음', () => {
-    const tx1 = getBitcoinTransactionObject('BITCOIN')
-    const tx2 = getBitcoinTransactionObject('BITCOIN')
+    const tx1 = getBitcoinTransactionObject()
+    const tx2 = getBitcoinTransactionObject()
     addBitcoinTransactionInput(tx1, 'leaky', 0, 'p2pkh', 'm/0')
     expect(tx1.inputs).toHaveLength(1)
     expect(tx2.inputs).toHaveLength(0)

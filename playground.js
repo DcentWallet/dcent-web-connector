@@ -2690,34 +2690,34 @@
     testnet3: 'https://mempool.space/testnet/api',
     signet: 'https://mempool.space/signet/api'
   }
-  // full chainId → blockchair chain slug (browser CORS 지원 코인). mempool은 BTC 전용 별도 처리.
-  var BTC_BLOCKCHAIR = {
-    'bip122:12a765e31ffd4059bada1e25190f6e98/slip44:2': 'litecoin',
-    'bip122:1a91e3dace36e2be3bf030a65679fe82/slip44:3': 'dogecoin',
-    'bip122:00000ffd590b1485b3caadc19b22e637/slip44:5': 'dash',
-    'bip122:00040fe8ec8471911baa1db1266ea15d/slip44:133': 'zcash',
-    'bip122:000000000000000000651ef99cb9fcbe/slip44:145': 'bitcoin-cash',
-    'bip122:000000000019d6689c085ae165831e93/slip44:145': 'ecash'
+  // esplora(mempool 호환) explorer — /address/{a}/utxo + /tx/{txid}/hex. 무료·CORS·API key 불필요.
+  var BTC_ESPLORA = {
+    'bip122:000000000019d6689c085ae165831e93/slip44:0': 'https://mempool.space/api', // BTC mainnet
+    'bip122:12a765e31ffd4059bada1e25190f6e98/slip44:2': 'https://litecoinspace.org/api' // Litecoin (mempool팀 운영)
   }
-  var BTC_MAINNET_CHAINID = 'bip122:000000000019d6689c085ae165831e93/slip44:0'
+  // blockcypher explorer (무료, API key 불필요) — chainId → {coin, chain}
+  var BTC_BLOCKCYPHER = {
+    'bip122:1a91e3dace36e2be3bf030a65679fe82/slip44:3': { coin: 'doge', chain: 'main' }, // Dogecoin
+    'bip122:00000ffd590b1485b3caadc19b22e637/slip44:5': { coin: 'dash', chain: 'main' } // Dash
+  }
   var BTC_TESTNET_CHAINID = 'bip122:000000000933ea01ad0ee984209779ba/slip44:0'
 
   // chainId → explorer config. 없으면 null(수동 입력). btcNet = BTC testnet의 mempool sub-net.
   function _btcResolveExplorer (chainId, btcNet) {
-    if (chainId === BTC_MAINNET_CHAINID) {
-      return { kind: 'mempool', base: 'https://mempool.space/api', label: 'mempool BTC' }
-    }
     if (chainId === BTC_TESTNET_CHAINID) {
-      return { kind: 'mempool', base: BTC_MEMPOOL_NETS[btcNet || 'testnet4'], label: 'mempool BTC ' + (btcNet || 'testnet4') }
+      return { kind: 'esplora', base: BTC_MEMPOOL_NETS[btcNet || 'testnet4'], label: 'mempool BTC ' + (btcNet || 'testnet4') }
     }
-    var slug = BTC_BLOCKCHAIR[chainId]
-    if (slug) return { kind: 'blockchair', base: 'https://api.blockchair.com/' + slug, label: 'blockchair ' + slug }
+    if (BTC_ESPLORA[chainId]) {
+      return { kind: 'esplora', base: BTC_ESPLORA[chainId], label: 'esplora ' + BTC_ESPLORA[chainId].replace('https://', '').replace('/api', '') }
+    }
+    var bc = BTC_BLOCKCYPHER[chainId]
+    if (bc) return { kind: 'blockcypher', coin: bc.coin, chain: bc.chain, label: 'blockcypher ' + bc.coin }
     return null
   }
 
   // explorer로 첫 UTXO + prev_tx hex 조회 → {vout,value,hex} | null
   function _btcFetchFirstUtxo (ex, addr) {
-    if (ex.kind === 'mempool') {
+    if (ex.kind === 'esplora') {
       return fetch(ex.base + '/address/' + addr + '/utxo').then(function (r) { return r.json() }).then(function (utxos) {
         if (!utxos || !utxos.length) return null
         var u = utxos.filter(function (x) { return x.status && x.status.confirmed })[0] || utxos[0]
@@ -2726,16 +2726,16 @@
         })
       })
     }
-    // blockchair
-    return fetch(ex.base + '/dashboards/address/' + addr + '?limit=1').then(function (r) { return r.json() }).then(function (j) {
-      var d = j && j.data && j.data[addr]
-      var utxos = d && d.utxo
-      if (!utxos || !utxos.length) return null
-      var u = utxos[0]
-      return fetch(ex.base + '/raw/transaction/' + u.transaction_hash).then(function (r) { return r.json() }).then(function (rj) {
-        var raw = rj && rj.data && rj.data[u.transaction_hash] && rj.data[u.transaction_hash].raw_transaction
-        if (!raw) return null
-        return { vout: u.index, value: u.value, hex: raw }
+    // blockcypher — txrefs(unspent) + includeHex
+    var bcBase = 'https://api.blockcypher.com/v1/' + ex.coin + '/' + ex.chain
+    return fetch(bcBase + '/addrs/' + addr + '?unspentOnly=true&limit=1').then(function (r) { return r.json() }).then(function (j) {
+      var refs = j && j.txrefs
+      if (!refs || !refs.length) return null
+      var u = refs[0]
+      return fetch(bcBase + '/txs/' + u.tx_hash + '?includeHex=true&limit=1').then(function (r) { return r.json() }).then(function (tj) {
+        var hex = tj && tj.hex
+        if (!hex) return null
+        return { vout: u.tx_output_n, value: u.value, hex: hex }
       })
     })
   }

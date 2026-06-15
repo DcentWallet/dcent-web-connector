@@ -253,7 +253,12 @@ function assertFlatWireOutput (item: unknown, idx: number): void {
   if (!isValidSatoshi(o.amount)) {
     throw dcentException('param_error', `bitcoinTxToWire: outputs[${idx}].amount must be a non-negative integer satoshi (number or canonical decimal string)`)
   }
-  if (!Array.isArray(o.addresses) || o.addresses.length === 0 || !o.addresses.every((a) => typeof a === 'string' && a.length > 0)) {
+  // Array.from으로 sparse array(holes)를 densify — every가 hole을 skip해 undefined가 누출되는 것 방지.
+  if (
+    !Array.isArray(o.addresses) ||
+    o.addresses.length === 0 ||
+    !Array.from(o.addresses as unknown[]).every((a) => typeof a === 'string' && a.length > 0)
+  ) {
     throw dcentException('param_error', `bitcoinTxToWire: outputs[${idx}].addresses must be a non-empty array of non-empty strings`)
   }
 }
@@ -299,9 +304,10 @@ export function bitcoinTxToWire (txObject: unknown): BitcoinWireTransaction {
 
   // EC2: 이미 flat인 wire transaction → 필드 shape 검증 후 pass-through.
   // flat wire도 untrusted dApp 입력이므로 무검증 통과하지 않는다 (cross-review r3).
+  // Array.from으로 densify — forEach가 sparse array의 hole을 skip해 undefined가 누출되는 것 방지(r4).
   if (Array.isArray(obj.inputs) && Array.isArray(obj.outputs)) {
-    obj.inputs.forEach(assertFlatWireInput)
-    obj.outputs.forEach(assertFlatWireOutput)
+    Array.from(obj.inputs as unknown[]).forEach(assertFlatWireInput)
+    Array.from(obj.outputs as unknown[]).forEach(assertFlatWireOutput)
     return txObject as BitcoinWireTransaction
   }
 
@@ -322,8 +328,9 @@ export function bitcoinTxToWire (txObject: unknown): BitcoinWireTransaction {
   if (parameter.output !== undefined && !Array.isArray(parameter.output)) {
     throw dcentException('param_error', 'bitcoinTxToWire: parameter.output must be an array')
   }
-  const inputItems: unknown[] = Array.isArray(parameter.input) ? parameter.input : []
-  const outputItems: unknown[] = Array.isArray(parameter.output) ? parameter.output : []
+  // Array.from으로 densify — map이 sparse array의 hole을 skip해 결과에 undefined hole이 남는 것 방지(r4).
+  const inputItems: unknown[] = Array.isArray(parameter.input) ? Array.from(parameter.input) : []
+  const outputItems: unknown[] = Array.isArray(parameter.output) ? Array.from(parameter.output) : []
 
   const inputs: BitcoinWireInput[] = inputItems.map((item, idx) => {
     if (!item || typeof item !== 'object') {

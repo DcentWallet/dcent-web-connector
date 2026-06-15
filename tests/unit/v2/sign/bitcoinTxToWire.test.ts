@@ -263,6 +263,22 @@ describe('bitcoinTxToWire — field-level boundary validation (T-U-SHIM-09)', ()
     // 검증 통과 + 동일 reference 반환 (pass-through 의미 보존)
     expect(bitcoinTxToWire(flat)).toBe(flat)
   })
+
+  test('T-U-SHIM-09i: sparse array(holes)도 densify 후 검증 → param_error throw (round-4)', () => {
+    const validIn = { rawTransaction: 'abcd', index: 0, txType: 'p2pkh', keyPath: "m/44'/0'/0'/0/0" }
+    const validOut = { txType: 'p2pkh', amount: '100000', addresses: ['addr'] }
+    // 최상위 sparse inputs/outputs (flat 경로) — hole이 forEach skip로 누출되지 않아야 함
+    // eslint-disable-next-line no-sparse-arrays
+    expect(() => bitcoinTxToWire({ inputs: [, validIn], outputs: [validOut] })).toThrow(PARAM_ERROR)
+    expect(() => bitcoinTxToWire({ inputs: new Array(1), outputs: [validOut] })).toThrow(PARAM_ERROR)
+    // eslint-disable-next-line no-sparse-arrays
+    expect(() => bitcoinTxToWire({ inputs: [validIn], outputs: [, validOut] })).toThrow(PARAM_ERROR)
+    // sparse addresses (flat output) — hole이 every skip로 누출되지 않아야 함
+    expect(() => bitcoinTxToWire({ inputs: [validIn], outputs: [{ txType: 'p2pkh', amount: '1', addresses: new Array(1) }] })).toThrow(PARAM_ERROR)
+    // 최상위 sparse nested input — map hole 누출 방지
+    // eslint-disable-next-line no-sparse-arrays
+    expect(() => bitcoinTxToWire({ request: { body: { parameter: { input: [, validIn], output: [] } } } })).toThrow(PARAM_ERROR)
+  })
 })
 
 describe('bitcoinTxToWire — export 표면 (T-U-SHIM-08)', () => {

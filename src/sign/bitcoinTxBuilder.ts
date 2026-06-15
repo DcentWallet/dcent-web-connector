@@ -307,12 +307,14 @@ export function bitcoinTxToWire (txObject: unknown): BitcoinWireTransaction {
         `bitcoinTxToWire: unsupported output[${idx}].type '${String(o.type)}' (expected one of ${WIRE_OUTPUT_TX_TYPES.join('/')})`,
       )
     }
-    // value는 satoshi number 또는 satoshi 문자열만 허용 — `amount:'undefined'` 같은 silent invalid wire 방지.
+    // value는 satoshi(비음수 정수)만 허용 — number는 safe integer(≥0), string은 canonical 10진 정수 문자열.
+    // `1.5`/`-1`/`'1.5'`/`'abc'`/공백 등 비-satoshi 값이 `amount:'1e+21'`/`'abc'` 같은 invalid wire로
+    // 흘러가지 않도록 변환 단계에서 차단 (boundary-validation — wm BigNumber NaN 도달 전에 거부).
     const validValue =
-      (typeof o.value === 'number' && Number.isFinite(o.value)) ||
-      (typeof o.value === 'string' && o.value.length > 0)
+      (typeof o.value === 'number' && Number.isSafeInteger(o.value) && o.value >= 0) ||
+      (typeof o.value === 'string' && /^(0|[1-9]\d*)$/.test(o.value))
     if (!validValue) {
-      throw dcentException('param_error', `bitcoinTxToWire: output[${idx}].value must be a finite number or non-empty string (satoshi)`)
+      throw dcentException('param_error', `bitcoinTxToWire: output[${idx}].value must be a non-negative integer satoshi (number or canonical decimal string)`)
     }
     if (typeof o.to !== 'string' || o.to.length === 0) {
       throw dcentException('param_error', `bitcoinTxToWire: output[${idx}].to must be a non-empty string`)

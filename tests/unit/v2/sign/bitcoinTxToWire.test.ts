@@ -214,6 +214,27 @@ describe('bitcoinTxToWire — field-level boundary validation (T-U-SHIM-09)', ()
     expect(() => bitcoinTxToWire(base({ type: 'p2pkh', value: '100000' }))).toThrow(PARAM_ERROR)
     expect(() => bitcoinTxToWire(base({ type: 'p2pkh', value: '100000', to: '' }))).toThrow(PARAM_ERROR)
   })
+
+  test('T-U-SHIM-09e: value가 비-satoshi(float/음수/비정수문자열/대형) → param_error throw (round-2 강화)', () => {
+    const base = (output: unknown) => ({ request: { body: { parameter: { input: [], output: [output] } } } })
+    // number: float / 음수 / unsafe-large
+    expect(() => bitcoinTxToWire(base({ type: 'p2pkh', value: 1.5, to: 'addr' }))).toThrow(PARAM_ERROR)
+    expect(() => bitcoinTxToWire(base({ type: 'p2pkh', value: -1, to: 'addr' }))).toThrow(PARAM_ERROR)
+    expect(() => bitcoinTxToWire(base({ type: 'p2pkh', value: 1e21, to: 'addr' }))).toThrow(PARAM_ERROR)
+    // string: 소수점 / 비숫자 / 공백 / 음수 / leading-zero
+    expect(() => bitcoinTxToWire(base({ type: 'p2pkh', value: '1.5', to: 'addr' }))).toThrow(PARAM_ERROR)
+    expect(() => bitcoinTxToWire(base({ type: 'p2pkh', value: 'abc', to: 'addr' }))).toThrow(PARAM_ERROR)
+    expect(() => bitcoinTxToWire(base({ type: 'p2pkh', value: '   ', to: 'addr' }))).toThrow(PARAM_ERROR)
+    expect(() => bitcoinTxToWire(base({ type: 'p2pkh', value: '-1', to: 'addr' }))).toThrow(PARAM_ERROR)
+    expect(() => bitcoinTxToWire(base({ type: 'p2pkh', value: '0123', to: 'addr' }))).toThrow(PARAM_ERROR)
+  })
+
+  test('T-U-SHIM-09f: value=0 (number/string) 및 정수 satoshi는 정상 통과 (경계 — over-reject 방지)', () => {
+    const base = (output: unknown) => ({ request: { body: { parameter: { input: [], output: [output] } } } })
+    expect(bitcoinTxToWire(base({ type: 'p2pkh', value: 0, to: 'addr' })).outputs[0].amount).toBe('0')
+    expect(bitcoinTxToWire(base({ type: 'p2pkh', value: '0', to: 'addr' })).outputs[0].amount).toBe('0')
+    expect(bitcoinTxToWire(base({ type: 'p2pkh', value: 200000, to: 'addr' })).outputs[0].amount).toBe('200000')
+  })
 })
 
 describe('bitcoinTxToWire — export 표면 (T-U-SHIM-08)', () => {

@@ -174,6 +174,48 @@ describe('bitcoinTxToWire — malformed 입력 reject (T-U-SHIM-07)', () => {
   })
 })
 
+describe('bitcoinTxToWire — field-level boundary validation (T-U-SHIM-09)', () => {
+  // 크로스 리뷰(Codex BLOCK + Claude WARNING, 2026-06-15): public dApp-facing API가
+  // 손상된 nested envelope에 대해 raw TypeError를 던지거나 silent invalid wire를
+  // 만들지 않고 항상 param_error로 throw해야 한다 (boundary-validation + dapp-input-sanitization).
+
+  test('T-U-SHIM-09a: parameter.input/output이 배열 아님 → param_error throw (raw TypeError 방지)', () => {
+    expect(() => bitcoinTxToWire({ request: { body: { parameter: { input: 'not-array' } } } })).toThrow(PARAM_ERROR)
+    expect(() => bitcoinTxToWire({ request: { body: { parameter: { output: 42 } } } })).toThrow(PARAM_ERROR)
+    expect(() => bitcoinTxToWire({ request: { body: { parameter: { input: {} } } } })).toThrow(PARAM_ERROR)
+  })
+
+  test('T-U-SHIM-09b: input/output 배열 원소가 null/비객체 → param_error throw', () => {
+    expect(() => bitcoinTxToWire({ request: { body: { parameter: { input: [null] } } } })).toThrow(PARAM_ERROR)
+    expect(() => bitcoinTxToWire({ request: { body: { parameter: { input: [42] } } } })).toThrow(PARAM_ERROR)
+    expect(() => bitcoinTxToWire({ request: { body: { parameter: { output: [null] } } } })).toThrow(PARAM_ERROR)
+  })
+
+  test('T-U-SHIM-09c: 부분 input(필드 누락/타입 위반) → param_error throw (silent undefined wire 방지)', () => {
+    const base = (input: unknown) => ({ request: { body: { parameter: { input: [input] } } } })
+    // prev_tx 누락
+    expect(() => bitcoinTxToWire(base({ utxo_idx: 0, type: 'p2pkh', key: 'm/0' }))).toThrow(PARAM_ERROR)
+    // utxo_idx 비정수/음수
+    expect(() => bitcoinTxToWire(base({ prev_tx: 'ab', utxo_idx: -1, type: 'p2pkh', key: 'm/0' }))).toThrow(PARAM_ERROR)
+    expect(() => bitcoinTxToWire(base({ prev_tx: 'ab', utxo_idx: 1.5, type: 'p2pkh', key: 'm/0' }))).toThrow(PARAM_ERROR)
+    // key 누락/빈 문자열
+    expect(() => bitcoinTxToWire(base({ prev_tx: 'ab', utxo_idx: 0, type: 'p2pkh' }))).toThrow(PARAM_ERROR)
+    expect(() => bitcoinTxToWire(base({ prev_tx: 'ab', utxo_idx: 0, type: 'p2pkh', key: '' }))).toThrow(PARAM_ERROR)
+  })
+
+  test('T-U-SHIM-09d: 부분 output(value/to 누락·위반) → param_error throw (amount:"undefined" 방지)', () => {
+    const base = (output: unknown) => ({ request: { body: { parameter: { input: [], output: [output] } } } })
+    // value 누락 → amount:'undefined' 금지
+    expect(() => bitcoinTxToWire(base({ type: 'p2pkh', to: 'addr' }))).toThrow(PARAM_ERROR)
+    // value 비-satoshi (boolean/NaN)
+    expect(() => bitcoinTxToWire(base({ type: 'p2pkh', value: true, to: 'addr' }))).toThrow(PARAM_ERROR)
+    expect(() => bitcoinTxToWire(base({ type: 'p2pkh', value: Number.NaN, to: 'addr' }))).toThrow(PARAM_ERROR)
+    // to 누락/빈 문자열 → addresses:[undefined] 금지
+    expect(() => bitcoinTxToWire(base({ type: 'p2pkh', value: '100000' }))).toThrow(PARAM_ERROR)
+    expect(() => bitcoinTxToWire(base({ type: 'p2pkh', value: '100000', to: '' }))).toThrow(PARAM_ERROR)
+  })
+})
+
 describe('bitcoinTxToWire — export 표면 (T-U-SHIM-08)', () => {
   test('T-U-SHIM-08: dcent.bitcoinTxToWire는 함수 (default 객체 멤버 등재)', () => {
     expect(typeof dcent.bitcoinTxToWire).toBe('function')

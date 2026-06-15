@@ -234,10 +234,13 @@ export function bitcoinTxToWire (txObject: unknown): BitcoinWireTransaction {
     throw dcentException('param_error', 'bitcoinTxToWire: transaction must be a non-null object')
   }
 
+  // 입력은 dApp 제공 untrusted 구조 → known-field만 추출하고 각 필드를 unknown에서 검증한다
+  // (dapp-input-sanitization + boundary-validation). 모든 실패는 dcentException('param_error')로
+  // 통일(error-handling-consistency) — raw TypeError나 silent invalid wire(`amount:'undefined'` 등) 금지.
   const obj = txObject as {
     inputs?: unknown
     outputs?: unknown
-    request?: { body?: { parameter?: BitcoinTxParameter } }
+    request?: { body?: { parameter?: { input?: unknown; output?: unknown } } }
   }
 
   // EC2: 이미 flat인 wire transaction → 변환 없이 pass-through.
@@ -255,12 +258,35 @@ export function bitcoinTxToWire (txObject: unknown): BitcoinWireTransaction {
     )
   }
 
-  const inputs: BitcoinWireInput[] = (parameter.input ?? []).map((i, idx) => {
-    if (!WIRE_INPUT_TX_TYPES.includes(i.type)) {
+  // input/output이 존재하면 반드시 배열이어야 한다 (non-array → param_error, raw TypeError 방지).
+  if (parameter.input !== undefined && !Array.isArray(parameter.input)) {
+    throw dcentException('param_error', 'bitcoinTxToWire: parameter.input must be an array')
+  }
+  if (parameter.output !== undefined && !Array.isArray(parameter.output)) {
+    throw dcentException('param_error', 'bitcoinTxToWire: parameter.output must be an array')
+  }
+  const inputItems: unknown[] = Array.isArray(parameter.input) ? parameter.input : []
+  const outputItems: unknown[] = Array.isArray(parameter.output) ? parameter.output : []
+
+  const inputs: BitcoinWireInput[] = inputItems.map((item, idx) => {
+    if (!item || typeof item !== 'object') {
+      throw dcentException('param_error', `bitcoinTxToWire: input[${idx}] must be a non-null object`)
+    }
+    const i = item as Record<string, unknown>
+    if (typeof i.prev_tx !== 'string') {
+      throw dcentException('param_error', `bitcoinTxToWire: input[${idx}].prev_tx must be a string`)
+    }
+    if (typeof i.utxo_idx !== 'number' || !Number.isInteger(i.utxo_idx) || i.utxo_idx < 0) {
+      throw dcentException('param_error', `bitcoinTxToWire: input[${idx}].utxo_idx must be a non-negative integer`)
+    }
+    if (typeof i.type !== 'string' || !WIRE_INPUT_TX_TYPES.includes(i.type)) {
       throw dcentException(
         'param_error',
-        `bitcoinTxToWire: unsupported input[${idx}].type '${i.type}' (expected one of ${WIRE_INPUT_TX_TYPES.join('/')})`,
+        `bitcoinTxToWire: unsupported input[${idx}].type '${String(i.type)}' (expected one of ${WIRE_INPUT_TX_TYPES.join('/')})`,
       )
+    }
+    if (typeof i.key !== 'string' || i.key.length === 0) {
+      throw dcentException('param_error', `bitcoinTxToWire: input[${idx}].key must be a non-empty string`)
     }
     return {
       rawTransaction: i.prev_tx,
@@ -270,12 +296,26 @@ export function bitcoinTxToWire (txObject: unknown): BitcoinWireTransaction {
     }
   })
 
-  const outputs: BitcoinWireOutput[] = (parameter.output ?? []).map((o, idx) => {
-    if (!WIRE_OUTPUT_TX_TYPES.includes(o.type)) {
+  const outputs: BitcoinWireOutput[] = outputItems.map((item, idx) => {
+    if (!item || typeof item !== 'object') {
+      throw dcentException('param_error', `bitcoinTxToWire: output[${idx}] must be a non-null object`)
+    }
+    const o = item as Record<string, unknown>
+    if (typeof o.type !== 'string' || !WIRE_OUTPUT_TX_TYPES.includes(o.type)) {
       throw dcentException(
         'param_error',
-        `bitcoinTxToWire: unsupported output[${idx}].type '${o.type}' (expected one of ${WIRE_OUTPUT_TX_TYPES.join('/')})`,
+        `bitcoinTxToWire: unsupported output[${idx}].type '${String(o.type)}' (expected one of ${WIRE_OUTPUT_TX_TYPES.join('/')})`,
       )
+    }
+    // value는 satoshi number 또는 satoshi 문자열만 허용 — `amount:'undefined'` 같은 silent invalid wire 방지.
+    const validValue =
+      (typeof o.value === 'number' && Number.isFinite(o.value)) ||
+      (typeof o.value === 'string' && o.value.length > 0)
+    if (!validValue) {
+      throw dcentException('param_error', `bitcoinTxToWire: output[${idx}].value must be a finite number or non-empty string (satoshi)`)
+    }
+    if (typeof o.to !== 'string' || o.to.length === 0) {
+      throw dcentException('param_error', `bitcoinTxToWire: output[${idx}].to must be a non-empty string`)
     }
     return {
       txType: o.type as BitcoinWireTxType | 'change',

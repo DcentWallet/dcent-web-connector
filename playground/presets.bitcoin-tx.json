@@ -3,7 +3,6 @@
     "id": "btx:p2wpkh-single",
     "label": "Bitcoin P2WPKH (single utxo → single output)",
     "applicableMethodIds": ["btx:new", "btx:addInput", "btx:addOutput", "btx:buildAndSign"],
-    "coinType": "BITCOIN",
     "chainId": "bip122:000000000019d6689c085ae165831e93/slip44:0",
     "keyPath": "m/84'/0'/0'/0/0",
     "input": {
@@ -22,8 +21,7 @@
     "id": "btx:p2pkh-single",
     "label": "Bitcoin Legacy P2PKH (single utxo → single output)",
     "applicableMethodIds": ["btx:new", "btx:addInput", "btx:addOutput", "btx:buildAndSign"],
-    "coinType": "BITCOIN_TESTNET",
-    "chainId": "bip122:000000000933ea01ad0ee984209779ba/slip44:1",
+    "chainId": "bip122:000000000933ea01ad0ee984209779ba/slip44:0",
     "keyPath": "m/44'/1'/0'/0/0",
     "input": {
       "prev_tx": "0100000001abcdef0123456789abcdef0123456789abcdef0123456789abcdef0123456789000000006a47304402200000000000000000000000000000000000000000000000000000000000000000022000000000000000000000000000000000000000000000000000000000000000000121020000000000000000000000000000000000000000000000000000000000000000ffffffff0140420f00000000001976a914000000000000000000000000000000000000000088ac00000000",

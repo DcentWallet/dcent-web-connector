@@ -9,10 +9,6 @@
  *   실제 chain resolve는 sdk/wm(m09-03-21) 위임.
  * - selectAddress: v1 1:1 port (m08-01-02.5) — 변경 없음
  *
- * **m12-03 Layer B (MEDIUM)**:
- *   - `syncAccount(accountInfos, opts?)` — opts?.deviceId 유지
- *   - `selectAddress(addresses, opts?)` — opts?.deviceId 유지
- *
  * 룰 준수:
  *   - connector-chain-addition-isolation: chain enum / coin_group 검증 제거
  *   - dapp-input-sanitization: _sanitizeSyncAccountItem per-item sanitize
@@ -25,7 +21,7 @@ import { _call } from './call'
 import { isAvaliableLabel } from './labelValidator'
 import { _sanitizeSyncAccountItem } from './_sanitizeSyncAccountItem'
 import { dcentException } from '../v1/dcent-exception'
-import type { V1Response, V2SyncAccountInfo, CallOptions } from './types'
+import type { V1Response, V2SyncAccountInfo } from './types'
 
 /**
  * v1 dcent.setLabel (src-v1/index.js#l705-716) 1:1 port.
@@ -56,10 +52,9 @@ export function setLabel (label: string): Promise<V1Response> {
  * (마이그레이션 가이드는 m09-04-04/06 docs child 담당)
  *
  * @param accountInfos v2 account 항목 배열 — 각 항목은 _sanitizeSyncAccountItem으로 검증
- * @param opts 선택적 CallOptions (deviceId 등)
  * @throws dcentException('param_error') — 비배열 / invalid 항목
  */
-export function syncAccount (accountInfos: V2SyncAccountInfo[], opts?: CallOptions): Promise<V1Response> {
+export function syncAccount (accountInfos: V2SyncAccountInfo[]): Promise<V1Response> {
   // boundary-validation: 비배열 입력 → throw (selectAddress T-U-SEL-02 패턴 통일)
   if (!Array.isArray(accountInfos)) {
     throw dcentException('param_error', 'accountInfos is not array')
@@ -68,21 +63,18 @@ export function syncAccount (accountInfos: V2SyncAccountInfo[], opts?: CallOptio
   // per-item sanitize — _sanitizeSyncAccountItem이 throw on invalid
   const safe = accountInfos.map(_sanitizeSyncAccountItem)
 
-  return _call({ method: 'syncAccount', params: { accountInfos: safe }, deviceId: opts?.deviceId })
+  return _call({ method: 'syncAccount', params: { accountInfos: safe } })
 }
 
 /**
  * v1 dcent.selectAddress (src-v1/index.js#l762-772) 1:1 port.
  *
- * **m12-03 Layer B**: `opts?.deviceId` 추가. trailing optional → backward-compat.
- *
  * @param addresses 선택할 address 배열
- * @param opts 선택적 CallOptions (deviceId 등)
  * @throws dcentException('param_error') Array가 아닌 경우
  */
-export function selectAddress (addresses: string[], opts?: CallOptions): Promise<V1Response> {
+export function selectAddress (addresses: string[]): Promise<V1Response> {
   if (!Array.isArray(addresses)) {
     throw dcentException('param_error', 'addresses is not array')
   }
-  return _call({ method: 'selectAddress', params: { addresses }, deviceId: opts?.deviceId })
+  return _call({ method: 'selectAddress', params: { addresses } })
 }

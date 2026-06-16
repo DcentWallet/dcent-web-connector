@@ -75,13 +75,6 @@ export class PopupTransport implements MessageTransport {
   private popupWindow: Window | null = null
   private pending: Map<string, PendingRequest> = new Map()
   /**
-   * (Session deviceId, 2026-05-22) caller가 다음 handshake 시점에 sdk로 전달할 deviceId hint.
-   * 첫 send 호출이 sendHandshake를 trigger하기 전 `setPendingDeviceId`로 설정.
-   * sendHandshake가 handshake message params에 포함시킨 뒤 caller 책임으로 reset하지 않는다 —
-   * 같은 popup 세션 도중 reuse하는 후속 send에는 영향 없음(handshake는 1회만 fire).
-   */
-  private pendingDeviceId: string | undefined = undefined
-  /**
    * (m09-04-03) caller가 다음 handshake 시점에 sdk로 전달할 transport 힌트.
    * popup lifecycle 단위 first-wins (audit R12): handshake는 첫 send에서만 1회 fire.
    * 두 번째 sign 호출 시 setPendingTransport가 다시 호출되어도 handshakePromise가 이미
@@ -194,22 +187,6 @@ export class PopupTransport implements MessageTransport {
   off (event: 'state', handler: (state: TransportState) => void): void {
     if (event !== 'state') return
     this.stateHandlers.delete(handler)
-  }
-
-  /**
-   * (Session deviceId, 2026-05-22) 다음 handshake에 sdk로 전달할 deviceId hint를 지정.
-   *
-   * 호출 시점: 첫 send 호출이 handshake를 trigger하기 전에 caller(예: dcent.* 메서드 wrapper)가
-   * 본 method로 설정. sendHandshake는 이 값을 handshake params.deviceId로 송신.
-   *
-   * 동일 popup 세션 내 후속 send에는 영향 없음 (handshake는 첫 send에서만 fire). 다음 popup
-   * 세션에서 새 deviceId 사용하려면 caller가 본 method를 다시 호출.
-   *
-   * @param deviceId  설정할 deviceId hint. undefined로 호출하면 hint 비우기 (다음 handshake는
-   *   기존 picker 흐름).
-   */
-  setPendingDeviceId (deviceId: string | undefined): void {
-    this.pendingDeviceId = deviceId
   }
 
   /**
@@ -475,23 +452,16 @@ export class PopupTransport implements MessageTransport {
         timer,
       })
 
-      // (Session deviceId, 2026-05-22) pendingDeviceId 가 있으면 handshake params 에 포함.
-      // sdk가 권한 캐시된 device 중 deviceId 매칭하는 것을 chooser 없이 자동 연결한다.
-      // mismatch 시 ProviderRpcError(4001) — sdk envelope.error로 변환되어 send promise reject.
       // (m09-04-03) pendingTransport를 toWireTransport로 변환하여 항상 동봉 (undefined → 'auto').
       // sdk가 'auto'를 받으면 picker UI fallback, 'hid'/'ble'를 받으면 즉시 connect.
       const handshakeParams: {
         version: string
         clientName: string
-        deviceId?: string
         transport: 'hid' | 'ble' | 'auto'
       } = {
         version: this.protocolVersion,
         clientName: 'connector',
         transport: toWireTransport(this.pendingTransport),
-      }
-      if (this.pendingDeviceId) {
-        handshakeParams.deviceId = this.pendingDeviceId
       }
       const handshakeMessage: MessageEnvelope<typeof handshakeParams> = {
         id: handshakeId,

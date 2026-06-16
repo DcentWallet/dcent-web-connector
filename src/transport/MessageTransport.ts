@@ -23,21 +23,11 @@ export interface MessageEnvelope<T = unknown> {
 /**
  * 응답 envelope — sdk → connector 방향
  * JSON-RPC 2.0 호환 형태 (result xor error)
- *
- * (Session deviceId, 2026-05-22) sdk가 매 응답 envelope top-level에 connected device의
- * HW `device_id`를 echo. dApp이 첫 응답에서 캡처하여 후속 호출의 method param `deviceId`로
- * 전달하면, sdk가 picker 없이 자동 cached connect + deviceId 매칭 검증. cross-repo-interface-edit
- * 룰의 양방향 짝 — sdk envelope.ts와 동일 spec.
  */
 export interface ResponseEnvelope<T = unknown> {
   id: string // 요청 id와 매칭
   result?: T
   error?: { code: number; message: string; data?: unknown }
-  /**
-   * sdk가 connected device의 HW device_id 응답에 echo. transport 미초기화 / disconnect 후
-   * 응답이면 undefined. dApp이 캡처해 후속 호출에 method-level `deviceId` 옵션으로 전달.
-   */
-  deviceId?: string
 }
 
 /** 트랜스포트 연결 상태 */

@@ -7,7 +7,6 @@
  * **m12-03**:
  *   - `getDeviceInfo()` 반환 타입을 `V1Response<DeviceInfoPayload>`로 narrow (Layer A).
  *     options arg는 비스코프 (first-call / device-discovery 성격).
- *   - `getAccountInfo(opts?)` — MEDIUM priority facade, deviceId 옵션 추가 (Layer B).
  * **m09-04-12**:
  *   - `getAccountInfo()` 반환 타입을 `V1Response<AccountListV2Payload>`로 narrow.
  *     connector는 sdk(m09-03-21) enrich 응답을 그대로 forward.
@@ -18,7 +17,7 @@
  */
 
 import { _call } from './call'
-import type { V1Response, DeviceInfoPayload, AccountListV2Payload, CallOptions } from './types'
+import type { V1Response, DeviceInfoPayload, AccountListV2Payload } from './types'
 
 /**
  * v1 dcent.info — Bridge (Tray Daemon) status 정보 조회.
@@ -32,7 +31,7 @@ export function info (): Promise<V1Response> {
  *
  * **m12-03 Layer A**: 반환 타입을 `V1Response<DeviceInfoPayload>`로 narrow.
  * dApp이 `resp.body.parameter?.label` 등 typed field를 직접 접근 가능.
- * options arg는 비스코프 (first-call / device-discovery 성격 — deviceId 없이 시작).
+ * options arg는 비스코프 (first-call / device-discovery 성격).
  */
 export function getDeviceInfo (): Promise<V1Response<DeviceInfoPayload>> {
   return _call({ method: 'getDeviceInfo' }) as Promise<V1Response<DeviceInfoPayload>>
@@ -41,12 +40,10 @@ export function getDeviceInfo (): Promise<V1Response<DeviceInfoPayload>> {
 /**
  * v1 dcent.getAccountInfo — Wallet에 등록된 account 리스트 조회.
  *
- * **m12-03 Layer B (MEDIUM)**: `opts?.deviceId` 추가.
  * **m09-04-12**: 반환 타입을 `V1Response<AccountListV2Payload>`로 narrow.
  * connector는 sdk(m09-03-21)가 enrich한 응답을 그대로 forward — 변환 로직 없음.
  * dApp이 `resp.body.parameter?.account` 배열을 typed으로 접근 가능.
- * opts 미명시 시 기존 흐름 유지 (backward-compat).
  */
-export function getAccountInfo (opts?: CallOptions): Promise<V1Response<AccountListV2Payload>> {
-  return _call({ method: 'getAccountInfo', deviceId: opts?.deviceId }) as unknown as Promise<V1Response<AccountListV2Payload>>
+export function getAccountInfo (): Promise<V1Response<AccountListV2Payload>> {
+  return _call({ method: 'getAccountInfo' }) as unknown as Promise<V1Response<AccountListV2Payload>>
 }

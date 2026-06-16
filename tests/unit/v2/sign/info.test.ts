@@ -80,8 +80,12 @@ describe('read-only info functions — m08-01-02.5', () => {
 // ── T-U-TYPE-* — 타입 계약 (deviceid-facade.test.ts에서 이전, m09-04-16) ──────
 // deviceId 옵션과 무관한 still-existing 타입 커버리지. deviceId-facade 전용
 // 테스트 삭제 시 함께 사라지지 않도록 여기로 보존한다.
+// 주의: unit-v2는 babel-jest로 실행되어 TS 타입 어노테이션이 erase되므로
+//   TYPE-01/03의 타입 할당은 "compile-time 강제"가 아니라 문서화 + 런타임 스모크다.
+//   진짜 compile-time 강제는 src/를 대상으로 한 `yarn tsc`(tsconfig include=src)가 담당.
+//   TYPE-02는 getDeviceInfo 반환 payload 전 필드를 runtime로 단언한다.
 describe('T-U-TYPE-* — DeviceInfoPayload / V1Response generic 타입 계약', () => {
-  test('T-U-TYPE-01: DeviceInfoPayload — 모든 필드 optional (compile-time)', () => {
+  test('T-U-TYPE-01: DeviceInfoPayload — 모든 필드 optional (타입 할당 + 런타임 스모크)', () => {
     // 빈 객체가 DeviceInfoPayload에 할당 가능 = 모든 필드 optional
     const empty: DeviceInfoPayload = {}
     expect(empty).toBeDefined()

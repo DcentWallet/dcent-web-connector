@@ -549,12 +549,14 @@
     _testDcent: null,
     // m11-01-03: bitcoin tx builder 누적 상태 (session 동안 유지, localStorage 미사용)
     bitcoinTx: {
-      current: null, // BitcoinTxObject | null (facade가 반환한 nested envelope)
-      coinType: null, // 'BITCOIN' / 'BITCOIN_TESTNET' / 'MONACOIN' / 'MONACOIN_TESTNET'
-      chainId: null, // 'bip122:.../slip44:0' (Build & Sign 시 사용)
+      current: null, // BitcoinWireTransaction | null (facade가 반환한 v2 flat wire {inputs,outputs})
+      chainId: null, // 'bip122:.../slip44:0' (Build & Sign 시 사용 — v2는 coinType 미사용, chainId가 코인 결정)
       inputs: 0, // count for UI
       outputs: 0,
     },
+    // m09-04-15 follow-up: bitcoin signTx 폼 모드 ('json'=Transaction JSON 직접 / 'auto'=UTXO fetch→build→sign)
+    btxSignMode: 'json',
+    btxAuto: {}, // 자동 모드 캐시 (prevTx/vout/value/net/addr 등)
     // m12-03: sticky deviceId bar state (session memory only — no localStorage)
     cachedDeviceId: null, // string | null — first captured from response envelope.deviceId
     deviceIdOverride: '', // string — textbox current value (manual edit overrides cachedDeviceId)
@@ -1313,7 +1315,7 @@
   // ── renderBitcoinTxBuilderForm (m11-01-03) ──
   // Bitcoin transaction builder의 4 method form 빌더.
   // methodDef.id는 'btx:{action}' 형식으로 분기 — action별 input 구성이 다르다.
-  //   - btx:new           → coinType select (+ chainId/keyPath text)
+  //   - btx:new           → chainId text (v2: coinType 폼 없음 — 코인은 chainId가 결정)
   //   - btx:addInput      → prev_tx / utxo_idx / type (p2pkh/p2pk/p2sh/p2wpkh) / key 입력
   //   - btx:addOutput     → type (p2pkh/p2pk/p2sh/p2wpkh/change) / value / to
   //   - btx:buildAndSign  → 누적된 tx로 dcent.sign({method:'signTransaction', chainId, payload}) 호출
@@ -1367,26 +1369,7 @@
     }
 
     if (action === 'new') {
-      // coinType <select> — isBitcoinTxCoinType 화이트리스트 (BITCOIN/BITCOIN_TESTNET/MONACOIN/MONACOIN_TESTNET)
-      var ctKeys = ['BITCOIN', 'BITCOIN_TESTNET', 'MONACOIN', 'MONACOIN_TESTNET']
-      var ctRow = document.createElement('div')
-      ctRow.className = 'form-row'
-      var ctLabel = document.createElement('label')
-      ctLabel.setAttribute('for', 'field-coinType')
-      ctLabel.textContent = 'coinType'
-      var ctSelect = document.createElement('select')
-      ctSelect.id = 'field-coinType'
-      ctKeys.forEach(function (k) {
-        var opt = document.createElement('option')
-        opt.value = k
-        opt.textContent = k
-        ctSelect.appendChild(opt)
-      })
-      ctSelect.value = 'BITCOIN'
-      ctRow.appendChild(ctLabel)
-      ctRow.appendChild(ctSelect)
-      formFields.appendChild(ctRow)
-
+      // v2: coinType 없음. getBitcoinTransactionObject()는 무인자 — 코인은 chainId가 결정한다.
       // chainId — Build & Sign 단계에서 사용. 사용자가 직접 입력 가능 (CAIP-19 pass-through).
       appendFormRow('chainId', 'Chain ID (CAIP-19, for Build & Sign)', 'input', {
         value: 'bip122:000000000019d6689c085ae165831e93/slip44:0',
@@ -1484,7 +1467,7 @@
   function _renderBitcoinTxStateText () {
     var b = state.bitcoinTx
     if (!b.current) return 'Current tx: (none — call getBitcoinTransactionObject first)'
-    return 'Current tx: ' + (b.coinType || '?') + ' | ' + b.inputs + ' inputs / ' + b.outputs + ' outputs'
+    return 'Current tx: ' + (b.chainId || '?') + ' | ' + b.inputs + ' inputs / ' + b.outputs + ' outputs'
   }
 
   function _updateBitcoinTxStateDisplay () {
@@ -1495,8 +1478,7 @@
   // preset 적용 — action별로 다른 필드를 채운다 (form selector 변경 시 호출)
   function _applyBitcoinTxPreset (action, preset) {
     if (action === 'new') {
-      var ctSel = document.getElementById('field-coinType')
-      if (ctSel && preset.coinType) ctSel.value = preset.coinType
+      // v2: coinType 폼 없음 — chainId만 적용 (preset.coinType는 무시)
       var chainIdEl = document.getElementById('field-chainId')
       if (chainIdEl && preset.chainId) chainIdEl.value = preset.chainId
       return
@@ -1704,6 +1686,38 @@
   // ── renderSignTxNonEvmForm (m06-01-03) ──
   // 비-EVM family 공용 폼: chainId(read-only) + keyPath + transaction(JSON) + preset selector
   function renderSignTxNonEvmForm (methodDef) {
+    // m09-04-15 follow-up: Bitcoin은 [⚡ 자동 / Transaction(JSON)] 모드 선택.
+    // 자동 = mempool UTXO fetch → getBitcoinTransactionObject()+add* 빌드 → sign.
+    if (methodDef.family === 'bitcoin') {
+      var btcMode = state.btxSignMode || 'json'
+      var modeRow = document.createElement('div')
+      modeRow.className = 'form-row'
+      modeRow.style.cssText = 'margin-bottom:10px;padding:6px;background:#eef;border-radius:4px;'
+      ;[['auto', '⚡ 자동 (UTXO fetch → build → sign)'], ['json', 'Transaction (JSON) 직접']].forEach(function (m) {
+        var lb = document.createElement('label')
+        lb.style.cssText = 'margin-right:14px;font-size:12px;cursor:pointer;'
+        var rb = document.createElement('input')
+        rb.type = 'radio'
+        rb.name = 'btx-sign-mode'
+        rb.value = m[0]
+        rb.checked = (btcMode === m[0])
+        rb.addEventListener('change', function () {
+          state.btxSignMode = m[0]
+          formFields.innerHTML = ''
+          renderSignTxNonEvmForm(methodDef)
+          updateSendBtn()
+        })
+        lb.appendChild(rb)
+        lb.appendChild(document.createTextNode(' ' + m[1]))
+        modeRow.appendChild(lb)
+      })
+      formFields.appendChild(modeRow)
+      if (btcMode === 'auto') {
+        _renderBtcAutoSignForm(methodDef)
+        return
+      }
+    }
+
     // ── Sender resolver button (form 맨 위) ─────────────────────────────────
     // dApp이 보내는 transaction 의 sender 필드가 실제 wallet 주소가 아닌 placeholder 면
     // device 서명 후 family-별 라이브러리(@solana/web3.js / algosdk 등)가 reject 한다.
@@ -2356,28 +2370,18 @@
 
     try {
       if (action === 'new') {
-        var ctEl = document.getElementById('field-coinType')
         var chainIdEl = document.getElementById('field-chainId')
-        var coinTypeKey = ctEl ? ctEl.value : ''
-        // facade의 isBitcoinTxCoinType은 key 또는 value 모두 toLowerCase 비교로 매치하므로 그대로 전달
-        // 단 coinType enum이 노출되어 있으면 key → value 변환 (일관성)
-        var coinTypeValue = coinTypeKey
-        var coinTypeEnum = (window.dcent && window.dcent.coinType) || {}
-        if (coinTypeEnum[coinTypeKey] !== undefined) {
-          coinTypeValue = coinTypeEnum[coinTypeKey]
-        }
         var chainId = chainIdEl ? chainIdEl.value.trim() : ''
-        // facade 호출 — coinType 미지원 시 dcentException throw
-        var txObj = dcent.getBitcoinTransactionObject(coinTypeValue)
+        // facade 호출 — v2는 무인자. 코인은 sign 시 chainId가 결정 (coinType 미사용).
+        var txObj = dcent.getBitcoinTransactionObject()
         state.bitcoinTx.current = txObj
-        state.bitcoinTx.coinType = coinTypeKey
         state.bitcoinTx.chainId = chainId
         state.bitcoinTx.inputs = 0
         state.bitcoinTx.outputs = 0
         _updateBitcoinTxStateDisplay()
         appendLog({
           method: 'getBitcoinTransactionObject',
-          request: { coinType: coinTypeValue },
+          request: { chainId: chainId },
           response: txObj,
           latencyMs: Date.now() - startMs,
         })
@@ -2500,6 +2504,8 @@
         // b08-01: _unwrapV1Envelope이 success → body.parameter unwrap, failure → throw로 변환.
         // m09-04-03: transport 옵션 — #select-transport 선택값. undefined이면 미전달 (backward compat).
         var bsTransport = _getTransportOption()
+        // m09-04-15: builder(getBitcoinTransactionObject/add*)가 v2 flat wire(BitcoinWireTransaction)를
+        // 직접 생성하므로 변환 없이 그대로 송신. (unsupported txType/malformed 인자는 add* 시점에 throw됨.)
         var bsSignInput = { method: 'signTransaction', chainId: bsChainId, payload: { keyPath: bsKeyPath, transaction: builtTx } }
         if (bsTransport !== undefined) bsSignInput.transport = bsTransport
         dcent.sign(bsSignInput).then(_unwrapV1Envelope).then(function (result) {
@@ -2674,10 +2680,303 @@
     })
   }
 
+  // ── Bitcoin 계열 자동 서명 (m09-04-15 follow-up) ──────────────────────────
+  // signTx > Bitcoin family(BTC/LTC/DOGE/DASH/ZEC/BCH/eCash 등) 노드의 '⚡ 자동' 모드.
+  // 코인은 클릭한 노드의 chainId로 결정. explorer 지원 코인은 [Fetch UTXO]가 prev_tx/vout 자동 채움,
+  // 미지원 코인(Bitcoin Gold/DigiByte/Ravencoin/Horizen 등)은 prev_tx/vout 직접 입력 → 동일하게 build+sign.
+  // 전 코인 동일 wm convertTransaction slot(flat wire)이라 모두 testable.
+  var BTC_MEMPOOL_NETS = {
+    testnet4: 'https://mempool.space/testnet4/api',
+    testnet3: 'https://mempool.space/testnet/api',
+    signet: 'https://mempool.space/signet/api'
+  }
+  // esplora(mempool 호환) explorer — /address/{a}/utxo + /tx/{txid}/hex. 무료·CORS·API key 불필요.
+  var BTC_ESPLORA = {
+    'bip122:000000000019d6689c085ae165831e93/slip44:0': 'https://mempool.space/api', // BTC mainnet
+    'bip122:12a765e31ffd4059bada1e25190f6e98/slip44:2': 'https://litecoinspace.org/api' // Litecoin (mempool팀 운영)
+  }
+  // blockcypher explorer (무료, API key 불필요) — chainId → {coin, chain}
+  var BTC_BLOCKCYPHER = {
+    'bip122:1a91e3dace36e2be3bf030a65679fe82/slip44:3': { coin: 'doge', chain: 'main' }, // Dogecoin
+    'bip122:00000ffd590b1485b3caadc19b22e637/slip44:5': { coin: 'dash', chain: 'main' } // Dash
+  }
+  var BTC_TESTNET_CHAINID = 'bip122:000000000933ea01ad0ee984209779ba/slip44:0'
+
+  // chainId → explorer config. 없으면 null(수동 입력). btcNet = BTC testnet의 mempool sub-net.
+  function _btcResolveExplorer (chainId, btcNet) {
+    if (chainId === BTC_TESTNET_CHAINID) {
+      return { kind: 'esplora', base: BTC_MEMPOOL_NETS[btcNet || 'testnet4'], label: 'mempool BTC ' + (btcNet || 'testnet4') }
+    }
+    if (BTC_ESPLORA[chainId]) {
+      return { kind: 'esplora', base: BTC_ESPLORA[chainId], label: 'esplora ' + BTC_ESPLORA[chainId].replace('https://', '').replace('/api', '') }
+    }
+    var bc = BTC_BLOCKCYPHER[chainId]
+    if (bc) return { kind: 'blockcypher', coin: bc.coin, chain: bc.chain, label: 'blockcypher ' + bc.coin }
+    return null
+  }
+
+  // explorer로 첫 UTXO + prev_tx hex 조회 → {vout,value,hex} | null
+  function _btcFetchFirstUtxo (ex, addr) {
+    if (ex.kind === 'esplora') {
+      return fetch(ex.base + '/address/' + addr + '/utxo').then(function (r) { return r.json() }).then(function (utxos) {
+        if (!utxos || !utxos.length) return null
+        var u = utxos.filter(function (x) { return x.status && x.status.confirmed })[0] || utxos[0]
+        return fetch(ex.base + '/tx/' + u.txid + '/hex').then(function (r) { return r.text() }).then(function (hex) {
+          return { vout: u.vout, value: u.value, hex: hex }
+        })
+      })
+    }
+    // blockcypher — txrefs(unspent) + includeHex
+    var bcBase = 'https://api.blockcypher.com/v1/' + ex.coin + '/' + ex.chain
+    return fetch(bcBase + '/addrs/' + addr + '?unspentOnly=true&limit=1').then(function (r) { return r.json() }).then(function (j) {
+      var refs = j && j.txrefs
+      if (!refs || !refs.length) return null
+      var u = refs[0]
+      return fetch(bcBase + '/txs/' + u.tx_hash + '?includeHex=true&limit=1').then(function (r) { return r.json() }).then(function (tj) {
+        var hex = tj && tj.hex
+        if (!hex) return null
+        return { vout: u.tx_output_n, value: u.value, hex: hex }
+      })
+    })
+  }
+
+  function _appendSelectRow (id, labelText, options, value) {
+    var row = document.createElement('div')
+    row.className = 'form-row'
+    var label = document.createElement('label')
+    label.setAttribute('for', 'field-' + id)
+    label.textContent = labelText
+    var sel = document.createElement('select')
+    sel.id = 'field-' + id
+    options.forEach(function (o) {
+      var op = document.createElement('option')
+      op.value = o
+      op.textContent = o
+      sel.appendChild(op)
+    })
+    if (value) sel.value = value
+    row.appendChild(label)
+    row.appendChild(sel)
+    formFields.appendChild(row)
+    return sel
+  }
+
+  function _btcSetStatus (msg, isErr) {
+    var el = document.getElementById('btc-fetch-status')
+    if (el) {
+      el.textContent = msg
+      el.style.color = isErr ? '#c00' : '#888'
+    }
+  }
+
+  // getAddress 버튼 — 현재 chainId/keyPath/txType로 dcent.getAddress 호출 → address 필드 채움
+  function _btcGetAddressClick () {
+    var chainIdEl = document.getElementById('field-btcChainId')
+    var chainId = chainIdEl ? chainIdEl.value.trim() : ''
+    var keyPathEl = document.getElementById('field-btcKeyPath')
+    var keyPath = keyPathEl ? keyPathEl.value.trim() : ''
+    var txTypeEl = document.getElementById('field-btcTxType')
+    var txType = txTypeEl ? txTypeEl.value : 'p2pkh'
+    if (!chainId || !keyPath) {
+      _btcSetStatus('chainId / keyPath 필요', true)
+      return
+    }
+    // txType → addressFormat (wm registry 지원: legacy / segwit-native. p2sh는 미지정)
+    var afMap = { p2pkh: 'legacy', p2wpkh: 'segwit-native' }
+    var input = { chainId: chainId, keyPath: keyPath }
+    if (afMap[txType]) input.addressFormat = afMap[txType]
+    var dcent = _getDcent()
+    if (!dcent || typeof dcent.getAddress !== 'function') {
+      _btcSetStatus('dcent.getAddress 사용 불가', true)
+      return
+    }
+    _btcSetStatus('getAddress 요청 중...', false)
+    var startMs = Date.now()
+    Promise.resolve(dcent.getAddress(input)).then(_unwrapV1Envelope).then(function (result) {
+      var address = result && (result.address || result.pubkey || result)
+      if (typeof address !== 'string' || !address) {
+        _btcSetStatus('getAddress 응답에서 address 추출 실패', true)
+        return
+      }
+      var addrEl = document.getElementById('field-btcAddr')
+      if (addrEl) addrEl.value = address
+      if (!state.btxAuto) state.btxAuto = {}
+      state.btxAuto.addr = address
+      appendLog({ method: 'getAddress', request: input, response: result, latencyMs: Date.now() - startMs })
+      _btcSetStatus('✅ ' + address + ' → 이제 [Fetch UTXO]', false)
+    }).catch(function (err) {
+      appendLog({ method: 'getAddress', request: input, error: normalizeError(err), latencyMs: Date.now() - startMs })
+      _btcSetStatus('getAddress 실패 — 결과 로그 확인', true)
+    })
+  }
+
+  // 자동 모드 폼 렌더 — network / address / chainId / keyPath / txType / Fetch UTXO / to / amount / fee
+  function _renderBtcAutoSignForm (methodDef) {
+    var a = state.btxAuto || {}
+    var chainId = a.chainId || methodDef.chainId || BTC_TESTNET_CHAINID
+    var keyPath = a.keyPath || methodDef.defaultKeyPath || "m/44'/1'/0'/0/0"
+    var ex = _btcResolveExplorer(chainId, a.net || 'testnet4')
+    // BTC testnet만 mempool sub-net 선택 노출 (testnet4/testnet3/signet)
+    if (chainId === BTC_TESTNET_CHAINID) {
+      var netSel = _appendSelectRow('btcNet', 'mempool network (BTC testnet)', ['testnet4', 'testnet3', 'signet'], a.net || 'testnet4')
+      netSel.addEventListener('change', function () {
+        if (!state.btxAuto) state.btxAuto = {}
+        state.btxAuto.net = netSel.value
+      })
+    }
+    appendFormRow('btcChainId', 'Chain ID', 'input', { value: chainId })
+    appendFormRow('btcKeyPath', 'Key Path', 'input', { value: keyPath, placeholder: keyPath })
+    _appendSelectRow('btcTxType', 'Input txType (주소 종류: legacy=p2pkh)', ['p2pkh', 'p2wpkh', 'p2sh'], a.txType || 'p2pkh')
+    appendFormRow('btcAddr', 'Address (📡 getAddress 또는 직접 입력)', 'input', { value: a.addr || '', placeholder: '내 지갑 주소' })
+    var btnRow = document.createElement('div')
+    btnRow.className = 'form-row'
+    var gaBtn = document.createElement('button')
+    gaBtn.id = 'btn-btc-getaddr'
+    gaBtn.type = 'button'
+    gaBtn.textContent = '📡 getAddress'
+    gaBtn.style.cssText = 'font-size:12px;padding:5px 10px;margin-right:6px;'
+    gaBtn.addEventListener('click', _btcGetAddressClick)
+    var fetchBtn = document.createElement('button')
+    fetchBtn.id = 'btn-btc-fetch'
+    fetchBtn.type = 'button'
+    fetchBtn.textContent = ex ? ('🔍 Fetch UTXO (' + ex.label + ')') : '🔍 Fetch UTXO — 미지원'
+    fetchBtn.style.cssText = 'font-size:12px;padding:5px 10px;'
+    fetchBtn.disabled = !ex
+    fetchBtn.addEventListener('click', _btcFetchUtxoClick)
+    var status = document.createElement('span')
+    status.id = 'btc-fetch-status'
+    status.style.cssText = 'font-size:11px;color:#888;margin-left:10px;'
+    status.textContent = ex ? 'getAddress → Fetch UTXO' : '이 코인은 explorer 자동 fetch 미지원 — prev_tx/vout 직접 입력'
+    btnRow.appendChild(gaBtn)
+    btnRow.appendChild(fetchBtn)
+    btnRow.appendChild(status)
+    formFields.appendChild(btnRow)
+    appendFormRow('btcPrevTx', 'prev_tx (raw hex — Fetch가 채움 / 수동 paste)', 'textarea', { value: a.prevTx || '', placeholder: 'UTXO를 만든 tx의 raw hex' })
+    appendFormRow('btcVout', 'vout (output index)', 'input', { value: (a.vout != null ? String(a.vout) : '0') })
+    appendFormRow('btcTo', 'To (받는 주소, 비우면 self-send)', 'input', { value: a.to || '' })
+    appendFormRow('btcAmount', 'Amount (sat)', 'input', { value: a.amount || '', placeholder: 'Fetch 시 자동 = UTXO − fee' })
+    appendFormRow('btcFee', 'Fee (sat)', 'input', { value: a.fee || '200' })
+  }
+
+  // Fetch UTXO 버튼 — chainId로 explorer 결정 → 첫 UTXO+hex 조회 → prev_tx/vout/to/amount 채움
+  function _btcFetchUtxoClick () {
+    var addrEl = document.getElementById('field-btcAddr')
+    var addr = addrEl ? addrEl.value.trim() : ''
+    var chainIdEl = document.getElementById('field-btcChainId')
+    var chainId = chainIdEl ? chainIdEl.value.trim() : ''
+    var netEl = document.getElementById('field-btcNet')
+    var btcNet = netEl ? netEl.value : 'testnet4'
+    var feeEl = document.getElementById('field-btcFee')
+    var fee = parseInt((feeEl ? feeEl.value : '200') || '200', 10)
+    if (!fee || fee < 0) fee = 200
+    if (!addr) {
+      _btcSetStatus('address를 입력하세요 (📡 getAddress)', true)
+      return
+    }
+    var ex = _btcResolveExplorer(chainId, btcNet)
+    if (!ex) {
+      _btcSetStatus('이 코인은 explorer 자동 fetch 미지원 — prev_tx/vout 직접 입력 후 Send', true)
+      return
+    }
+    _btcSetStatus('조회 중 (' + ex.label + ')...', false)
+    _btcFetchFirstUtxo(ex, addr).then(function (u) {
+      if (!u) {
+        _btcSetStatus('UTXO 없음 — 충전 후 재시도 (또는 prev_tx 직접 입력)', true)
+        return
+      }
+      var ptEl = document.getElementById('field-btcPrevTx')
+      if (ptEl) ptEl.value = u.hex
+      var voEl = document.getElementById('field-btcVout')
+      if (voEl) voEl.value = String(u.vout)
+      var toEl = document.getElementById('field-btcTo')
+      if (toEl && !toEl.value.trim()) toEl.value = addr
+      var amtEl = document.getElementById('field-btcAmount')
+      if (amtEl) amtEl.value = String(Math.max(u.value - fee, 0))
+      if (!state.btxAuto) state.btxAuto = {}
+      state.btxAuto.addr = addr
+      _btcSetStatus('✅ UTXO ' + u.value + ' sat (vout ' + u.vout + ') → prev_tx ' + u.hex.length + ' chars', false)
+    }).catch(function (e) {
+      _btcSetStatus('조회 실패 (' + ((e && e.message) ? e.message : String(e)) + ') — prev_tx 직접 입력 가능', true)
+    })
+  }
+
+  // 자동 모드 Send — prev_tx/vout(Fetch 또는 수동) + to/amount로 build + sign (Send 버튼이 호출)
+  function sendBtcAutoSign () {
+    var prevTxEl = document.getElementById('field-btcPrevTx')
+    var prevTx = prevTxEl ? prevTxEl.value.trim() : ''
+    var voutEl = document.getElementById('field-btcVout')
+    var vout = parseInt((voutEl ? voutEl.value : '') || '', 10)
+    var chainIdEl = document.getElementById('field-btcChainId')
+    var chainId = chainIdEl ? chainIdEl.value.trim() : ''
+    var keyPathEl = document.getElementById('field-btcKeyPath')
+    var keyPath = keyPathEl ? keyPathEl.value.trim() : ''
+    var txTypeEl = document.getElementById('field-btcTxType')
+    var txType = txTypeEl ? txTypeEl.value : 'p2pkh'
+    var toEl = document.getElementById('field-btcTo')
+    var to = toEl ? toEl.value.trim() : ''
+    var amountEl = document.getElementById('field-btcAmount')
+    var amount = amountEl ? amountEl.value.trim() : ''
+    if (!prevTx) {
+      _btcSetStatus('prev_tx 필요 ([Fetch UTXO] 또는 직접 입력)', true)
+      return
+    }
+    if (isNaN(vout) || vout < 0) {
+      _btcSetStatus('vout(output index) 필요 — 0 이상 정수', true)
+      return
+    }
+    var keyPathError = validateKeyPath(keyPath)
+    if (keyPathError) {
+      _btcSetStatus('keyPath: ' + keyPathError, true)
+      return
+    }
+    if (!chainId) {
+      _btcSetStatus('chainId 필요', true)
+      return
+    }
+    if (!to) {
+      _btcSetStatus('To 주소 필요 (self-send이면 내 주소)', true)
+      return
+    }
+    if (!amount) {
+      _btcSetStatus('amount 필요 ([Fetch UTXO]가 자동 채움)', true)
+      return
+    }
+    var startMs = Date.now()
+    var dcent = _getDcent()
+    var builtTx
+    try {
+      builtTx = dcent.getBitcoinTransactionObject()
+      dcent.addBitcoinTransactionInput(builtTx, prevTx, vout, txType, keyPath)
+      dcent.addBitcoinTransactionOutput(builtTx, txType, amount, to)
+    } catch (e) {
+      appendLog({ method: 'signTransaction(auto-build)', request: { txType: txType, vout: vout, amount: amount, to: to }, error: normalizeError(e), latencyMs: Date.now() - startMs })
+      _btcSetStatus('build 실패 — 결과 로그 확인', true)
+      return
+    }
+    var transport = _getTransportOption()
+    var signInput = { method: 'signTransaction', chainId: chainId, payload: { keyPath: keyPath, transaction: builtTx } }
+    if (transport !== undefined) signInput.transport = transport
+    var req = { chainId: chainId, keyPath: keyPath, transaction: builtTx }
+    _btcSetStatus('디바이스 서명 요청 중...', false)
+    dcent.sign(signInput).then(_unwrapV1Envelope).then(function (result) {
+      appendLog({ method: 'signTransaction', chainId: chainId, keyPath: keyPath, request: req, response: result, latencyMs: Date.now() - startMs, deviceFirmware: state.device && state.device.firmware })
+      _btcSetStatus('✅ 서명 완료 — 결과 로그 확인', false)
+    }).catch(function (err) {
+      appendLog({ method: 'signTransaction', chainId: chainId, keyPath: keyPath, request: req, error: normalizeError(err), latencyMs: Date.now() - startMs })
+      _btcSetStatus('서명 실패 — 결과 로그 확인', true)
+    })
+  }
+
   // ── sendSignTxNonEvm (m06-01-03) ──
   function sendSignTxNonEvm () {
     var methodDef = state.selectedMethodDef
     if (!methodDef) return
+
+    // m09-04-15 follow-up: Bitcoin 자동 모드 → UTXO fetch 결과로 build+sign
+    if (methodDef.family === 'bitcoin' && state.btxSignMode === 'auto') {
+      sendBtcAutoSign()
+      return
+    }
 
     var chainIdEl = document.getElementById('field-chainId')
     var keyPathEl = document.getElementById('field-keyPath')
@@ -3095,7 +3394,6 @@
     getBitcoinTxState: function () { return state.bitcoinTx },
     resetBitcoinTxState: function () {
       state.bitcoinTx.current = null
-      state.bitcoinTx.coinType = null
       state.bitcoinTx.chainId = null
       state.bitcoinTx.inputs = 0
       state.bitcoinTx.outputs = 0

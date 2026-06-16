@@ -45,32 +45,22 @@ describe('[v2 e2e] playground bitcoin tx builder', () => {
       const api = (window as any)._playgroundTestAPI
       const calls: Array<{ method: string; args: any[] }> = []
 
-      // facade builder들은 동기 — v1 1:1 port. mock도 동기.
-      const mockBuildTx = () => ({
-        request: {
-          header: { version: '1.0', request_to: '' },
-          body: {
-            command: 'transaction',
-            parameter: { version: 1, locktime: 0, input: [], output: [] },
-          },
-        },
-      })
-
+      // m09-04-15: builder가 v2 flat wire(BitcoinWireTransaction = {inputs[],outputs[]})를 직접 생성.
+      // mock도 실 builder의 flat 매핑을 미러 (별도 변환 함수 없음).
       const mockDcent = {
-        getBitcoinTransactionObject: (coinType: string) => {
-          calls.push({ method: 'getBitcoinTransactionObject', args: [coinType] })
-          const tx = mockBuildTx()
-          tx.request.header.request_to = coinType
-          return tx
+        // m09-04-15 RE-AUDIT: v2는 인자 없음(coinType 제거). 실제 전달 인자를 그대로 기록.
+        getBitcoinTransactionObject: (...args: unknown[]) => {
+          calls.push({ method: 'getBitcoinTransactionObject', args })
+          return { inputs: [], outputs: [] } as any
         },
         addBitcoinTransactionInput: (tx: any, prevTx: string, utxoIdx: number, type: string, key: string) => {
           calls.push({ method: 'addBitcoinTransactionInput', args: [tx, prevTx, utxoIdx, type, key] })
-          tx.request.body.parameter.input.push({ prev_tx: prevTx, utxo_idx: utxoIdx, type, key })
+          tx.inputs.push({ rawTransaction: prevTx, index: utxoIdx, txType: type, keyPath: key })
           return tx
         },
         addBitcoinTransactionOutput: (tx: any, type: string, value: any, to: string) => {
           calls.push({ method: 'addBitcoinTransactionOutput', args: [tx, type, value, to] })
-          tx.request.body.parameter.output.push({ type, value, to })
+          tx.outputs.push({ txType: type, amount: String(value), addresses: [to] })
           return tx
         },
         sign: (input: any) => {
@@ -82,7 +72,7 @@ describe('[v2 e2e] playground bitcoin tx builder', () => {
         },
         popupWindowClose: () => {},
         setConnectionListener: () => {},
-        // expose enum for renderBitcoinTxBuilderForm — keys must match isBitcoinTxCoinType whitelist
+        // (v2 btx는 coinType 미사용 — 이 enum은 inert. getAddress v1-path 재사용 대비로만 잔존)
         coinType: {
           BITCOIN: 'bitcoin',
           BITCOIN_TESTNET: 'bitcoin_testnet',
@@ -152,21 +142,22 @@ describe('[v2 e2e] playground bitcoin tx builder', () => {
     await setupPlaygroundWithSpy()
 
     await page.click('[data-method-id="btx:new"]')
-    // default coinType BITCOIN, default chainId
+    // v2: coinType 폼 없음 — default chainId만 (코인은 chainId가 결정)
     await page.click('#btn-send')
     await new Promise((r) => setTimeout(r, 200))
 
     const calls = await page.evaluate(() => (window as any)._mockCalls as any[])
     const newCall = calls.find((c) => c.method === 'getBitcoinTransactionObject')
     expect(newCall).toBeDefined()
-    // facade는 coinType enum value(소문자) 전달
-    expect(newCall.args[0]).toBe('bitcoin')
+    // facade는 v2에서 인자 없음(coinType 제거, RE-AUDIT 2026-06-15) — playground는 무인자 호출
+    expect(newCall.args).toEqual([])
 
     const btxState = await page.evaluate(() => (window as any)._playgroundTestAPI.getBitcoinTxState())
     expect(btxState.current).not.toBeNull()
     expect(btxState.inputs).toBe(0)
     expect(btxState.outputs).toBe(0)
-    expect(btxState.coinType).toBe('BITCOIN')
+    // v2: state.coinType 제거 — chainId(default)만 보유
+    expect(btxState.chainId).toContain('bip122:')
 
     // state note text 확인 (re-select method to re-render note from current state)
     await page.click('[data-method-id="btx:new"]')
@@ -176,7 +167,7 @@ describe('[v2 e2e] playground bitcoin tx builder', () => {
   }, 30000)
 
   // ────────────────────────────────────────────────────────
-  // T-E2E-03: btx:addInput → inputs=1, current.parameter.input.length === 1
+  // T-E2E-03: btx:addInput → inputs=1, current.inputs.length === 1 (flat)
   // ────────────────────────────────────────────────────────
   it('T-E2E-03: btx:addInput → inputs=1', async () => {
     await setupPlaygroundWithSpy()
@@ -203,7 +194,8 @@ describe('[v2 e2e] playground bitcoin tx builder', () => {
 
     const btxState = await page.evaluate(() => (window as any)._playgroundTestAPI.getBitcoinTxState())
     expect(btxState.inputs).toBe(1)
-    expect(btxState.current.request.body.parameter.input.length).toBe(1)
+    // m09-04-15: builder가 flat wire 직접 생성 — current는 {inputs[],outputs[]} (nested 아님)
+    expect(btxState.current.inputs.length).toBe(1)
   }, 30000)
 
   // ────────────────────────────────────────────────────────
@@ -234,7 +226,8 @@ describe('[v2 e2e] playground bitcoin tx builder', () => {
 
     const btxState = await page.evaluate(() => (window as any)._playgroundTestAPI.getBitcoinTxState())
     expect(btxState.outputs).toBe(1)
-    expect(btxState.current.request.body.parameter.output.length).toBe(1)
+    // m09-04-15: flat wire — current.outputs (nested parameter.output 아님)
+    expect(btxState.current.outputs.length).toBe(1)
   }, 30000)
 
   // ────────────────────────────────────────────────────────
@@ -275,8 +268,13 @@ describe('[v2 e2e] playground bitcoin tx builder', () => {
     expect(signArg.payload).toBeDefined()
     expect(signArg.payload.keyPath).toBe("m/84'/0'/0'/0/0")
     expect(signArg.payload.transaction).toBeDefined()
-    expect(signArg.payload.transaction.request.body.parameter.input.length).toBe(1)
-    expect(signArg.payload.transaction.request.body.parameter.output.length).toBe(1)
+    // m09-04-15: builder가 flat wire를 직접 생성하여 변환 없이 송신. payload.transaction은
+    // flat {inputs[],outputs[]} (nested request.body.parameter 아님).
+    expect(signArg.payload.transaction.inputs.length).toBe(1)
+    expect(signArg.payload.transaction.outputs.length).toBe(1)
+    // nested v1 envelope 잔재 금지 — flat wire만 송신
+    expect(signArg.payload.transaction.request).toBeUndefined()
+    expect(signArg.payload.transaction.inputs[0].rawTransaction).toBeDefined()
     // OLD shape 절대 금지 (DC-2221)
     expect(signArg.chain).toBeUndefined()
 

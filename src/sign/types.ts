@@ -6,7 +6,7 @@
  *
  * **m12-03**: V1Response를 generic으로 확장해 `body.parameter`에 typed narrow를 지원.
  * 기존 호출자는 default `TParam = Record<string, unknown>`으로 backward-compat.
- * `CallOptions` / `DeviceInfoPayload` 신설.
+ * `DeviceInfoPayload` 신설.
  *
  * 룰 준수:
  *   - mutation-isolation: V1Response는 매 호출마다 새 객체로 생성 (call.ts 참조)
@@ -59,26 +59,6 @@ export interface V1ResponseBody<TParam = Record<string, unknown>> {
 export interface V1Response<TParam = Record<string, unknown>> {
   header: V1ResponseHeader
   body: V1ResponseBody<TParam>
-  /**
-   * (Session deviceId, 2026-05-22) sdk가 응답 envelope top-level에 echo한 HW device_id.
-   * dApp이 첫 응답에서 캡처하여 후속 호출의 method param `deviceId`로 사용. transport
-   * 미초기화 / disconnect 후 응답이면 undefined. cross-repo-interface-edit 룰의 양방향 짝.
-   */
-  deviceId?: string
-}
-
-/**
- * dApp-facing 메서드 옵션 — deviceId (m12-03).
- *
- * HIGH / MEDIUM priority facade 메서드의 마지막 optional 인자.
- * dApp이 이전 응답 `V1Response.deviceId` 에서 캡처한 값을 전달하면
- * `_call` → PopupTransport.setPendingDeviceId → sdk handshake로 전달되어
- * 특정 디바이스에 자동 연결 (picker 없음).
- *
- * 미명시 시 기존 흐름 (picker UI 또는 이전 session binding).
- */
-export interface CallOptions {
-  deviceId?: string
 }
 
 /* eslint-disable camelcase */

@@ -50,12 +50,6 @@ export interface SignInput {
    */
   payload: Record<string, unknown>
   /**
-   * (Session deviceId, 2026-05-22) dApp이 이전 응답에서 캡처한 HW `device_id`. 명시 시 sdk가
-   * 권한 캐시된 device 중 매칭되는 것에 picker 없이 자동 연결. mismatch면 V1Response failure
-   * (code 4001). 미명시 시 기존 picker 흐름.
-   */
-  deviceId?: string
-  /**
    * (m09-04-03) per-call HW transport 힌트. 명시 시 sdk popup이 picker UI를 skip하고
    * 해당 transport로 즉시 connect한다. 미명시 시 sdk picker UI fallback.
    *
@@ -116,14 +110,10 @@ export async function sign (input: SignInput): Promise<V1Response> {
   _validateSignPayload(safeChainId, input.payload)
   // (m09-04-03) transport 옵션 sanitize — 'hid' | 'ble' | undefined (INVALID_PARAMS throw 가능)
   const safeTransport = _sanitizeTransportOption(input.transport)
-  // (Session deviceId, 2026-05-22) deviceId hint를 _call로 전달. _call이 PopupTransport
-  // .setPendingDeviceId로 등록 + handshake에 echo. dApp이 sign({..., deviceId})로 호출하면
-  // sdk가 자동 cached connect 시도.
   return _call({
     method: safeMethod,
     chainId: safeChainId,
     params: input.payload,
-    deviceId: input.deviceId,
     transport: safeTransport,
   })
 }

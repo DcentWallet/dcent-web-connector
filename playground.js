@@ -557,10 +557,6 @@
     // m09-04-15 follow-up: bitcoin signTx 폼 모드 ('json'=Transaction JSON 직접 / 'auto'=UTXO fetch→build→sign)
     btxSignMode: 'json',
     btxAuto: {}, // 자동 모드 캐시 (prevTx/vout/value/net/addr 등)
-    // m12-03: sticky deviceId bar state (session memory only — no localStorage)
-    cachedDeviceId: null, // string | null — first captured from response envelope.deviceId
-    deviceIdOverride: '', // string — textbox current value (manual edit overrides cachedDeviceId)
-    useDeviceId: false, // boolean — checkbox ON/OFF
   }
 
   // ── DOM refs ──
@@ -578,11 +574,6 @@
   var btnPause = $('btn-pause')
   var btnClear = $('btn-clear')
   var btnCopy = $('btn-copy')
-  // m12-03: deviceId bar refs
-  var chkUseDeviceId = $('chk-use-deviceid')
-  var inputDeviceId = $('input-deviceid')
-  var btnCopyDeviceId = $('btn-copy-deviceid')
-  var btnClearDeviceId = $('btn-clear-deviceid')
 
   // ── SDK facade reference (m08-01-05) ──
   // index-v2.html이 window.dcent를 default export object로 alias함:
@@ -603,50 +594,6 @@
     var val = el.value
     if (val === 'hid' || val === 'ble') return val
     return undefined // '' → undefined: 옵션 미전달 (dcent.sign이 'auto' handshake 전송)
-  }
-
-  // ── DeviceId bar helpers (m12-03) ──
-
-  /**
-   * 응답 envelope에서 deviceId를 캡처한다.
-   * - 첫 캡처만 state.cachedDeviceId에 저장 (이후 응답은 무시 — sticky pattern).
-   * - textbox도 자동 채워지고 체크박스를 ON으로 설정한다.
-   * - boundary-validation: string 타입 + 비어있지 않음 확인 후 캡처.
-   */
-  function _captureDeviceIdFromEnvelope (envelope) {
-    if (!envelope || typeof envelope !== 'object') return
-    var did = envelope.deviceId
-    if (typeof did !== 'string' || did.length === 0) return
-    if (state.cachedDeviceId) return // 이미 캡처됨 — sticky (T-U-PG-DEVID-03)
-    state.cachedDeviceId = did
-    state.deviceIdOverride = did
-    state.useDeviceId = true
-    if (inputDeviceId) inputDeviceId.value = did
-    if (chkUseDeviceId) chkUseDeviceId.checked = true
-  }
-
-  /**
-   * 현재 deviceId 옵션 객체를 반환한다.
-   * - 체크박스 OFF 또는 textbox 비어있으면 undefined 반환 (wire에 deviceId 미포함).
-   * - boundary-validation: string + 비어있지 않음 강제.
-   */
-  function _getDeviceIdOption () {
-    if (!state.useDeviceId) return undefined
-    var val = inputDeviceId ? inputDeviceId.value.trim() : state.deviceIdOverride
-    if (typeof val !== 'string' || val.length === 0) return undefined
-    return val
-  }
-
-  /**
-   * DeviceId bar의 Clear 버튼 핸들러.
-   * state.cachedDeviceId + textbox + 체크박스를 초기화한다 (T-U-PG-DEVID-05).
-   */
-  function _clearDeviceId () {
-    state.cachedDeviceId = null
-    state.deviceIdOverride = ''
-    state.useDeviceId = false
-    if (inputDeviceId) inputDeviceId.value = ''
-    if (chkUseDeviceId) chkUseDeviceId.checked = false
   }
 
   // ── Build Tree DOM ──
@@ -2163,12 +2110,9 @@
     // method별 인자 수집 + facade 호출. async IIFE로 sync throw → Promise rejection 통일.
     var callPromise = (function () {
       try {
-        // m12-03: deviceId option — read once per call dispatch
-        var deviceIdOpt = _getDeviceIdOption()
-
         if (name === 'info') return dcent.info()
         if (name === 'getDeviceInfo') return dcent.getDeviceInfo()
-        if (name === 'getAccountInfo') return dcent.getAccountInfo(deviceIdOpt ? { deviceId: deviceIdOpt } : undefined)
+        if (name === 'getAccountInfo') return dcent.getAccountInfo()
 
         if (name === 'setLabel') {
           var labelEl = document.getElementById('field-label')
@@ -2189,7 +2133,7 @@
             return Promise.reject(new Error('Invalid JSON: ' + e.message))
           }
           var sanitized = _sanitizeSyncAccountInfos(parsed)
-          return dcent.syncAccount(sanitized, deviceIdOpt ? { deviceId: deviceIdOpt } : undefined)
+          return dcent.syncAccount(sanitized)
         }
 
         if (name === 'selectAddress') {
@@ -2209,7 +2153,7 @@
           }
           // dapp-input-sanitization: each element → string (silent coerce)
           var addrs = addrParsed.map(function (a) { return String(a) })
-          return dcent.selectAddress(addrs, deviceIdOpt ? { deviceId: deviceIdOpt } : undefined)
+          return dcent.selectAddress(addrs)
         }
 
         if (name === 'getAddress') {
@@ -2239,12 +2183,10 @@
             if (addressFormatRaw !== '') {
               v2Input.addressFormat = addressFormatRaw
             }
-            // m12-03: deviceId inject into v2 input object
-            if (deviceIdOpt) v2Input.deviceId = deviceIdOpt
             return dcent.getAddress(v2Input)
           }
 
-          // v1 path: dcent.getAddress(coinType, path, prefix, opts?) — 기존 동작 + m12-03 opts
+          // v1 path: dcent.getAddress(coinType, path, prefix) — 기존 동작
           var ctEl = document.getElementById('field-coinType')
           var pathEl = document.getElementById('field-path')
           var prefixEl = document.getElementById('field-prefix')
@@ -2262,7 +2204,7 @@
           var path = pathEl ? pathEl.value.trim() : ''
           var prefixRaw = prefixEl ? prefixEl.value.trim() : ''
           var prefix = prefixRaw === '' ? null : prefixRaw
-          return dcent.getAddress(coinTypeValue, path, prefix, deviceIdOpt ? { deviceId: deviceIdOpt } : undefined)
+          return dcent.getAddress(coinTypeValue, path, prefix)
         }
 
         if (name === 'getXPUB') {
@@ -2270,9 +2212,9 @@
           var bipEl = document.getElementById('field-bip32name')
           var key = keyEl ? keyEl.value.trim() : ''
           var bip32name = bipEl ? bipEl.value.trim() : ''
-          // facade signature: getXPUB(key, bip32name, opts?). bip32name이 빈 값이면 undefined 전달
+          // facade signature: getXPUB(key, bip32name). bip32name이 빈 값이면 undefined 전달
           // (facade 내부에서 default 'Bitcoin seed' 처리는 spec에 명시되지 않으므로 그대로 위임).
-          return dcent.getXPUB(key, bip32name === '' ? undefined : bip32name, deviceIdOpt ? { deviceId: deviceIdOpt } : undefined)
+          return dcent.getXPUB(key, bip32name === '' ? undefined : bip32name)
         }
 
         return Promise.reject(new Error('Unknown method: ' + methodId))
@@ -2283,11 +2225,7 @@
     })()
 
     // common envelope unwrap + log
-    // m12-03: capture deviceId from raw V1Response envelope before unwrap strips it
-    callPromise.then(function (rawResp) {
-      _captureDeviceIdFromEnvelope(rawResp)
-      return rawResp
-    }).then(_unwrapV1Envelope).then(function (result) {
+    callPromise.then(_unwrapV1Envelope).then(function (result) {
       if (name === 'getDeviceInfo') {
         state.device = result
       }
@@ -3159,37 +3097,6 @@
     }
   })
 
-  // ── DeviceId bar event listeners (m12-03) ──
-
-  if (chkUseDeviceId) {
-    chkUseDeviceId.addEventListener('change', function () {
-      state.useDeviceId = chkUseDeviceId.checked
-    })
-  }
-
-  if (inputDeviceId) {
-    inputDeviceId.addEventListener('input', function () {
-      // T-U-PG-DEVID-04: 사용자 수동 편집 → deviceIdOverride 갱신 (cachedDeviceId는 그대로)
-      state.deviceIdOverride = inputDeviceId.value
-    })
-  }
-
-  if (btnCopyDeviceId) {
-    btnCopyDeviceId.addEventListener('click', function () {
-      // T-U-PG-DEVID-06: Copy 버튼 → clipboard
-      var val = inputDeviceId ? inputDeviceId.value.trim() : ''
-      if (val && navigator.clipboard) {
-        navigator.clipboard.writeText(val).catch(function () {})
-      }
-    })
-  }
-
-  if (btnClearDeviceId) {
-    btnClearDeviceId.addEventListener('click', function () {
-      _clearDeviceId() // T-U-PG-DEVID-05
-    })
-  }
-
   // ── Utils ──
   // m08-01-05: _genId 제거 — facade의 _call이 내부 ID 생성 (singleton.ts/idGen.ts)
 
@@ -3233,10 +3140,6 @@
     appendLog: appendLog,
     // b08-01: envelope unwrap helper + popup-only onConnect 검증용 노출
     _unwrapV1Envelope: _unwrapV1Envelope,
-    // m12-03: deviceId bar helpers — unit testable
-    _captureDeviceIdFromEnvelope: _captureDeviceIdFromEnvelope,
-    _getDeviceIdOption: _getDeviceIdOption,
-    _clearDeviceId: _clearDeviceId,
     // placeholder substitution helpers — unit testable
     _substituteSolanaSigner: _substituteSolanaSigner,
     _substituteAlgorandSender: _substituteAlgorandSender,

@@ -60,7 +60,7 @@ import {
   getCzonePrifix,
 } from './coinTypeValidators'
 import { dcentException } from '../v1/dcent-exception'
-import type { V1Response, CallOptions } from './types'
+import type { V1Response } from './types'
 
 /**
  * BTC family 주소 형식 enum (m09-04-09).
@@ -151,11 +151,6 @@ export interface GetAddressV2Input {
    * v1의 coinType='BTC-SEGWIT' 명시 신호를 v2 wire에서 회복.
    */
   addressFormat?: AddressFormat
-  /**
-   * (m12-03 Layer B) 세션 deviceId — 이전 응답 `V1Response.deviceId`에서 캡처한 값.
-   * 특정 디바이스에 자동 연결 (picker 없음). 미명시 시 기존 흐름.
-   */
-  deviceId?: string
 }
 
 /**
@@ -203,19 +198,16 @@ async function _getAddressV2 (input: GetAddressV2Input): Promise<V1Response> {
     params.addressFormat = safeAddressFormat
   }
 
-  return _call({ method: 'getAddress', chainId: safeChainId, params, deviceId: input.deviceId })
+  return _call({ method: 'getAddress', chainId: safeChainId, params })
 }
 
 /**
  * v1 getAddress — coinType 기반 시그니처 (m08-01-02.5 그대로).
- *
- * **m12-03 Layer B**: `opts?.deviceId` 추가. trailing optional → backward-compat.
  */
 async function _getAddressV1 (
   coinType: string,
   path: string,
   prefix: string | number | null = null,
-  opts?: CallOptions,
 ): Promise<V1Response> {
   if (!isAvaliableCoinType(coinType)) {
     throw dcentException('coin_type_error', 'not supported coin type')
@@ -240,7 +232,7 @@ async function _getAddressV1 (
     params.optionParam = Number(prefix)
   }
 
-  const res = await _call({ method: 'getAddress', params, deviceId: opts?.deviceId })
+  const res = await _call({ method: 'getAddress', params })
 
   // czone 응답에서 response_from을 원래 coinType으로 복원 (v1 src-v1/index.js#l808)
   if (res.header.response_from === 'czone') {
@@ -275,18 +267,16 @@ export function getAddress (
   coinType: string,
   path: string,
   prefix?: string | number | null,
-  opts?: CallOptions,
 ): Promise<V1Response>
 export function getAddress (
   arg1: GetAddressV2Input | string,
   arg2?: string,
   arg3?: string | number | null,
-  arg4?: CallOptions,
 ): Promise<V1Response> {
   // 런타임 분기:
   //   - Array → 명시적 거부 (typeof [] === 'object' 함정 방지)
-  //   - plain object → v2 path (deviceId는 input.deviceId에서)
-  //   - string → v1 path (deviceId는 arg4?.deviceId에서)
+  //   - plain object → v2 path
+  //   - string → v1 path
   if (Array.isArray(arg1)) {
     return Promise.reject(
       dcentException(
@@ -300,7 +290,7 @@ export function getAddress (
   }
   // string 외 타입(undefined / number / boolean)도 v1 경로로 보내면
   // isAvaliableCoinType에서 coin_type_error로 reject되므로 안전.
-  return _getAddressV1(arg1 as string, arg2 as string, arg3 ?? null, arg4)
+  return _getAddressV1(arg1 as string, arg2 as string, arg3 ?? null)
 }
 
 /**
@@ -308,14 +298,10 @@ export function getAddress (
  *
  * Extended Public Key 조회. BIP44 key path가 최소 두 depth로 hardened되어야 함.
  *
- * **m12-03 Layer B (HIGH)**: `opts?: CallOptions` 추가 — `opts?.deviceId`로 특정 디바이스 지정.
- * 2-arg 기존 호출자에 영향 없음 (trailing optional).
- *
  * @param key BIP44 key path
  * @param bip32name BIP32 master key 파생용 string (default 'Bitcoin seed')
- * @param opts 선택적 CallOptions (deviceId 등)
  * @returns XPUB가 담긴 V1Response
  */
-export function getXPUB (key: string, bip32name: string, opts?: CallOptions): Promise<V1Response> {
-  return _call({ method: 'getXPUB', params: { key, bip32name }, deviceId: opts?.deviceId })
+export function getXPUB (key: string, bip32name: string): Promise<V1Response> {
+  return _call({ method: 'getXPUB', params: { key, bip32name } })
 }

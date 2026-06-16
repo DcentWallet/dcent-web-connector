@@ -43,15 +43,6 @@ export interface CallInput {
    */
   chainId?: string
   /**
-   * (Session deviceId, 2026-05-22) dApp이 이전 응답에서 캡처한 deviceId를 후속 호출에 전달.
-   * PopupTransport의 setPendingDeviceId로 등록되어 sdk handshake params로 송신됨. sdk는
-   * 권한 캐시된 device 중 deviceId 매칭하는 것에 자동 연결 (picker 없음). mismatch면 sdk가
-   * ProviderRpcError(4001)을 envelope.error로 반환 → V1Response failure.
-   *
-   * 미명시 시 기존 흐름 (picker UI). 첫 호출에는 dApp이 deviceId를 모르므로 undefined.
-   */
-  deviceId?: string
-  /**
    * (m09-04-03) sanitize된 transport 힌트. PopupTransport의 setPendingTransport로 등록되어
    * sdk handshake params.transport로 송신됨. popup lifecycle 단위 first-wins (audit R12).
    * undefined 시 toWireTransport에서 'auto'로 변환 → sdk picker UI fallback.
@@ -134,19 +125,6 @@ export async function _call (input: CallInput): Promise<V1Response> {
   const transport = _getTransport()
   const id = _genId()
 
-  // (Session deviceId, 2026-05-22) deviceId hint를 다음 handshake에 전달. PopupTransport의
-  // 첫 send가 sendHandshake를 trigger하기 전 본 setter가 호출되어야 함. 본 _call이 모든
-  // dcent.* method의 단일 entry이므로 setter call site는 1곳으로 충분.
-  // PopupTransport 외 transport 타입은 본 메서드를 가지지 않을 수 있으므로 type guard.
-  if (
-    'setPendingDeviceId' in transport &&
-    typeof (transport as { setPendingDeviceId?: unknown }).setPendingDeviceId === 'function'
-  ) {
-    ;(transport as { setPendingDeviceId: (id: string | undefined) => void }).setPendingDeviceId(
-      input.deviceId,
-    )
-  }
-
   // (m09-04-03) transport 힌트를 다음 handshake에 전달. popup lifecycle 단위 first-wins.
   // setPendingTransport가 있는 transport(PopupTransport)에만 적용.
   if (
@@ -170,10 +148,6 @@ export async function _call (input: CallInput): Promise<V1Response> {
       }),
     )
 
-    // boundary-validation: envelope shape. (Session deviceId) envelope.deviceId 캐시 — 성공/
-    // 에러 두 경로 모두 응답에 echo.
-    const responseDeviceId = envelope?.deviceId
-
     if (envelope && envelope.error) {
       // popup(sdk PopupListener)이 envelope.error로 실패를 보낸 경우. sdk는 ProviderRpcError의
       // number code (예: -32601 method_not_found, -32603 internal_error, -32602 invalid_params)를
@@ -186,8 +160,6 @@ export async function _call (input: CallInput): Promise<V1Response> {
       const message = envelope.error.message ?? ''
       const providerErr = new ProviderError(code, message, envelope.error.data)
       const v1Err = providerErrorToV1(providerErr)
-      // (Session deviceId) error 경로에도 deviceId echo — m11-01-XX 패턴 유지.
-      if (responseDeviceId !== undefined) v1Err.deviceId = responseDeviceId
       return v1Err
     }
 
@@ -199,8 +171,6 @@ export async function _call (input: CallInput): Promise<V1Response> {
     } else {
       v1 = wrapV1Success(result, input.method)
     }
-    // (Session deviceId) 응답에 deviceId echo — dApp이 result.deviceId 캡처 가능.
-    if (responseDeviceId !== undefined) v1.deviceId = responseDeviceId
     return v1
   } catch (err) {
     // PopupTransport.send가 reject한 ProviderError 또는 generic Error

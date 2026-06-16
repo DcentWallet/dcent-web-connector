@@ -241,7 +241,7 @@
       "xahau:mainnet/slip44:144",
       "xahau:testnet/slip44:21337"
     ],
-    "note": "Xahau (XRPL sidechain) payment transaction. Uses same shape as XRP Ledger. Note: signTransaction -32601 expected — wm XahauAPIImpl not yet registered via WalletConnect. Layer 1 getAddress passes.",
+    "note": "Xahau (XRPL sidechain) payment transaction. Uses same shape as XRP Ledger. ✅ wm 0.7.14: xahau signTransaction slot 등록됨(ripple 로직 공유 + signTransactionFromWire가 xahau preparedFee 특수처리) — 더 이상 -32601 아님(이전 노트 stale). Account/Destination/Amount 교체 후 송금.",
     "sourceUrl": "https://xahau.network/",
     "transaction": {
       "TransactionType": "Payment",
@@ -286,7 +286,7 @@
     "applicableChainIds": [
       "stellar:pubnet/slip44:148"
     ],
-    "note": "Stellar Operation.payment for native XLM. Edit destination/amount before send. Note: signTransaction -32601 expected — wm StellarAPIImpl not yet registered via WalletConnect. Layer 1 getAddress passes.",
+    "note": "Stellar Operation.payment for native XLM. Edit destination/amount before send. ✅ wm 0.7.14: stellar signTransaction/signMessage/signAuthEntry(Soroban auth entry) slot 모두 등록됨(stellar/index.js) — 더 이상 -32601 아님(이전 노트 stale). 토큰(credit-asset)/Soroban 컨트랙트도 wm 수용.",
     "sourceUrl": "https://stellar.github.io/js-stellar-sdk/Operation.payment.html",
     "transaction": {
       "type": "payment",
@@ -311,7 +311,7 @@
       "cip34:1-764824073",
       "cip34:0-2"
     ],
-    "note": "Minimal ADA payment (TransactionCommon shape). Edit sender/recipient before send. Note: signTransaction -32601 expected — wm CardanoAPIImpl not yet registered via WalletConnect. Layer 1 getAddress passes.",
+    "note": "Minimal ADA payment (wm-internal TransactionCommon — Shape 2 pass-through). Edit sender/recipient before send. ✅ wm 0.7.14: cardano signTransaction slot 등록됨(cardano/index.js) — 더 이상 -32601 아님(이전 노트 stale). dApp CIP-30 CBOR signTx는 ada-cbor-signtx preset, CIP-8/95 메시지 서명은 signData(wm signDataFromWire) 참조.",
     "sourceUrl": "https://cips.cardano.org/cips/cip30/",
     "transaction": {
       "type": "transfer",
@@ -319,6 +319,20 @@
       "sender": "addr1qy2z6xu9y07vkdnx26jq06l7jqnmhv8jh2v8sth47pltfq4vnv7mhjy7p2d3zf9p9xr2hq4wv3wgdl8p2c8kpv7lgfqcmfr7p",
       "recipient": "addr1qy2z6xu9y07vkdnx26jq06l7jqnmhv8jh2v8sth47pltfq4vnv7mhjy7p2d3zf9p9xr2hq4wv3wgdl8p2c8kpv7lgfqcmfr7p",
       "amount": "1000000"
+    }
+  },
+  {
+    "id": "ada-cbor-signtx",
+    "label": "Cardano dApp signTransaction (CIP-30 CBOR — native asset)",
+    "family": "cardano",
+    "applicableChainIds": [
+      "cip34:1-764824073",
+      "cip34:0-2"
+    ],
+    "note": "댑 요청 — CIP-30 api.signTx(CBOR). wm cardano/wire-convert가 {txCbor} 또는 top-level hex(0x 허용, 4-element array 0x84 prefix, ≥100 hex)를 감지해 signCardanoCbor로 라우팅(Shape 0). 예시 CBOR(wm fixture)은 input 1개 + native-asset 출력(policy 4444..., asset 'USDM'=445553444d, amount 5000 + 2 ADA) + fee 0.17 ADA. ⚠️ 실제 dApp은 cardano-serialization-lib(@emurgo/csl)로 CBOR 생성. 디바이스는 CBOR body 해시를 서명만 하고 UTXO 유효성은 미검증 → placeholder input(aaaa...)으로도 서명 동작 확인 가능하나 broadcast 불가. 본인 주소/실제 UTXO로 교체 시 실송금.",
+    "sourceUrl": "https://cips.cardano.org/cips/cip30/",
+    "transaction": {
+      "txCbor": "84a30081825820aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa00018182581d60f2f2f2f2f2f2f2f2f2f2f2f2f2f2f2f2f2f2f2f2f2f2f2f2f2f2f2f2821a001e8480a1581c44444444444444444444444444444444444444444444444444444444a1445553444d191388021a00029810a0f5f6"
     }
   },
   {
@@ -375,7 +389,7 @@
       "constellation:mainnet/slip44:1137",
       "constellation:testnet/slip44:1137"
     ],
-    "note": "Constellation DAG transfer — wire source/destination shape (wm constellation/wire-convert.js convertTransaction). amount 단위 DATUM (1 DAG = 1e8). source/destination 수정 후 송금. signTransaction -32601 expected — wm ConstellationAPIImpl 미등록(WalletConnect 라우팅 갭, preset 값 문제 아님). Layer 1 getAddress passes.",
+    "note": "Constellation DAG transfer — wire source/destination shape (wm constellation/wire-convert.js convertTransaction). amount 단위 DATUM (1 DAG = 1e8). source/destination 수정 후 송금. ✅ wm 0.7.14: constellation signTransaction slot 등록됨 — 더 이상 -32601 아님(이전 노트 stale). Layer 1 getAddress passes.",
     "sourceUrl": "https://docs.constellationnetwork.io/",
     "transaction": {
       "type": "transfer",
@@ -403,6 +417,127 @@
       "nid": "0x100",
       "nonce": "0x1",
       "version": "0x3"
+    }
+  },
+  {
+    "id": "sol-spl-transfer",
+    "label": "Solana SPL token transfer (plain JSON, data: 0x hex)",
+    "family": "solana",
+    "applicableChainIds": [
+      "solana:5eykt4UsFv8P8NJdTREpY1vzqKqZKvdp/slip44:501"
+    ],
+    "note": "토큰 전송 — SPL Token transfer. programId=SPL Token program(Tokenkeg...), instruction.data=0x03 + amount(u64 LE) → 현재 0x03e803000000000000(=1000 base units). keys: [source ATA(writable), destination ATA(writable), owner(signer)]. ⚠️ pubkey 3개는 placeholder — 본인 디바이스 SOL 주소에서 파생한 실제 ATA(연관 토큰 계정) + owner pubkey로 교체해야 서명 유효. data-hex 형식은 SystemProgram 외 모든 instruction에 권장(sol-transfer-data-hex와 동일 메커니즘). recentBlockhash는 dApp/RPC가 주입. ⚠️ wm는 직렬화 bytes를 opaque 서명 — 기기 펌웨어의 SPL 표시 동작은 HW smoke 검증 필요. SystemProgram.Transfer 외 instruction은 직렬화(sol-transfer-base58-serialized) 경로가 가장 안정적.",
+    "sourceUrl": "https://spl.solana.com/token",
+    "transaction": {
+      "version": 0,
+      "feePayer": "11111111111111111111111111111111",
+      "instructions": [
+        {
+          "programId": "TokenkegQfeZyiNwAJbNbGKPFXCWuBvf9Ss623VQ5DA",
+          "keys": [
+            {
+              "pubkey": "11111111111111111111111111111111",
+              "isSigner": false,
+              "isWritable": true
+            },
+            {
+              "pubkey": "11111111111111111111111111111112",
+              "isSigner": false,
+              "isWritable": true
+            },
+            {
+              "pubkey": "11111111111111111111111111111113",
+              "isSigner": true,
+              "isWritable": false
+            }
+          ],
+          "data": "0x03e803000000000000"
+        }
+      ],
+      "recentBlockhash": "11111111111111111111111111111111"
+    }
+  },
+  {
+    "id": "xrp-iou-payment",
+    "label": "XRP issued-currency (IOU) Payment",
+    "family": "xrp",
+    "applicableChainIds": [
+      "xrpl:0/slip44:144"
+    ],
+    "note": "토큰 전송 — XRP Ledger issued-currency(IOU) Payment. native XRP(drops 문자열)와 달리 Amount가 {currency, issuer, value} 객체. 예시: Bitstamp USD(issuer=rvYAfWj5...). ⚠️ IOU 전송은 Destination이 해당 issuer의 trustline(TrustSet)을 가져야 성공. Account/Destination/issuer/currency/value 송금 전 교체. wm ripple은 Payment의 IOU Amount 객체 수용(ripple/transaction.js). self-send 시 Account==Destination.",
+    "sourceUrl": "https://xrpl.org/payment.html",
+    "transaction": {
+      "TransactionType": "Payment",
+      "Account": "rHb9CJAWyB4rj91VRWn96DkukG4bwdtyTh",
+      "Destination": "rPT1Sjq2YGrBMTttX4GZHjKu9dyfzbpAYe",
+      "Amount": {
+        "currency": "USD",
+        "issuer": "rvYAfWj5gh67oV6fW32ZzP3Aw4Eubs59B",
+        "value": "10"
+      },
+      "Fee": "12",
+      "Sequence": 1,
+      "Flags": 0
+    }
+  },
+  {
+    "id": "near-ft-transfer",
+    "label": "NEAR NEP-141 token transfer (ft_transfer)",
+    "family": "near",
+    "applicableChainIds": [
+      "near:mainnet/slip44:397"
+    ],
+    "note": "토큰 전송 — NEAR NEP-141 ft_transfer. near-api-js Transaction shape(signerId/receiverId/actions[]). wm near/wire-convert가 FunctionCall action을 contract_call로 변환(SUPPORTED_ACTION_TYPES). receiverId=토큰 컨트랙트 계정(예: usdt.tether-token.near), args={receiver_id, amount}는 ⚠️JSON 객체(base64 아님, wm가 structuredClone). amount는 토큰 base units(USDT NEAR=6 decimals → 1000000=1 USDT). deposit='1'(yoctoNEAR, NEP-141 보안 요구), gas=30 TGas. ⚠️ signerId는 device 실 on-chain NEAR 계정이어야 서명 유효(access-key를 view_access_key_list RPC로 조회 — near-transfer note 참조). receiver_id/signerId/receiverId 교체 후 송금. blockHash/nonce는 prepareTransaction이 RPC로 덮어씀.",
+    "sourceUrl": "https://nomicon.io/Standards/Tokens/FungibleToken/Core",
+    "transaction": {
+      "signerId": "sender.near",
+      "receiverId": "usdt.tether-token.near",
+      "actions": [
+        {
+          "type": "FunctionCall",
+          "params": {
+            "methodName": "ft_transfer",
+            "args": {
+              "receiver_id": "receiver.near",
+              "amount": "1000000"
+            },
+            "gas": "30000000000000",
+            "deposit": "1"
+          }
+        }
+      ],
+      "blockHash": "GJp9NRJGBnXqWJAKFxkzD8p9cJTiSNi1J3UWKVBbcfRw",
+      "nonce": 0
+    }
+  },
+  {
+    "id": "near-nft-transfer",
+    "label": "NEAR NEP-171 NFT transfer (nft_transfer)",
+    "family": "near",
+    "applicableChainIds": [
+      "near:mainnet/slip44:397"
+    ],
+    "note": "NFT 전송 — NEAR NEP-171 nft_transfer. FunctionCall action(wm contract_call 경로). receiverId=NFT 컨트랙트 계정, args={receiver_id, token_id}는 JSON 객체. deposit='1'(yoctoNEAR), gas=30 TGas. ⚠️ signerId는 device 실 on-chain NEAR 계정 + 본인 소유 token_id 사용. receiverId(NFT 컨트랙트)/receiver_id/token_id 교체 후 송금. blockHash/nonce는 RPC가 덮어씀.",
+    "sourceUrl": "https://nomicon.io/Standards/Tokens/NonFungibleToken/Core",
+    "transaction": {
+      "signerId": "sender.near",
+      "receiverId": "nft.contract.near",
+      "actions": [
+        {
+          "type": "FunctionCall",
+          "params": {
+            "methodName": "nft_transfer",
+            "args": {
+              "receiver_id": "receiver.near",
+              "token_id": "1"
+            },
+            "gas": "30000000000000",
+            "deposit": "1"
+          }
+        }
+      ],
+      "blockHash": "GJp9NRJGBnXqWJAKFxkzD8p9cJTiSNi1J3UWKVBbcfRw",
+      "nonce": 0
     }
   }
 ]

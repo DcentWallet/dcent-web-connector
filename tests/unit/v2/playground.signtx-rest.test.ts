@@ -174,11 +174,12 @@ it('T-U-REST-03: 14 family inject 시 method 노드 수 = chains 항목 수 (트
 })
 
 // ─────────────────────────────────────────────────────────────────────────────
-// T-U-REST-04: presets.rest.json — 9 entry × 7 필드 모두 valid + transaction object
+// T-U-REST-04: presets.rest.json — ≥9 entry (≥1 per 9 family) × 7 필드 모두 valid + transaction object
+// (토큰/컨트랙트 preset 추가로 family당 다수 entry 허용 — 단 9개 family는 모두 ≥1 entry 유지)
 // ─────────────────────────────────────────────────────────────────────────────
-it('T-U-REST-04: presets.rest.json — 9 entry × 7 필드 모두 valid + transaction object', () => {
+it('T-U-REST-04: presets.rest.json — ≥1 entry per 9 family × 7 필드 모두 valid + transaction object', () => {
   expect(Array.isArray(SAMPLE_REST_PRESETS)).toBe(true)
-  expect(SAMPLE_REST_PRESETS).toHaveLength(9)
+  expect(SAMPLE_REST_PRESETS.length).toBeGreaterThanOrEqual(9)
 
   const expectedFamilies = ['algorand', 'conflux', 'cosmos', 'fil', 'polkadot', 'stacks', 'tezos', 'vechain', 'tron']
   const requiredFields = ['id', 'label', 'family', 'applicableChainIds', 'note', 'sourceUrl', 'transaction']

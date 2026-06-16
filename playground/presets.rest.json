@@ -227,5 +227,97 @@
       "raw_data_hex": "",
       "fee_limit": 0
     }
+  },
+  {
+    "id": "trx-trc20-transfer",
+    "label": "TRON TRC20 token transfer",
+    "family": "tron",
+    "applicableChainIds": [
+      "tron:0x2b6653dc/slip44:195"
+    ],
+    "note": "토큰 전송 — TRC20 transfer. TriggerSmartContract(wm tron/wire-convert.js, selector a9059cbb). 예시: USDT-TRC20(contract_address=TR7NHqjeKQxGTCi8q8ZY4pL8otSzgjLj6t). owner_address는 base58(T...) 또는 hex(41...) 모두 허용 — 현재 디바이스 self 주소. data: a9059cbb + recipient(32바이트, 현재 0 placeholder — 본인 주소 hex 20바이트를 left-pad) + amount(32바이트, 현재 0x3e8=1000=0.001 USDT, 6 decimals). ref_block_*/expiration/timestamp는 wm가 getNodeInfo로 재생성. fee_limit는 컨트랙트 실행비(현재 100 TRX). 기기 펌웨어가 TRC20 토큰 표시 경로 보유.",
+    "sourceUrl": "https://developers.tron.network/docs/trc20-contract-interaction",
+    "transaction": {
+      "raw_data": {
+        "contract": [
+          {
+            "type": "TriggerSmartContract",
+            "parameter": {
+              "value": {
+                "owner_address": "TJRabPrwbZy45sbavfcjinPJC18kjpRTv8",
+                "contract_address": "TR7NHqjeKQxGTCi8q8ZY4pL8otSzgjLj6t",
+                "data": "a9059cbb000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000003e8"
+              },
+              "type_url": "type.googleapis.com/protocol.TriggerSmartContract"
+            }
+          }
+        ],
+        "ref_block_bytes": "0000",
+        "ref_block_hash": "0000000000000000",
+        "expiration": 0,
+        "timestamp": 0
+      },
+      "raw_data_hex": "",
+      "fee_limit": 100000000
+    }
+  },
+  {
+    "id": "trx-trc20-approve",
+    "label": "TRON TRC20 approve (dApp request)",
+    "family": "tron",
+    "applicableChainIds": [
+      "tron:0x2b6653dc/slip44:195"
+    ],
+    "note": "댑 요청 — TRC20 approve(spender,uint256). TRON dApp(JustLend/SunSwap 등)이 토큰 사용 권한을 요청할 때 보내는 TriggerSmartContract(selector 095ea7b3). 예시: USDT-TRC20를 임의 spender에 max 승인. ⚠️ spender(data 1번째 32바이트, 현재 0 placeholder)를 실제 컨트랙트 주소 hex로 교체, unlimited(0xff..ff) 대신 필요 금액만 승인 권장. contract_address/owner_address 교체. fee_limit 100 TRX.",
+    "sourceUrl": "https://developers.tron.network/docs/trc20-contract-interaction",
+    "transaction": {
+      "raw_data": {
+        "contract": [
+          {
+            "type": "TriggerSmartContract",
+            "parameter": {
+              "value": {
+                "owner_address": "TJRabPrwbZy45sbavfcjinPJC18kjpRTv8",
+                "contract_address": "TR7NHqjeKQxGTCi8q8ZY4pL8otSzgjLj6t",
+                "data": "095ea7b30000000000000000000000000000000000000000000000000000000000000000ffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffff"
+              },
+              "type_url": "type.googleapis.com/protocol.TriggerSmartContract"
+            }
+          }
+        ],
+        "ref_block_bytes": "0000",
+        "ref_block_hash": "0000000000000000",
+        "expiration": 0,
+        "timestamp": 0
+      },
+      "raw_data_hex": "",
+      "fee_limit": 100000000
+    }
+  },
+  {
+    "id": "vet-vip180-transfer",
+    "label": "VeChain VIP-180 token transfer",
+    "family": "vechain",
+    "applicableChainIds": [
+      "vechain:b1ac3413d346d43539627e6be7ec1b4a/slip44:818"
+    ],
+    "note": "토큰 전송 — VeChain VIP-180(ERC-20 호환) token transfer. clauses[0].to=토큰 컨트랙트, value=0x0, data=transfer(address,uint256) calldata. 예시: VTHO(VeThor, contract 0x0000...456E65726779). ⚠️ wm vechain은 clauses[0]만 사용(multi-clause 미지원). data recipient(2번째 32바이트, 현재 0 placeholder)를 본인 주소로 교체 시 self-send. amount=0x3e8. ⚠️ wm는 data opaque pass-through — 기기 펌웨어의 VIP-180 표시 동작은 HW smoke 검증 필요. blockRef/nonce는 송금 전 갱신.",
+    "sourceUrl": "https://docs.vechain.org/core-concepts/transactions",
+    "transaction": {
+      "chainTag": 74,
+      "blockRef": "0x0000000000000000",
+      "expiration": 720,
+      "clauses": [
+        {
+          "to": "0x0000000000000000000000000000456E65726779",
+          "value": "0x0",
+          "data": "0xa9059cbb000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000003e8"
+        }
+      ],
+      "gasPriceCoef": 0,
+      "gas": 80000,
+      "dependsOn": null,
+      "nonce": "0x0"
+    }
   }
 ]

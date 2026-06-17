@@ -310,10 +310,9 @@
     "label": "Cardano ADA transfer",
     "family": "cardano",
     "applicableChainIds": [
-      "cip34:1-764824073",
-      "cip34:0-2"
+      "cip34:1-764824073"
     ],
-    "note": "Minimal ADA payment — wm cardano wire-convert 기대 dApp-wire Shape 1 (senderAddress/receiverAddress/lovelaceToSend). lovelaceToSend는 BigNumber로 변환되어 prepareTransaction 정상 진입(이전 Shape 2 {sender,recipient,amount:string}는 wire-convert.js:142 pass-through로 빠져 transaction.amount.isZero() TypeError). 별개 preset ada-cbor-signtx(Shape 0, CIP-30 CBOR)와 분리 유지. self-send(addr 동일). 실서명 검증은 짝 m09-04-13(swproxy e2e)/HW smoke.",
+    "note": "Minimal ADA payment — wm cardano wire-convert 기대 dApp-wire Shape 1 (senderAddress/receiverAddress/lovelaceToSend). lovelaceToSend는 BigNumber로 변환되어 prepareTransaction 정상 진입(이전 Shape 2 {sender,recipient,amount:string}는 wire-convert.js:142 pass-through로 빠져 transaction.amount.isZero() TypeError). 별개 preset ada-cbor-signtx(Shape 0, CIP-30 CBOR)와 분리 유지. self-send(addr 동일). 실서명 검증은 짝 m09-04-13(swproxy e2e)/HW smoke. applicableChainIds는 mainnet(cip34:1-...) 단일 한정 — fixture가 mainnet addr1 주소이므로 testnet(cip34:0-2)은 별도 addr_test1 preset 후속(단일-체인 원칙).",
     "sourceUrl": "https://cips.cardano.org/cips/cip30/",
     "transaction": {
       "senderAddress": "addr1qy2z6xu9y07vkdnx26jq06l7jqnmhv8jh2v8sth47pltfq4vnv7mhjy7p2d3zf9p9xr2hq4wv3wgdl8p2c8kpv7lgfqcmfr7p",

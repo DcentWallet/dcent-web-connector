@@ -13,6 +13,25 @@
  */
 import * as fs from 'fs'
 import * as path from 'path'
+import * as bech32 from 'bech32'
+import { base58 } from '@scure/base'
+
+// SS58 디코드 헬퍼 (선례: tests/unit/1_bridge_test/18_coin.polkadot.sign.spec.js)
+// prefix < 64 (Astar=5, Creditcoin=42)는 ss58Length=1 → prefix=decoded[0]
+function decodeSs58(addr: string): { prefix: number; pubkey: Uint8Array } {
+  const decoded = base58.decode(addr)
+  const ss58Length = decoded[0] & 0b0100_0000 ? 2 : 1
+  const prefix = decoded[0] // <64 prefix 한정 (본 테스트 대상 5/42)
+  const pubkey = decoded.slice(ss58Length, ss58Length + 32)
+  return { prefix, pubkey }
+}
+// bech32 20-byte data(hash160) 추출
+function bech32Data(addr: string): Uint8Array {
+  return Uint8Array.from(bech32.fromWords(bech32.decode(addr).words))
+}
+function bytesEq(a: Uint8Array, b: Uint8Array): boolean {
+  return a.length === b.length && a.every((v, i) => v === b[i])
+}
 
 // ── Playground 로드 helper ──────────────────────────────────────────────────
 function loadPlayground(): void {
@@ -258,6 +277,9 @@ it('T-U-REST-COSMOS-01: cosmos 형제망 preset 필드/bech32 prefix/단일-체�
     { id: 'hippo-transfer', chainId: 'cosmos:hippo-protocol-1/slip44:118', chain_id: 'hippo-protocol-1', prefix: 'hippo', denom: 'ahp' },
     { id: 'hippo-testnet-transfer', chainId: 'cosmos:hippo-protocol-testnet-1/slip44:118', chain_id: 'hippo-protocol-testnet-1', prefix: 'hippo', denom: 'ahp' },
   ]
+  // 레퍼런스 atom-transfer의 20-byte 키 데이터 (self-key 재인코딩 invariant 검증용)
+  const atomRef = SAMPLE_REST_PRESETS.find((x: any) => x.id === 'atom-transfer')
+  const atomData = bech32Data(atomRef.transaction.msgs[0].value.from_address)
   cases.forEach((c) => {
     const p = SAMPLE_REST_PRESETS.find((x: any) => x.id === c.id)
     expect(p).toBeDefined()
@@ -268,7 +290,10 @@ it('T-U-REST-COSMOS-01: cosmos 형제망 preset 필드/bech32 prefix/단일-체�
     expect(tx.chain_id).toBe(c.chain_id)
     const msg = tx.msgs[0]
     expect(msg.type).toBe('cosmos-sdk/MsgSend')
-    expect(msg.value.from_address.startsWith(`${c.prefix}1`)).toBe(true)
+    // bech32 디코드: HRP prefix가 정확히 일치 + 20-byte 데이터가 atom 레퍼런스와 동일(self-key 재인코딩)
+    const dec = bech32.decode(msg.value.from_address)
+    expect(dec.prefix).toBe(c.prefix)
+    expect(bytesEq(bech32Data(msg.value.from_address), atomData)).toBe(true)
     // self-send
     expect(msg.value.to_address).toBe(msg.value.from_address)
     expect(msg.value.amount[0].denom).toBe(c.denom)
@@ -281,11 +306,14 @@ it('T-U-REST-COSMOS-01: cosmos 형제망 preset 필드/bech32 prefix/단일-체�
 // ─────────────────────────────────────────────────────────────────────────────
 it('T-U-REST-POLKADOT-01: polkadot 형제망 preset method/args/SS58/단일-체인(1d4201c 가드)', () => {
   const cases = [
-    { id: 'astar-transfer', chainId: 'polkadot:9eb76c5184c4ab8679d2d5d819fdf90b/slip44:810' },
-    { id: 'shibuya-transfer', chainId: 'polkadot:ddb89643205c8fe1c79afeb31f48d50f/slip44:810' },
-    { id: 'creditcoin-transfer', chainId: 'polkadot:6673c7e2c2b7bde45a60c71ef70d9c7c/slip44:354' },
-    { id: 'creditcoin-testnet-transfer', chainId: 'polkadot:8a2e8af69a7892d2e60a77e3df4e0fa0/slip44:354' },
+    { id: 'astar-transfer', chainId: 'polkadot:9eb76c5184c4ab8679d2d5d819fdf90b/slip44:810', ss58: 5 },
+    { id: 'shibuya-transfer', chainId: 'polkadot:ddb89643205c8fe1c79afeb31f48d50f/slip44:810', ss58: 5 },
+    { id: 'creditcoin-transfer', chainId: 'polkadot:6673c7e2c2b7bde45a60c71ef70d9c7c/slip44:354', ss58: 42 },
+    { id: 'creditcoin-testnet-transfer', chainId: 'polkadot:8a2e8af69a7892d2e60a77e3df4e0fa0/slip44:354', ss58: 42 },
   ]
+  // 레퍼런스 dot-transfer의 pubkey (self-key 재인코딩 invariant 검증용)
+  const dotRef = SAMPLE_REST_PRESETS.find((x: any) => x.id === 'dot-transfer')
+  const dotPubkey = decodeSs58(dotRef.transaction.args[0]).pubkey
   cases.forEach((c) => {
     const p = SAMPLE_REST_PRESETS.find((x: any) => x.id === c.id)
     expect(p).toBeDefined()
@@ -295,12 +323,13 @@ it('T-U-REST-POLKADOT-01: polkadot 형제망 preset method/args/SS58/단일-체�
     expect(tx.method).toBe('balances.transfer')
     expect(Array.isArray(tx.args)).toBe(true)
     expect(tx.args.length).toBe(2)
-    // args[0] = SS58 자기주소 (길이 46~50자 plausible SS58)
+    // args[0] = SS58 자기주소: 디코드하여 network prefix 정확 일치 + pubkey가 dot 레퍼런스와 동일(self-key 재인코딩)
     expect(typeof tx.args[0]).toBe('string')
-    expect(tx.args[0].length).toBeGreaterThanOrEqual(46)
-    expect(tx.args[0].length).toBeLessThanOrEqual(50)
-    // args[1] = Planck 금액 문자열
-    expect(typeof tx.args[1]).toBe('string')
+    const ss58 = decodeSs58(tx.args[0])
+    expect(ss58.prefix).toBe(c.ss58)
+    expect(bytesEq(ss58.pubkey, dotPubkey)).toBe(true)
+    // args[1] = Planck 금액 문자열 (decimals 18 → 1e18)
+    expect(tx.args[1]).toBe('1000000000000000000')
     // dead chain-specific 필드 생략 (sidechain에 mainnet identity auto-fill 방지)
     expect(tx).not.toHaveProperty('genesisHash')
     expect(tx).not.toHaveProperty('specVersion')

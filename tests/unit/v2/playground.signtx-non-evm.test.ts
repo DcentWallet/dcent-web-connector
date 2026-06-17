@@ -912,14 +912,17 @@ it('T-DATA-02: presets applicableChainIds ⊆ chains.json chainIds', () => {
   const chainsPath = path.resolve(__dirname, '../../../playground/chains.json')
   const evmPresetsPath = path.resolve(__dirname, '../../../playground/presets.evm.json')
   const nonEvmPresetsPath = path.resolve(__dirname, '../../../playground/presets.non-evm.json')
+  const restPresetsPath = path.resolve(__dirname, '../../../playground/presets.rest.json')
 
   const chains: any[] = JSON.parse(fs.readFileSync(chainsPath, 'utf8'))
   const evmPresets: any[] = JSON.parse(fs.readFileSync(evmPresetsPath, 'utf8'))
   const nonEvmPresets: any[] = JSON.parse(fs.readFileSync(nonEvmPresetsPath, 'utf8'))
+  // m09-04-17: rest preset(cosmos/polkadot 형제망)도 chains.json 멤버십 가드에 포함 (cross-review F4)
+  const restPresets: any[] = JSON.parse(fs.readFileSync(restPresetsPath, 'utf8'))
 
   const chainIds = new Set(chains.map((c: any) => c.chainId))
 
-  ;[...evmPresets, ...nonEvmPresets].forEach((p: any) => {
+  ;[...evmPresets, ...nonEvmPresets, ...restPresets].forEach((p: any) => {
     p.applicableChainIds.forEach((c: string) => {
       expect(chainIds.has(c)).toBe(true)
     })
@@ -1080,8 +1083,12 @@ it('T-U-CARDANO-01: ada-transfer가 dApp-wire Shape 1 보유 + Shape 2 키 미�
   expect(tx).toHaveProperty('receiverAddress')
   expect(tx).toHaveProperty('lovelaceToSend')
   expect(typeof tx.lovelaceToSend).toBe('string')
-  // self-send
+  // self-send + mainnet addr1 주소
   expect(tx.receiverAddress).toBe(tx.senderAddress)
+  expect(tx.senderAddress.startsWith('addr1')).toBe(true)
+  // 단일-체인: mainnet(cip34:1-...)만 — fixture가 mainnet addr1 주소이므로 testnet(cip34:0-2) 미포함
+  // (cross-review F1: mainnet 주소를 testnet에 노출하던 chain-incorrect scope 제거)
+  expect(ada.applicableChainIds).toEqual(['cip34:1-764824073'])
   // Shape 2 키 미보유 (pass-through 분기 회피 회귀 가드)
   expect(tx).not.toHaveProperty('sender')
   expect(tx).not.toHaveProperty('recipient')

@@ -319,5 +319,245 @@
       "dependsOn": null,
       "nonce": "0x0"
     }
+  },
+  {
+    "id": "coreum-transfer",
+    "label": "Coreum CORE transfer",
+    "family": "cosmos",
+    "applicableChainIds": [
+      "cosmos:coreum-mainnet-1/slip44:990"
+    ],
+    "note": "Coreum CORE transfer — wm Amino SignDoc(MsgSend). denom ucore.  from/to=core1n9a7x46880h6qrtjmvwxrlgt0yprj7029k55sc(디바이스 self-send, atom 키 재인코딩). account_number/sequence는 sign 시 wm가 live REST로 덮어씀(placeholder '0'). applicableChainIds 단일-체인(1d4201c 가드). 실서명 검증은 짝 m09-04-13.",
+    "sourceUrl": "https://github.com/cosmos/cosmjs",
+    "transaction": {
+      "chain_id": "coreum-mainnet-1",
+      "account_number": "0",
+      "sequence": "0",
+      "fee": {
+        "amount": [
+          {
+            "denom": "ucore",
+            "amount": "5000"
+          }
+        ],
+        "gas": "200000"
+      },
+      "msgs": [
+        {
+          "type": "cosmos-sdk/MsgSend",
+          "value": {
+            "from_address": "core1n9a7x46880h6qrtjmvwxrlgt0yprj7029k55sc",
+            "to_address": "core1n9a7x46880h6qrtjmvwxrlgt0yprj7029k55sc",
+            "amount": [
+              {
+                "denom": "ucore",
+                "amount": "1000000"
+              }
+            ]
+          }
+        }
+      ],
+      "memo": ""
+    }
+  },
+  {
+    "id": "coreum-testnet-transfer",
+    "label": "Coreum Testnet CORE transfer",
+    "family": "cosmos",
+    "applicableChainIds": [
+      "cosmos:coreum-testnet-1/slip44:990"
+    ],
+    "note": "Coreum Testnet CORE transfer — wm Amino SignDoc(MsgSend). denom utestcore.  from/to=testcore1n9a7x46880h6qrtjmvwxrlgt0yprj702nz0flw(디바이스 self-send, atom 키 재인코딩). account_number/sequence는 sign 시 wm가 live REST로 덮어씀(placeholder '0'). applicableChainIds 단일-체인(1d4201c 가드). 실서명 검증은 짝 m09-04-13.",
+    "sourceUrl": "https://github.com/cosmos/cosmjs",
+    "transaction": {
+      "chain_id": "coreum-testnet-1",
+      "account_number": "0",
+      "sequence": "0",
+      "fee": {
+        "amount": [
+          {
+            "denom": "utestcore",
+            "amount": "5000"
+          }
+        ],
+        "gas": "200000"
+      },
+      "msgs": [
+        {
+          "type": "cosmos-sdk/MsgSend",
+          "value": {
+            "from_address": "testcore1n9a7x46880h6qrtjmvwxrlgt0yprj702nz0flw",
+            "to_address": "testcore1n9a7x46880h6qrtjmvwxrlgt0yprj702nz0flw",
+            "amount": [
+              {
+                "denom": "utestcore",
+                "amount": "1000000"
+              }
+            ]
+          }
+        }
+      ],
+      "memo": ""
+    }
+  },
+  {
+    "id": "hippo-transfer",
+    "label": "Hippo Protocol HP transfer",
+    "family": "cosmos",
+    "applicableChainIds": [
+      "cosmos:hippo-protocol-1/slip44:118"
+    ],
+    "note": "Hippo Protocol HP transfer — wm Amino SignDoc(MsgSend). denom ahp.  from/to=hippo1n9a7x46880h6qrtjmvwxrlgt0yprj7028s65fc(디바이스 self-send, atom 키 재인코딩). account_number/sequence는 sign 시 wm가 live REST로 덮어씀(placeholder '0'). applicableChainIds 단일-체인(1d4201c 가드). 실서명 검증은 짝 m09-04-13.",
+    "sourceUrl": "https://github.com/cosmos/cosmjs",
+    "transaction": {
+      "chain_id": "hippo-protocol-1",
+      "account_number": "0",
+      "sequence": "0",
+      "fee": {
+        "amount": [
+          {
+            "denom": "ahp",
+            "amount": "5000"
+          }
+        ],
+        "gas": "200000"
+      },
+      "msgs": [
+        {
+          "type": "cosmos-sdk/MsgSend",
+          "value": {
+            "from_address": "hippo1n9a7x46880h6qrtjmvwxrlgt0yprj7028s65fc",
+            "to_address": "hippo1n9a7x46880h6qrtjmvwxrlgt0yprj7028s65fc",
+            "amount": [
+              {
+                "denom": "ahp",
+                "amount": "1000000"
+              }
+            ]
+          }
+        }
+      ],
+      "memo": ""
+    }
+  },
+  {
+    "id": "hippo-testnet-transfer",
+    "label": "Hippo Protocol Testnet HP transfer",
+    "family": "cosmos",
+    "applicableChainIds": [
+      "cosmos:hippo-protocol-testnet-1/slip44:118"
+    ],
+    "note": "Hippo Protocol Testnet HP transfer — wm Amino SignDoc(MsgSend). denom ahp.  from/to=hippo1n9a7x46880h6qrtjmvwxrlgt0yprj7028s65fc(디바이스 self-send, atom 키 재인코딩). account_number/sequence는 sign 시 wm가 live REST로 덮어씀(placeholder '0'). applicableChainIds 단일-체인(1d4201c 가드). 실서명 검증은 짝 m09-04-13.",
+    "sourceUrl": "https://github.com/cosmos/cosmjs",
+    "transaction": {
+      "chain_id": "hippo-protocol-testnet-1",
+      "account_number": "0",
+      "sequence": "0",
+      "fee": {
+        "amount": [
+          {
+            "denom": "ahp",
+            "amount": "5000"
+          }
+        ],
+        "gas": "200000"
+      },
+      "msgs": [
+        {
+          "type": "cosmos-sdk/MsgSend",
+          "value": {
+            "from_address": "hippo1n9a7x46880h6qrtjmvwxrlgt0yprj7028s65fc",
+            "to_address": "hippo1n9a7x46880h6qrtjmvwxrlgt0yprj7028s65fc",
+            "amount": [
+              {
+                "denom": "ahp",
+                "amount": "1000000"
+              }
+            ]
+          }
+        }
+      ],
+      "memo": ""
+    }
+  },
+  {
+    "id": "astar-transfer",
+    "label": "Astar ASTR transfer",
+    "family": "polkadot",
+    "applicableChainIds": [
+      "polkadot:9eb76c5184c4ab8679d2d5d819fdf90b/slip44:810"
+    ],
+    "note": "Astar ASTR transfer — wm convertTransaction은 method/args[0]/args[1]만 소비(era/specVersion/blockHash/genesisHash는 wm가 live api로 재도출하므로 preset에서 생략 — sidechain에 mainnet identity auto-fill 방지, 1d4201c 가드). args[0]=SS58(prefix 5) 자기주소 self-send(ZaGqVp3GgGJjTC3nTF45vNfx8CYkmzbJRzpjRNgqa3NQ4r3, DOT 키 재인코딩), args[1]=Planck(decimals 18, 1 token=1e18). applicableChainIds 단일-체인. 실서명 검증은 짝 m09-04-13.",
+    "sourceUrl": "https://github.com/polkadot-js/api",
+    "transaction": {
+      "method": "balances.transfer",
+      "args": [
+        "ZaGqVp3GgGJjTC3nTF45vNfx8CYkmzbJRzpjRNgqa3NQ4r3",
+        "1000000000000000000"
+      ],
+      "era": "0x00",
+      "nonce": 0,
+      "tip": 0
+    }
+  },
+  {
+    "id": "shibuya-transfer",
+    "label": "Shibuya SBY transfer",
+    "family": "polkadot",
+    "applicableChainIds": [
+      "polkadot:ddb89643205c8fe1c79afeb31f48d50f/slip44:810"
+    ],
+    "note": "Shibuya SBY transfer — wm convertTransaction은 method/args[0]/args[1]만 소비(era/specVersion/blockHash/genesisHash는 wm가 live api로 재도출하므로 preset에서 생략 — sidechain에 mainnet identity auto-fill 방지, 1d4201c 가드). args[0]=SS58(prefix 5) 자기주소 self-send(ZaGqVp3GgGJjTC3nTF45vNfx8CYkmzbJRzpjRNgqa3NQ4r3, DOT 키 재인코딩), args[1]=Planck(decimals 18, 1 token=1e18). applicableChainIds 단일-체인. 실서명 검증은 짝 m09-04-13.",
+    "sourceUrl": "https://github.com/polkadot-js/api",
+    "transaction": {
+      "method": "balances.transfer",
+      "args": [
+        "ZaGqVp3GgGJjTC3nTF45vNfx8CYkmzbJRzpjRNgqa3NQ4r3",
+        "1000000000000000000"
+      ],
+      "era": "0x00",
+      "nonce": 0,
+      "tip": 0
+    }
+  },
+  {
+    "id": "creditcoin-transfer",
+    "label": "Creditcoin CTC transfer",
+    "family": "polkadot",
+    "applicableChainIds": [
+      "polkadot:6673c7e2c2b7bde45a60c71ef70d9c7c/slip44:354"
+    ],
+    "note": "Creditcoin CTC transfer — wm convertTransaction은 method/args[0]/args[1]만 소비(era/specVersion/blockHash/genesisHash는 wm가 live api로 재도출하므로 preset에서 생략 — sidechain에 mainnet identity auto-fill 방지, 1d4201c 가드). args[0]=SS58(prefix 42) 자기주소 self-send(5FhgQCqxVSdCWdADJ9nw4GDPs5VRnZHrHEVgViApyD3Qp1TZ, DOT 키 재인코딩), args[1]=Planck(decimals 18, 1 token=1e18). applicableChainIds 단일-체인. 실서명 검증은 짝 m09-04-13.",
+    "sourceUrl": "https://github.com/polkadot-js/api",
+    "transaction": {
+      "method": "balances.transfer",
+      "args": [
+        "5FhgQCqxVSdCWdADJ9nw4GDPs5VRnZHrHEVgViApyD3Qp1TZ",
+        "1000000000000000000"
+      ],
+      "era": "0x00",
+      "nonce": 0,
+      "tip": 0
+    }
+  },
+  {
+    "id": "creditcoin-testnet-transfer",
+    "label": "Creditcoin Testnet CTC transfer",
+    "family": "polkadot",
+    "applicableChainIds": [
+      "polkadot:8a2e8af69a7892d2e60a77e3df4e0fa0/slip44:354"
+    ],
+    "note": "Creditcoin Testnet CTC transfer — wm convertTransaction은 method/args[0]/args[1]만 소비(era/specVersion/blockHash/genesisHash는 wm가 live api로 재도출하므로 preset에서 생략 — sidechain에 mainnet identity auto-fill 방지, 1d4201c 가드). args[0]=SS58(prefix 42) 자기주소 self-send(5FhgQCqxVSdCWdADJ9nw4GDPs5VRnZHrHEVgViApyD3Qp1TZ, DOT 키 재인코딩), args[1]=Planck(decimals 18, 1 token=1e18). applicableChainIds 단일-체인. 실서명 검증은 짝 m09-04-13.",
+    "sourceUrl": "https://github.com/polkadot-js/api",
+    "transaction": {
+      "method": "balances.transfer",
+      "args": [
+        "5FhgQCqxVSdCWdADJ9nw4GDPs5VRnZHrHEVgViApyD3Qp1TZ",
+        "1000000000000000000"
+      ],
+      "era": "0x00",
+      "nonce": 0,
+      "tip": 0
+    }
   }
 ]

@@ -1059,3 +1059,36 @@ describe('누락보강 5 family — signTx/getAddress 도달성', () => {
     })
   })
 })
+
+// ─────────────────────────────────────────────────────────────────────────────
+// T-U-CARDANO-01 (m09-04-17): ada-transfer preset — wm dApp-wire Shape 1 가드
+// 현재 Shape 2(sender/recipient/amount:string)는 wire-convert.js:142 pass-through로 빠져
+// prepareTransaction에서 transaction.amount.isZero() TypeError → Shape 1로 정정.
+// ada-cbor-signtx(Shape 0)와는 별개 preset 유지.
+// ─────────────────────────────────────────────────────────────────────────────
+it('T-U-CARDANO-01: ada-transfer가 dApp-wire Shape 1 보유 + Shape 2 키 미보유', () => {
+  const presetsPath = path.resolve(__dirname, '../../../playground/presets.non-evm.json')
+  const presets: any[] = JSON.parse(fs.readFileSync(presetsPath, 'utf8'))
+
+  const ada = presets.find((p) => p.id === 'ada-transfer')
+  expect(ada).toBeDefined()
+  expect(ada.family).toBe('cardano')
+
+  const tx = ada.transaction
+  // Shape 1 키 보유
+  expect(tx).toHaveProperty('senderAddress')
+  expect(tx).toHaveProperty('receiverAddress')
+  expect(tx).toHaveProperty('lovelaceToSend')
+  expect(typeof tx.lovelaceToSend).toBe('string')
+  // self-send
+  expect(tx.receiverAddress).toBe(tx.senderAddress)
+  // Shape 2 키 미보유 (pass-through 분기 회피 회귀 가드)
+  expect(tx).not.toHaveProperty('sender')
+  expect(tx).not.toHaveProperty('recipient')
+  expect(tx).not.toHaveProperty('amount')
+
+  // ada-cbor-signtx(Shape 0)는 별개 preset으로 유지 (병합/중복 금지)
+  const adaCbor = presets.find((p) => p.id === 'ada-cbor-signtx')
+  expect(adaCbor).toBeDefined()
+  expect(adaCbor.transaction).toHaveProperty('txCbor')
+})

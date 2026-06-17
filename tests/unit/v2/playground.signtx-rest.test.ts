@@ -239,3 +239,96 @@ it('T-U-REST-05: preset 부재 family chain 노드는 트리에 노출되되 tex
   expect(formFields).not.toBeNull()
   expect(formFields!.textContent).toContain('No presets available')
 })
+
+// ─────────────────────────────────────────────────────────────────────────────
+// T-U-REST-COUNT (m09-04-17): presets.rest.json entry count ≥ 기존(12) + cosmos 4 + polkadot 4 = 20
+// 하한 단언만 — 정확-count 금지(9fe0b71이 T-U-REST-04를 정확→≥로 완화한 것을 역행하지 않도록)
+// ─────────────────────────────────────────────────────────────────────────────
+it('T-U-REST-COUNT: presets.rest.json entry count ≥ 20 (기존 12 + cosmos 4 + polkadot 4)', () => {
+  expect(SAMPLE_REST_PRESETS.length).toBeGreaterThanOrEqual(20)
+})
+
+// ─────────────────────────────────────────────────────────────────────────────
+// T-U-REST-COSMOS-01 (m09-04-17): cosmos 형제망 4개 preset — 필드 + bech32 prefix + 단일-체인 정합
+// ─────────────────────────────────────────────────────────────────────────────
+it('T-U-REST-COSMOS-01: cosmos 형제망 preset 필드/bech32 prefix/단일-체인(1d4201c 가드)', () => {
+  const cases = [
+    { id: 'coreum-transfer', chainId: 'cosmos:coreum-mainnet-1/slip44:990', chain_id: 'coreum-mainnet-1', prefix: 'core', denom: 'ucore' },
+    { id: 'coreum-testnet-transfer', chainId: 'cosmos:coreum-testnet-1/slip44:990', chain_id: 'coreum-testnet-1', prefix: 'testcore', denom: 'utestcore' },
+    { id: 'hippo-transfer', chainId: 'cosmos:hippo-protocol-1/slip44:118', chain_id: 'hippo-protocol-1', prefix: 'hippo', denom: 'ahp' },
+    { id: 'hippo-testnet-transfer', chainId: 'cosmos:hippo-protocol-testnet-1/slip44:118', chain_id: 'hippo-protocol-testnet-1', prefix: 'hippo', denom: 'ahp' },
+  ]
+  cases.forEach((c) => {
+    const p = SAMPLE_REST_PRESETS.find((x: any) => x.id === c.id)
+    expect(p).toBeDefined()
+    expect(p.family).toBe('cosmos')
+    // 단일-체인 한정 (mainnet payload sidechain auto-fill 회귀 방지)
+    expect(p.applicableChainIds).toEqual([c.chainId])
+    const tx = p.transaction
+    expect(tx.chain_id).toBe(c.chain_id)
+    const msg = tx.msgs[0]
+    expect(msg.type).toBe('cosmos-sdk/MsgSend')
+    expect(msg.value.from_address.startsWith(`${c.prefix}1`)).toBe(true)
+    // self-send
+    expect(msg.value.to_address).toBe(msg.value.from_address)
+    expect(msg.value.amount[0].denom).toBe(c.denom)
+    expect(tx.fee.amount[0].denom).toBe(c.denom)
+  })
+})
+
+// ─────────────────────────────────────────────────────────────────────────────
+// T-U-REST-POLKADOT-01 (m09-04-17): polkadot 형제망 4개 preset — method/args/SS58/단일-체인 정합
+// ─────────────────────────────────────────────────────────────────────────────
+it('T-U-REST-POLKADOT-01: polkadot 형제망 preset method/args/SS58/단일-체인(1d4201c 가드)', () => {
+  const cases = [
+    { id: 'astar-transfer', chainId: 'polkadot:9eb76c5184c4ab8679d2d5d819fdf90b/slip44:810' },
+    { id: 'shibuya-transfer', chainId: 'polkadot:ddb89643205c8fe1c79afeb31f48d50f/slip44:810' },
+    { id: 'creditcoin-transfer', chainId: 'polkadot:6673c7e2c2b7bde45a60c71ef70d9c7c/slip44:354' },
+    { id: 'creditcoin-testnet-transfer', chainId: 'polkadot:8a2e8af69a7892d2e60a77e3df4e0fa0/slip44:354' },
+  ]
+  cases.forEach((c) => {
+    const p = SAMPLE_REST_PRESETS.find((x: any) => x.id === c.id)
+    expect(p).toBeDefined()
+    expect(p.family).toBe('polkadot')
+    expect(p.applicableChainIds).toEqual([c.chainId])
+    const tx = p.transaction
+    expect(tx.method).toBe('balances.transfer')
+    expect(Array.isArray(tx.args)).toBe(true)
+    expect(tx.args.length).toBe(2)
+    // args[0] = SS58 자기주소 (길이 46~50자 plausible SS58)
+    expect(typeof tx.args[0]).toBe('string')
+    expect(tx.args[0].length).toBeGreaterThanOrEqual(46)
+    expect(tx.args[0].length).toBeLessThanOrEqual(50)
+    // args[1] = Planck 금액 문자열
+    expect(typeof tx.args[1]).toBe('string')
+    // dead chain-specific 필드 생략 (sidechain에 mainnet identity auto-fill 방지)
+    expect(tx).not.toHaveProperty('genesisHash')
+    expect(tx).not.toHaveProperty('specVersion')
+  })
+})
+
+// ─────────────────────────────────────────────────────────────────────────────
+// T-U-REST-SCOPE-01 (m09-04-17): 신규 형제망 preset 전체 — payload chain 식별자 ↔ applicableChainIds 1:1
+// (mismatch 0, commit 1d4201c 회귀 가드 — mainnet payload가 sidechain에 auto-fill되는 버그 방지)
+// ─────────────────────────────────────────────────────────────────────────────
+it('T-U-REST-SCOPE-01: 신규 cosmos/polkadot preset payload 식별자 ↔ applicableChainIds 1:1 (mismatch 0)', () => {
+  const newIds = [
+    'coreum-transfer', 'coreum-testnet-transfer', 'hippo-transfer', 'hippo-testnet-transfer',
+    'astar-transfer', 'shibuya-transfer', 'creditcoin-transfer', 'creditcoin-testnet-transfer',
+  ]
+  newIds.forEach((id) => {
+    const p = SAMPLE_REST_PRESETS.find((x: any) => x.id === id)
+    expect(p).toBeDefined()
+    // 모든 신규 preset은 단일-체인 한정
+    expect(p.applicableChainIds.length).toBe(1)
+    if (p.family === 'cosmos') {
+      // payload chain_id가 applicableChainIds의 chain 세그먼트와 1:1 일치
+      const chainSeg = p.applicableChainIds[0].split('/')[0].split(':')[1]
+      expect(p.transaction.chain_id).toBe(chainSeg)
+    } else {
+      // polkadot: chain-specific dead 필드를 생략하여 mismatch 벡터 자체를 제거
+      expect(p.transaction).not.toHaveProperty('genesisHash')
+      expect(p.transaction).not.toHaveProperty('blockHash')
+    }
+  })
+})

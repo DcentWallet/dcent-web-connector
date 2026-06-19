@@ -19,9 +19,11 @@
 import {
   _registerStateListener,
   _setPendingTimeout,
+  _setPendingTransport,
   resetSingleton,
   type StateListener,
 } from './singleton'
+import { _sanitizeTransportOption } from './sign/_sanitizeTransportOption'
 
 /** v1 호환 connection state listener 시그니처. singleton.ts의 StateListener와 동일. */
 export type ConnectionListener = StateListener
@@ -47,6 +49,24 @@ export function setTimeOutMs (timeOutMs: number): void {
  */
 export function setConnectionListener (listener: ConnectionListener): void {
   _registerStateListener(listener)
+}
+
+/**
+ * (DC-2701) `dcent.setTransport('hid' | 'ble')` — 연결 단위 transport 힌트.
+ *
+ * popup이 처음 열릴 때(첫 호출) sdk handshake로 송신되어 picker를 해당 transport로 고정한다:
+ *   - 'hid'      → USB 전용 picker + HID 자동연결
+ *   - 'ble'      → BLE 전용 picker (자동연결 불가, gesture 필요)
+ *   - undefined  → default. HID/BLE 둘 다 + HID 자동연결
+ *
+ * transport는 기기 연결 속성이므로 sign 메서드 per-call 옵션이 아닌 연결 단위로 둔다.
+ * **첫 호출 전에** 설정해야 적용된다(handshake first-wins). popup이 이미 열린 뒤 호출하면
+ * 다음 연결(popupWindowClose 후 재연결)부터 적용. transport 미생성 시 cache.
+ *
+ * @param transport 'hid' | 'ble' | undefined. invalid 값은 _sanitizeTransportOption이 throw.
+ */
+export function setTransport (transport: 'hid' | 'ble' | undefined): void {
+  _setPendingTransport(_sanitizeTransportOption(transport))
 }
 
 /**

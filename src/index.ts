@@ -71,7 +71,7 @@ export { ErrorCode } from './error/ErrorCode'
 export { ProviderError } from './error/ProviderError'
 
 // === 새 named exports (m08-01-01) ===
-export { setTimeOutMs, setConnectionListener, popupWindowClose } from './lifecycle'
+export { setTimeOutMs, setConnectionListener, setTransport, popupWindowClose } from './lifecycle'
 export type { ConnectionListener } from './lifecycle'
 
 export {
@@ -168,6 +168,7 @@ const dcent = {
   // lifecycle
   setTimeOutMs: lifecycle.setTimeOutMs,
   setConnectionListener: lifecycle.setConnectionListener,
+  setTransport: lifecycle.setTransport,
   popupWindowClose: lifecycle.popupWindowClose,
   // enums
   coinType,

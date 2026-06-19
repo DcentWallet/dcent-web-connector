@@ -32,7 +32,9 @@
         {
           "txType": "p2pkh",
           "amount": 990000,
-          "addresses": ["1A1zP1eP5QGefi2DMPTfTL5SLmv7DivfNa"]
+          "addresses": [
+            "1A1zP1eP5QGefi2DMPTfTL5SLmv7DivfNa"
+          ]
         }
       ]
     }
@@ -308,17 +310,14 @@
     "label": "Cardano ADA transfer",
     "family": "cardano",
     "applicableChainIds": [
-      "cip34:1-764824073",
-      "cip34:0-2"
+      "cip34:1-764824073"
     ],
-    "note": "Minimal ADA payment (wm-internal TransactionCommon — Shape 2 pass-through). Edit sender/recipient before send. ✅ wm 0.7.14: cardano signTransaction slot 등록됨(cardano/index.js) — 더 이상 -32601 아님(이전 노트 stale). dApp CIP-30 CBOR signTx는 ada-cbor-signtx preset, CIP-8/95 메시지 서명은 signData(wm signDataFromWire) 참조.",
+    "note": "Minimal ADA payment — wm cardano wire-convert 기대 dApp-wire Shape 1 (senderAddress/receiverAddress/lovelaceToSend). lovelaceToSend는 BigNumber로 변환되어 prepareTransaction 정상 진입(이전 Shape 2 {sender,recipient,amount:string}는 wire-convert.js:142 pass-through로 빠져 transaction.amount.isZero() TypeError). 별개 preset ada-cbor-signtx(Shape 0, CIP-30 CBOR)와 분리 유지. self-send(addr 동일). 실서명 검증은 짝 m09-04-13(swproxy e2e)/HW smoke. applicableChainIds는 mainnet(cip34:1-...) 단일 한정 — fixture가 mainnet addr1 주소이므로 testnet(cip34:0-2)은 별도 addr_test1 preset 후속(단일-체인 원칙).",
     "sourceUrl": "https://cips.cardano.org/cips/cip30/",
     "transaction": {
-      "type": "transfer",
-      "family": "cardano",
-      "sender": "addr1qy2z6xu9y07vkdnx26jq06l7jqnmhv8jh2v8sth47pltfq4vnv7mhjy7p2d3zf9p9xr2hq4wv3wgdl8p2c8kpv7lgfqcmfr7p",
-      "recipient": "addr1qy2z6xu9y07vkdnx26jq06l7jqnmhv8jh2v8sth47pltfq4vnv7mhjy7p2d3zf9p9xr2hq4wv3wgdl8p2c8kpv7lgfqcmfr7p",
-      "amount": "1000000"
+      "senderAddress": "addr1qy2z6xu9y07vkdnx26jq06l7jqnmhv8jh2v8sth47pltfq4vnv7mhjy7p2d3zf9p9xr2hq4wv3wgdl8p2c8kpv7lgfqcmfr7p",
+      "receiverAddress": "addr1qy2z6xu9y07vkdnx26jq06l7jqnmhv8jh2v8sth47pltfq4vnv7mhjy7p2d3zf9p9xr2hq4wv3wgdl8p2c8kpv7lgfqcmfr7p",
+      "lovelaceToSend": "1000000"
     }
   },
   {

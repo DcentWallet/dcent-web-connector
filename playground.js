@@ -583,9 +583,11 @@
     return state._testDcent || window.dcent
   }
 
-  // ── Transport option helper (m09-04-03) ──
-  // #select-transport 값을 읽어 dcent.sign()의 transport 옵션으로 전달할 값 반환.
-  // '' (auto/default) → undefined (옵션 미전달 = 기존 동작 유지, backward compat)
+  // ── Transport option helper (m09-04-03, DC-2701 재정의) ──
+  // #select-transport 값을 읽어 dcent.setTransport()에 넘길 연결 단위 transport 힌트 반환.
+  // (DC-2701) transport는 sign per-call이 아니라 연결 단위 속성 — Connect 시점/드롭다운 변경 시
+  // dcent.setTransport(_getTransportOption())로 1회 설정한다 (handshake first-wins).
+  // '' (auto/default) → undefined (힌트 미설정 = sdk가 default 3-state 라우팅)
   // 'hid' | 'ble' → string 그대로 반환
   // connector-chain-addition-isolation: transport는 chain과 직교, chain-specific 분기 없음.
   function _getTransportOption () {
@@ -593,7 +595,7 @@
     if (!el) return undefined
     var val = el.value
     if (val === 'hid' || val === 'ble') return val
-    return undefined // '' → undefined: 옵션 미전달 (dcent.sign이 'auto' handshake 전송)
+    return undefined // '' → undefined: setTransport 미설정 = sdk default 3-state 라우팅 (DC-2701: 'auto' 폐기)
   }
 
   // ── Build Tree DOM ──
@@ -1955,6 +1957,23 @@
     onDisconnect()
   })
 
+  // (DC-2701) transport 드롭다운 변경 시 연결 단위 transport 갱신.
+  // 첫 호출(popup open) 전에 설정돼 있어야 적용됨(handshake first-wins). popup이 이미 열린 뒤
+  // 변경하면 다음 연결(Disconnect 후 재연결)부터 반영.
+  var selTransport = $('select-transport')
+  if (selTransport) {
+    selTransport.addEventListener('change', function () {
+      var d = _getDcent()
+      if (d && typeof d.setTransport === 'function') {
+        try {
+          d.setTransport(_getTransportOption())
+        } catch (e) {
+          appendLog({ method: 'setTransport', request: {}, response: { error: String(e) }, latencyMs: 0 })
+        }
+      }
+    })
+  }
+
   // m08-01-05: state listener는 connect/disconnect 사이클과 독립적으로 1회 등록
   // facade가 listener를 cached하므로 reset 후에도 자동 복구 (singleton.ts 동작)
   var _stateListenerRegistered = false
@@ -1989,6 +2008,12 @@
     // m08-01-05: facade가 transport/queue를 lazy 생성 — listener는 1회만 등록.
     // popup은 첫 sign / getDeviceInfo 호출 시 lazy하게 열린다.
     _ensureStateListener()
+
+    // (DC-2701) 연결 단위 transport — 현재 드롭다운 값을 첫 호출(popup open) 전에 등록한다.
+    // sign per-call 옵션이 아닌 dcent.setTransport()로 일원화. 첫 호출이 getDeviceInfo여도 적용됨.
+    if (typeof dcent.setTransport === 'function') {
+      dcent.setTransport(_getTransportOption())
+    }
 
     // state.device는 건드리지 않는다 — [getDeviceInfo] 버튼이 단일 책임자.
     state.connected = true
@@ -2440,12 +2465,10 @@
         // m09-04-01/DC-2221: NEW sign schema { method, chainId, payload } — OLD { chain, payload } 금지.
         // connector-chain-addition-isolation: bsChainId는 사용자 입력 그대로 pass-through (chain enum 없음).
         // b08-01: _unwrapV1Envelope이 success → body.parameter unwrap, failure → throw로 변환.
-        // m09-04-03: transport 옵션 — #select-transport 선택값. undefined이면 미전달 (backward compat).
-        var bsTransport = _getTransportOption()
         // m09-04-15: builder(getBitcoinTransactionObject/add*)가 v2 flat wire(BitcoinWireTransaction)를
         // 직접 생성하므로 변환 없이 그대로 송신. (unsupported txType/malformed 인자는 add* 시점에 throw됨.)
+        // DC-2701: transport는 연결 단위(dcent.setTransport) — sign per-call transport 미지원.
         var bsSignInput = { method: 'signTransaction', chainId: bsChainId, payload: { keyPath: bsKeyPath, transaction: builtTx } }
-        if (bsTransport !== undefined) bsSignInput.transport = bsTransport
         dcent.sign(bsSignInput).then(_unwrapV1Envelope).then(function (result) {
           appendLog({
             method: 'signTransaction',
@@ -2524,10 +2547,8 @@
     // method는 intent literal ('signMessage'), chainId(CAIP-19)는 top-level, payload에는 chainId 제거.
     var dcent = _getDcent()
     // b08-01: _unwrapV1Envelope이 success → body.parameter unwrap, failure → throw로 변환
-    // m09-04-03: transport 옵션 — #select-transport 선택값. undefined이면 미전달 (backward compat).
-    var smTransport = _getTransportOption()
+    // DC-2701: transport는 연결 단위(dcent.setTransport) — sign per-call transport 미지원.
     var smSignInput = { method: 'signMessage', chainId: chainId, payload: { keyPath: keyPath, message: message, meta: metaObj } }
-    if (smTransport !== undefined) smSignInput.transport = smTransport
     dcent.sign(smSignInput).then(_unwrapV1Envelope).then(function (result) {
       appendLog({
         method: 'signMessage',
@@ -2592,10 +2613,8 @@
     // sdk resolveChainId가 wallet-models registry로 currency 결정.
     var dcent = _getDcent()
     // b08-01: _unwrapV1Envelope이 success → body.parameter unwrap, failure → throw로 변환
-    // m09-04-03: transport 옵션 — #select-transport 선택값. undefined이면 미전달 (backward compat).
-    var evmTransport = _getTransportOption()
+    // DC-2701: transport는 연결 단위(dcent.setTransport) — sign per-call transport 미지원.
     var evmSignInput = { method: 'signTransaction', chainId: chainId, payload: { keyPath: keyPath, transaction: txObj } }
-    if (evmTransport !== undefined) evmSignInput.transport = evmTransport
     dcent.sign(evmSignInput).then(_unwrapV1Envelope).then(function (result) {
       appendLog({
         method: 'signTransaction',
@@ -2891,9 +2910,8 @@
       _btcSetStatus('build 실패 — 결과 로그 확인', true)
       return
     }
-    var transport = _getTransportOption()
+    // DC-2701: transport는 연결 단위(dcent.setTransport) — sign per-call transport 미지원.
     var signInput = { method: 'signTransaction', chainId: chainId, payload: { keyPath: keyPath, transaction: builtTx } }
-    if (transport !== undefined) signInput.transport = transport
     var req = { chainId: chainId, keyPath: keyPath, transaction: builtTx }
     _btcSetStatus('디바이스 서명 요청 중...', false)
     dcent.sign(signInput).then(_unwrapV1Envelope).then(function (result) {
@@ -2953,10 +2971,8 @@
     // bip122/solana/xrpl/cosmos/stellar/hedera 등 비-EVM도 동일 패턴. chains.json의 chainId가 이미 CAIP-19.
     var dcent = _getDcent()
     // b08-01: _unwrapV1Envelope이 success → body.parameter unwrap, failure → throw로 변환
-    // m09-04-03: transport 옵션 — #select-transport 선택값. undefined이면 미전달 (backward compat).
-    var nonEvmTransport = _getTransportOption()
+    // DC-2701: transport는 연결 단위(dcent.setTransport) — sign per-call transport 미지원.
     var nonEvmSignInput = { method: 'signTransaction', chainId: chainId, payload: { keyPath: keyPath, transaction: txObj } }
-    if (nonEvmTransport !== undefined) nonEvmSignInput.transport = nonEvmTransport
     dcent.sign(nonEvmSignInput).then(_unwrapV1Envelope).then(function (result) {
       appendLog({
         method: 'signTransaction',

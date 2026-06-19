@@ -13,6 +13,25 @@
  */
 import * as fs from 'fs'
 import * as path from 'path'
+import * as bech32 from 'bech32'
+import { base58 } from '@scure/base'
+
+// SS58 디코드 헬퍼 (선례: tests/unit/1_bridge_test/18_coin.polkadot.sign.spec.js)
+// prefix < 64 (Astar=5, Creditcoin=42)는 ss58Length=1 → prefix=decoded[0]
+function decodeSs58(addr: string): { prefix: number; pubkey: Uint8Array } {
+  const decoded = base58.decode(addr)
+  const ss58Length = decoded[0] & 0b0100_0000 ? 2 : 1
+  const prefix = decoded[0] // <64 prefix 한정 (본 테스트 대상 5/42)
+  const pubkey = decoded.slice(ss58Length, ss58Length + 32)
+  return { prefix, pubkey }
+}
+// bech32 20-byte data(hash160) 추출
+function bech32Data(addr: string): Uint8Array {
+  return Uint8Array.from(bech32.fromWords(bech32.decode(addr).words))
+}
+function bytesEq(a: Uint8Array, b: Uint8Array): boolean {
+  return a.length === b.length && a.every((v, i) => v === b[i])
+}
 
 // ── Playground 로드 helper ──────────────────────────────────────────────────
 function loadPlayground(): void {
@@ -238,4 +257,107 @@ it('T-U-REST-05: preset 부재 family chain 노드는 트리에 노출되되 tex
   const formFields = document.getElementById('form-fields')
   expect(formFields).not.toBeNull()
   expect(formFields!.textContent).toContain('No presets available')
+})
+
+// ─────────────────────────────────────────────────────────────────────────────
+// T-U-REST-COUNT (m09-04-17): presets.rest.json entry count ≥ 기존(12) + cosmos 4 + polkadot 4 = 20
+// 하한 단언만 — 정확-count 금지(9fe0b71이 T-U-REST-04를 정확→≥로 완화한 것을 역행하지 않도록)
+// ─────────────────────────────────────────────────────────────────────────────
+it('T-U-REST-COUNT: presets.rest.json entry count ≥ 20 (기존 12 + cosmos 4 + polkadot 4)', () => {
+  expect(SAMPLE_REST_PRESETS.length).toBeGreaterThanOrEqual(20)
+})
+
+// ─────────────────────────────────────────────────────────────────────────────
+// T-U-REST-COSMOS-01 (m09-04-17): cosmos 형제망 4개 preset — 필드 + bech32 prefix + 단일-체인 정합
+// ─────────────────────────────────────────────────────────────────────────────
+it('T-U-REST-COSMOS-01: cosmos 형제망 preset 필드/bech32 prefix/단일-체인(1d4201c 가드)', () => {
+  const cases = [
+    { id: 'coreum-transfer', chainId: 'cosmos:coreum-mainnet-1/slip44:990', chain_id: 'coreum-mainnet-1', prefix: 'core', denom: 'ucore' },
+    { id: 'coreum-testnet-transfer', chainId: 'cosmos:coreum-testnet-1/slip44:990', chain_id: 'coreum-testnet-1', prefix: 'testcore', denom: 'utestcore' },
+    { id: 'hippo-transfer', chainId: 'cosmos:hippo-protocol-1/slip44:118', chain_id: 'hippo-protocol-1', prefix: 'hippo', denom: 'ahp' },
+    { id: 'hippo-testnet-transfer', chainId: 'cosmos:hippo-protocol-testnet-1/slip44:118', chain_id: 'hippo-protocol-testnet-1', prefix: 'hippo', denom: 'ahp' },
+  ]
+  // 레퍼런스 atom-transfer의 20-byte 키 데이터 (self-key 재인코딩 invariant 검증용)
+  const atomRef = SAMPLE_REST_PRESETS.find((x: any) => x.id === 'atom-transfer')
+  const atomData = bech32Data(atomRef.transaction.msgs[0].value.from_address)
+  cases.forEach((c) => {
+    const p = SAMPLE_REST_PRESETS.find((x: any) => x.id === c.id)
+    expect(p).toBeDefined()
+    expect(p.family).toBe('cosmos')
+    // 단일-체인 한정 (mainnet payload sidechain auto-fill 회귀 방지)
+    expect(p.applicableChainIds).toEqual([c.chainId])
+    const tx = p.transaction
+    expect(tx.chain_id).toBe(c.chain_id)
+    const msg = tx.msgs[0]
+    expect(msg.type).toBe('cosmos-sdk/MsgSend')
+    // bech32 디코드: HRP prefix가 정확히 일치 + 20-byte 데이터가 atom 레퍼런스와 동일(self-key 재인코딩)
+    const dec = bech32.decode(msg.value.from_address)
+    expect(dec.prefix).toBe(c.prefix)
+    expect(bytesEq(bech32Data(msg.value.from_address), atomData)).toBe(true)
+    // self-send
+    expect(msg.value.to_address).toBe(msg.value.from_address)
+    expect(msg.value.amount[0].denom).toBe(c.denom)
+    expect(tx.fee.amount[0].denom).toBe(c.denom)
+  })
+})
+
+// ─────────────────────────────────────────────────────────────────────────────
+// T-U-REST-POLKADOT-01 (m09-04-17): polkadot 형제망 4개 preset — method/args/SS58/단일-체인 정합
+// ─────────────────────────────────────────────────────────────────────────────
+it('T-U-REST-POLKADOT-01: polkadot 형제망 preset method/args/SS58/단일-체인(1d4201c 가드)', () => {
+  const cases = [
+    { id: 'astar-transfer', chainId: 'polkadot:9eb76c5184c4ab8679d2d5d819fdf90b/slip44:810', ss58: 5 },
+    { id: 'shibuya-transfer', chainId: 'polkadot:ddb89643205c8fe1c79afeb31f48d50f/slip44:810', ss58: 5 },
+    { id: 'creditcoin-transfer', chainId: 'polkadot:6673c7e2c2b7bde45a60c71ef70d9c7c/slip44:354', ss58: 42 },
+    { id: 'creditcoin-testnet-transfer', chainId: 'polkadot:8a2e8af69a7892d2e60a77e3df4e0fa0/slip44:354', ss58: 42 },
+  ]
+  // 레퍼런스 dot-transfer의 pubkey (self-key 재인코딩 invariant 검증용)
+  const dotRef = SAMPLE_REST_PRESETS.find((x: any) => x.id === 'dot-transfer')
+  const dotPubkey = decodeSs58(dotRef.transaction.args[0]).pubkey
+  cases.forEach((c) => {
+    const p = SAMPLE_REST_PRESETS.find((x: any) => x.id === c.id)
+    expect(p).toBeDefined()
+    expect(p.family).toBe('polkadot')
+    expect(p.applicableChainIds).toEqual([c.chainId])
+    const tx = p.transaction
+    expect(tx.method).toBe('balances.transfer')
+    expect(Array.isArray(tx.args)).toBe(true)
+    expect(tx.args.length).toBe(2)
+    // args[0] = SS58 자기주소: 디코드하여 network prefix 정확 일치 + pubkey가 dot 레퍼런스와 동일(self-key 재인코딩)
+    expect(typeof tx.args[0]).toBe('string')
+    const ss58 = decodeSs58(tx.args[0])
+    expect(ss58.prefix).toBe(c.ss58)
+    expect(bytesEq(ss58.pubkey, dotPubkey)).toBe(true)
+    // args[1] = Planck 금액 문자열 (decimals 18 → 1e18)
+    expect(tx.args[1]).toBe('1000000000000000000')
+    // dead chain-specific 필드 생략 (sidechain에 mainnet identity auto-fill 방지)
+    expect(tx).not.toHaveProperty('genesisHash')
+    expect(tx).not.toHaveProperty('specVersion')
+  })
+})
+
+// ─────────────────────────────────────────────────────────────────────────────
+// T-U-REST-SCOPE-01 (m09-04-17): 신규 형제망 preset 전체 — payload chain 식별자 ↔ applicableChainIds 1:1
+// (mismatch 0, commit 1d4201c 회귀 가드 — mainnet payload가 sidechain에 auto-fill되는 버그 방지)
+// ─────────────────────────────────────────────────────────────────────────────
+it('T-U-REST-SCOPE-01: 신규 cosmos/polkadot preset payload 식별자 ↔ applicableChainIds 1:1 (mismatch 0)', () => {
+  const newIds = [
+    'coreum-transfer', 'coreum-testnet-transfer', 'hippo-transfer', 'hippo-testnet-transfer',
+    'astar-transfer', 'shibuya-transfer', 'creditcoin-transfer', 'creditcoin-testnet-transfer',
+  ]
+  newIds.forEach((id) => {
+    const p = SAMPLE_REST_PRESETS.find((x: any) => x.id === id)
+    expect(p).toBeDefined()
+    // 모든 신규 preset은 단일-체인 한정
+    expect(p.applicableChainIds.length).toBe(1)
+    if (p.family === 'cosmos') {
+      // payload chain_id가 applicableChainIds의 chain 세그먼트와 1:1 일치
+      const chainSeg = p.applicableChainIds[0].split('/')[0].split(':')[1]
+      expect(p.transaction.chain_id).toBe(chainSeg)
+    } else {
+      // polkadot: chain-specific dead 필드를 생략하여 mismatch 벡터 자체를 제거
+      expect(p.transaction).not.toHaveProperty('genesisHash')
+      expect(p.transaction).not.toHaveProperty('blockHash')
+    }
+  })
 })

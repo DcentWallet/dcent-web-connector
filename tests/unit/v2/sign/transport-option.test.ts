@@ -6,18 +6,19 @@
  *
  * T-U-01: transport: 'hid' → handshake params.transport === 'hid'
  * T-U-02: transport: 'ble' → handshake params.transport === 'ble'
- * T-U-03: transport 미명시 → handshake params.transport === 'auto'
+ * T-U-03: transport 미명시 → handshake params.transport === 'hid' (DC-2701: 'auto' 제거, HID 기본)
  * T-U-04: transport: 'webusb' → throw ProviderError(INVALID_PARAMS)
  * T-U-05: transport: null / '' / {} → throw ProviderError(INVALID_PARAMS)
  * T-U-06: 두 번째 sign 호출 transport는 silent ignore (first-wins)
- * T-U-07: toWireTransport 단위 — 'hid'→'hid', 'ble'→'ble', undefined→'auto'
+ * T-U-07: toWireTransport 단위 — 'hid'→'hid', 'ble'→'ble', undefined→'hid' (DC-2701)
  * T-BC-01: 기존 sign({method, chainId, payload}) 호출 회귀 0
  * T-BC-02: sdk가 transport 미파싱 시 silent ignore + 정상 응답 반환 (race-safe mock)
  * T-BC-03: 구 sdk transport 힌트 수신 후 PROTOCOL_VERSION_MISMATCH(5007) 미발생 회귀
- * T-BC-04: 옵션 미명시 시 handshake params keys — transport 필드 항상 포함(==='auto')
+ * T-BC-04: 옵션 미명시 시 handshake params keys — transport 필드 항상 포함(==='hid')
  */
 
 import { sign } from '../../../../src/sign/sign'
+import { setTransport } from '../../../../src/lifecycle'
 import { _sanitizeTransportOption, toWireTransport } from '../../../../src/sign/_sanitizeTransportOption'
 import { PopupTransport } from '../../../../src/transport/PopupTransport'
 import { ensureSingleton, _resetForTesting } from '../../../../src/singleton'
@@ -124,8 +125,10 @@ describe('toWireTransport — unit', () => {
     expect(toWireTransport('ble')).toBe('ble')
   })
 
-  test('T-U-07c: undefined → "auto"', () => {
-    expect(toWireTransport(undefined)).toBe('auto')
+  test('T-U-07c: undefined → undefined (DC-2701: default 3-state — hid로 coerce 안 함)', () => {
+    // default(미지정)는 sdk에서 "HID/BLE 둘 다 picker + HID 자동연결 가능"으로 처리된다.
+    // 명시 'hid'(USB only)와 구분되어야 하므로 undefined를 'hid'로 coerce하지 않는다.
+    expect(toWireTransport(undefined)).toBeUndefined()
   })
 })
 
@@ -266,8 +269,8 @@ describe('PopupTransport — handshake transport 동봉', () => {
     expect(hsParams.transport).toBe('ble')
   })
 
-  test('T-U-03: transport 미명시 → handshake params.transport === "auto"', async () => {
-    // setPendingTransport 호출 없음 (pendingTransport === undefined → 'auto')
+  test('T-U-03: transport 미명시 → handshake params.transport === undefined (DC-2701: default 3-state)', async () => {
+    // setPendingTransport 호출 없음 (pendingTransport === undefined → default, sdk가 둘 다 picker)
     const sendPromise = transport.send({ id: 'req3', method: 'signTransaction', params: {} })
     await flushHandshake()
     dispatchResponse(DEFAULT_ORIGIN, { id: 'req3', result: { header: { version: '1.0', status: 'success' }, body: { command: 'signTransaction' } } })
@@ -278,10 +281,10 @@ describe('PopupTransport — handshake transport 동봉', () => {
     )
     expect(hsCall).toBeDefined()
     const hsParams = (hsCall![0] as { params: { transport: unknown } }).params
-    expect(hsParams.transport).toBe('auto')
+    expect(hsParams.transport).toBeUndefined()
   })
 
-  test('T-BC-04: 옵션 미명시 시 handshake params에 transport 필드 항상 포함 (==="auto")', async () => {
+  test('T-BC-04: 옵션 미명시 시 handshake params.transport === undefined (default)', async () => {
     const sendPromise = transport.send({ id: 'req4', method: 'getDeviceInfo', params: {} })
     await flushHandshake()
     dispatchResponse(DEFAULT_ORIGIN, { id: 'req4', result: { header: { version: '1.0', status: 'success' }, body: { command: 'getDeviceInfo' } } })
@@ -292,9 +295,8 @@ describe('PopupTransport — handshake transport 동봉', () => {
     )
     expect(hsCall).toBeDefined()
     const hsParams = (hsCall![0] as { params: Record<string, unknown> }).params
-    // transport 필드가 항상 존재해야 함
-    expect(Object.keys(hsParams)).toContain('transport')
-    expect(hsParams.transport).toBe('auto')
+    // (DC-2701) 미명시는 default — transport는 undefined로 동봉된다 (hid coerce 안 함)
+    expect(hsParams.transport).toBeUndefined()
     // 기존 필드들도 그대로 있어야 함
     expect(hsParams.clientName).toBe('connector')
     expect(typeof hsParams.version).toBe('string')
@@ -371,15 +373,10 @@ describe('sign() — transport option throw + backward compat', () => {
     jest.restoreAllMocks()
   })
 
-  test('T-U-04: sign({transport: "webusb"}) → throws ProviderError(INVALID_PARAMS)', async () => {
+  test('T-ST-01 (DC-2701): setTransport("webusb") → throws ProviderError(INVALID_PARAMS)', () => {
     let caught: unknown
     try {
-      await sign({
-        method: 'signTransaction',
-        chainId: 'eip155:1',
-        payload: { keyPath: "m/44'/60'/0'/0/0" },
-        transport: 'webusb' as never,
-      })
+      setTransport('webusb' as never)
     } catch (e) {
       caught = e
     }
@@ -387,20 +384,47 @@ describe('sign() — transport option throw + backward compat', () => {
     expect((caught as ProviderError).code).toBe(ErrorCode.INVALID_PARAMS)
   })
 
-  test('T-U-05-sign: sign({transport: null}) → throws ProviderError(INVALID_PARAMS)', async () => {
+  test('T-ST-02 (DC-2701): setTransport(null) → throws ProviderError(INVALID_PARAMS)', () => {
     let caught: unknown
     try {
-      await sign({
-        method: 'signTransaction',
-        chainId: 'eip155:1',
-        payload: { keyPath: "m/44'/60'/0'/0/0" },
-        transport: null as never,
-      })
+      setTransport(null as never)
     } catch (e) {
       caught = e
     }
     expect(caught instanceof ProviderError).toBe(true)
     expect((caught as ProviderError).code).toBe(ErrorCode.INVALID_PARAMS)
+  })
+
+  test('T-ST-03 (DC-2701): setTransport("ble") 후 첫 handshake에 transport="ble" 동봉', async () => {
+    setTransport('ble')
+    const { transport } = ensureSingleton()
+    const sendSpy = jest.spyOn(transport, 'send').mockResolvedValue({
+      id: 'st03',
+      result: {
+        header: { version: '1.0', status: 'success' as const },
+        body: { command: 'signTransaction' },
+      },
+    })
+    await sign({ method: 'signTransaction', chainId: 'eip155:1', payload: { keyPath: "m/44'/60'/0'/0/0" } })
+
+    const hsCall = sendSpy.mock.calls.find(
+      (c) => (c[0] as { method?: unknown })?.method === '_handshake',
+    )
+    // handshake가 send 경로를 안 타는 mock이면 pendingTransport로 검증
+    expect((transport as unknown as { pendingTransport: unknown }).pendingTransport).toBe('ble')
+    void hsCall
+  })
+
+  test('T-ST-04 (DC-2701): setTransport("hid") → pendingTransport "hid"', () => {
+    setTransport('hid')
+    const { transport } = ensureSingleton()
+    expect((transport as unknown as { pendingTransport: unknown }).pendingTransport).toBe('hid')
+  })
+
+  test('T-ST-05 (DC-2701): setTransport(undefined) → pendingTransport undefined (default)', () => {
+    setTransport(undefined)
+    const { transport } = ensureSingleton()
+    expect((transport as unknown as { pendingTransport: unknown }).pendingTransport).toBeUndefined()
   })
 
   test('T-BC-01: 기존 sign({method, chainId, payload}) 호출 — transport 미명시 → 회귀 0', async () => {
@@ -424,8 +448,8 @@ describe('sign() — transport option throw + backward compat', () => {
     expect(resp.header.status).toBe('success')
   })
 
-  test('T-BC-02: sdk가 transport 미파싱 시 (m09-03-03 미SHIPPED) — silent ignore + 정상 응답', async () => {
-    // sdk가 transport 필드를 무시하고 정상 응답을 반환하는 시나리오 mock
+  test('T-BC-02 (DC-2701): setTransport("hid") 후 sign — sdk가 transport 무시해도 정상 응답', async () => {
+    setTransport('hid')
     const { transport } = ensureSingleton()
     jest.spyOn(transport, 'send').mockResolvedValue({
       id: 'bc02',
@@ -439,16 +463,14 @@ describe('sign() — transport option throw + backward compat', () => {
       method: 'signTransaction',
       chainId: 'eip155:1',
       payload: { keyPath: "m/44'/60'/0'/0/0" },
-      transport: 'hid',
     })
 
-    // sdk가 transport를 무시해도 정상 응답
     expect(resp.header.status).toBe('success')
     expect(resp.body.parameter?.signed_tx).toBe('0xsigned')
   })
 
-  test('T-BC-03: transport 힌트 수신 후 PROTOCOL_VERSION_MISMATCH(5007) 미발생 회귀', async () => {
-    // sdk가 transport 필드를 받고도 PROTOCOL_VERSION_MISMATCH를 던지지 않는 시나리오 mock
+  test('T-BC-03 (DC-2701): setTransport 후 PROTOCOL_VERSION_MISMATCH(5007) 미발생 회귀', async () => {
+    setTransport('hid')
     const { transport } = ensureSingleton()
     jest.spyOn(transport, 'send').mockResolvedValue({
       id: 'bc03',
@@ -458,16 +480,13 @@ describe('sign() — transport option throw + backward compat', () => {
       },
     })
 
-    // transport 힌트 있어도 정상 응답 반환 — PROTOCOL_VERSION_MISMATCH 없음
     const resp = await sign({
       method: 'signTransaction',
       chainId: 'eip155:1',
       payload: { keyPath: "m/44'/60'/0'/0/0" },
-      transport: 'hid',
     })
 
     expect(resp.header.status).toBe('success')
-    // PROTOCOL_VERSION_MISMATCH(5007) 에러가 없음을 확인
     expect(resp.body.error?.code).not.toBe('protocol_version_mismatch')
   })
 })

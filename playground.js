@@ -1955,6 +1955,23 @@
     onDisconnect()
   })
 
+  // (DC-2701) transport 드롭다운 변경 시 연결 단위 transport 갱신.
+  // 첫 호출(popup open) 전에 설정돼 있어야 적용됨(handshake first-wins). popup이 이미 열린 뒤
+  // 변경하면 다음 연결(Disconnect 후 재연결)부터 반영.
+  var selTransport = $('select-transport')
+  if (selTransport) {
+    selTransport.addEventListener('change', function () {
+      var d = _getDcent()
+      if (d && typeof d.setTransport === 'function') {
+        try {
+          d.setTransport(_getTransportOption())
+        } catch (e) {
+          appendLog({ method: 'setTransport', request: {}, response: { error: String(e) }, latencyMs: 0 })
+        }
+      }
+    })
+  }
+
   // m08-01-05: state listener는 connect/disconnect 사이클과 독립적으로 1회 등록
   // facade가 listener를 cached하므로 reset 후에도 자동 복구 (singleton.ts 동작)
   var _stateListenerRegistered = false
@@ -1989,6 +2006,12 @@
     // m08-01-05: facade가 transport/queue를 lazy 생성 — listener는 1회만 등록.
     // popup은 첫 sign / getDeviceInfo 호출 시 lazy하게 열린다.
     _ensureStateListener()
+
+    // (DC-2701) 연결 단위 transport — 현재 드롭다운 값을 첫 호출(popup open) 전에 등록한다.
+    // sign per-call 옵션이 아닌 dcent.setTransport()로 일원화. 첫 호출이 getDeviceInfo여도 적용됨.
+    if (typeof dcent.setTransport === 'function') {
+      dcent.setTransport(_getTransportOption())
+    }
 
     // state.device는 건드리지 않는다 — [getDeviceInfo] 버튼이 단일 책임자.
     state.connected = true

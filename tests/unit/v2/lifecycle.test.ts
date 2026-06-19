@@ -16,9 +16,12 @@
 import {
   setTimeOutMs,
   setConnectionListener,
+  setTransport,
   popupWindowClose,
 } from '../../../src/lifecycle'
 import { ensureSingleton, _resetForTesting } from '../../../src/singleton'
+import { ProviderError } from '../../../src/error/ProviderError'
+import { ErrorCode } from '../../../src/error/ErrorCode'
 
 beforeEach(() => {
   _resetForTesting()
@@ -71,6 +74,42 @@ describe('lifecycle — setTimeOutMs', () => {
 
     expect(setSpy).toHaveBeenCalledWith(8888)
     expect(setSpy).toHaveBeenCalledTimes(1)
+  })
+})
+
+describe('lifecycle — setTransport (DC-2701, 연결 단위 transport)', () => {
+  test('T-ST-LC-01: 싱글톤 미생성 상태에서 setTransport("ble") → 다음 ensureSingleton에서 pendingTransport 적용', () => {
+    setTransport('ble')
+
+    const { transport } = ensureSingleton()
+    expect((transport as unknown as { pendingTransport: unknown }).pendingTransport).toBe('ble')
+  })
+
+  test('T-ST-LC-02: 싱글톤 생성 후 setTransport("hid") → 즉시 transport.setPendingTransport', () => {
+    const { transport } = ensureSingleton()
+    const setSpy = jest.spyOn(transport, 'setPendingTransport')
+
+    setTransport('hid')
+
+    expect(setSpy).toHaveBeenCalledWith('hid')
+  })
+
+  test('T-ST-LC-03: setTransport(undefined) → pendingTransport undefined (default)', () => {
+    setTransport('ble')
+    setTransport(undefined)
+    const { transport } = ensureSingleton()
+    expect((transport as unknown as { pendingTransport: unknown }).pendingTransport).toBeUndefined()
+  })
+
+  test('T-ST-LC-04: setTransport(invalid) → ProviderError(INVALID_PARAMS) throw', () => {
+    expect(() => setTransport('webusb' as never)).toThrow(ProviderError)
+    let caught: unknown
+    try {
+      setTransport('' as never)
+    } catch (e) {
+      caught = e
+    }
+    expect((caught as ProviderError).code).toBe(ErrorCode.INVALID_PARAMS)
   })
 })
 

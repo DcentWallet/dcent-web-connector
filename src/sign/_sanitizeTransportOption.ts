@@ -24,7 +24,7 @@ import { ErrorCode } from '../error/ErrorCode'
  * dApp이 dcent.sign 옵션으로 넘긴 transport 값을 sanitize.
  *
  * - 정상: 'hid' | 'ble' → 그대로 반환
- * - 미사용: undefined → undefined (toWireTransport에서 'auto'로 변환)
+ * - 미사용: undefined → undefined (toWireTransport에서 'hid'로 변환 — DC-2701)
  * - invalid: null / '' / 그 외 string / object → throw ProviderError(INVALID_PARAMS)
  *
  * @param transport dApp이 넘긴 transport 값 (unknown)
@@ -46,12 +46,21 @@ export function _sanitizeTransportOption (
  * sanitize 결과를 wire 값으로 변환.
  * handshake message body params.transport 동봉 시점에 호출.
  *
+ * (DC-2701) 'auto' 제거 + 3-state wire — dApp이 명시한 transport를 그대로 sdk로 전달한다.
+ * sdk가 3가지를 분기한다:
+ *   - 'hid'      → USB 전용 picker + HID 자동연결 (Case A/B)
+ *   - 'ble'      → BLE 전용 picker, 자동연결 안 함 (Case B)
+ *   - undefined  → default. HID/BLE 둘 다 picker + HID 자동연결 가능 (Case A/B)
+ *
+ * 미지정(undefined)을 'hid'로 coerce하지 않는다 — default와 명시 'hid'는 picker 옵션 노출이
+ * 다르므로(default=둘 다, hid=USB only) wire에서 구분되어야 한다.
+ *
  * - 'hid' → 'hid'
  * - 'ble' → 'ble'
- * - undefined → 'auto' (sdk picker UI fallback 신호)
+ * - undefined → undefined (default)
  */
 export function toWireTransport (
   sanitized: 'hid' | 'ble' | undefined,
-): 'hid' | 'ble' | 'auto' {
-  return sanitized ?? 'auto'
+): 'hid' | 'ble' | undefined {
+  return sanitized
 }

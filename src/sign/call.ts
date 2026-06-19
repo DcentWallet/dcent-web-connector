@@ -42,12 +42,6 @@ export interface CallInput {
    * sign 외 read-only/lifecycle 메서드(getDeviceInfo / info 등)는 chainId가 없을 수 있어 optional.
    */
   chainId?: string
-  /**
-   * (m09-04-03) sanitize된 transport 힌트. PopupTransport의 setPendingTransport로 등록되어
-   * sdk handshake params.transport로 송신됨. popup lifecycle 단위 first-wins (audit R12).
-   * undefined 시 toWireTransport에서 'auto'로 변환 → sdk picker UI fallback.
-   */
-  transport?: 'hid' | 'ble'
   params?: Record<string, unknown>
 }
 
@@ -125,16 +119,8 @@ export async function _call (input: CallInput): Promise<V1Response> {
   const transport = _getTransport()
   const id = _genId()
 
-  // (m09-04-03) transport 힌트를 다음 handshake에 전달. popup lifecycle 단위 first-wins.
-  // setPendingTransport가 있는 transport(PopupTransport)에만 적용.
-  if (
-    'setPendingTransport' in transport &&
-    typeof (transport as { setPendingTransport?: unknown }).setPendingTransport === 'function'
-  ) {
-    ;(transport as { setPendingTransport: (t: 'hid' | 'ble' | undefined) => void }).setPendingTransport(
-      input.transport,
-    )
-  }
+  // (DC-2701) transport 힌트는 연결 단위 dcent.setTransport()가 singleton에 등록한다.
+  // _call은 더 이상 per-call transport를 다루지 않는다 (handshake first-wins).
 
   try {
     const envelope = await queue.enqueue(() =>

@@ -27,7 +27,6 @@
 import { _call } from './call'
 import { _sanitizeMethod, _sanitizeChainId } from './sanitize'
 import { _validateSignPayload } from './_validateSignPayload'
-import { _sanitizeTransportOption } from './_sanitizeTransportOption'
 import type { V1Response } from './types'
 
 export type { SignPayload } from './_validateSignPayload'
@@ -49,20 +48,9 @@ export interface SignInput {
    * connector 경계에서 보장되는 contract는 `_validateSignPayload` 참조.
    */
   payload: Record<string, unknown>
-  /**
-   * (m09-04-03) per-call HW transport 힌트. 명시 시 sdk popup이 picker UI를 skip하고
-   * 해당 transport로 즉시 connect한다. 미명시 시 sdk picker UI fallback.
-   *
-   * - 'hid': WebHID 강제
-   * - 'ble': WebBLE 강제
-   * - undefined: sdk picker UI (기본)
-   *
-   * 같은 popup lifecycle 내 두 번째 호출의 transport 옵션은 silent ignore (first-wins).
-   * connector-chain-addition-isolation: transport는 chain과 직교 (모든 chain 공통).
-   *
-   * @throws ProviderError(INVALID_PARAMS) — invalid 값('webusb', null, '' 등)
-   */
-  transport?: 'hid' | 'ble'
+  // (DC-2701) per-call transport 옵션 제거 — transport는 기기 연결 속성이므로 연결 단위
+  // `dcent.setTransport('hid'|'ble')`로 일원화(lifecycle). handshake first-wins라 per-call
+  // 옵션은 두 번째 호출부터 무시되어 오해를 유발했음.
 }
 
 /**
@@ -108,12 +96,10 @@ export async function sign (input: SignInput): Promise<V1Response> {
   const safeMethod = _sanitizeMethod(input.method)
   const safeChainId = _sanitizeChainId(input.chainId)
   _validateSignPayload(safeChainId, input.payload)
-  // (m09-04-03) transport 옵션 sanitize — 'hid' | 'ble' | undefined (INVALID_PARAMS throw 가능)
-  const safeTransport = _sanitizeTransportOption(input.transport)
+  // (DC-2701) transport는 연결 단위 dcent.setTransport()로 분리 — sign per-call 옵션 제거.
   return _call({
     method: safeMethod,
     chainId: safeChainId,
     params: input.payload,
-    transport: safeTransport,
   })
 }

@@ -452,12 +452,13 @@ export class PopupTransport implements MessageTransport {
         timer,
       })
 
-      // (m09-04-03) pendingTransport를 toWireTransport로 변환하여 항상 동봉 (undefined → 'auto').
-      // sdk가 'auto'를 받으면 picker UI fallback, 'hid'/'ble'를 받으면 즉시 connect.
+      // (m09-04-03 / DC-2701) pendingTransport를 toWireTransport로 변환하여 동봉 (3-state).
+      // (DC-2701) 'auto' 제거 — 미지정(undefined)은 default로 sdk에 그대로 전달한다. sdk가
+      // 'hid'(USB only + auto) / 'ble'(BLE only, no auto) / undefined(둘 다 + auto)로 분기.
       const handshakeParams: {
         version: string
         clientName: string
-        transport: 'hid' | 'ble' | 'auto'
+        transport?: 'hid' | 'ble'
       } = {
         version: this.protocolVersion,
         clientName: 'connector',

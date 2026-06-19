@@ -395,24 +395,41 @@ describe('sign() — transport option throw + backward compat', () => {
     expect((caught as ProviderError).code).toBe(ErrorCode.INVALID_PARAMS)
   })
 
-  test('T-ST-03 (DC-2701): setTransport("ble") 후 첫 handshake에 transport="ble" 동봉', async () => {
-    setTransport('ble')
-    const { transport } = ensureSingleton()
-    const sendSpy = jest.spyOn(transport, 'send').mockResolvedValue({
-      id: 'st03',
-      result: {
-        header: { version: '1.0', status: 'success' as const },
-        body: { command: 'signTransaction' },
-      },
-    })
-    await sign({ method: 'signTransaction', chainId: 'eip155:1', payload: { keyPath: "m/44'/60'/0'/0/0" } })
+  test('T-ST-03 (DC-2701 F6 cross-review): setTransport("ble") → 첫 handshake params.transport === "ble" (실제 wire end-to-end)', async () => {
+    // (F6) 기존 T-ST-03은 transport.send를 통째로 mock해 실제 _handshake가 방출되지 않았고
+    // pendingTransport(내부 상태)만 검증했다 → setTransport→handshake wire seam이 미검증. 공개
+    // setTransport 진입점이 실제 handshake 메시지 params.transport로 흐르는지(singleton 포함)
+    // real postMessage 하네스(T-U-01~03 동일 패턴)로 end-to-end 검증한다.
+    jest.useFakeTimers()
+    const mockPopup = makeMockPopup()
+    const openSpy = jest
+      .spyOn(window, 'open')
+      .mockImplementation(() => mockPopup as unknown as Window)
+    // singleton popUpUrl = 'http://localhost:5173' → 같은 origin으로 handshake auto-respond.
+    installHandshakeAutoRespond(mockPopup, 'http://localhost:5173')
+    try {
+      setTransport('ble') // 공개 API → singleton _pendingTransport
+      const { transport } = ensureSingleton()
+      const sendPromise = transport.send({ id: 'st03', method: 'signTransaction', params: {} })
+      await flushHandshake()
+      dispatchResponse('http://localhost:5173', {
+        id: 'st03',
+        result: { header: { version: '1.0', status: 'success' }, body: { command: 'signTransaction' } },
+      })
+      await sendPromise
 
-    const hsCall = sendSpy.mock.calls.find(
-      (c) => (c[0] as { method?: unknown })?.method === '_handshake',
-    )
-    // handshake가 send 경로를 안 타는 mock이면 pendingTransport로 검증
-    expect((transport as unknown as { pendingTransport: unknown }).pendingTransport).toBe('ble')
-    void hsCall
+      const hsCall = mockPopup.postMessage.mock.calls.find(
+        (c: unknown[]) => (c[0] as { method?: unknown })?.method === '_handshake',
+      )
+      expect(hsCall).toBeDefined()
+      expect((hsCall![0] as { params: { transport: unknown } }).params.transport).toBe('ble')
+    } finally {
+      await ensureSingleton().transport.close().catch(() => {})
+      jest.useRealTimers()
+      openSpy.mockRestore()
+      uninstallReadyAutoRespond()
+      _resetForTesting()
+    }
   })
 
   test('T-ST-04 (DC-2701): setTransport("hid") → pendingTransport "hid"', () => {

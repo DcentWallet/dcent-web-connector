@@ -419,6 +419,60 @@
             },
           ],
         },
+        {
+          // m10-01-12: Stellar signMessage — wm 0.7.14 stellar/index.js:32 slot 등록.
+          // SDK는 signMessage 핸들러로 wm signMessageFromWire에 forward (EVM/Solana와 동일 경로).
+          kind: 'family',
+          label: 'Stellar',
+          items: [
+            {
+              kind: 'method',
+              id: 'signMessage:xlm:raw',
+              label: 'signMessage (raw)',
+              chainId: 'stellar:pubnet/slip44:148',
+              defaultKeyPath: "m/44'/148'/0'",
+              metaKind: 'raw',
+            },
+          ],
+        },
+      ],
+    },
+    {
+      // m10-01-11 / m10-01-14: dApp 전용 sign 메서드 — signMessage와 별개 intent.
+      //   - signData (Cardano CIP-8/CIP-95): { keyPath, address, payload } → { signature, key }
+      //   - signAuthEntry (Stellar Soroban): { keyPath, authEntry } → { signedAuthEntry, signerAddress }
+      // SDK 핸들러는 머지됨 (DcentSdkClient signData ~1087 / signAuthEntry ~1044).
+      // connector는 chain-agnostic pass-through — method 문자열만 forward
+      // (connector-chain-addition-isolation: chain enum/매핑 부재).
+      kind: 'group',
+      label: 'Sign Data / Auth Entry (dApp)',
+      items: [
+        {
+          kind: 'family',
+          label: 'Cardano',
+          items: [
+            {
+              kind: 'method',
+              id: 'signData:ada:cip8',
+              label: 'signData (CIP-8/95)',
+              chainId: 'cip34:1-764824073',
+              defaultKeyPath: "m/44'/1815'/0'/0/0",
+            },
+          ],
+        },
+        {
+          kind: 'family',
+          label: 'Stellar',
+          items: [
+            {
+              kind: 'method',
+              id: 'signAuthEntry:xlm:soroban',
+              label: 'signAuthEntry (Soroban)',
+              chainId: 'stellar:pubnet/slip44:148',
+              defaultKeyPath: "m/44'/148'/0'",
+            },
+          ],
+        },
       ],
     },
     {
@@ -528,6 +582,12 @@
       {
         label: 'Tezos raw message',
         message: 'Hello Tezos!',
+      },
+    ],
+    'signMessage:xlm:raw': [
+      {
+        label: 'Stellar raw message',
+        message: 'Hello Stellar!',
       },
     ],
   }
@@ -886,6 +946,10 @@
       renderBitcoinTxBuilderForm(methodDef)
     } else if (methodDef.id.startsWith('signMessage:')) {
       renderSignMessageForm(methodDef)
+    } else if (methodDef.id.startsWith('signData:')) {
+      renderSignDataForm(methodDef)
+    } else if (methodDef.id.startsWith('signAuthEntry:')) {
+      renderSignAuthEntryForm(methodDef)
     } else if (methodDef.id.startsWith('signTx:evm:')) {
       renderSignTxEvmForm(methodDef)
     } else if (methodDef.family && NON_EVM_FAMILIES.indexOf(methodDef.family) !== -1) {
@@ -1555,6 +1619,74 @@
     }
   }
 
+  // ── renderSignDataForm (m10-01-14) ──
+  // Cardano CIP-8 / CIP-95 message signing (signData).
+  // SDK 핸들러(DcentSdkClient signData ~1087)는 { keyPath, address, payload }를 wm signDataFromWire로
+  // 무변환 forward하고 { signature, key }(DataSignature)를 반환한다.
+  //   - address: payment / 29-byte stake / DRep credential hex (non-empty 필수)
+  //   - payload: opaque sign bytes (hex) — CIP-8/95는 빈 payload도 허용
+  // 폼은 signMessage(raw) 패턴 mirror — message → address + payload로 교체.
+  function renderSignDataForm (methodDef) {
+    var sdFamily = (allChainsMap[methodDef.chainId] || {}).family || 'cardano'
+    var sdChainIdEl = appendFormRow('chainId', 'Chain ID (CAIP-19)', 'input', {
+      value: methodDef.chainId,
+      datalist: _chainIdOptions(sdFamily),
+    })
+
+    var sdKeyPathEl = appendFormRow('keyPath', 'Key Path', 'input', {
+      value: methodDef.defaultKeyPath || CHAIN_KEY_PATH[methodDef.chainId] || "m/44'/1815'/0'/0/0",
+      placeholder: "m/44'/1815'/0'/0/0",
+    })
+    _wireKeyPathSync(sdChainIdEl, sdKeyPathEl)
+
+    appendFormRow('address', 'Address (payment / stake / DRep hex)', 'input', {
+      value: '',
+      placeholder: 'addr1... or stake/DRep credential hex',
+    })
+
+    var sdPayloadEl = appendFormRow('payload', 'Payload (hex sign bytes)', 'textarea', {
+      value: '',
+      placeholder: 'CIP-8/95 opaque sign payload (hex) — empty allowed',
+    })
+    if (sdPayloadEl) sdPayloadEl.rows = 4
+
+    var sdNote = document.createElement('p')
+    sdNote.style.cssText = 'font-size:10px;color:#aaa;margin-bottom:6px;'
+    sdNote.textContent = 'Cardano CIP-8/CIP-95 — address must belong to the connected device. Returns { signature, key }.'
+    formFields.appendChild(sdNote)
+  }
+
+  // ── renderSignAuthEntryForm (m10-01-11) ──
+  // Stellar Soroban authorization entry signing (signAuthEntry).
+  // SDK 핸들러(DcentSdkClient signAuthEntry ~1044)는 { keyPath, authEntry }를 wm signAuthEntryFromWire로
+  // 무변환 forward하고 { signedAuthEntry, signerAddress }를 반환한다.
+  //   - authEntry: opaque XDR string (base64) — non-empty 필수
+  // 폼은 signMessage(raw) 패턴 mirror — message → authEntry로 교체.
+  function renderSignAuthEntryForm (methodDef) {
+    var saFamily = (allChainsMap[methodDef.chainId] || {}).family || 'stellar'
+    var saChainIdEl = appendFormRow('chainId', 'Chain ID (CAIP-19)', 'input', {
+      value: methodDef.chainId,
+      datalist: _chainIdOptions(saFamily),
+    })
+
+    var saKeyPathEl = appendFormRow('keyPath', 'Key Path', 'input', {
+      value: methodDef.defaultKeyPath || CHAIN_KEY_PATH[methodDef.chainId] || "m/44'/148'/0'",
+      placeholder: "m/44'/148'/0'",
+    })
+    _wireKeyPathSync(saChainIdEl, saKeyPathEl)
+
+    var saEntryEl = appendFormRow('authEntry', 'Auth Entry (XDR base64)', 'textarea', {
+      value: '',
+      placeholder: 'Soroban HashIDPreimage / authorization entry XDR (base64)',
+    })
+    if (saEntryEl) saEntryEl.rows = 6
+
+    var saNote = document.createElement('p')
+    saNote.style.cssText = 'font-size:10px;color:#aaa;margin-bottom:6px;'
+    saNote.textContent = 'Stellar Soroban — authEntry is opaque XDR. Returns { signedAuthEntry, signerAddress }.'
+    formFields.appendChild(saNote)
+  }
+
   // ── renderSignTxEvmForm ──
   function renderSignTxEvmForm (methodDef) {
     // chainId — 트리 선택값을 default로 두고 사용자가 자유 입력 가능.
@@ -2092,6 +2224,10 @@
       handleBitcoinTxAction(methodId)
     } else if (methodId.startsWith('signMessage:')) {
       sendSignMessage()
+    } else if (methodId.startsWith('signData:')) {
+      sendSignData()
+    } else if (methodId.startsWith('signAuthEntry:')) {
+      sendSignAuthEntry()
     } else if (methodId.startsWith('signTx:evm:')) {
       sendSignTxEvm()
     } else if (state.selectedMethodDef && state.selectedMethodDef.family &&
@@ -2562,6 +2698,115 @@
     }).catch(function (err) {
       appendLog({
         method: 'signMessage',
+        chainId: chainId,
+        keyPath: keyPath,
+        request: params,
+        error: normalizeError(err),
+        latencyMs: Date.now() - startMs,
+      })
+    })
+  }
+
+  // ── sendSignData (m10-01-14) — Cardano CIP-8/95 dApp message signing ──
+  // wire: { method: 'signData', chainId, payload: { keyPath, address, payload } }
+  // SDK는 address(non-empty) + payload(string, empty 허용)를 검증 후 wm로 forward → { signature, key }.
+  // boundary-validation: keyPath / address 필수. payload는 빈 문자열 허용(CIP-8 opaque).
+  function sendSignData () {
+    var methodDef = state.selectedMethodDef
+    if (!methodDef) return
+
+    var chainIdEl = document.getElementById('field-chainId')
+    var keyPathEl = document.getElementById('field-keyPath')
+    var addressEl = document.getElementById('field-address')
+    var payloadEl = document.getElementById('field-payload')
+
+    var chainId = chainIdEl ? chainIdEl.value : methodDef.chainId
+    var keyPath = keyPathEl ? keyPathEl.value.trim() : ''
+    var address = addressEl ? addressEl.value.trim() : ''
+    // payload는 opaque sign bytes — 빈 문자열도 유효(SDK signData 핸들러가 empty payload 수용).
+    var signPayload = payloadEl ? payloadEl.value.trim() : ''
+
+    var keyPathError = validateKeyPath(keyPath)
+    if (keyPathError) {
+      showFieldError('keyPath', keyPathError)
+      return
+    }
+    if (!address) {
+      showFieldError('address', 'Address is required (payment / stake / DRep hex)')
+      return
+    }
+
+    var params = { chainId: chainId, keyPath: keyPath, address: address, payload: signPayload }
+    var startMs = Date.now()
+
+    var dcent = _getDcent()
+    var sdSignInput = { method: 'signData', chainId: chainId, payload: { keyPath: keyPath, address: address, payload: signPayload } }
+    dcent.sign(sdSignInput).then(_unwrapV1Envelope).then(function (result) {
+      appendLog({
+        method: 'signData',
+        chainId: chainId,
+        keyPath: keyPath,
+        request: params,
+        response: result,
+        latencyMs: Date.now() - startMs,
+        deviceFirmware: state.device && state.device.firmware,
+      })
+    }).catch(function (err) {
+      appendLog({
+        method: 'signData',
+        chainId: chainId,
+        keyPath: keyPath,
+        request: params,
+        error: normalizeError(err),
+        latencyMs: Date.now() - startMs,
+      })
+    })
+  }
+
+  // ── sendSignAuthEntry (m10-01-11) — Stellar Soroban authorization entry signing ──
+  // wire: { method: 'signAuthEntry', chainId, payload: { keyPath, authEntry } }
+  // SDK는 authEntry(non-empty)를 검증 후 wm로 forward → { signedAuthEntry, signerAddress }.
+  // boundary-validation: keyPath / authEntry 필수.
+  function sendSignAuthEntry () {
+    var methodDef = state.selectedMethodDef
+    if (!methodDef) return
+
+    var chainIdEl = document.getElementById('field-chainId')
+    var keyPathEl = document.getElementById('field-keyPath')
+    var authEntryEl = document.getElementById('field-authEntry')
+
+    var chainId = chainIdEl ? chainIdEl.value : methodDef.chainId
+    var keyPath = keyPathEl ? keyPathEl.value.trim() : ''
+    var authEntry = authEntryEl ? authEntryEl.value.trim() : ''
+
+    var keyPathError = validateKeyPath(keyPath)
+    if (keyPathError) {
+      showFieldError('keyPath', keyPathError)
+      return
+    }
+    if (!authEntry) {
+      showFieldError('authEntry', 'Auth Entry (XDR) is required')
+      return
+    }
+
+    var params = { chainId: chainId, keyPath: keyPath, authEntry: authEntry }
+    var startMs = Date.now()
+
+    var dcent = _getDcent()
+    var saSignInput = { method: 'signAuthEntry', chainId: chainId, payload: { keyPath: keyPath, authEntry: authEntry } }
+    dcent.sign(saSignInput).then(_unwrapV1Envelope).then(function (result) {
+      appendLog({
+        method: 'signAuthEntry',
+        chainId: chainId,
+        keyPath: keyPath,
+        request: params,
+        response: result,
+        latencyMs: Date.now() - startMs,
+        deviceFirmware: state.device && state.device.firmware,
+      })
+    }).catch(function (err) {
+      appendLog({
+        method: 'signAuthEntry',
         chainId: chainId,
         keyPath: keyPath,
         request: params,
@@ -3149,6 +3394,7 @@
   // ── Export minimal test API for unit tests (jsdom) ──
   window._playgroundTestAPI = {
     TREE: TREE,
+    PRESETS: PRESETS,
     CHAIN_KEY_PATH: CHAIN_KEY_PATH,
     KEY_PATH_RE: KEY_PATH_RE,
     validateKeyPath: validateKeyPath,

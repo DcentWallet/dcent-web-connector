@@ -57,7 +57,7 @@
     ],
     "transaction": {
       "type": 2,
-      "to": "0xdAC17F958D2ee523a2206206994597C13D831ec7",
+      "to": "0xdac17f958d2ee523a2206206994597c13d831ec7",
       "value": "0x0",
       "gasLimit": "0x186a0",
       "maxFeePerGas": "0x77359400",
@@ -91,7 +91,7 @@
     ],
     "transaction": {
       "type": 2,
-      "to": "0xdAC17F958D2ee523a2206206994597C13D831ec7",
+      "to": "0xdac17f958d2ee523a2206206994597c13d831ec7",
       "value": "0x0",
       "gasLimit": "0x186a0",
       "maxFeePerGas": "0x77359400",
@@ -125,7 +125,7 @@
     ],
     "transaction": {
       "type": 2,
-      "to": "0xBC4CA0EdA7647A8aB7C2061c2E118A18a936f13D",
+      "to": "0xbc4ca0eda7647a8ab7c2061c2e118a18a936f13d",
       "value": "0x0",
       "gasLimit": "0x30d40",
       "maxFeePerGas": "0x77359400",

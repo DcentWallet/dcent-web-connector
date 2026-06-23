@@ -11,6 +11,7 @@
 
 import { getAccountInfo } from '../../../../src/sign/info'
 import type { AccountListV2Payload, V2AccountInfo } from '../../../../src/sign/types'
+import type { AddressFormat } from '../../../../src/sign/address'
 import { ensureSingleton, _resetForTesting } from '../../../../src/singleton'
 
 beforeEach(() => {
@@ -83,10 +84,11 @@ describe('getAccountInfo v2 — m09-04-12', () => {
     const { transport } = ensureSingleton()
 
     const resolved = {
-      chainId: 'eip155:1/slip44:60', // 정본 B: full CAIP-19 (slash 포함), 별도 caip19 필드 없음
+      // 정본 B resolved: chainId=full CAIP-19, keyPath, label만. unresolved/raw discriminant 미포함
+      // (sdk enrichAccountInfo가 resolved에 unresolved 키를 싣지 않음 — sdk T-SYNC-01과 대칭).
+      chainId: 'eip155:1/slip44:60',
       keyPath: "m/44'/60'/0'/0/0",
       label: 'ETH',
-      unresolved: false as const,
     }
     const unresolved = {
       chainId: null,
@@ -108,6 +110,8 @@ describe('getAccountInfo v2 — m09-04-12', () => {
     expect(typeof r.chainId).toBe('string')
     expect((r.chainId as string)).toContain('/') // full CAIP-19 (slash 포함)
     expect(r).not.toHaveProperty('caip19') // 정본 B: 별도 caip19 필드 없음
+    expect(r).not.toHaveProperty('unresolved') // resolved는 discriminant 미포함
+    expect(r).not.toHaveProperty('raw') // raw는 unresolved 전용
     if (!r.unresolved) {
       expect(r.keyPath).toBe("m/44'/60'/0'/0/0")
       expect(r.label).toBe('ETH')
@@ -150,8 +154,11 @@ describe('getAccountInfo v2 — m09-04-12', () => {
     const acc = resp.body.parameter!.account[0]
 
     if (!acc.unresolved) {
+      // 컴파일 타임 가드 — meta.addressFormat이 known key(AddressFormat)로 타입됨을 강제.
+      // addressFormat이 index signature(unknown)로 회귀하면 이 binding이 컴파일 실패한다.
+      const fmt: AddressFormat | undefined = acc.meta?.addressFormat
       // passthrough — dApp이 BTC legacy/segwit 구분에 사용
-      expect(acc.meta?.addressFormat).toBe('segwit-native')
+      expect(fmt).toBe('segwit-native')
       expect(acc.chainId).toBe('bip122:000000000019d6689c085ae165831e93/slip44:0')
     }
   })

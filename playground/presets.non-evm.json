@@ -508,35 +508,5 @@
       "blockHash": "GJp9NRJGBnXqWJAKFxkzD8p9cJTiSNi1J3UWKVBbcfRw",
       "nonce": 0
     }
-  },
-  {
-    "id": "near-nft-transfer",
-    "label": "NEAR NEP-171 NFT transfer (nft_transfer)",
-    "family": "near",
-    "applicableChainIds": [
-      "near:mainnet/slip44:397"
-    ],
-    "note": "NFT 전송 — NEAR NEP-171 nft_transfer. FunctionCall action(wm contract_call 경로). receiverId=NFT 컨트랙트 계정, args={receiver_id, token_id}는 JSON 객체. deposit='1'(yoctoNEAR), gas=30 TGas. ⚠️ signerId는 device 실 on-chain NEAR 계정 + 본인 소유 token_id 사용. receiverId(NFT 컨트랙트)/receiver_id/token_id 교체 후 송금. blockHash/nonce는 RPC가 덮어씀.",
-    "sourceUrl": "https://nomicon.io/Standards/Tokens/NonFungibleToken/Core",
-    "transaction": {
-      "signerId": "sender.near",
-      "receiverId": "nft.contract.near",
-      "actions": [
-        {
-          "type": "FunctionCall",
-          "params": {
-            "methodName": "nft_transfer",
-            "args": {
-              "receiver_id": "receiver.near",
-              "token_id": "1"
-            },
-            "gas": "30000000000000",
-            "deposit": "1"
-          }
-        }
-      ],
-      "blockHash": "GJp9NRJGBnXqWJAKFxkzD8p9cJTiSNi1J3UWKVBbcfRw",
-      "nonce": 0
-    }
   }
 ]

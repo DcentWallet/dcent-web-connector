@@ -306,6 +306,30 @@
     }
   },
   {
+    "id": "xlm-usdc-payment",
+    "label": "Stellar USDC payment (issued asset)",
+    "family": "stellar",
+    "applicableChainIds": [
+      "stellar:pubnet/slip44:148"
+    ],
+    "note": "Stellar issued-asset(trustline token) payment. wm 0.7.20 keystone STELLAR 어댑터(m02-05-53 / DC-2887)가 wire의 asset:{code,issuer}를 extractStellarTokenIdentity → TokenAccount 합성 → signTransaction이 new Asset(code,issuer) 서명(native Asset.native() 아님). chainId는 native stellar(slip44:148)와 동일 — asset은 payload에서 식별됨. amount 단위 = 토큰 최소단위(USDC 7 decimals → 10000000 = 1 USDC). issuer = Circle USDC mainnet(GA5ZSEJYB37JRC5AVCIA5MOP4RHTM335X2KGX3IHOJAPP5RE34K4KZVN). ⚠ 수신처에 USDC trustline 선행 필요(없으면 op_no_trust). registry 미등록 토큰은 keystone -32602(silent native XLM 차단). native XLM은 xlm-payment preset 참조.",
+    "sourceUrl": "https://developers.stellar.org/docs/learn/fundamentals/stellar-data-structures/assets",
+    "transaction": {
+      "type": "payment",
+      "destination": "GC6OISCEYJSHTO6QBZYVT52B4ZW63BCVTNCFYLUJQK5FUKLJP6L2XNAJ",
+      "asset": {
+        "code": "USDC",
+        "issuer": "GA5ZSEJYB37JRC5AVCIA5MOP4RHTM335X2KGX3IHOJAPP5RE34K4KZVN"
+      },
+      "amount": "10000000",
+      "memo": {
+        "type": "none"
+      },
+      "fee": 100,
+      "sequenceNumber": "0"
+    }
+  },
+  {
     "id": "ada-cbor-signtx",
     "label": "Cardano dApp signTransaction (CIP-30 CBOR — native asset)",
     "family": "cardano",

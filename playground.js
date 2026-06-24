@@ -252,16 +252,131 @@
     return clone
   }
 
-  // family-aware sender substitution dispatcher. 현재 지원: solana / algorand / tezos / hedera /
-  // xrp / xahau / constellation. 다른 family 는 향후 점진 추가 (Tron `owner_address`, Conflux
-  // `from`, Stellar `source` 등). 미지원 family 는 원본 그대로 반환 (no-op).
+  // ── Tron placeholder substitution helper ──
+  // Tron tx 는 nested 봉투: raw_data.contract[].parameter.value.owner_address 가 sender.
+  // dApp 이 placeholder owner_address 를 보내면 device 서명 후 TronWeb 이 owner_address ↔
+  // derived address 불일치로 reject. flattened form(top-level owner_address) + wm-internal
+  // sender 도 함께 치환. 보존: to_address(recipient), contract_address, amount, data 등.
+  function _substituteTronOwner (txObj, walletAddress) {
+    if (typeof txObj === 'string') return txObj
+    if (!txObj || typeof txObj !== 'object') return txObj
+    if (!walletAddress || typeof walletAddress !== 'string') return txObj
+    var clone
+    try {
+      clone = JSON.parse(JSON.stringify(txObj))
+    } catch (e) {
+      return txObj
+    }
+    var contracts = clone.raw_data && clone.raw_data.contract
+    if (Array.isArray(contracts)) {
+      contracts.forEach(function (c) {
+        var v = c && c.parameter && c.parameter.value
+        if (v && typeof v === 'object' && Object.prototype.hasOwnProperty.call(v, 'owner_address')) {
+          v.owner_address = walletAddress
+        }
+      })
+    }
+    if (Object.prototype.hasOwnProperty.call(clone, 'owner_address')) {
+      clone.owner_address = walletAddress
+    }
+    if (Object.prototype.hasOwnProperty.call(clone, 'sender')) {
+      clone.sender = walletAddress
+    }
+    return clone
+  }
+
+  // ── `from`-field placeholder substitution helper (Conflux / Havah) ──
+  // Conflux({from,to,value,...}) / Havah(ICON-native {from,to,value,nid,...}) 의 `from` 이 sender.
+  // placeholder from 을 보내면 서명 후 라이브러리/firmware 가 from ↔ derived address 불일치로 reject.
+  // 보존: to(recipient), value, nid, stepLimit, gas 등. wm-internal sender 도 함께 치환.
+  function _substituteFromField (txObj, walletAddress) {
+    if (typeof txObj === 'string') return txObj
+    if (!txObj || typeof txObj !== 'object') return txObj
+    if (!walletAddress || typeof walletAddress !== 'string') return txObj
+    var clone
+    try {
+      clone = JSON.parse(JSON.stringify(txObj))
+    } catch (e) {
+      return txObj
+    }
+    if (Object.prototype.hasOwnProperty.call(clone, 'from')) {
+      clone.from = walletAddress
+    }
+    if (Object.prototype.hasOwnProperty.call(clone, 'sender')) {
+      clone.sender = walletAddress
+    }
+    return clone
+  }
+
+  // ── Cosmos placeholder substitution helper ──
+  // Cosmos amino({chain_id, msgs:[{type, value:{from_address, to_address, amount}}], ...}) 의
+  // msgs[].value.from_address 가 sender. placeholder 면 서명 후 signer pubkey 불일치로 reject.
+  // 보존: to_address(recipient), amount, fee, memo 등. wm-internal sender 도 함께 치환.
+  function _substituteCosmosSender (txObj, walletAddress) {
+    if (typeof txObj === 'string') return txObj
+    if (!txObj || typeof txObj !== 'object') return txObj
+    if (!walletAddress || typeof walletAddress !== 'string') return txObj
+    var clone
+    try {
+      clone = JSON.parse(JSON.stringify(txObj))
+    } catch (e) {
+      return txObj
+    }
+    if (Array.isArray(clone.msgs)) {
+      clone.msgs.forEach(function (m) {
+        var v = m && m.value
+        if (v && typeof v === 'object' && Object.prototype.hasOwnProperty.call(v, 'from_address')) {
+          v.from_address = walletAddress
+        }
+      })
+    }
+    if (Object.prototype.hasOwnProperty.call(clone, 'sender')) {
+      clone.sender = walletAddress
+    }
+    return clone
+  }
+
+  // ── NEAR placeholder substitution helper ──
+  // NEAR({type:'transfer', sender:'x.near', recipient:'y.near', amount, ...}) 의 `sender`(또는
+  // 일부 포맷의 `signerId`)가 sender. placeholder named account 면 서명 후 access key 불일치로 reject.
+  // 보존: recipient, amount, blockHash, publicKey 등.
+  function _substituteNearSender (txObj, walletAddress) {
+    if (typeof txObj === 'string') return txObj
+    if (!txObj || typeof txObj !== 'object') return txObj
+    if (!walletAddress || typeof walletAddress !== 'string') return txObj
+    var clone
+    try {
+      clone = JSON.parse(JSON.stringify(txObj))
+    } catch (e) {
+      return txObj
+    }
+    if (Object.prototype.hasOwnProperty.call(clone, 'signerId')) {
+      clone.signerId = walletAddress
+    }
+    if (Object.prototype.hasOwnProperty.call(clone, 'sender')) {
+      clone.sender = walletAddress
+    }
+    return clone
+  }
+
+  // family-aware sender substitution dispatcher. 치환 가능: ethereum(from) / solana / algorand /
+  // tezos / hedera / xrp / xahau / constellation / tron / conflux / havah / cosmos / near.
+  // EVM(ethereum)은 보통 from 생략(signer 암시)이라 _substituteFromField 가 대개 no-op.
+  // payload 에 sender 필드가 없는 family(bitcoin / stellar / polkadot / vechain / fil / stacks /
+  // cardano-CBOR)는 미등록 — 원본 그대로 반환 (no-op). 버튼은 전 family 노출되며, no-op 은
+  // 클릭 핸들러가 JSON 무변화로 감지해 안내한다.
   function _substituteSenderByFamily (txObj, family, walletAddress) {
+    if (family === 'ethereum') return _substituteFromField(txObj, walletAddress)
     if (family === 'solana') return _substituteSolanaSigner(txObj, walletAddress)
     if (family === 'algorand') return _substituteAlgorandSender(txObj, walletAddress)
     if (family === 'tezos') return _substituteTezosSource(txObj, walletAddress)
     if (family === 'hedera') return _substituteHederaSender(txObj, walletAddress)
     if (family === 'xrp' || family === 'xahau') return _substituteXrpAccount(txObj, walletAddress)
     if (family === 'constellation') return _substituteConstellationSource(txObj, walletAddress)
+    if (family === 'tron') return _substituteTronOwner(txObj, walletAddress)
+    if (family === 'conflux' || family === 'havah') return _substituteFromField(txObj, walletAddress)
+    if (family === 'cosmos') return _substituteCosmosSender(txObj, walletAddress)
+    if (family === 'near') return _substituteNearSender(txObj, walletAddress)
     return txObj
   }
 
@@ -1761,6 +1876,46 @@
   }
 
   // ── renderSignTxEvmForm ──
+  // ── Sender resolver row builder (EVM + non-EVM signTransaction 폼 공용) ─────
+  // 모든 signTransaction 폼 상단에 "Resolve sender from device" 버튼을 단다(전 네트워크
+  // 일관 노출). family 에 sender 필드가 있으면 device 주소로 치환(_substituteSenderByFamily),
+  // 없으면 no-op — 클릭 핸들러가 "치환 대상 없음"으로 안내한다(JSON 무변화 감지).
+  var SENDER_FIELD_LABELS = {
+    ethereum: 'placeholder from 을 wallet 0x 주소로 치환 (EVM은 보통 from 생략 — signer 암시)',
+    solana: 'placeholder feePayer/signer 를 wallet pubkey 로 치환',
+    algorand: 'placeholder from(sender) 를 wallet address 로 치환',
+    tezos: 'placeholder source 를 wallet tz1 주소로 치환',
+    hedera: 'transfers[amount<0] accountId 를 wallet 0.0.X 로 치환',
+    xrp: 'placeholder Account 를 wallet r... 주소로 치환',
+    xahau: 'placeholder Account 를 wallet r... 주소로 치환',
+    constellation: 'placeholder source 를 wallet DAG 주소로 치환',
+    tron: 'placeholder owner_address 를 wallet T... 주소로 치환',
+    conflux: 'placeholder from 을 wallet cfx: 주소로 치환',
+    havah: 'placeholder from 을 wallet hx 주소로 치환',
+    cosmos: 'msgs[].value.from_address 를 wallet cosmos1... 로 치환',
+    near: 'placeholder sender 를 wallet .near 계정으로 치환',
+  }
+  function _appendSenderResolveRow (family) {
+    var resolveRow = document.createElement('div')
+    resolveRow.className = 'form-row'
+    resolveRow.style.cssText = 'margin-bottom:8px;padding:6px;background:#f7f7f7;border-radius:4px;'
+    var resolveBtn = document.createElement('button')
+    resolveBtn.id = 'btn-resolve-sender'
+    resolveBtn.type = 'button'
+    resolveBtn.textContent = '🔑 Resolve sender from device'
+    resolveBtn.style.cssText = 'font-size:11px;padding:4px 8px;'
+    var resolveHint = document.createElement('span')
+    resolveHint.id = 'resolve-sender-hint'
+    resolveHint.style.cssText = 'font-size:10px;color:#888;margin-left:8px;'
+    resolveHint.textContent = SENDER_FIELD_LABELS[family] || '이 네트워크는 payload에 sender 필드가 없음 (signer=디바이스 계정) — 클릭해도 변화 없을 수 있음'
+    resolveBtn.addEventListener('click', function () {
+      _resolveSenderFromDeviceClick(family, resolveHint)
+    })
+    resolveRow.appendChild(resolveBtn)
+    resolveRow.appendChild(resolveHint)
+    formFields.appendChild(resolveRow)
+  }
+
   function renderSignTxEvmForm (methodDef) {
     // chainId — 트리 선택값을 default로 두고 사용자가 자유 입력 가능.
     // EVM family의 모든 chain (Polygon/Kaia/BSC 등)을 datalist로 제공.
@@ -1775,6 +1930,10 @@
       placeholder: "m/44'/60'/0'/0/0",
     })
     _wireKeyPathSync(evmChainIdEl, evmKeyPathEl)
+
+    // Sender resolver button — EVM도 전 네트워크 일관 노출 (family='ethereum').
+    // EVM tx는 보통 from 생략(signer 암시)이라 대개 no-op이며, from 필드가 있으면 치환.
+    _appendSenderResolveRow(methodDef.family)
 
     // transaction (JSON textarea)
     var txInput = appendFormRow('transaction', 'Transaction (JSON)', 'textarea', {
@@ -1872,45 +2031,11 @@
       }
     }
 
-    // ── Sender resolver button (form 맨 위) ─────────────────────────────────
-    // dApp이 보내는 transaction 의 sender 필드가 실제 wallet 주소가 아닌 placeholder 면
-    // device 서명 후 family-별 라이브러리(@solana/web3.js / algosdk 등)가 reject 한다.
-    // 이 버튼은 device 에서 실제 wallet 주소를 fetch 한 뒤 textarea JSON 의 placeholder 를
-    // 치환한다. family-aware dispatch — _substituteSenderByFamily 가 처리.
-    // 폼 맨 위에 배치 — 사용자가 chainId/keyPath 채운 직후 한 번 클릭하면 끝.
-    var resolverFamilies = { solana: true, algorand: true, tezos: true, hedera: true, xrp: true, xahau: true, constellation: true }
-    if (resolverFamilies[methodDef.family]) {
-      var resolveRow = document.createElement('div')
-      resolveRow.className = 'form-row'
-      resolveRow.style.cssText = 'margin-bottom:8px;padding:6px;background:#f7f7f7;border-radius:4px;'
-      var resolveBtn = document.createElement('button')
-      resolveBtn.id = 'btn-resolve-sender'
-      resolveBtn.type = 'button'
-      resolveBtn.textContent = '🔑 Resolve sender from device'
-      resolveBtn.style.cssText = 'font-size:11px;padding:4px 8px;'
-      var resolveHint = document.createElement('span')
-      resolveHint.id = 'resolve-sender-hint'
-      resolveHint.style.cssText = 'font-size:10px;color:#888;margin-left:8px;'
-      // family 별 안내 문구
-      var senderFieldLabelMap = {
-        solana: 'placeholder feePayer/signer 를 wallet pubkey 로 치환',
-        algorand: 'placeholder from(sender) 를 wallet address 로 치환',
-        tezos: 'placeholder source 를 wallet tz1 주소로 치환',
-        hedera: 'transfers[amount<0] accountId 를 wallet 0.0.X 로 치환',
-        xrp: 'placeholder Account 를 wallet r... 주소로 치환',
-        xahau: 'placeholder Account 를 wallet r... 주소로 치환',
-        constellation: 'placeholder source 를 wallet DAG 주소로 치환',
-      }
-      resolveHint.textContent = senderFieldLabelMap[methodDef.family] || 'sender 치환'
-      // family closure capture
-      var family = methodDef.family
-      resolveBtn.addEventListener('click', function () {
-        _resolveSenderFromDeviceClick(family, resolveHint)
-      })
-      resolveRow.appendChild(resolveBtn)
-      resolveRow.appendChild(resolveHint)
-      formFields.appendChild(resolveRow)
-    }
+    // ── Sender resolver button (전 family 일관 노출 — _appendSenderResolveRow) ──
+    // dApp transaction 의 sender 필드가 placeholder 면 device 서명 후 family 라이브러리가
+    // reject 한다. 이 버튼이 device 의 실제 wallet 주소로 치환. sender 필드가 없는
+    // family(bitcoin/stellar/polkadot 등)는 no-op — 클릭 핸들러가 안내한다.
+    _appendSenderResolveRow(methodDef.family)
 
     // chainId — 트리 선택값을 default로 두고 사용자가 자유 입력 가능.
     // 같은 family의 chain (예: Polkadot family의 Polkadot/Astar 등)을 datalist로 제공.
@@ -2080,8 +2205,16 @@
         return
       }
       var substituted = _substituteSenderByFamily(txObj, family, address)
+      var before = JSON.stringify(txObj)
+      var after = JSON.stringify(substituted)
       txEl.value = JSON.stringify(substituted, null, 2)
-      setHint('✓ substituted to ' + address.slice(0, 8) + '…' + address.slice(-4), false)
+      var addrShort = address.slice(0, 8) + '…' + address.slice(-4)
+      if (before === after) {
+        // 치환 대상(sender 필드)이 없어 payload 무변화 — no-op family 안내.
+        setHint('ⓘ 이 네트워크는 치환할 sender 필드가 없음 (signer = ' + addrShort + ')', false)
+      } else {
+        setHint('✓ substituted to ' + addrShort, false)
+      }
     }).catch(function (err) {
       setHint('⚠ getAddress 실패: ' + ((err && err.message) || String(err)), true)
     })
@@ -3485,6 +3618,10 @@
     _substituteHederaSender: _substituteHederaSender,
     _substituteXrpAccount: _substituteXrpAccount,
     _substituteConstellationSource: _substituteConstellationSource,
+    _substituteTronOwner: _substituteTronOwner,
+    _substituteFromField: _substituteFromField,
+    _substituteCosmosSender: _substituteCosmosSender,
+    _substituteNearSender: _substituteNearSender,
     _substituteSenderByFamily: _substituteSenderByFamily,
     onConnect: onConnect,
     getLogEntries: function () { return state.logs },

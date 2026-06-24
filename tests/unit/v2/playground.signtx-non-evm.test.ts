@@ -624,12 +624,12 @@ describe('_substituteAlgorandSender: placeholder → wallet address', () => {
     expect(out.to).toBe(RECIPIENT)
   })
 
-  it('T-U-NEVM-FAMILY-SUB-03: _substituteSenderByFamily — 미지원 family (tron 등) → no-op', () => {
-    const tx = { owner_address: 'placeholder-owner', to_address: RECIPIENT }
-    const out = subByFamily(tx, 'tron', WALLET)
-    // 미지원이므로 원본 그대로 반환
+  it('T-U-NEVM-FAMILY-SUB-03: _substituteSenderByFamily — 미지원 family (polkadot 등, sender 필드 없음) → no-op', () => {
+    const tx = { method: 'balances.transfer', args: ['placeholder-addr', '1'] }
+    const out = subByFamily(tx, 'polkadot', WALLET)
+    // sender 필드가 없는 family — 원본 그대로 반환
     expect(out).toBe(tx)
-    expect(out.owner_address).toBe('placeholder-owner')
+    expect(out.args[0]).toBe('placeholder-addr')
   })
 
   it('T-U-NEVM-FAMILY-SUB-04: _substituteSenderByFamily — xrp family → XRP Account 치환', () => {
@@ -653,6 +653,72 @@ describe('_substituteAlgorandSender: placeholder → wallet address', () => {
     expect(out.source).toBe(WALLET)
     expect(out.destination).toBe(RECIPIENT)
     expect(out.amount).toBe('100000000')
+  })
+
+  it('T-U-NEVM-FAMILY-SUB-07: tron family → raw_data owner_address 치환, to_address 보존', () => {
+    const tx = {
+      raw_data: {
+        contract: [
+          { type: 'TransferContract', parameter: { value: { owner_address: 'TPLACEHOLDERxxxxxxxxxxxxxxxxxxxxxxx', to_address: RECIPIENT, amount: 1000000 } } },
+        ],
+      },
+    }
+    const out = subByFamily(tx, 'tron', WALLET)
+    expect(out.raw_data.contract[0].parameter.value.owner_address).toBe(WALLET)
+    expect(out.raw_data.contract[0].parameter.value.to_address).toBe(RECIPIENT)
+    expect(out.raw_data.contract[0].parameter.value.amount).toBe(1000000)
+  })
+
+  it('T-U-NEVM-FAMILY-SUB-08: conflux family → from 치환, to/value 보존', () => {
+    const tx = { from: 'cfxPLACEHOLDER', to: RECIPIENT, value: '0x10' }
+    const out = subByFamily(tx, 'conflux', WALLET)
+    expect(out.from).toBe(WALLET)
+    expect(out.to).toBe(RECIPIENT)
+    expect(out.value).toBe('0x10')
+  })
+
+  it('T-U-NEVM-FAMILY-SUB-09: havah family → from 치환, to/nid 보존', () => {
+    const tx = { from: 'hxPLACEHOLDER', to: RECIPIENT, value: '0xDE0B6B3A7640001', nid: '0x100' }
+    const out = subByFamily(tx, 'havah', WALLET)
+    expect(out.from).toBe(WALLET)
+    expect(out.to).toBe(RECIPIENT)
+    expect(out.nid).toBe('0x100')
+  })
+
+  it('T-U-NEVM-FAMILY-SUB-10: cosmos family → msgs[].value.from_address 치환, to_address 보존', () => {
+    const tx = { chain_id: 'cosmoshub-4', msgs: [{ type: 'cosmos-sdk/MsgSend', value: { from_address: 'cosmosPLACEHOLDER', to_address: RECIPIENT, amount: [{ denom: 'uatom', amount: '1000000' }] } }] }
+    const out = subByFamily(tx, 'cosmos', WALLET)
+    expect(out.msgs[0].value.from_address).toBe(WALLET)
+    expect(out.msgs[0].value.to_address).toBe(RECIPIENT)
+    expect(out.msgs[0].value.amount[0].amount).toBe('1000000')
+  })
+
+  it('T-U-NEVM-FAMILY-SUB-11: near family → sender 치환, recipient/amount 보존', () => {
+    const tx = { type: 'transfer', sender: 'placeholder.near', recipient: RECIPIENT, amount: '1000000000000000000000000' }
+    const out = subByFamily(tx, 'near', WALLET)
+    expect(out.sender).toBe(WALLET)
+    expect(out.recipient).toBe(RECIPIENT)
+    expect(out.amount).toBe('1000000000000000000000000')
+  })
+
+  it('T-U-NEVM-FAMILY-SUB-12: sender 필드 없는 family(bitcoin) → no-op (원본 반환)', () => {
+    const tx = { inputs: [{ keyPath: "m/44'/0'/0'/0/0" }], outputs: [{ address: RECIPIENT, amount: 1000 }] }
+    const out = subByFamily(tx, 'bitcoin', WALLET)
+    expect(out).toBe(tx)
+  })
+
+  it('T-U-NEVM-FAMILY-SUB-13: ethereum family → from 치환 (from 있을 때), to/value 보존', () => {
+    const tx = { from: '0xPLACEHOLDER', to: RECIPIENT, value: '0x10', type: 2 }
+    const out = subByFamily(tx, 'ethereum', WALLET)
+    expect(out.from).toBe(WALLET)
+    expect(out.to).toBe(RECIPIENT)
+    expect(out.value).toBe('0x10')
+  })
+
+  it('T-U-NEVM-FAMILY-SUB-14: ethereum family → from 없으면 무변화(no-op)', () => {
+    const tx = { to: RECIPIENT, value: '0x10', type: 2 }
+    const out = subByFamily(tx, 'ethereum', WALLET)
+    expect(JSON.stringify(out)).toBe(JSON.stringify(tx))
   })
 })
 

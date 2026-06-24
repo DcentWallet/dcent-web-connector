@@ -181,14 +181,87 @@
     return clone
   }
 
-  // family-aware sender substitution dispatcher. 현재 지원: solana / algorand / tezos / hedera.
-  // 다른 family는 향후 점진 추가 (XRP `Account`, Tron `owner_address`, Conflux `from`, Stellar
-  // `source` 등). 미지원 family는 원본 그대로 반환 (no-op).
+  // ── XRP / Xahau placeholder substitution helper ──
+  // XRPL Payment({TransactionType, Account, Destination, Amount, Fee, Sequence, ...}) 의 `Account`
+  // 필드가 sender. dApp 이 placeholder("rHb9...") 를 보내면 device 서명 시 firmware 가 Account ↔
+  // derived pubkey 불일치로 'Invalid Unsigned'(firmware code='invalid_format') reject 한다.
+  // Xahau 는 XRPL 사이드체인으로 동일 shape(ripple 로직 공유) → 같은 helper 적용.
+  //
+  // 적용 대상: txObj.Account (XRPL 표준), txObj.sender (wm-internal)
+  // 보존: txObj.Destination (recipient), Amount, Fee, Sequence, Flags 등
+  function _substituteXrpAccount (txObj, walletAddress) {
+    if (typeof txObj === 'string') return txObj // opaque (pre-encoded blob)
+    if (!txObj || typeof txObj !== 'object') return txObj
+    if (!walletAddress || typeof walletAddress !== 'string') return txObj
+    var clone
+    try {
+      clone = JSON.parse(JSON.stringify(txObj))
+    } catch (e) {
+      return txObj
+    }
+    if (Object.prototype.hasOwnProperty.call(clone, 'Account')) {
+      clone.Account = walletAddress
+    }
+    if (Object.prototype.hasOwnProperty.call(clone, 'sender')) {
+      clone.sender = walletAddress
+    }
+    return clone
+  }
+
+  // ── Constellation (DAG) placeholder substitution helper ──
+  // Constellation transfer({type:'transfer', source, destination, amount, fee}) 의 `source` 필드가
+  // sender. dApp 이 placeholder("DAG000...0000") 를 보내면 wm 이 source 주소의 last transaction
+  // reference 를 live L1 API 로 조회하는데, 존재하지 않는 주소라 404 →
+  // "constellation: failed to fetch last transaction reference — Not found".
+  // 실 wallet DAG 주소(on-chain 이력 보유)로 치환하면 lastRef 조회가 성공한다.
+  //
+  // destination 도 zero-filled placeholder("DAG000...0001") 면 walletAddress 로 치환 → self-transfer.
+  // 이 placeholder 는 Constellation 체크섬을 만족하지 않는 invalid 주소라, wm/firmware 가 파싱할 때
+  // recipient/amount 표시가 깨진다 (실측: amount 1 DAG 가 0.01531742 DAG 로, to 가 DAG000...0000 으로
+  // 뭉개짐). 다른 family 의 zero-address placeholder(EVM 0x000.., Solana 111..112)는 구조적으로
+  // valid 라 통하지만 Constellation 은 체크섬 검증이 있어 통하지 않는다. 실제 수신처를 입력한
+  // 경우(placeholder 아님)는 보존 — source 와 달리 destination 은 조건부 치환.
+  //
+  // 적용 대상: txObj.source / txObj.sender (무조건), txObj.destination (placeholder 일 때만)
+  // 보존: 실제 destination(recipient), amount, fee, type
+  function _substituteConstellationSource (txObj, walletAddress) {
+    if (typeof txObj === 'string') return txObj
+    if (!txObj || typeof txObj !== 'object') return txObj
+    if (!walletAddress || typeof walletAddress !== 'string') return txObj
+    var clone
+    try {
+      clone = JSON.parse(JSON.stringify(txObj))
+    } catch (e) {
+      return txObj
+    }
+    if (Object.prototype.hasOwnProperty.call(clone, 'source')) {
+      clone.source = walletAddress
+    }
+    if (Object.prototype.hasOwnProperty.call(clone, 'sender')) {
+      clone.sender = walletAddress
+    }
+    // zero-filled placeholder destination("DAG" + 20자 이상 연속 0)만 self-transfer 로 치환.
+    // 실 DAG 주소는 parity 자리가 0이어도 20자 연속 0을 갖지 않으므로 valid recipient 는 보존.
+    if (
+      Object.prototype.hasOwnProperty.call(clone, 'destination') &&
+      typeof clone.destination === 'string' &&
+      /^DAG0{20,}/.test(clone.destination)
+    ) {
+      clone.destination = walletAddress
+    }
+    return clone
+  }
+
+  // family-aware sender substitution dispatcher. 현재 지원: solana / algorand / tezos / hedera /
+  // xrp / xahau / constellation. 다른 family 는 향후 점진 추가 (Tron `owner_address`, Conflux
+  // `from`, Stellar `source` 등). 미지원 family 는 원본 그대로 반환 (no-op).
   function _substituteSenderByFamily (txObj, family, walletAddress) {
     if (family === 'solana') return _substituteSolanaSigner(txObj, walletAddress)
     if (family === 'algorand') return _substituteAlgorandSender(txObj, walletAddress)
     if (family === 'tezos') return _substituteTezosSource(txObj, walletAddress)
     if (family === 'hedera') return _substituteHederaSender(txObj, walletAddress)
+    if (family === 'xrp' || family === 'xahau') return _substituteXrpAccount(txObj, walletAddress)
+    if (family === 'constellation') return _substituteConstellationSource(txObj, walletAddress)
     return txObj
   }
 
@@ -1805,7 +1878,7 @@
     // 이 버튼은 device 에서 실제 wallet 주소를 fetch 한 뒤 textarea JSON 의 placeholder 를
     // 치환한다. family-aware dispatch — _substituteSenderByFamily 가 처리.
     // 폼 맨 위에 배치 — 사용자가 chainId/keyPath 채운 직후 한 번 클릭하면 끝.
-    var resolverFamilies = { solana: true, algorand: true, tezos: true, hedera: true }
+    var resolverFamilies = { solana: true, algorand: true, tezos: true, hedera: true, xrp: true, xahau: true, constellation: true }
     if (resolverFamilies[methodDef.family]) {
       var resolveRow = document.createElement('div')
       resolveRow.className = 'form-row'
@@ -1824,6 +1897,9 @@
         algorand: 'placeholder from(sender) 를 wallet address 로 치환',
         tezos: 'placeholder source 를 wallet tz1 주소로 치환',
         hedera: 'transfers[amount<0] accountId 를 wallet 0.0.X 로 치환',
+        xrp: 'placeholder Account 를 wallet r... 주소로 치환',
+        xahau: 'placeholder Account 를 wallet r... 주소로 치환',
+        constellation: 'placeholder source 를 wallet DAG 주소로 치환',
       }
       resolveHint.textContent = senderFieldLabelMap[methodDef.family] || 'sender 치환'
       // family closure capture
@@ -3407,6 +3483,8 @@
     _substituteAlgorandSender: _substituteAlgorandSender,
     _substituteTezosSource: _substituteTezosSource,
     _substituteHederaSender: _substituteHederaSender,
+    _substituteXrpAccount: _substituteXrpAccount,
+    _substituteConstellationSource: _substituteConstellationSource,
     _substituteSenderByFamily: _substituteSenderByFamily,
     onConnect: onConnect,
     getLogEntries: function () { return state.logs },

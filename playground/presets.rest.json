@@ -361,6 +361,46 @@
     }
   },
   {
+    "id": "coreum-assetft-transfer",
+    "label": "Coreum assetft (smart-token) transfer",
+    "family": "cosmos",
+    "applicableChainIds": [
+      "cosmos:coreum-mainnet-1/slip44:990"
+    ],
+    "note": "m02-05-54 검증용. wm Amino SignDoc(bank MsgSend)인데 amount[0].denom = assetft 토큰 denom. 기대: extractCosmosTokenIdentity가 denom을 토큰으로 식별 → tier-1 registry hit(smart-token.json 'test', parent CZONE:core, decimals 6) → TokenAccount 합성 → MsgSend가 token denom으로 서명(native ucore 아님). 54 전이면 native ucore로 silent 오서명(버그). amount '1000000' = 1 token(6dec). fee는 항상 native ucore. from/to=디바이스 coreum self-send. account_number/sequence는 sign 시 wm live REST가 덮어씀. /verify-wire-sign COSMOS로 byte 검증: MsgSend denom=token + secp recover=device 계정.",
+    "sourceUrl": "https://docs.coreum.dev/docs/modules/assetft",
+    "transaction": {
+      "chain_id": "coreum-mainnet-1",
+      "account_number": "0",
+      "sequence": "0",
+      "fee": {
+        "amount": [
+          {
+            "denom": "ucore",
+            "amount": "5000"
+          }
+        ],
+        "gas": "200000"
+      },
+      "msgs": [
+        {
+          "type": "cosmos-sdk/MsgSend",
+          "value": {
+            "from_address": "core1n9a7x46880h6qrtjmvwxrlgt0yprj7029k55sc",
+            "to_address": "core1n9a7x46880h6qrtjmvwxrlgt0yprj7029k55sc",
+            "amount": [
+              {
+                "denom": "test-core14ljz7w9lc2yrg66gtfklk94p4jzzmla32ft2s8",
+                "amount": "1000000"
+              }
+            ]
+          }
+        }
+      ],
+      "memo": ""
+    }
+  },
+  {
     "id": "coreum-testnet-transfer",
     "label": "Coreum Testnet CORE transfer",
     "family": "cosmos",

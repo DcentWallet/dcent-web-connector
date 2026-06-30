@@ -217,4 +217,57 @@ describe('getPublicKey v2 facade — 입력 검증 (boundary-validation / dapp-i
       }),
     ).rejects.toEqual(expectV1Error('param_error'))
   })
+
+  // boundary-validation / error-handling-consistency: non-object input은 raw TypeError가 아니라
+  // dcentException(param_error)로 reject되어야 한다 (cross-review W2).
+  test('input=undefined → param_error reject (raw TypeError 아님)', async () => {
+    await expect(getPublicKey(undefined as any)).rejects.toEqual(
+      expectV1Error('param_error', 'getPublicKey: input must be an object { chainId, keyPath }'),
+    )
+  })
+
+  test('input=null → param_error reject', async () => {
+    await expect(getPublicKey(null as any)).rejects.toEqual(
+      expectV1Error('param_error', 'getPublicKey: input must be an object { chainId, keyPath }'),
+    )
+  })
+
+  test('input=array → param_error reject (typeof [] === object 함정 명시 거부)', async () => {
+    await expect(getPublicKey(['cip34:1-764824073'] as any)).rejects.toEqual(
+      expectV1Error('param_error', 'getPublicKey: input must be an object { chainId, keyPath }'),
+    )
+  })
+
+  test('input=string(primitive) → param_error reject', async () => {
+    await expect(getPublicKey('cip34:1-764824073' as any)).rejects.toEqual(
+      expectV1Error('param_error', 'getPublicKey: input must be an object { chainId, keyPath }'),
+    )
+  })
+})
+
+describe('getPublicKey v2 facade — mutation 격리 (nested payload, cross-review W1)', () => {
+  // T-SEC-MUT: getPublicKey 응답의 nested role 객체(payment/stake/drep)를 호출자가 변경해도
+  // popup이 보낸 원본 / 같은 객체를 재사용하는 다음 응답에 leak되지 않아야 한다.
+  test('nested publicKey mutation이 다음 getPublicKey 호출에 leak되지 않음', async () => {
+    const { transport } = ensureSingleton()
+    // 같은 응답 객체를 두 번 반환 (popup이 객체를 재사용하는 worst case — T-MUT-RESP 패턴)
+    const sharedResult = {
+      payment: { keyPath: "m/1852'/1815'/0'/0/0", publicKey: 'aa11' },
+      stake: { keyPath: "m/1852'/1815'/0'/2/0", publicKey: 'bb22' },
+      drep: { keyPath: "m/1852'/1815'/0'/3/0", publicKey: 'cc33' },
+    }
+    jest.spyOn(transport, 'send').mockResolvedValue({ id: 'gp-mut', result: sharedResult })
+
+    const a = await getPublicKey({ chainId: 'cip34:1-764824073', keyPath: "m/1852'/1815'/0'/0/0" })
+    // dApp이 반환된 nested role 객체를 in-place 변경
+    ;(a.body.parameter as any).payment.publicKey = 'ffff'
+
+    const b = await getPublicKey({ chainId: 'cip34:1-764824073', keyPath: "m/1852'/1815'/0'/0/0" })
+    // 두 번째 응답은 오염되지 않아야 함
+    expect((b.body.parameter as any).payment.publicKey).toBe('aa11')
+    // 두 응답의 nested 객체는 서로 다른 reference
+    expect((a.body.parameter as any).payment).not.toBe((b.body.parameter as any).payment)
+    // popup 원본도 오염되지 않아야 함
+    expect(sharedResult.payment.publicKey).toBe('aa11')
+  })
 })

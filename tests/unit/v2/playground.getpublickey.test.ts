@@ -68,6 +68,18 @@ const CARDANO_PUBKEY_RESULT = {
   drep: { keyPath: "m/1852'/1815'/0'/3/0", publicKey: 'cc33' },
 }
 
+// facade-shaped mock dcent — getPublicKey가 v1 success envelope을 resolve
+function makeMockDcent(getPublicKeyImpl?: jest.Mock) {
+  return {
+    getPublicKey:
+      getPublicKeyImpl ||
+      jest.fn().mockResolvedValue({ header: { status: 'success' }, body: { parameter: CARDANO_PUBKEY_RESULT } }),
+    getDeviceInfo: jest.fn().mockResolvedValue({ header: { status: 'success' }, body: { parameter: {} } }),
+    popupWindowClose: jest.fn(),
+    setConnectionListener: jest.fn(),
+  }
+}
+
 // ─────────────────────────────────────────────────────────
 // T-CONN-PG-03: getPublicKey 노드 — 트리 + 폼 + 결과 요약
 // ─────────────────────────────────────────────────────────
@@ -93,6 +105,40 @@ describe('T-CONN-PG-03: getPublicKey 노드 렌더', () => {
     // DOM 트리 노드로도 렌더링된다
     const domNode = document.querySelector('[data-method-id="account:getPublicKey"]')
     expect(domNode).toBeTruthy()
+  })
+
+  it('노드 선택 시 chainId/keyPath 폼 필드가 default 값으로 렌더된다', () => {
+    const node = document.querySelector('[data-method-id="account:getPublicKey"]') as HTMLElement
+    node.click()
+
+    const chainIdEl = document.getElementById('field-chainId') as HTMLInputElement
+    const keyPathEl = document.getElementById('field-keyPath') as HTMLInputElement
+    expect(chainIdEl).toBeTruthy()
+    expect(keyPathEl).toBeTruthy()
+    expect(chainIdEl.value).toBe('cip34:1-764824073')
+    expect(keyPathEl.value).toBe("m/1852'/1815'/0'/0/0")
+  })
+
+  it('Send 클릭 시 dcent.getPublicKey({chainId, keyPath})로 dispatch된다', () => {
+    const api = (window as any)._playgroundTestAPI
+    const mockGetPublicKey = jest
+      .fn()
+      .mockResolvedValue({ header: { status: 'success' }, body: { parameter: CARDANO_PUBKEY_RESULT } })
+
+    const node = document.querySelector('[data-method-id="account:getPublicKey"]') as HTMLElement
+    node.click()
+    api.simulateConnect(makeMockDcent(mockGetPublicKey), null, { model: 'Bio', firmware: '3.0' })
+
+    // 폼 값 수정 (default와 다른 값으로 — 실제 입력 반영 검증)
+    ;(document.getElementById('field-chainId') as HTMLInputElement).value = 'cip34:1-764824073'
+    ;(document.getElementById('field-keyPath') as HTMLInputElement).value = "m/1852'/1815'/0'/2/0"
+    ;(document.getElementById('btn-send') as HTMLButtonElement).click()
+
+    expect(mockGetPublicKey).toHaveBeenCalledTimes(1)
+    expect(mockGetPublicKey).toHaveBeenCalledWith({
+      chainId: 'cip34:1-764824073',
+      keyPath: "m/1852'/1815'/0'/2/0",
+    })
   })
 
   it('결과 요약 helper가 payment/stake/drep 각 keyPath+publicKey를 추출한다 (undefined-safe)', () => {

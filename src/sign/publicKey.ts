@@ -86,6 +86,17 @@ export interface GetPublicKeyV2Input {
  * @throws V1Exception(param_error) — chainId / keyPath / addressFormat 검증 실패 시
  */
 export async function getPublicKey (input: GetPublicKeyV2Input): Promise<V1Response> {
+  // boundary-validation: input이 non-null plain object인지 먼저 가드.
+  // undefined/null/array/primitive를 그대로 deref하면 raw TypeError가 나서
+  // error-handling-consistency(모든 실패는 dcentException) 계약이 깨진다.
+  // getAddress facade가 array를 명시 거부하는 것과 동일한 방어 (typeof [] === 'object' 함정 포함).
+  if (input === null || typeof input !== 'object' || Array.isArray(input)) {
+    throw dcentException(
+      'param_error',
+      'getPublicKey: input must be an object { chainId, keyPath }',
+    )
+  }
+
   // chainId sanitize는 ProviderError로 throw — v1 호환을 위해 catch + dcentException re-throw.
   // (getAddress _getAddressV2와 동일 패턴 — dApp의 .catch(err => err.body?.error?.code) 호환)
   let safeChainId: string

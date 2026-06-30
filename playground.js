@@ -512,6 +512,8 @@
         { kind: 'method', id: 'account:syncAccount', label: 'syncAccount' },
         { kind: 'method', id: 'account:selectAddress', label: 'selectAddress' },
         { kind: 'method', id: 'account:getAddress', label: 'getAddress' },
+        // m09-04-21: chain-agnostic getPublicKey verb — Cardano payment/stake/drep 공개키 조회.
+        { kind: 'method', id: 'account:getPublicKey', label: 'getPublicKey' },
         { kind: 'method', id: 'account:getXPUB', label: 'getXPUB' },
       ],
     },
@@ -1246,6 +1248,26 @@
       //   - connector-chain-addition-isolation: chainId 문자열 pass-through만 (chain enum/switch 부재)
       //   - boundary-validation: v2 input 검증은 facade(m11-01-02 _getAddressV2)가 담당, 폼은 UI validation만
       _renderGetAddressForm()
+      return
+    }
+
+    if (name === 'getPublicKey') {
+      // m09-04-21: chain-agnostic getPublicKey 폼 — chainId(CAIP/CIP-34) + keyPath.
+      // facade(dcent.getPublicKey)가 입력 검증을 담당하므로 폼은 단순 입력만 수집한다.
+      //   - connector-chain-addition-isolation: chainId는 입력값 그대로 pass-through (chain enum 부재)
+      //   - boundary-validation: 빈 chainId/keyPath는 facade가 param_error throw
+      var gpkNote = document.createElement('p')
+      gpkNote.style.cssText = 'font-size:11px;color:#888;margin-bottom:8px;'
+      gpkNote.textContent = 'Cardano payment/stake/drep 공개키(+keyPath)를 조회합니다.'
+      formFields.appendChild(gpkNote)
+      appendFormRow('chainId', 'chainId (CAIP-19 / CIP-34)', 'input', {
+        value: 'cip34:1-764824073',
+        placeholder: 'cip34:1-764824073',
+      })
+      appendFormRow('keyPath', 'Key Path', 'input', {
+        value: "m/1852'/1815'/0'/0/0",
+        placeholder: "m/1852'/1815'/0'/0/0",
+      })
       return
     }
 
@@ -2578,6 +2600,16 @@
           return dcent.getAddress(coinTypeValue, path, prefix)
         }
 
+        if (name === 'getPublicKey') {
+          // m09-04-21: dcent.getPublicKey({chainId, keyPath}) — chain-agnostic passthrough.
+          // facade가 chainId/keyPath 검증을 담당 (빈 값이면 param_error throw).
+          var gpkChainIdEl = document.getElementById('field-chainId')
+          var gpkKeyPathEl = document.getElementById('field-keyPath')
+          var gpkChainId = gpkChainIdEl ? gpkChainIdEl.value.trim() : ''
+          var gpkKeyPath = gpkKeyPathEl ? gpkKeyPathEl.value.trim() : ''
+          return dcent.getPublicKey({ chainId: gpkChainId, keyPath: gpkKeyPath })
+        }
+
         if (name === 'getXPUB') {
           var keyEl = document.getElementById('field-key')
           var bipEl = document.getElementById('field-bip32name')
@@ -3485,6 +3517,38 @@
   }
 
   // ── Log helpers ──
+  // ── _summarizeGetPublicKeyResult (m09-04-21) ──
+  // getPublicKey 응답에서 Cardano payment/stake/drep role별 {keyPath, publicKey}를 추출한다.
+  // undefined-safe — role 항목이 없거나 필드가 누락돼도 throw하지 않고 가능한 만큼만 반환.
+  // 어떤 chain의 응답이든 동작 (chain-agnostic) — role이 없으면 빈 배열.
+  function _summarizeGetPublicKeyResult (result) {
+    var rows = []
+    if (!result || typeof result !== 'object') return rows
+    var roles = ['payment', 'stake', 'drep']
+    roles.forEach(function (role) {
+      var entry = result[role]
+      if (entry && typeof entry === 'object') {
+        rows.push({
+          role: role,
+          keyPath: typeof entry.keyPath === 'string' ? entry.keyPath : undefined,
+          publicKey: typeof entry.publicKey === 'string' ? entry.publicKey : undefined,
+        })
+      }
+    })
+    return rows
+  }
+
+  // ── _summarizeGetAddressResult (m09-04-21) ──
+  // getAddress 응답에서 address + (Cardano) rewardAddress를 추출한다.
+  // undefined-safe — rewardAddress는 Cardano 신 shape에만 존재. 다른 family는 미포함.
+  function _summarizeGetAddressResult (result) {
+    var out = {}
+    if (!result || typeof result !== 'object') return out
+    if (typeof result.address === 'string') out.address = result.address
+    if (typeof result.rewardAddress === 'string') out.rewardAddress = result.rewardAddress
+    return out
+  }
+
   function appendLog (entry) {
     var ts = new Date().toISOString()
     var logEntry = {
@@ -3530,6 +3594,34 @@
       resEl.className = 'log-json'
       resEl.textContent = JSON.stringify(entry.response, null, 2)
       entryEl.appendChild(resEl)
+    }
+
+    // m09-04-21: getPublicKey 응답 — payment/stake/drep role별 keyPath/publicKey 요약 라인.
+    if (entry.response !== undefined && entry.method === 'getPublicKey') {
+      var pkRows = _summarizeGetPublicKeyResult(entry.response)
+      if (pkRows.length > 0) {
+        var pkSummary = document.createElement('div')
+        pkSummary.className = 'log-summary pubkey-summary'
+        pkRows.forEach(function (r) {
+          var line = document.createElement('div')
+          line.className = 'pubkey-role pubkey-role-' + r.role
+          line.textContent = r.role + ': ' + (r.keyPath || '(no keyPath)') + ' → ' + (r.publicKey || '(no publicKey)')
+          pkSummary.appendChild(line)
+        })
+        entryEl.appendChild(pkSummary)
+      }
+    }
+
+    // m09-04-21: getAddress 응답 — Cardano 신 shape의 rewardAddress 라인 (undefined-safe).
+    // 다른 family 응답은 rewardAddress 부재 → 라인 미표시.
+    if (entry.response !== undefined && entry.method === 'getAddress') {
+      var addrSummary = _summarizeGetAddressResult(entry.response)
+      if (addrSummary.rewardAddress) {
+        var rwLine = document.createElement('div')
+        rwLine.className = 'log-summary reward-address-line'
+        rwLine.textContent = 'rewardAddress: ' + addrSummary.rewardAddress
+        entryEl.appendChild(rwLine)
+      }
     }
 
     if (entry.error) {
@@ -3610,6 +3702,9 @@
     validateKeyPath: validateKeyPath,
     state: state,
     appendLog: appendLog,
+    // m09-04-21: getPublicKey / getAddress 응답 요약 helper (undefined-safe, pure)
+    _summarizeGetPublicKeyResult: _summarizeGetPublicKeyResult,
+    _summarizeGetAddressResult: _summarizeGetAddressResult,
     // b08-01: envelope unwrap helper + popup-only onConnect 검증용 노출
     _unwrapV1Envelope: _unwrapV1Envelope,
     // placeholder substitution helpers — unit testable

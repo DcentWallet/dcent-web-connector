@@ -71,7 +71,7 @@ afterEach(() => {
 // T-U-01: 트리 DOM 빌더 — TREE 선언적 객체에서 expected node 개수
 // m11-01-01: Account/Device 그룹 8 method + signMessage 4 method = 12 (기존 5에서 변경)
 // ─────────────────────────────────────────────────────────
-it('T-U-01: 트리 DOM에 23개 non-placeholder method node가 렌더링된다', () => {
+it('T-U-01: 트리 DOM에 24개 non-placeholder method node가 렌더링된다', () => {
   const api = (window as any)._playgroundTestAPI
   expect(api).toBeDefined()
 
@@ -80,12 +80,13 @@ it('T-U-01: 트리 DOM에 23개 non-placeholder method node가 렌더링된다',
   // m11-01-03: Bitcoin Tx Builder(4) 추가 → 16
   // DC-2309 (b11-01): signMessage 비-EVM family 3종(sol/tron/dot) + Astar → 4→8 → 20
   // m10-01-11/12/14: signMessage Stellar(1) + signData Cardano(1) + signAuthEntry Stellar(1) → 23
+  // m09-04-21: Account API에 getPublicKey(1) 추가 → 24
   const count = api.countMethodNodes()
-  expect(count).toBe(23)
+  expect(count).toBe(24)
 
-  // DOM에는 placeholder 포함 24개 .tree-item (EVM 체인 로드 전 placeholder 1개 추가)
+  // DOM에는 placeholder 포함 25개 .tree-item (EVM 체인 로드 전 placeholder 1개 추가)
   const domItems = document.querySelectorAll('.tree-item')
-  expect(domItems.length).toBe(24) // 23 non-placeholder + 1 EVM loading placeholder
+  expect(domItems.length).toBe(25) // 24 non-placeholder + 1 EVM loading placeholder
 })
 
 // ─────────────────────────────────────────────────────────

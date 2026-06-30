@@ -21,6 +21,28 @@
     }
   },
   {
+    "id": "algo-asa-transfer",
+    "label": "Algorand ASA transfer (USDC axfer)",
+    "family": "algorand",
+    "applicableChainIds": [
+      "algorand:wGHE2Pwdvd7S12BL5FaOP20EGYesN73k/slip44:283"
+    ],
+    "note": "Algorand ASA(axfer) 토큰 전송. assetIndex 31566704 = USDC(decimals 6, amount 1000 = 0.001 USDC). m02-05-55(DC-2904) wire ASA 서명 검증용. ⚠️ 반드시 Algorand 메인넷 체인으로 서명(USDC ASA는 ALGORAND 메인넷 parent에만 등록 — 다른 체인 선택 시 tier-1 miss → -32602). ⚠️ from/to를 기기 자기 계정으로 교체(self-send) — owner≠signer면 broadcast 거부, 수신자 USDC opt-in 선행 필요. native ALGO가 아닌 USDC 토큰으로 서명·표시되는지 확인.",
+    "sourceUrl": "https://github.com/algorand/js-algorand-sdk",
+    "transaction": {
+      "type": "axfer",
+      "assetIndex": 31566704,
+      "from": "Y76M3MSY6DKBRHBL7C3NNDXGS5IIMQVQVUAB6MP4XEMMGVF2QWNPL226CA",
+      "to": "Y76M3MSY6DKBRHBL7C3NNDXGS5IIMQVQVUAB6MP4XEMMGVF2QWNPL226CA",
+      "amount": 1000,
+      "fee": 1000,
+      "firstRound": 1,
+      "lastRound": 1000,
+      "genesisID": "mainnet-v1.0",
+      "genesisHash": "wGHE2Pwdvd7S12BL5FaOP20EGYesN73ktiHc0CYz/uo="
+    }
+  },
+  {
     "id": "cfx-transfer",
     "label": "Conflux CFX transfer",
     "family": "conflux",
@@ -598,6 +620,26 @@
       "era": "0x00",
       "nonce": 0,
       "tip": 0
+    }
+  },
+  {
+    "id": "trx-trc20-descriptor-transfer",
+    "label": "TRON TRC20 transfer — form-D descriptor (미등록/커스텀 토큰)",
+    "family": "tron",
+    "applicableChainIds": [
+      "tron:0x2b6653dc/slip44:195"
+    ],
+    "note": "미등록(커스텀) 토큰 전송 — form-D descriptor. wm m02-05-68 buildTrc20TransferFromDescriptor 가 transaction.token={contract,to,amount} 를 TRC-20 transfer calldata(a9059cbb + pad32(to) + pad32(amount)) 로 빌드 → generic {type:'trigger'} shape → 서명. ★form-E(trx-trc20-transfer, raw_data 봉투)와 달리 registry 등록 불필요 — 미등록 TRC-20 컨트랙트도 서명 가능. contract=TQvqG7ezw25SGRfvGW57vVXo1Rw8P17LeR 는 trc-token.json 에 없는 미등록 valid-format 컨트랙트(checksum OK). descriptor 에 decimals 가 있으면 wm 3-tier resolver 가 tier-3(descriptor)로 합성 → on-chain RPC 없이 해석되므로 컨트랙트 실재 불필요(§9 byte-proof 는 broadcast 안 함). owner 는 transaction.owner_address(또는 from)에서 read-only — 없으면 sender undefined → convertTransaction -32602(오서명 방지). amount=base units 문자열(×10^decimals 재스케일 금지). ref_block_*/expiration/timestamp 는 wm 가 getNodeInfo 로 재생성. ⚠️ token.to/owner_address 를 본인 디바이스 TRON 계정(T...)으로 교체(self-send 권장, asset risk 0). 실재 미등록 토큰으로 바꾸려면 token.contract 를 trc-token.json 에 없는 임의 TRC-20 로 교체. 검증: /verify-wire-sign TRON (assetKind=token, native TRX 아님, signer=owner).",
+    "sourceUrl": "https://developers.tron.network/docs/trc20-contract-interaction",
+    "transaction": {
+      "token": {
+        "contract": "TQvqG7ezw25SGRfvGW57vVXo1Rw8P17LeR",
+        "to": "TJRabPrwbZy45sbavfcjinPJC18kjpRTv8",
+        "amount": "1000",
+        "decimals": 6,
+        "symbol": "TKN"
+      },
+      "owner_address": "TJRabPrwbZy45sbavfcjinPJC18kjpRTv8"
     }
   }
 ]

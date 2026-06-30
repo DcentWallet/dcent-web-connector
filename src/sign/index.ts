@@ -32,6 +32,9 @@ export { getAddress, getXPUB } from './address'
 export type { GetAddressV2Input } from './address'
 // m09-04-09: addressFormat enum type for BTC family multi-variant dispatch
 export type { AddressFormat } from './address'
+// m09-04-21: v2 getPublicKey verb (chain-agnostic) — Cardano payment/stake/drep 공개키 조회
+export { getPublicKey } from './publicKey'
+export type { GetPublicKeyV2Input } from './publicKey'
 export { setLabel, syncAccount, selectAddress } from './configure'
 // m09-04-12: SyncAccountInfo(v1) removed — V2SyncAccountInfo re-exported from ./types above
 // m09-04-15: builder가 v2 flat BitcoinWireTransaction을 직접 생성 (별도 변환 함수 없음)

@@ -59,10 +59,35 @@ function isV1ResponseShape (result: unknown): result is V1Response {
 }
 
 /**
+ * v1 payload(parameter) deep-clone helper — mutation-isolation.
+ *
+ * shallow spread(`{ ...parameter }`)는 top-level 키만 분리하므로, parameter가
+ * **중첩 객체/배열**을 담으면(예: getPublicKey의 `{payment,stake,drep}` role 객체,
+ * getAccountInfo의 account 배열) dApp이 `parameter.payment.publicKey`를 in-place 변경할 때
+ * popup이 보낸 원본(또는 같은 객체를 재사용하는 다음 응답)에 leak된다.
+ * deep-clone으로 반환 시점에 완전히 분리한다.
+ *
+ * v1 wire payload는 postMessage(structured clone)를 거친 JSON-호환 데이터이므로
+ * structuredClone이 안전하다. 비-cloneable 값이 섞인 예외는 JSON 라운드트립으로 fallback,
+ * 그조차 실패하면 원본을 그대로 반환(가용성 우선).
+ */
+function deepClonePlain<T> (value: T): T {
+  try {
+    return structuredClone(value)
+  } catch {
+    try {
+      return JSON.parse(JSON.stringify(value)) as T
+    } catch {
+      return value
+    }
+  }
+}
+
+/**
  * raw payload를 v1 호환 success V1Response로 wrap한다.
  * popup이 v1 형식이 아닌 raw 결과를 보낸 경우의 매퍼.
  *
- * 매 호출마다 새 객체 생성 — mutation-isolation.
+ * 매 호출마다 새 객체 생성 — mutation-isolation (중첩 payload는 deep-clone).
  */
 function wrapV1Success (result: unknown, method: string): V1Response {
   const header: V1ResponseHeader = {
@@ -75,8 +100,8 @@ function wrapV1Success (result: unknown, method: string): V1Response {
   }
   if (result !== undefined && result !== null) {
     if (typeof result === 'object') {
-      // shallow copy로 호출자 mutation 격리 (mutation-isolation)
-      body.parameter = { ...(result as Record<string, unknown>) }
+      // deep clone으로 호출자 mutation 격리 — 중첩 객체/배열까지 분리 (mutation-isolation)
+      body.parameter = deepClonePlain(result as Record<string, unknown>)
     } else {
       // primitive는 'value' 키로 wrap
       body.parameter = { value: result }
@@ -97,7 +122,8 @@ function cloneV1Response (response: V1Response): V1Response {
     body: { command: response.body.command },
   }
   if (response.body.parameter) {
-    cloned.body.parameter = { ...response.body.parameter }
+    // deep clone — 중첩 객체/배열(role별 publicKey, account 목록 등)까지 호출자 mutation 격리
+    cloned.body.parameter = deepClonePlain(response.body.parameter)
   }
   if (response.body.error) {
     cloned.body.error = {

@@ -36,6 +36,7 @@ import {
   getDeviceInfo,
   getAccountInfo,
   getAddress,
+  getPublicKey,
   getXPUB,
   setLabel,
   syncAccount,
@@ -124,6 +125,7 @@ export {
   getDeviceInfo,
   getAccountInfo,
   getAddress,
+  getPublicKey,
   getXPUB,
   setLabel,
   syncAccount,
@@ -147,6 +149,8 @@ export type { V2SyncAccountInfo, V2AccountInfo, AccountListV2Payload } from './s
 export type { GetAddressV2Input } from './sign'
 // m09-04-09: addressFormat enum for BTC family multi-variant dispatch
 export type { AddressFormat } from './sign'
+// m09-04-21: v2 getPublicKey verb input type (chain-agnostic — Cardano payment/stake/drep)
+export type { GetPublicKeyV2Input } from './sign'
 // v1 validator helpers — dApp 표면 1:1 보존 (v1 typo `getCzonePrifix` 포함)
 export {
   isAvaliableCoinType,
@@ -189,6 +193,7 @@ const dcent = {
   getDeviceInfo,
   getAccountInfo,
   getAddress,
+  getPublicKey,
   getXPUB,
   setLabel,
   syncAccount,

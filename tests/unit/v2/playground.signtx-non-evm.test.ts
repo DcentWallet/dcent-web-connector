@@ -336,7 +336,8 @@ it('T-U-NEVM-04: presets.non-evm.json — wm 등록 family preset 모두 valid J
   const requiredFields = ['id', 'label', 'family', 'applicableChainIds', 'transaction']
   // 누락보강(P1)으로 NON_EVM_FAMILIES에 추가된 xahau/cardano/near/constellation preset이
   // orphan에서 활성화됨 + havah preset 신규 추가 → expectedFamilies에 포함.
-  const expectedFamilies = ['bitcoin', 'solana', 'xrp', 'hedera', 'stellar', 'xahau', 'cardano', 'near', 'constellation', 'havah']
+  // 토큰 transfer preset(m02-05-55~68) 추가로 stacks(SIP-010)/tezos(FA1.2·FA2) family 신규 등록.
+  const expectedFamilies = ['bitcoin', 'solana', 'xrp', 'hedera', 'stellar', 'xahau', 'cardano', 'near', 'constellation', 'havah', 'stacks', 'tezos']
 
   // CAIP-19 정규식: namespace:reference/slip44:N
   // CAIP-2 namespace는 spec상 3-8 chars 권장이나 wm registry는 더 긴 namespace 사용
@@ -624,12 +625,219 @@ describe('_substituteAlgorandSender: placeholder → wallet address', () => {
     expect(out.to).toBe(RECIPIENT)
   })
 
-  it('T-U-NEVM-FAMILY-SUB-03: _substituteSenderByFamily — 미지원 family (tron/xrp 등) → no-op', () => {
-    const tx = { Account: 'rHb9CJAWyB4rj91VRWn96DkukG4bwdtyTh', Destination: RECIPIENT }
-    const out = subByFamily(tx, 'xrp', WALLET)
-    // 미지원이므로 원본 그대로 반환
+  it('T-U-NEVM-FAMILY-SUB-03: _substituteSenderByFamily — 미지원 family (polkadot 등, sender 필드 없음) → no-op', () => {
+    const tx = { method: 'balances.transfer', args: ['placeholder-addr', '1'] }
+    const out = subByFamily(tx, 'polkadot', WALLET)
+    // sender 필드가 없는 family — 원본 그대로 반환
     expect(out).toBe(tx)
+    expect(out.args[0]).toBe('placeholder-addr')
+  })
+
+  it('T-U-NEVM-FAMILY-SUB-04: _substituteSenderByFamily — xrp family → XRP Account 치환', () => {
+    const tx = { TransactionType: 'Payment', Account: 'rHb9CJAWyB4rj91VRWn96DkukG4bwdtyTh', Destination: RECIPIENT, Amount: '1000000' }
+    const out = subByFamily(tx, 'xrp', WALLET)
+    expect(out.Account).toBe(WALLET)
+    expect(out.Destination).toBe(RECIPIENT)
+    expect(out.Amount).toBe('1000000')
+  })
+
+  it('T-U-NEVM-FAMILY-SUB-05: _substituteSenderByFamily — xahau family → XRP Account 치환 (ripple 로직 공유)', () => {
+    const tx = { TransactionType: 'Payment', Account: 'rHb9CJAWyB4rj91VRWn96DkukG4bwdtyTh', Destination: RECIPIENT }
+    const out = subByFamily(tx, 'xahau', WALLET)
+    expect(out.Account).toBe(WALLET)
+    expect(out.Destination).toBe(RECIPIENT)
+  })
+
+  it('T-U-NEVM-FAMILY-SUB-06: _substituteSenderByFamily — constellation family → DAG source 치환', () => {
+    const tx = { type: 'transfer', source: 'DAG0000000000000000000000000000000000000000', destination: RECIPIENT, amount: '100000000', fee: '0' }
+    const out = subByFamily(tx, 'constellation', WALLET)
+    expect(out.source).toBe(WALLET)
+    expect(out.destination).toBe(RECIPIENT)
+    expect(out.amount).toBe('100000000')
+  })
+
+  it('T-U-NEVM-FAMILY-SUB-07: tron family → raw_data owner_address 치환, to_address 보존', () => {
+    const tx = {
+      raw_data: {
+        contract: [
+          { type: 'TransferContract', parameter: { value: { owner_address: 'TPLACEHOLDERxxxxxxxxxxxxxxxxxxxxxxx', to_address: RECIPIENT, amount: 1000000 } } },
+        ],
+      },
+    }
+    const out = subByFamily(tx, 'tron', WALLET)
+    expect(out.raw_data.contract[0].parameter.value.owner_address).toBe(WALLET)
+    expect(out.raw_data.contract[0].parameter.value.to_address).toBe(RECIPIENT)
+    expect(out.raw_data.contract[0].parameter.value.amount).toBe(1000000)
+  })
+
+  it('T-U-NEVM-FAMILY-SUB-08: conflux family → from 치환, to/value 보존', () => {
+    const tx = { from: 'cfxPLACEHOLDER', to: RECIPIENT, value: '0x10' }
+    const out = subByFamily(tx, 'conflux', WALLET)
+    expect(out.from).toBe(WALLET)
+    expect(out.to).toBe(RECIPIENT)
+    expect(out.value).toBe('0x10')
+  })
+
+  it('T-U-NEVM-FAMILY-SUB-09: havah family → from 치환, to/nid 보존', () => {
+    const tx = { from: 'hxPLACEHOLDER', to: RECIPIENT, value: '0xDE0B6B3A7640001', nid: '0x100' }
+    const out = subByFamily(tx, 'havah', WALLET)
+    expect(out.from).toBe(WALLET)
+    expect(out.to).toBe(RECIPIENT)
+    expect(out.nid).toBe('0x100')
+  })
+
+  it('T-U-NEVM-FAMILY-SUB-10: cosmos family → msgs[].value.from_address 치환, to_address 보존', () => {
+    const tx = { chain_id: 'cosmoshub-4', msgs: [{ type: 'cosmos-sdk/MsgSend', value: { from_address: 'cosmosPLACEHOLDER', to_address: RECIPIENT, amount: [{ denom: 'uatom', amount: '1000000' }] } }] }
+    const out = subByFamily(tx, 'cosmos', WALLET)
+    expect(out.msgs[0].value.from_address).toBe(WALLET)
+    expect(out.msgs[0].value.to_address).toBe(RECIPIENT)
+    expect(out.msgs[0].value.amount[0].amount).toBe('1000000')
+  })
+
+  it('T-U-NEVM-FAMILY-SUB-11: near family → sender 치환, recipient/amount 보존', () => {
+    const tx = { type: 'transfer', sender: 'placeholder.near', recipient: RECIPIENT, amount: '1000000000000000000000000' }
+    const out = subByFamily(tx, 'near', WALLET)
+    expect(out.sender).toBe(WALLET)
+    expect(out.recipient).toBe(RECIPIENT)
+    expect(out.amount).toBe('1000000000000000000000000')
+  })
+
+  it('T-U-NEVM-FAMILY-SUB-12: sender 필드 없는 family(bitcoin) → no-op (원본 반환)', () => {
+    const tx = { inputs: [{ keyPath: "m/44'/0'/0'/0/0" }], outputs: [{ address: RECIPIENT, amount: 1000 }] }
+    const out = subByFamily(tx, 'bitcoin', WALLET)
+    expect(out).toBe(tx)
+  })
+
+  it('T-U-NEVM-FAMILY-SUB-13: ethereum family → from 치환 (from 있을 때), to/value 보존', () => {
+    const tx = { from: '0xPLACEHOLDER', to: RECIPIENT, value: '0x10', type: 2 }
+    const out = subByFamily(tx, 'ethereum', WALLET)
+    expect(out.from).toBe(WALLET)
+    expect(out.to).toBe(RECIPIENT)
+    expect(out.value).toBe('0x10')
+  })
+
+  it('T-U-NEVM-FAMILY-SUB-14: ethereum family → from 없으면 무변화(no-op)', () => {
+    const tx = { to: RECIPIENT, value: '0x10', type: 2 }
+    const out = subByFamily(tx, 'ethereum', WALLET)
+    expect(JSON.stringify(out)).toBe(JSON.stringify(tx))
+  })
+})
+
+// ─────────────────────────────────────────────────────────────────────────────
+// T-U-NEVM-XRP-SUB-*: _substituteXrpAccount — XRPL/Xahau Payment 의 Account 필드 치환.
+// dApp 이 placeholder Account 를 보내면 firmware 가 Account ↔ derived pubkey 불일치로
+// 'Invalid Unsigned'(invalid_format) reject — getAddress 선행 후 Account 치환으로 해소.
+// ─────────────────────────────────────────────────────────────────────────────
+describe('_substituteXrpAccount: placeholder → wallet r-address', () => {
+  const WALLET = 'rWALLETxxxxxxxxxxxxxxxxxxxxxxxxxx'
+  const RECIPIENT = 'rPT1Sjq2YGrBMTttX4GZHjKu9dyfzbpAYe'
+  function sub (txObj: any, address = WALLET) {
+    const api = (window as any)._playgroundTestAPI
+    return api._substituteXrpAccount(txObj, address)
+  }
+
+  it('T-U-NEVM-XRP-SUB-01: XRPL 표준 Payment — Account 치환, Destination/Amount/Fee/Sequence 보존', () => {
+    const tx = { TransactionType: 'Payment', Account: 'rHb9CJAWyB4rj91VRWn96DkukG4bwdtyTh', Destination: RECIPIENT, Amount: '1000000', Fee: '12', Sequence: 1, Flags: 0 }
+    const out = sub(tx)
+    expect(out.Account).toBe(WALLET)
+    expect(out.Destination).toBe(RECIPIENT)
+    expect(out.Amount).toBe('1000000')
+    expect(out.Fee).toBe('12')
+    expect(out.Sequence).toBe(1)
+  })
+
+  it('T-U-NEVM-XRP-SUB-02: wm-internal {sender, ...} shape → sender 치환', () => {
+    const tx = { sender: 'rHb9CJAWyB4rj91VRWn96DkukG4bwdtyTh', recipient: RECIPIENT, amount: '1000000' }
+    const out = sub(tx)
+    expect(out.sender).toBe(WALLET)
+    expect(out.recipient).toBe(RECIPIENT)
+  })
+
+  it('T-U-NEVM-XRP-SUB-03: string payload (pre-encoded blob) → no-op (opaque)', () => {
+    const blob = '120000228000000024...'
+    expect(sub(blob)).toBe(blob)
+  })
+
+  it('T-U-NEVM-XRP-SUB-04: 원본 객체 mutation 금지 (deep clone)', () => {
+    const tx = { TransactionType: 'Payment', Account: 'rHb9CJAWyB4rj91VRWn96DkukG4bwdtyTh', Destination: RECIPIENT }
+    const out = sub(tx)
+    expect(out).not.toBe(tx)
+    expect(tx.Account).toBe('rHb9CJAWyB4rj91VRWn96DkukG4bwdtyTh')
+  })
+
+  it('T-U-NEVM-XRP-SUB-05: invalid input (null / undefined / number) → 그대로 반환', () => {
+    expect(sub(null)).toBe(null)
+    expect(sub(undefined)).toBe(undefined)
+    expect(sub(42)).toBe(42)
+  })
+
+  it('T-U-NEVM-XRP-SUB-06: empty wallet address → no-op (원본 보존)', () => {
+    const tx = { TransactionType: 'Payment', Account: 'rHb9CJAWyB4rj91VRWn96DkukG4bwdtyTh' }
+    const out = sub(tx, '')
     expect(out.Account).toBe('rHb9CJAWyB4rj91VRWn96DkukG4bwdtyTh')
+  })
+})
+
+// ─────────────────────────────────────────────────────────────────────────────
+// T-U-NEVM-CONST-SUB-*: _substituteConstellationSource — DAG transfer 의 source(무조건) +
+// placeholder destination(조건부) 치환.
+// placeholder source(DAG000...0000)는 on-chain 이력이 없어 wm lastRef 조회가 404 →
+// getAddress 선행 후 실 wallet DAG 주소로 치환.
+// zero-filled placeholder destination(DAG000...0001)은 Constellation 체크섬 미충족 invalid
+// 주소라 firmware/wm 파싱 시 recipient/amount 표시가 깨진다(실측: 1 DAG→0.01531742 DAG) →
+// wallet 주소로 치환(self-transfer). 실제 valid destination 은 보존.
+// ─────────────────────────────────────────────────────────────────────────────
+describe('_substituteConstellationSource: placeholder → wallet DAG address', () => {
+  const WALLET = 'DAG5wallet0000000000000000000000000000001'
+  const RECIPIENT = 'DAG4pYx5e4dV4e54A81SRQZ23ovs2Rk6x5fzHjRv' // 실제 valid recipient → 보존
+  const PLACEHOLDER_DEST = 'DAG0000000000000000000000000000000000000001' // zero-filled invalid → self-transfer 치환
+  function sub (txObj: any, address = WALLET) {
+    const api = (window as any)._playgroundTestAPI
+    return api._substituteConstellationSource(txObj, address)
+  }
+
+  it('T-U-NEVM-CONST-SUB-01: DAG transfer — source 치환, destination/amount/fee/type 보존', () => {
+    const tx = { type: 'transfer', source: 'DAG0000000000000000000000000000000000000000', destination: RECIPIENT, amount: '100000000', fee: '0' }
+    const out = sub(tx)
+    expect(out.source).toBe(WALLET)
+    expect(out.destination).toBe(RECIPIENT)
+    expect(out.amount).toBe('100000000')
+    expect(out.fee).toBe('0')
+    expect(out.type).toBe('transfer')
+  })
+
+  it('T-U-NEVM-CONST-SUB-02: wm-internal {sender, ...} shape → sender 치환', () => {
+    const tx = { sender: 'DAG0000000000000000000000000000000000000000', recipient: RECIPIENT, amount: '100000000' }
+    const out = sub(tx)
+    expect(out.sender).toBe(WALLET)
+    expect(out.recipient).toBe(RECIPIENT)
+  })
+
+  it('T-U-NEVM-CONST-SUB-03: string payload → no-op (opaque)', () => {
+    const blob = 'opaque-dag-blob'
+    expect(sub(blob)).toBe(blob)
+  })
+
+  it('T-U-NEVM-CONST-SUB-04: 원본 객체 mutation 금지 (deep clone)', () => {
+    const tx = { type: 'transfer', source: 'DAG0000000000000000000000000000000000000000', destination: RECIPIENT }
+    const out = sub(tx)
+    expect(out).not.toBe(tx)
+    expect(tx.source).toBe('DAG0000000000000000000000000000000000000000')
+  })
+
+  it('T-U-NEVM-CONST-SUB-05: invalid input / empty wallet → 보수적 보존', () => {
+    expect(sub(null)).toBe(null)
+    const tx = { type: 'transfer', source: 'DAG0000000000000000000000000000000000000000' }
+    expect(sub(tx, '').source).toBe('DAG0000000000000000000000000000000000000000')
+  })
+
+  it('T-U-NEVM-CONST-SUB-06: zero-placeholder destination → wallet 주소로 치환 (self-transfer)', () => {
+    const tx = { type: 'transfer', source: 'DAG0000000000000000000000000000000000000000', destination: PLACEHOLDER_DEST, amount: '100000000', fee: '0' }
+    const out = sub(tx)
+    expect(out.source).toBe(WALLET)
+    expect(out.destination).toBe(WALLET) // placeholder → self-transfer
+    expect(out.amount).toBe('100000000')
+    expect(out.fee).toBe('0')
   })
 })
 
@@ -1064,38 +1272,24 @@ describe('누락보강 5 family — signTx/getAddress 도달성', () => {
 })
 
 // ─────────────────────────────────────────────────────────────────────────────
-// T-U-CARDANO-01 (m09-04-17): ada-transfer preset — wm dApp-wire Shape 1 가드
-// 현재 Shape 2(sender/recipient/amount:string)는 wire-convert.js:142 pass-through로 빠져
-// prepareTransaction에서 transaction.amount.isZero() TypeError → Shape 1로 정정.
-// ada-cbor-signtx(Shape 0)와는 별개 preset 유지.
+// T-U-CARDANO-01: ada-transfer preset 제거 가드 (wire-sign 미지원)
+// dApp-wire Shape 1 (senderAddress/receiverAddress/lovelaceToSend) transfer-build 는
+// SDK wire-sign 경로에서 본질적으로 미지원 — synthesizeAccount 가 UTXO 를 채우지 않아
+// wm cardano/transaction.ts:169 (commonAccountInfo.extra.utxoList) 에서 크래시한다.
+// (signTransaction [cip34:1-...] -> "Cannot read properties of undefined (reading 'extra')")
+// → ada-transfer preset 영구 제거. CBOR 경로(ada-cbor-signtx, Shape 0)만 유지.
 // ─────────────────────────────────────────────────────────────────────────────
-it('T-U-CARDANO-01: ada-transfer가 dApp-wire Shape 1 보유 + Shape 2 키 미보유', () => {
+it('T-U-CARDANO-01: ada-transfer preset 제거됨 + ada-cbor-signtx(CBOR) 유지', () => {
   const presetsPath = path.resolve(__dirname, '../../../playground/presets.non-evm.json')
   const presets: any[] = JSON.parse(fs.readFileSync(presetsPath, 'utf8'))
 
+  // Shape-1 transfer preset 은 wire-sign 미지원 → 제거됨
   const ada = presets.find((p) => p.id === 'ada-transfer')
-  expect(ada).toBeDefined()
-  expect(ada.family).toBe('cardano')
+  expect(ada).toBeUndefined()
 
-  const tx = ada.transaction
-  // Shape 1 키 보유
-  expect(tx).toHaveProperty('senderAddress')
-  expect(tx).toHaveProperty('receiverAddress')
-  expect(tx).toHaveProperty('lovelaceToSend')
-  expect(typeof tx.lovelaceToSend).toBe('string')
-  // self-send + mainnet addr1 주소
-  expect(tx.receiverAddress).toBe(tx.senderAddress)
-  expect(tx.senderAddress.startsWith('addr1')).toBe(true)
-  // 단일-체인: mainnet(cip34:1-...)만 — fixture가 mainnet addr1 주소이므로 testnet(cip34:0-2) 미포함
-  // (cross-review F1: mainnet 주소를 testnet에 노출하던 chain-incorrect scope 제거)
-  expect(ada.applicableChainIds).toEqual(['cip34:1-764824073'])
-  // Shape 2 키 미보유 (pass-through 분기 회피 회귀 가드)
-  expect(tx).not.toHaveProperty('sender')
-  expect(tx).not.toHaveProperty('recipient')
-  expect(tx).not.toHaveProperty('amount')
-
-  // ada-cbor-signtx(Shape 0)는 별개 preset으로 유지 (병합/중복 금지)
+  // 지원되는 CBOR 경로(Shape 0)는 유지 — wm wire-convert 가 txCbor → signCardanoCbor 라우팅
   const adaCbor = presets.find((p) => p.id === 'ada-cbor-signtx')
   expect(adaCbor).toBeDefined()
+  expect(adaCbor.family).toBe('cardano')
   expect(adaCbor.transaction).toHaveProperty('txCbor')
 })

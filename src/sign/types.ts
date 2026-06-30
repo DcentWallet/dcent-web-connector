@@ -13,6 +13,8 @@
  *   - boundary-validation: header/body 필드 존재 여부는 호출자 또는 _assertV1Success가 검증
  */
 
+import type { AddressFormat } from './address'
+
 /* eslint-disable camelcase */
 /** 응답 헤더 — v1 dcent.call() 응답의 `header` 필드 형태.
  *  v1 wire format이 snake_case를 사용하므로 camelcase 룰 disable. */
@@ -83,7 +85,8 @@ export interface V2SyncAccountInfo {
 }
 
 /**
- * 진화하는 account-info 부가 메타데이터 (forward-compat 확장점) — SYNC(sdk accountV2 V2AccountMeta).
+ * 진화하는 account-info 부가 메타데이터 (forward-compat 확장점).
+ * SYNC: sdk accountV2 `V2AccountMeta` (정본 shape B) ↔ 짝 m09-03-27(sdk, addressFormat 도출) / m09-04-20(connector).
  *
  * **connector 변경 최소화 목적**: connector는 dApp이 npm으로 가져가는 패키지라 재배포가 어렵다.
  * sdk(웹 배포)가 account-info에 추가하는 device-파생/진화 값들을 이 bag에 모아두면, sdk가 새 키를
@@ -96,7 +99,13 @@ export interface V2AccountMeta {
   customToken?: true
   /** customToken일 때 device coin_name(EVM: 15자 contract truncate, SPL 등: 토큰 이름) 표시 힌트. */
   deviceCoinName?: string
-  /** forward-compat: 추후 sdk가 추가하는 account-info 부가값. connector 재배포 없이 확장. */
+  /** 주소 인코딩 variant 힌트 (3축 disambiguation의 encoding 축). sdk가 도출(m09-03-27), connector는
+   *  forward만. 'segwit-native'=BIP-84 bech32 / 'legacy'=같은 chainId에 segwit 형제가 실재하는
+   *  bitcoin-family base(BITCOIN/DIGIBYTE 등)에만 부여. 그 외(customAddressPathFor/legacyFor 변형)는
+   *  인코딩이 같아 keyPath로 구분(미부여). dApp은 BTC legacy/segwit 구분에 사용. */
+  addressFormat?: AddressFormat
+  /** forward-compat: 추후 sdk가 추가하는 account-info 부가값. connector 재배포 없이 확장.
+   *  (addressFormat은 known 키로 승격되기 전부터 이 index signature로 이미 통과되어 왔다.) */
   [key: string]: unknown
 }
 
@@ -104,6 +113,11 @@ export interface V2AccountMeta {
  * v2 account wire — getAccountInfo 응답 항목 (m09-04-12).
  *
  * sdk(m09-03-21)가 enrich한 결과 shape. connector는 응답을 forward만 — 타입 narrow 전용.
+ *
+ * **정본 shape B** (2026-06-23 확정): resolved는 chainId=full CAIP-19(자산 caip19, 별도 caip19 필드 없음),
+ * 자산 구분은 contractAddress, 인코딩 variant는 meta.addressFormat. token은 부모 체인 caip19 + contractAddress.
+ * SYNC: sdk accountV2 `V2AccountInfo` ↔ 짝 m09-03-27(sdk B 정렬) / m09-04-20(connector 명문화).
+ * 양측 drift는 sdk T-SYNC-01 + connector getAccountInfo.v2 drift-guard 테스트가 감지.
  *
  * mutation-isolation: V1Response가 call.ts에서 매 호출마다 새 객체로 생성.
  */

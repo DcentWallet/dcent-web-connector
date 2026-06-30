@@ -1884,7 +1884,7 @@
     ethereum: 'placeholder from 을 wallet 0x 주소로 치환 (EVM은 보통 from 생략 — signer 암시)',
     solana: 'placeholder feePayer/signer 를 wallet pubkey 로 치환',
     algorand: 'placeholder from(sender) 를 wallet address 로 치환',
-    tezos: 'placeholder source 를 wallet tz1 주소로 치환',
+    tezos: 'native XTZ: source 자동 치환 / FA1.2·FA2 토큰: sender(Michelson from)는 nested라 버튼 미지원 — 수동 수정',
     hedera: 'transfers[amount<0] accountId 를 wallet 0.0.X 로 치환',
     xrp: 'placeholder Account 를 wallet r... 주소로 치환',
     xahau: 'placeholder Account 를 wallet r... 주소로 치환',
@@ -1894,6 +1894,7 @@
     havah: 'placeholder from 을 wallet hx 주소로 치환',
     cosmos: 'msgs[].value.from_address 를 wallet cosmos1... 로 치환',
     near: 'placeholder sender 를 wallet .near 계정으로 치환',
+    stacks: 'SIP-010 토큰: sender(functionArgs[1])는 nested라 버튼 미지원 — 수동 수정 (native STX는 키에서 파생)',
   }
   function _appendSenderResolveRow (family) {
     var resolveRow = document.createElement('div')

@@ -626,12 +626,49 @@
   },
   {
     "id": "tezos-fa12-transfer",
-    "label": "Tezos FA1.2 token transfer (SMAK)",
+    "label": "Tezos FA1.2 token transfer (SMAK, mainnet)",
+    "family": "tezos",
+    "applicableChainIds": [
+      "tezos:NetXdQprcVkpaWU/slip44:1729"
+    ],
+    "note": "토큰 전송 — Tezos FA1.2 fungible token transfer (mainnet). wm keystone TEZOS 어댑터(m02-05-58 / DC-2928)가 destination=KT1 컨트랙트 + parameters.entrypoint='transfer'를 식별 → TokenAccount 합성 → 서명. ★outer amount='0'(native XTZ 이동 0) — 58 이전엔 silent native XTZ 오서명이던 지점. parameters.value=FA1.2 Michelson Pair {from, Pair{to, value}}. amount(int)는 토큰 base units(wm tezos/transaction.ts 가 dividedBy(10^decimals)로 표시 단위 변환). SMAK(KT1TwzD6zV3WeJ39ukuqxcfK2fJCnhvrdN1X, 3 decimals, tzkt 검증) → int '1000' = 1 SMAK. from==to=self-send(tz1d9AU…, asset risk 0). ⚠️ value.args[0].string(from)/value.args[1].args[0].string(to)를 본인 디바이스 Tezos 계정(tz1…)으로 교체. 테스트넷 변형은 tezos-fa12-ghostnet-transfer 참조. native XTZ는 xtz-transfer 참조.",
+    "sourceUrl": "https://gitlab.com/tezos/tzip/-/blob/master/proposals/tzip-7/tzip-7.md",
+    "transaction": {
+      "kind": "transaction",
+      "destination": "KT1TwzD6zV3WeJ39ukuqxcfK2fJCnhvrdN1X",
+      "amount": "0",
+      "parameters": {
+        "entrypoint": "transfer",
+        "value": {
+          "prim": "Pair",
+          "args": [
+            {
+              "string": "tz1d9AUUKZw8LXbHsTmeBZKQ8LdJDZuCoVzW"
+            },
+            {
+              "prim": "Pair",
+              "args": [
+                {
+                  "string": "tz1d9AUUKZw8LXbHsTmeBZKQ8LdJDZuCoVzW"
+                },
+                {
+                  "int": "1000"
+                }
+              ]
+            }
+          ]
+        }
+      }
+    }
+  },
+  {
+    "id": "tezos-fa12-ghostnet-transfer",
+    "label": "Tezos FA1.2 token transfer (Ghostnet testnet)",
     "family": "tezos",
     "applicableChainIds": [
       "tezos:NetXnHfVqm9iesp/slip44:1729"
     ],
-    "note": "토큰 전송 — Tezos FA1.2 fungible token transfer. wm keystone TEZOS 어댑터(m02-05-58 / DC-2928)가 destination=KT1 컨트랙트 + parameters.entrypoint='transfer'를 식별 → TokenAccount 합성 → 서명. ★outer amount='0'(native XTZ 이동 0) — 이게 58 이전엔 silent native XTZ 오서명이던 지점. parameters.value=FA1.2 Michelson Pair {from, Pair{to, value}}. amount(int)는 토큰 base units(SMAK decimals 3 → 1 SMAK=1000). 현재 SMAK(KT1TwzD6zV3WeJ39ukuqxcfK2fJCnhvrdN1X, 3 decimals). Michelson value 구조는 wm tezos/transaction.ts getTokenTransferParameter(FA1.2 분기: {from,to,value}를 Taquito contract.methodsObject.transfer().toTransferParams().parameter로 인코딩)와 일치 — Taquito가 위 prim 트리(Pair[string,Pair[string,int]])로 직렬화. ⚠️ value.args[0].string(from) / value.args[1].args[0].string(to)를 본인 디바이스 Tezos 계정(tz1...)으로 교체해야 서명 유효(self-send 권장, asset risk 0). ⚠️ destination=KT1 토큰 컨트랙트(미등록은 keystone -32602). native XTZ는 xtz-transfer preset 참조.",
+    "note": "토큰 전송 — Tezos FA1.2 (Ghostnet 테스트넷). chainId=NetXnHfVqm9iesp(ghostnet). destination=KT1NZFY3nyohgVEJKxCaFbcg4oyhM1akHgvf 는 ghostnet 테스트넷 컨트랙트(mainnet tzkt 미등록 — 테스트넷 전용). wm 식별·서명 경로는 mainnet과 동일(destination KT1 + entrypoint=transfer). amount(int) base units — 해당 ghostnet 컨트랙트의 decimals 기준(현재 int '1000000', 컨트랙트별로 교체). from==to=self-send(tz1d9AU…). ⚠️ from/to/destination/decimals 를 본인 ghostnet 환경 값으로 교체. mainnet 실토큰(SMAK)은 tezos-fa12-transfer 참조.",
     "sourceUrl": "https://gitlab.com/tezos/tzip/-/blob/master/proposals/tzip-7/tzip-7.md",
     "transaction": {
       "kind": "transaction",
@@ -649,7 +686,7 @@
               "prim": "Pair",
               "args": [
                 {
-                  "string": "tz1Xsc6Lbd7nFrQdpC6N7R8B7FBEVngKANb8"
+                  "string": "tz1d9AUUKZw8LXbHsTmeBZKQ8LdJDZuCoVzW"
                 },
                 {
                   "int": "1000000"
@@ -663,12 +700,61 @@
   },
   {
     "id": "tezos-fa2-transfer",
-    "label": "Tezos FA2 token transfer (QUIPU)",
+    "label": "Tezos FA2 token transfer (QUIPU, mainnet)",
+    "family": "tezos",
+    "applicableChainIds": [
+      "tezos:NetXdQprcVkpaWU/slip44:1729"
+    ],
+    "note": "토큰 전송 — Tezos FA2 (TZIP-12) fungible token transfer (mainnet). wm keystone TEZOS 어댑터(m02-05-58 / DC-2928)가 destination=KT1 + entrypoint='transfer'를 식별 → TokenAccount 합성 → 서명. ★outer amount='0'(native XTZ 이동 0). parameters.value=FA2 Michelson list [Pair{from_, list[Pair{to_, Pair{token_id, amount}}]}]. token_id=0. amount(int) base units(wm dividedBy(10^decimals) 표시). QUIPU(KT193D4vozYnhGJQVtw7CoxxqphqUEEwK6Vb, 6 decimals, tzkt 검증) → int '1000000' = 1 QUIPU. from_==to_=self-send(tz1d9AU…, asset risk 0). ⚠️ value[0].args[0].string(from_)/value[0].args[1][0].args[0].string(to_)를 본인 디바이스 Tezos 계정으로 교체. 테스트넷 변형은 tezos-fa2-ghostnet-transfer 참조. native XTZ는 xtz-transfer 참조.",
+    "sourceUrl": "https://gitlab.com/tezos/tzip/-/blob/master/proposals/tzip-12/tzip-12.md",
+    "transaction": {
+      "kind": "transaction",
+      "destination": "KT193D4vozYnhGJQVtw7CoxxqphqUEEwK6Vb",
+      "amount": "0",
+      "parameters": {
+        "entrypoint": "transfer",
+        "value": [
+          {
+            "prim": "Pair",
+            "args": [
+              {
+                "string": "tz1d9AUUKZw8LXbHsTmeBZKQ8LdJDZuCoVzW"
+              },
+              [
+                {
+                  "prim": "Pair",
+                  "args": [
+                    {
+                      "string": "tz1d9AUUKZw8LXbHsTmeBZKQ8LdJDZuCoVzW"
+                    },
+                    {
+                      "prim": "Pair",
+                      "args": [
+                        {
+                          "int": "0"
+                        },
+                        {
+                          "int": "1000000"
+                        }
+                      ]
+                    }
+                  ]
+                }
+              ]
+            ]
+          }
+        ]
+      }
+    }
+  },
+  {
+    "id": "tezos-fa2-ghostnet-transfer",
+    "label": "Tezos FA2 token transfer (Ghostnet testnet)",
     "family": "tezos",
     "applicableChainIds": [
       "tezos:NetXnHfVqm9iesp/slip44:1729"
     ],
-    "note": "토큰 전송 — Tezos FA2 (TZIP-12) fungible token transfer. wm keystone TEZOS 어댑터(m02-05-58 / DC-2928)가 destination=KT1 컨트랙트 + parameters.entrypoint='transfer'를 식별 → TokenAccount 합성 → 서명. ★outer amount='0'(native XTZ 이동 0) — 58 이전엔 silent native XTZ 오서명이던 지점. parameters.value=FA2 Michelson list [Pair{from_, list[Pair{to_, Pair{token_id, amount}}]}]. token_id=0 고정. amount(int)는 토큰 base units(QUIPU decimals 6 → 1 QUIPU=1000000). 현재 QUIPU(KT193D4vozYnhGJQVtw7CoxxqphqUEEwK6Vb, 6 decimals). Michelson value 구조는 wm tezos/transaction.ts getTokenTransferParameter(FA2 분기: [{from_, txs:[{to_, token_id:0, amount}]}]를 Taquito contract.methodsObject.transfer().toTransferParams().parameter로 인코딩)와 일치 — Taquito가 위 prim 트리(list[Pair[string, list[Pair[string, Pair[int,int]]]]])로 직렬화. ⚠️ value[0].args[0].string(from_) / value[0].args[1][0].args[0].string(to_)를 본인 디바이스 Tezos 계정(tz1...)으로 교체해야 서명 유효(self-send 권장, asset risk 0). ⚠️ destination=KT1 토큰 컨트랙트(미등록은 keystone -32602). native XTZ는 xtz-transfer preset 참조.",
+    "note": "토큰 전송 — Tezos FA2 (Ghostnet 테스트넷). chainId=NetXnHfVqm9iesp(ghostnet). destination=KT1LdedBNxSMWE5rFaagXS8Fw9qaneMZ2XEm 는 ghostnet 테스트넷 컨트랙트(mainnet tzkt 미등록 — 테스트넷 전용). wm 식별·서명 경로는 mainnet과 동일. token_id=0. amount(int) base units — 해당 ghostnet 컨트랙트 decimals 기준(현재 int '1000000', 교체). from_==to_=self-send(tz1d9AU…). ⚠️ from_/to_/destination/decimals 를 본인 ghostnet 환경 값으로 교체. mainnet 실토큰(QUIPU)은 tezos-fa2-transfer 참조.",
     "sourceUrl": "https://gitlab.com/tezos/tzip/-/blob/master/proposals/tzip-12/tzip-12.md",
     "transaction": {
       "kind": "transaction",
@@ -688,7 +774,7 @@
                   "prim": "Pair",
                   "args": [
                     {
-                      "string": "tz1Xsc6Lbd7nFrQdpC6N7R8B7FBEVngKANb8"
+                      "string": "tz1d9AUUKZw8LXbHsTmeBZKQ8LdJDZuCoVzW"
                     },
                     {
                       "prim": "Pair",

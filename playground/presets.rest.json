@@ -653,13 +653,13 @@
     "sourceUrl": "https://docs.coreum.dev/docs/modules/assetft",
     "transaction": {
       "token": {
-        "contract": "utkn-core1n9a7x46880h6qrtjmvwxrlgt0yprj7029k55sc",
-        "to": "core1n9a7x46880h6qrtjmvwxrlgt0yprj7029k55sc",
+        "contract": "utkn-core1qjhxdnswckx9l2yn2p8yyq2sphcjnlu9qg68ll",
+        "to": "core1qjhxdnswckx9l2yn2p8yyq2sphcjnlu9qg68ll",
         "amount": "1000000",
         "decimals": 6,
         "symbol": "TKN"
       },
-      "from": "core1n9a7x46880h6qrtjmvwxrlgt0yprj7029k55sc",
+      "from": "core1qjhxdnswckx9l2yn2p8yyq2sphcjnlu9qg68ll",
       "chain_id": "coreum-mainnet-1",
       "account_number": "0",
       "sequence": "0",

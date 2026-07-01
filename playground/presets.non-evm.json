@@ -789,5 +789,25 @@
       "nonce": "0x1",
       "version": "0x3"
     }
+  },
+  {
+    "id": "hedera-hts-descriptor-transfer",
+    "label": "Hedera HTS token transfer — form-D descriptor (미등록/커스텀 토큰)",
+    "family": "hedera",
+    "applicableChainIds": [
+      "hedera:mainnet/slip44:3030"
+    ],
+    "note": "미등록(커스텀) HTS 토큰 전송 — form-D descriptor. wm m02-05-69 buildHederaTokenTransferFromDescriptor 가 transaction.token={contract,to,amount} 를 CryptoTransfer 봉투(tokenTransfers:[{tokenId,accountId:sender,amount:'-N'},{tokenId,accountId:to,amount:'N'}]) 로 빌드 → 서명. ★form-E(hedera-hts-transfer, SAUCE 0.0.731861)와 달리 hedera-hts.json registry 등록 불필요 — 미등록 tokenId 도 서명 가능(form-E 는 미등록 시 keystone -32602). contract=0.0.9999999 는 registry 에 없는 valid 0.0.x tokenId. descriptor 에 decimals 가 있으면 wm 3-tier resolver 가 tier-3(descriptor)로 합성 → on-chain RPC 없이 해석되므로 tokenId 실재 불필요(§9 byte-proof 는 broadcast 안 함). tokenId/to/from 모두 /^0\\.0\\.\\d+$/ 검증(non-0.0.x → -32602). amount=token base units(decimals 6 → 1500000=1.5토큰, HBAR tinybar 아님, 재스케일 없음). 두 leg(음수=sender debit / 양수=recipient credit) — native HBAR transfers 필드 없음(silent HBAR 오서명 불가). sender 는 transaction.from(0.0.x)에서 read-only. ⚠️ accountId(0.0.x)는 키에서 파생 불가 → token.to/from 을 본인 디바이스 실 Hedera 계정으로 확인/교체(self-send, 양쪽 동일 0.0.587690). ⚠️ recipient TokenAssociate 선행(transfer만, associate 비스코프). ⚠️ 반드시 mainnet(slip44:3030). 검증: /verify-wire-sign HEDERA (tokenTransfers tokenId=token, native HBAR 아님; expectedSignerPubkey 로 검증 — Hedera accountId 키파생 불가).",
+    "sourceUrl": "https://docs.hedera.com/hedera/sdks-and-apis/sdks/token-service/transfer-tokens",
+    "transaction": {
+      "token": {
+        "contract": "0.0.9999999",
+        "to": "0.0.587690",
+        "amount": "1500000",
+        "decimals": 6,
+        "symbol": "TKN"
+      },
+      "from": "0.0.587690"
+    }
   }
 ]

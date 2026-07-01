@@ -641,5 +641,63 @@
       },
       "owner_address": "TJRabPrwbZy45sbavfcjinPJC18kjpRTv8"
     }
+  },
+  {
+    "id": "cosmos-assetft-descriptor-transfer",
+    "label": "Cosmos assetft transfer — form-D descriptor (미등록/커스텀 토큰)",
+    "family": "cosmos",
+    "applicableChainIds": [
+      "cosmos:coreum-mainnet-1/slip44:990"
+    ],
+    "note": "미등록(커스텀) 토큰 전송 — form-D descriptor. wm m02-05-69 buildCosmosTokenTransferFromDescriptor 가 transaction.token={contract,to,amount} 를 amino MsgSend 봉투(msgs:[{type:'cosmos-sdk/MsgSend', value:{from_address,to_address,amount:[{denom:contract,amount}]}}]) 로 빌드 → 서명. ★form-E(coreum-assetft-transfer)와 달리 smart-token.json registry 등록 불필요 — 미등록 denom 도 서명 가능. contract=utkn-core1n9a7x46880h6qrtjmvwxrlgt0yprj7029k55sc 는 registry 에 없는 valid-format assetft denom(subunit-issuer). descriptor 에 decimals 가 있으면 wm 3-tier resolver 가 tier-3(descriptor)로 합성 → on-chain RPC 없이 해석되므로 denom 실재 불필요(§9 byte-proof 는 broadcast 안 함). denom 은 chain-prefix 검증 없이 verbatim 사용(54 parity). amount=base units(decimals 6 → 1000000=1토큰, 재스케일 없음). sender 는 transaction.from 에서 read-only — convertTransaction 이 denom drop 후 buildTransaction 이 합성 TokenAccount.contractAddress(=denom)로 재주입. account_number/sequence/fee 는 sign 시 wm live REST 가 덮어씀. ⚠️ token.to/from 을 본인 디바이스 Coreum 계정(core1...)으로 확인/교체(self-send 권장, asset risk 0). ⚠️ 반드시 Coreum mainnet(slip44:990). 검증: /verify-wire-sign COSMOS (MsgSend denom=token, native ucore 아님; secp recover=device 계정).",
+    "sourceUrl": "https://docs.coreum.dev/docs/modules/assetft",
+    "transaction": {
+      "token": {
+        "contract": "utkn-core1n9a7x46880h6qrtjmvwxrlgt0yprj7029k55sc",
+        "to": "core1n9a7x46880h6qrtjmvwxrlgt0yprj7029k55sc",
+        "amount": "1000000",
+        "decimals": 6,
+        "symbol": "TKN"
+      },
+      "from": "core1n9a7x46880h6qrtjmvwxrlgt0yprj7029k55sc",
+      "chain_id": "coreum-mainnet-1",
+      "account_number": "0",
+      "sequence": "0",
+      "fee": {
+        "amount": [
+          {
+            "denom": "ucore",
+            "amount": "5000"
+          }
+        ],
+        "gas": "200000"
+      },
+      "memo": ""
+    }
+  },
+  {
+    "id": "algo-asa-descriptor-transfer",
+    "label": "Algorand ASA transfer — form-D descriptor (미등록/커스텀 토큰)",
+    "family": "algorand",
+    "applicableChainIds": [
+      "algorand:wGHE2Pwdvd7S12BL5FaOP20EGYesN73k/slip44:283"
+    ],
+    "note": "미등록(커스텀) ASA 전송 — form-D descriptor. wm m02-05-69 buildAlgorandAssetTransferFromDescriptor 가 transaction.token={contract,to,amount} 를 axfer 봉투({type:'axfer',assetIndex,from,to,amount}) 로 빌드 → 서명. ★form-E(algo-asa-transfer)와 달리 algo-asset.json registry 등록 불필요 — 미등록 assetIndex 도 서명 가능. contract=987654321 는 registry 에 없는 valid 양의 정수 assetIndex(USDC 31566704 아님). descriptor 에 decimals 가 있으면 wm 3-tier resolver 가 tier-3(descriptor)로 합성 → on-chain RPC 없이 해석되므로 assetIndex 실재 불필요(§9 byte-proof 는 broadcast 안 함). assetIndex 는 /^[1-9][0-9]*$/ 검증(비숫자면 -32602, downstream +contractAddress silent NaN 차단). from 보존 필수(convert 첫 분기 typeof obj.from==='string' 요구) — 없으면 pass-through 로 빠져 미서명. 실제 assetIndex 는 합성 account.currency.contractAddress 에서 읽음. fee/firstRound/lastRound/genesisHash 는 sign 시 wm live REST(suggested params)가 덮어씀. ⚠️ token.to/from 을 본인 디바이스 Algorand 계정으로 확인/교체(self-send 권장, asset risk 0). ⚠️ 반드시 Algorand mainnet(slip44:283). 검증: /verify-wire-sign ALGORAND (axfer assetIndex=token, native ALGO 'pay' 아님; ed25519 verify=device 계정).",
+    "sourceUrl": "https://github.com/algorand/js-algorand-sdk",
+    "transaction": {
+      "token": {
+        "contract": "987654321",
+        "to": "Y76M3MSY6DKBRHBL7C3NNDXGS5IIMQVQVUAB6MP4XEMMGVF2QWNPL226CA",
+        "amount": "1000",
+        "decimals": 6,
+        "symbol": "TKN"
+      },
+      "from": "Y76M3MSY6DKBRHBL7C3NNDXGS5IIMQVQVUAB6MP4XEMMGVF2QWNPL226CA",
+      "fee": 1000,
+      "firstRound": 1,
+      "lastRound": 1000,
+      "genesisID": "mainnet-v1.0",
+      "genesisHash": "wGHE2Pwdvd7S12BL5FaOP20EGYesN73ktiHc0CYz/uo="
+    }
   }
 ]

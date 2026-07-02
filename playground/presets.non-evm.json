@@ -864,20 +864,20 @@
     "label": "Tezos FA1.2 transfer — form-D descriptor (미등록/커스텀, testnet)",
     "family": "tezos",
     "applicableChainIds": [
-      "tezos:NetXnHfVqm9iesp/slip44:1729"
+      "tezos:NetXdQprcVkpaWU/slip44:1729"
     ],
-    "note": "미등록(커스텀) FA1.2 전송 — form-D descriptor. wm m02-05-70 buildTezosTokenTransferFromDescriptor(tokenId 미설정 → FA1.2) 가 transfer entrypoint Michelson Pair 봉투로 빌드 → 서명. ★★Tezos 서명은 Stellar/Stacks 와 달리 Taquito contract.at(KT1) 이 RPC 로 entrypoints fetch → KT1 은 실존 배포 FA1.2 컨트랙트여야 함. ★실존-미등록: KT1NZFY3nyohgVEJKxCaFbcg4oyhM1akHgvf 는 ghostnet 에 실배포(m02-05-58 testnet-setup 산출, tezos-fa12-ghostnet-transfer form-E 가 쓰는 그 컨트랙트)되어 있고 wm xtz-fa-testnet.json(QUIPU/APPLE/GOLD/kUSD/RGT/BPT)에는 미등록 → form-D tier-3. ⚠️ ghostnet 리셋으로 contract.at 실패 시 .claude/skills/verify-wire-sign/testnet-setup/ CLI 로 재배포(cli.cjs all <기기-tz1>) 후 destination(=token.contract) 교체. amount=base units. ⚠️ token.to/source 를 본인 디바이스 ghostnet tz 계정으로 교체(self-send). ⚠️ SDK wm refresh(m02-05-70). ⚠️ ghostnet(NetXnHfVqm9iesp). 검증: /verify-wire-sign TEZOS (FA1.2 Pair transfer=token, native XTZ 아님; signerPubkey edpk=device).",
+    "note": "미등록(커스텀) FA1.2 전송 — form-D descriptor. wm m02-05-70 buildTezosTokenTransferFromDescriptor(tokenId 미설정 → FA1.2) 가 transfer entrypoint Michelson Pair 봉투로 빌드 → 서명. ★실존-미등록: tzBTC(KT1PWx2mnDueood7fEmfbBDKx1D9BAnnXitn, Tezos mainnet 실존 FA1.2, tzkt 검증, decimals 8) 는 우리 wm xtz-fa.json(QUIPU/PLENTY/YOU/SMAK/kDAO/crDAO/FLAME/WRAP/MTTR/INSTA)에 미등록 → form-E 라면 -32602, form-D(tier-3 decimals)로 서명 가능. ★★Tezos 서명은 Taquito contract.at(KT1) 이 mainnet RPC 로 entrypoints fetch → 실존 컨트랙트 필수(ghostnet 은 펌웨어 getAddress 미지원이라 mainnet 실토큰 사용). amount=base units(decimals 8 → 100000=0.001 tzBTC). ⚠️ 상단 '🔑 Resolve sender from device' 버튼으로 source(서명자)를 디바이스 tz 로 치환. ⚠️ token.to(수신자)를 self-send 시 본인 디바이스 tz 로 교체(기본 burn 주소=유효 placeholder). ⚠️ SDK wm refresh(m02-05-70) + connector 재빌드 후 실행. ⚠️ mainnet(NetXdQprcVkpaWU). 검증: /verify-wire-sign TEZOS (FA1.2 Pair transfer=token, native XTZ 아님; signerPubkey edpk=device).",
     "sourceUrl": "https://gitlab.com/tezos/tzip/-/blob/master/proposals/tzip-7/tzip-7.md",
     "transaction": {
       "token": {
-        "contract": "KT1NZFY3nyohgVEJKxCaFbcg4oyhM1akHgvf",
-        "to": "tz1__REPLACE_WITH_DEVICE_TZ__",
-        "amount": "1000",
-        "decimals": 6,
-        "symbol": "FA12"
+        "contract": "KT1PWx2mnDueood7fEmfbBDKx1D9BAnnXitn",
+        "to": "tz1burnburnburnburnburnburnburjAYjjX",
+        "amount": "100000",
+        "decimals": 8,
+        "symbol": "tzBTC"
       },
       "kind": "transaction",
-      "source": "tz1__REPLACE_WITH_DEVICE_TZ__",
+      "source": "tz1burnburnburnburnburnburnburjAYjjX",
       "fee": "1420",
       "counter": "1",
       "gasLimit": "10307",
@@ -889,21 +889,21 @@
     "label": "Tezos FA2 transfer — form-D descriptor (미등록/커스텀, testnet)",
     "family": "tezos",
     "applicableChainIds": [
-      "tezos:NetXnHfVqm9iesp/slip44:1729"
+      "tezos:NetXdQprcVkpaWU/slip44:1729"
     ],
-    "note": "미등록(커스텀) FA2 전송 — form-D descriptor. wm m02-05-70 buildTezosTokenTransferFromDescriptor(tokenId 설정 → FA2) 가 transfer entrypoint Michelson list 봉투로 빌드 → 서명. ★token_id 는 '0' 만 허용(W1 회귀 — signer token_id=0 하드코딩, ≠'0' → -32602). ★★Taquito contract.at(KT1) RPC fetch → 실존 배포 FA2 필요. ★실존-미등록: KT1LdedBNxSMWE5rFaagXS8Fw9qaneMZ2XEm 는 ghostnet 실배포(m02-05-58 testnet-setup, tezos-fa2-ghostnet-transfer 가 쓰는 컨트랙트, token_id 0 확인)되어 있고 wm xtz-fa-testnet.json 미등록 → form-D tier-3. ⚠️ ghostnet 리셋 시 testnet-setup CLI 재배포 후 교체. amount=base units. ⚠️ token.to/source 디바이스 ghostnet tz 계정 교체(self-send). ⚠️ SDK wm refresh(m02-05-70). ⚠️ ghostnet(NetXnHfVqm9iesp). 검증: /verify-wire-sign TEZOS (FA2 list transfer token_id=0=token, native XTZ 아님; signerPubkey edpk=device).",
+    "note": "미등록(커스텀) FA2 전송 — form-D descriptor. wm m02-05-70 buildTezosTokenTransferFromDescriptor(tokenId 설정 → FA2) 가 transfer entrypoint Michelson list 봉투로 빌드 → 서명. ★token_id 는 '0' 만 허용(W1 회귀 — signer token_id=0 하드코딩, ≠'0' → -32602). ★실존-미등록: uUSD(KT1XRPEPXbZK25r3Htzp2o1x7xdMMmfocKNW, Tezos mainnet 실존 FA2 youves, tzkt 검증, token_id 0, decimals 12) 는 우리 wm xtz-fa.json 에 미등록 → form-D tier-3. ★★Taquito contract.at(KT1) mainnet RPC fetch → 실존 컨트랙트 필수. amount=base units(decimals 12 → 1000000000=0.001 uUSD). ⚠️ '🔑 Resolve sender from device' 로 source 치환. ⚠️ token.to self-send 시 디바이스 tz 교체(기본 burn=유효 placeholder). ⚠️ SDK wm refresh + connector 재빌드. ⚠️ mainnet(NetXdQprcVkpaWU). 검증: /verify-wire-sign TEZOS (FA2 list transfer token_id=0=token, native XTZ 아님; signerPubkey edpk=device).",
     "sourceUrl": "https://gitlab.com/tezos/tzip/-/blob/master/proposals/tzip-12/tzip-12.md",
     "transaction": {
       "token": {
-        "contract": "KT1LdedBNxSMWE5rFaagXS8Fw9qaneMZ2XEm",
-        "to": "tz1__REPLACE_WITH_DEVICE_TZ__",
-        "amount": "1000000",
-        "decimals": 6,
-        "symbol": "FA2",
+        "contract": "KT1XRPEPXbZK25r3Htzp2o1x7xdMMmfocKNW",
+        "to": "tz1burnburnburnburnburnburnburjAYjjX",
+        "amount": "1000000000",
+        "decimals": 12,
+        "symbol": "uUSD",
         "tokenId": "0"
       },
       "kind": "transaction",
-      "source": "tz1__REPLACE_WITH_DEVICE_TZ__",
+      "source": "tz1burnburnburnburnburnburnburjAYjjX",
       "fee": "1420",
       "counter": "1",
       "gasLimit": "10307",

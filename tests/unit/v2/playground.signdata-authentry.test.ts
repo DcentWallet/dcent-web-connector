@@ -267,3 +267,84 @@ it('T-U-SIGNMSG-XLM-01: stellar signMessage 노드가 기존 signMessage wire로
   expect(xlmPresets.length).toBeGreaterThan(0)
   expect(xlmPresets[0].message).toBe('Hello Stellar!')
 })
+
+// ─────────────────────────────────────────────────────────
+// m09-04-22: preset selector (공유 헬퍼 renderPresetSelector)
+// ─────────────────────────────────────────────────────────
+
+// 트리 노드 선택 → 폼 렌더 (connect 불필요; 폼은 click 시 렌더)
+function selectNode(methodId: string): void {
+  const item = document.querySelector('[data-method-id="' + methodId + '"]') as HTMLElement
+  item.click()
+}
+
+// #field-preset의 option[value=idx]를 change 디스패치
+function pickPreset(idx: number): void {
+  const sel = document.getElementById('field-preset') as HTMLSelectElement
+  sel.value = String(idx)
+  sel.dispatchEvent(new Event('change'))
+}
+
+it('T-U-PRESET-SD-01: PRESETS[signData:ada:cip8] 존재 + 각 엔트리 {label,address,payload} shape', () => {
+  const api = (window as any)._playgroundTestAPI
+  const presets = api.PRESETS['signData:ada:cip8']
+  expect(Array.isArray(presets)).toBe(true)
+  expect(presets.length).toBeGreaterThan(0)
+  presets.forEach((p: any) => {
+    expect(typeof p.label).toBe('string')
+    expect(typeof p.address).toBe('string')
+    expect(typeof p.payload).toBe('string')
+  })
+})
+
+it('T-U-PRESET-SD-02: signData 폼 preset selector → field-address/field-payload 채움', () => {
+  const api = (window as any)._playgroundTestAPI
+  const p = api.PRESETS['signData:ada:cip8'][0]
+  selectNode('signData:ada:cip8')
+
+  const sel = document.getElementById('field-preset') as HTMLSelectElement
+  expect(sel).toBeTruthy()
+  pickPreset(0)
+
+  const addrEl = document.getElementById('field-address') as HTMLInputElement
+  const plEl = document.getElementById('field-payload') as HTMLTextAreaElement
+  expect(addrEl.value).toBe(p.address)
+  expect(plEl.value).toBe(p.payload)
+})
+
+it('T-U-PRESET-AE-01: PRESETS[signAuthEntry:xlm:soroban] 존재 + 각 엔트리 {label,authEntry} shape', () => {
+  const api = (window as any)._playgroundTestAPI
+  const presets = api.PRESETS['signAuthEntry:xlm:soroban']
+  expect(Array.isArray(presets)).toBe(true)
+  expect(presets.length).toBeGreaterThan(0)
+  presets.forEach((p: any) => {
+    expect(typeof p.label).toBe('string')
+    expect(typeof p.authEntry).toBe('string')
+  })
+})
+
+it('T-U-PRESET-AE-02: signAuthEntry 폼 preset selector → field-authEntry 채움', () => {
+  const api = (window as any)._playgroundTestAPI
+  const p = api.PRESETS['signAuthEntry:xlm:soroban'][0]
+  selectNode('signAuthEntry:xlm:soroban')
+
+  const sel = document.getElementById('field-preset') as HTMLSelectElement
+  expect(sel).toBeTruthy()
+  pickPreset(0)
+
+  const aeEl = document.getElementById('field-authEntry') as HTMLTextAreaElement
+  expect(aeEl.value).toBe(p.authEntry)
+})
+
+it('T-U-PRESET-RG-01: signMessage 폼 preset selector 회귀 0 — 공유 헬퍼 경유 후에도 field-message 채움', () => {
+  const api = (window as any)._playgroundTestAPI
+  const p = api.PRESETS['signMessage:xlm:raw'][0]
+  selectNode('signMessage:xlm:raw')
+
+  const sel = document.getElementById('field-preset') as HTMLSelectElement
+  expect(sel).toBeTruthy()
+  pickPreset(0)
+
+  const msgEl = document.getElementById('field-message') as HTMLTextAreaElement
+  expect(msgEl.value).toBe(p.message)
+})

@@ -1877,7 +1877,8 @@
     setHint('getAddress 요청 중...', false)
     var startMs = Date.now()
     var req = { chainId: chainId, keyPath: keyPath }
-    Promise.resolve(dcent.getAddress(req)).then(_unwrapV1Envelope).then(function (result) {
+    // getAddress의 동기 throw도 .catch로 흡수하도록 .then 안에서 호출 (async-hygiene)
+    Promise.resolve().then(function () { return dcent.getAddress(req) }).then(_unwrapV1Envelope).then(function (result) {
       var address = _summarizeGetAddressResult(result).address
       if (typeof address !== 'string' || !address) {
         setHint('getAddress 응답에서 address 추출 실패', true)

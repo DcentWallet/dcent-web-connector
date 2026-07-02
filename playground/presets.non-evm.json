@@ -909,5 +909,56 @@
       "gasLimit": "10307",
       "storageLimit": "257"
     }
+  },
+  {
+    "id": "tezos-fa12-ghostnet-descriptor-transfer",
+    "label": "Tezos FA1.2 transfer — form-D descriptor (미등록/커스텀, ghostnet)",
+    "family": "tezos",
+    "applicableChainIds": [
+      "tezos:NetXnHfVqm9iesp/slip44:1729"
+    ],
+    "note": "미등록(커스텀) FA1.2 전송 — form-D descriptor (ghostnet 변형, mainnet 은 tezos-fa12-descriptor-transfer). wm m02-05-70 buildTezosTokenTransferFromDescriptor(tokenId 미설정 → FA1.2) 가 transfer entrypoint Michelson Pair 봉투로 빌드 → 서명. ★실존-미등록: KT1NZFY3nyohgVEJKxCaFbcg4oyhM1akHgvf 는 ghostnet 실배포(m02-05-58 testnet-setup, tezos-fa12-ghostnet-transfer form-E 가 쓰는 컨트랙트)되어 있고 wm xtz-fa-testnet.json 미등록 → form-D tier-3. ★★Taquito contract.at(KT1) 이 ghostnet RPC 로 entrypoints fetch → 실존 필수. ⚠️ 펌웨어가 TEZOS-TESTNET getAddress 미지원 가능(Device firmware does not support TEZOS-TESTNET) — 그 경우 'Resolve sender from device' 안 되니 source/to 를 ghostnet tz 로 수동 입력, 또는 mainnet 변형 사용. ⚠️ ghostnet 리셋 시 testnet-setup CLI(cli.cjs all <기기-tz1>) 재배포 후 destination 교체. amount=base units. ⚠️ SDK wm refresh+connector 재빌드. 검증: /verify-wire-sign TEZOS.",
+    "sourceUrl": "https://gitlab.com/tezos/tzip/-/blob/master/proposals/tzip-7/tzip-7.md",
+    "transaction": {
+      "token": {
+        "contract": "KT1NZFY3nyohgVEJKxCaFbcg4oyhM1akHgvf",
+        "to": "tz1burnburnburnburnburnburnburjAYjjX",
+        "amount": "1000",
+        "decimals": 6,
+        "symbol": "FA12T"
+      },
+      "kind": "transaction",
+      "source": "tz1burnburnburnburnburnburnburjAYjjX",
+      "fee": "1420",
+      "counter": "1",
+      "gasLimit": "10307",
+      "storageLimit": "257"
+    }
+  },
+  {
+    "id": "tezos-fa2-ghostnet-descriptor-transfer",
+    "label": "Tezos FA2 transfer — form-D descriptor (미등록/커스텀, ghostnet)",
+    "family": "tezos",
+    "applicableChainIds": [
+      "tezos:NetXnHfVqm9iesp/slip44:1729"
+    ],
+    "note": "미등록(커스텀) FA2 전송 — form-D descriptor (ghostnet 변형, mainnet 은 tezos-fa2-descriptor-transfer). wm m02-05-70 buildTezosTokenTransferFromDescriptor(tokenId 설정 → FA2) 가 transfer entrypoint Michelson list 봉투로 빌드 → 서명. ★token_id 는 '0' 만 허용(W1, ≠'0' → -32602). ★실존-미등록: KT1LdedBNxSMWE5rFaagXS8Fw9qaneMZ2XEm 는 ghostnet 실배포(m02-05-58 testnet-setup, tezos-fa2-ghostnet-transfer 가 쓰는 컨트랙트, token_id 0 확인)되어 있고 wm xtz-fa-testnet.json 미등록 → form-D tier-3. ★★Taquito contract.at(KT1) ghostnet RPC fetch → 실존 필수. ⚠️ 펌웨어 TEZOS-TESTNET getAddress 미지원 가능 — source/to 수동 입력 또는 mainnet 변형 사용. ⚠️ ghostnet 리셋 시 testnet-setup CLI 재배포. amount=base units. ⚠️ SDK wm refresh+connector 재빌드. 검증: /verify-wire-sign TEZOS.",
+    "sourceUrl": "https://gitlab.com/tezos/tzip/-/blob/master/proposals/tzip-12/tzip-12.md",
+    "transaction": {
+      "token": {
+        "contract": "KT1LdedBNxSMWE5rFaagXS8Fw9qaneMZ2XEm",
+        "to": "tz1burnburnburnburnburnburnburjAYjjX",
+        "amount": "1000000",
+        "decimals": 6,
+        "symbol": "FA2T",
+        "tokenId": "0"
+      },
+      "kind": "transaction",
+      "source": "tz1burnburnburnburnburnburnburjAYjjX",
+      "fee": "1420",
+      "counter": "1",
+      "gasLimit": "10307",
+      "storageLimit": "257"
+    }
   }
 ]

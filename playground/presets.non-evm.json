@@ -809,5 +809,105 @@
       },
       "from": "0.0.587690"
     }
+  },
+  {
+    "id": "stellar-issued-asset-descriptor-transfer",
+    "label": "Stellar issued-asset transfer — form-D descriptor (미등록/커스텀 토큰)",
+    "family": "stellar",
+    "applicableChainIds": [
+      "stellar:pubnet/slip44:148"
+    ],
+    "note": "미등록(커스텀) issued-asset 전송 — form-D descriptor. wm m02-05-70 buildStellarIssuedAssetPaymentFromDescriptor 가 transaction.token={contract,to,amount} 를 payment 봉투({type:'payment', asset:{code,issuer}, destination, amount}) 로 빌드 → 서명. ★form-E(xlm-usdc-payment, USDC 등록)와 달리 registry 등록 불필요 — 미등록 code-issuer 도 서명 가능(form-E 는 미등록 시 -32602). contract='FAKETKN-GA5ZSEJYB37JRC5AVCIA5MOP4RHTM335X2KGX3IHOJAPP5RE34K4KZVN' 는 registry 에 없는 valid code-issuer(code 1-12 영숫자 '-' issuer 56자 G-strkey). descriptor 에 decimals 가 있으면 wm 3-tier resolver 가 tier-3(descriptor)로 합성 → 서명 경로가 로컬 rebuild(new Asset(code,issuer))라 on-chain 실재 불필요(§9 byte-proof 는 broadcast 안 함). 합성 contractAddress='0.{issuer}.{code}.'(customTokenContractAddress 훅) → 서명 4-part split 정상. amount=base units 정수(decimals 7 → 10000000=1토큰). ⚠️ token.to 를 본인 디바이스 Stellar 계정(G...)으로 교체(self-send 권장, asset risk 0). ⚠️ SDK 의 wm 복사본을 m02-05-70 포함본으로 refresh 후 실행. ⚠️ mainnet(slip44:148). 검증: /verify-wire-sign STELLAR (asset code/issuer=token, native XLM 아님; ed25519 verify=device 계정).",
+    "sourceUrl": "https://developers.stellar.org/docs/tokens",
+    "transaction": {
+      "token": {
+        "contract": "FAKETKN-GA5ZSEJYB37JRC5AVCIA5MOP4RHTM335X2KGX3IHOJAPP5RE34K4KZVN",
+        "to": "GC6OISCEYJSHTO6QBZYVT52B4ZW63BCVTNCFYLUJQK5FUKLJP6L2XNAJ",
+        "amount": "10000000",
+        "decimals": 7,
+        "symbol": "FAKETKN"
+      },
+      "memo": {
+        "type": "none"
+      },
+      "fee": 100,
+      "sequenceNumber": "0"
+    }
+  },
+  {
+    "id": "stacks-sip010-descriptor-transfer",
+    "label": "Stacks SIP-010 transfer — form-D descriptor (미등록/커스텀 토큰)",
+    "family": "stacks",
+    "applicableChainIds": [
+      "stacks:1/slip44:5757"
+    ],
+    "note": "미등록(커스텀) SIP-010 전송 — form-D descriptor. wm m02-05-70 buildStacksSip010TransferFromDescriptor 가 transaction.token={contract,to,amount} 를 contractCall 봉투({txType:'contractCall', contractAddress, contractName, functionName:'transfer', functionArgs:[uint amount, principal sender, principal to, none]}) 로 빌드 → 서명. post-condition 은 wm buildTransaction 이 합성 account.currency.contractAddress 4-segment 에서 자동 생성(makeStandardFungiblePostCondition). ★form-E(stacks-sip010-transfer, arkadiko 등록)와 달리 registry 등록 불필요 — 미등록도 서명 가능. contract='SP2C2YFP12AJZB4MABJBAJ55XECVS7E4PMMZ89YZR.faketoken::fake' 는 미등록 valid principal.contractName::assetName. ★미등록은 '::assetName' 필수(post-condition assetInfo 구성 — 부재 시 -32602). descriptor 에 decimals 가 있으면 tier-3 합성 → 서명 경로 로컬 rebuild(createAssetInfo)라 on-chain 실재 불필요. 합성 contractAddress='0.{principal}.{contractName}.{assetName}'(customTokenContractAddress 훅). sender 는 transaction.from(SP...)에서 read-only. amount=base units(decimals 6 → 1000000=1토큰). ⚠️ token.to/from 을 본인 디바이스 Stacks 계정(SP...)으로 교체(self-send 권장, asset risk 0). ⚠️ SDK wm refresh(m02-05-70) 후 실행. ⚠️ mainnet(slip44:5757). 검증: /verify-wire-sign STACKS (contractCall transfer=token, native STX tokenTransfer 아님; signer=device 계정).",
+    "sourceUrl": "https://github.com/stacksgov/sips/blob/main/sips/sip-010/sip-010-fungible-token-standard.md",
+    "transaction": {
+      "token": {
+        "contract": "SP2C2YFP12AJZB4MABJBAJ55XECVS7E4PMMZ89YZR.faketoken::fake",
+        "to": "SP3FBR2AGK5H9QBDH3EEN6DF8EK8JY7RX8QJ5SVTE",
+        "amount": "1000000",
+        "decimals": 6,
+        "symbol": "FAKE"
+      },
+      "from": "SP3FBR2AGK5H9QBDH3EEN6DF8EK8JY7RX8QJ5SVTE",
+      "nonce": "0",
+      "fee": "180",
+      "anchorMode": 3,
+      "postConditionMode": 1,
+      "network": "mainnet"
+    }
+  },
+  {
+    "id": "tezos-fa12-descriptor-transfer",
+    "label": "Tezos FA1.2 transfer — form-D descriptor (미등록/커스텀, testnet)",
+    "family": "tezos",
+    "applicableChainIds": [
+      "tezos:NetXnHfVqm9iesp/slip44:1729"
+    ],
+    "note": "미등록(커스텀) FA1.2 전송 — form-D descriptor. wm m02-05-70 buildTezosTokenTransferFromDescriptor 가 transaction.token={contract,to,amount}(tokenId 미설정 → FA1.2) 를 transfer entrypoint Michelson Pair({prim:'Pair',args:[{string:from},{prim:'Pair',args:[{string:to},{int:amount}]}]}) 봉투로 빌드 → 서명. ★★Tezos 서명은 Stellar/Stacks 와 달리 Taquito contract.at(KT1) 이 RPC 로 entrypoints 를 fetch → KT1 은 실재 배포된 FA1.2 컨트랙트여야 함(fake 불가). ⇒ .claude/skills/verify-wire-sign/testnet-setup/ CLI 로 Shadownet 에 FA1.2 배포·mint 후 그 KT1 로 destination(=token.contract) 교체 필수(cli.cjs all <기기-tz1>). contract='KT1__REPLACE_WITH_DEPLOYED_FA12_KT1__' 는 placeholder. token.to=디바이스 tz 계정(self-send). amount=base units 정수. ⚠️ SDK wm refresh(m02-05-70) 후 실행. ⚠️ testnet(Shadownet/Ghostnet NetXnHfVqm9iesp). 검증: /verify-wire-sign TEZOS (FA1.2 Pair transfer=token, native XTZ 아님; signerPubkey edpk=device).",
+    "sourceUrl": "https://gitlab.com/tezos/tzip/-/blob/master/proposals/tzip-7/tzip-7.md",
+    "transaction": {
+      "token": {
+        "contract": "KT1__REPLACE_WITH_DEPLOYED_FA12_KT1__",
+        "to": "tz1__REPLACE_WITH_DEVICE_TZ__",
+        "amount": "1000",
+        "decimals": 3,
+        "symbol": "FAKE"
+      },
+      "kind": "transaction",
+      "source": "tz1__REPLACE_WITH_DEVICE_TZ__",
+      "fee": "1420",
+      "counter": "1",
+      "gasLimit": "10307",
+      "storageLimit": "257"
+    }
+  },
+  {
+    "id": "tezos-fa2-descriptor-transfer",
+    "label": "Tezos FA2 transfer — form-D descriptor (미등록/커스텀, testnet)",
+    "family": "tezos",
+    "applicableChainIds": [
+      "tezos:NetXnHfVqm9iesp/slip44:1729"
+    ],
+    "note": "미등록(커스텀) FA2 전송 — form-D descriptor. wm m02-05-70 buildTezosTokenTransferFromDescriptor 가 transaction.token={contract,to,amount,tokenId}(tokenId 설정 → FA2) 를 transfer entrypoint Michelson list([{prim:'Pair',args:[{string:from_},[{prim:'Pair',args:[{string:to_},{prim:'Pair',args:[{int:token_id},{int:amount}]}]}]]}]) 봉투로 빌드 → 서명. ★token_id 는 '0' 만 허용(W1 회귀 — signer 가 token_id=0 하드코딩. ≠'0' → -32602). ★★Tezos 서명은 Taquito contract.at(KT1) RPC fetch → KT1 은 실재 배포된 FA2 컨트랙트여야 함(fake 불가). ⇒ testnet-setup CLI(.claude/skills/verify-wire-sign/testnet-setup/)로 Shadownet 에 FA2 배포·mint 후 KT1 교체(cli.cjs all <기기-tz1>). contract='KT1__REPLACE_WITH_DEPLOYED_FA2_KT1__' placeholder. token.to=디바이스 tz(self-send). amount=base units. ⚠️ SDK wm refresh(m02-05-70) 후 실행. ⚠️ testnet(Shadownet NetXnHfVqm9iesp). 검증: /verify-wire-sign TEZOS (FA2 list transfer token_id=0=token, native XTZ 아님; signerPubkey edpk=device).",
+    "sourceUrl": "https://gitlab.com/tezos/tzip/-/blob/master/proposals/tzip-12/tzip-12.md",
+    "transaction": {
+      "token": {
+        "contract": "KT1__REPLACE_WITH_DEPLOYED_FA2_KT1__",
+        "to": "tz1__REPLACE_WITH_DEVICE_TZ__",
+        "amount": "1000000",
+        "decimals": 6,
+        "symbol": "FAKE",
+        "tokenId": "0"
+      },
+      "kind": "transaction",
+      "source": "tz1__REPLACE_WITH_DEVICE_TZ__",
+      "fee": "1420",
+      "counter": "1",
+      "gasLimit": "10307",
+      "storageLimit": "257"
+    }
   }
 ]

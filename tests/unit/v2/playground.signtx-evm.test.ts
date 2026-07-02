@@ -129,8 +129,9 @@ it('T-U-EVM-01: simulateEvmLoad 후 EVM 체인 노드가 TREE에 추가된다', 
   // DC-2309 (b11-01): sign message 비-EVM family 3종(sol/tron/dot) + Astar 추가 → 4→8 → 20
   // m10-01-11/12/14: signMessage Stellar(1) + signData Cardano(1) + signAuthEntry Stellar(1) → 23
   // m09-04-21: Account API에 getPublicKey(1) 추가 → 24
+  // m09-04-22-fix: 미지원 signMessage 3종 제거(tron/tezos slot disabled + polkadot relay throw) → 21
   const beforeCount = api.countMethodNodes()
-  expect(beforeCount).toBe(24)
+  expect(beforeCount).toBe(21)
 
   // EVM 체인 로드 시뮬레이션
   api.simulateEvmLoad(SAMPLE_CHAINS, SAMPLE_PRESETS)

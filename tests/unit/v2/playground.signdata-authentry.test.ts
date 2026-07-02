@@ -348,3 +348,85 @@ it('T-U-PRESET-RG-01: signMessage 폼 preset selector 회귀 0 — 공유 헬퍼
   const msgEl = document.getElementById('field-message') as HTMLTextAreaElement
   expect(msgEl.value).toBe(p.message)
 })
+
+// ─────────────────────────────────────────────────────────
+// m09-04-22-fix: signData getAddress-채움 버튼 (실제 디바이스 payment 주소)
+// ─────────────────────────────────────────────────────────
+it('T-U-SIGNDATA-GA-01: signData getAddress 버튼이 디바이스 payment 주소로 field-address를 채운다', async () => {
+  const api = (window as any)._playgroundTestAPI
+  const mockGetAddress = jest
+    .fn()
+    .mockResolvedValue({ address: 'addr1qDEVICE_PAYMENT', rewardAddress: 'stake1DEVICE' })
+  const dcent = makeMockDcent()
+  ;(dcent as any).getAddress = mockGetAddress
+
+  selectNode('signData:ada:cip8')
+  api.simulateConnect(dcent, null, { model: 'Bio', firmware: '3.0' })
+
+  const btn = document.getElementById('btn-signdata-getaddress') as HTMLButtonElement
+  expect(btn).toBeTruthy()
+  btn.click()
+  // getAddress Promise 체인(microtask) flush
+  await new Promise((r) => setTimeout(r, 0))
+
+  // 폼 기본값(chainId=cip34, keyPath=default)으로 getAddress가 1회 호출되고
+  expect(mockGetAddress).toHaveBeenCalledTimes(1)
+  const gaArg = mockGetAddress.mock.calls[0][0]
+  expect(gaArg.chainId).toBe('cip34:1-764824073')
+  expect(typeof gaArg.keyPath).toBe('string')
+  expect(gaArg.keyPath.length).toBeGreaterThan(0)
+
+  // 응답의 payment 주소(address)가 field-address에 주입됨 (rewardAddress 아님)
+  const addrEl = document.getElementById('field-address') as HTMLInputElement
+  expect(addrEl.value).toBe('addr1qDEVICE_PAYMENT')
+})
+
+it('T-U-SIGNDATA-GA-02: getAddress 응답에 address 없으면 field-address 미변경 (boundary-validation)', async () => {
+  const api = (window as any)._playgroundTestAPI
+  const mockGetAddress = jest.fn().mockResolvedValue({ rewardAddress: 'stake1ONLY' }) // address 부재
+  const dcent = makeMockDcent()
+  ;(dcent as any).getAddress = mockGetAddress
+
+  selectNode('signData:ada:cip8')
+  api.simulateConnect(dcent, null, { model: 'Bio', firmware: '3.0' })
+
+  const addrEl = document.getElementById('field-address') as HTMLInputElement
+  addrEl.value = 'PRESERVED'
+  ;(document.getElementById('btn-signdata-getaddress') as HTMLButtonElement).click()
+  await new Promise((r) => setTimeout(r, 0))
+
+  expect(mockGetAddress).toHaveBeenCalledTimes(1)
+  expect(addrEl.value).toBe('PRESERVED') // 추출 실패 시 기존 값 보존
+})
+
+// ─────────────────────────────────────────────────────────
+// m09-04-22-fix: 미지원 signMessage 노드 제거 lock
+//   tron/tezos = wm slot DC-2296 disabled, polkadot relay(dot:raw) = isParaChain 가드 throw.
+//   지원되는 Astar(paraChain) / stellar / solana signMessage는 유지.
+// ─────────────────────────────────────────────────────────
+it('T-U-SIGNMSG-REMOVED-01: 미지원 signMessage 노드(tron/tezos/polkadot relay)가 트리·PRESETS에서 제거됨', () => {
+  const api = (window as any)._playgroundTestAPI
+
+  // 제거된 노드 — DOM 부재
+  expect(document.querySelector('[data-method-id="signMessage:tron:raw"]')).toBeNull()
+  expect(document.querySelector('[data-method-id="signMessage:xtz:raw"]')).toBeNull()
+  expect(document.querySelector('[data-method-id="signMessage:dot:raw"]')).toBeNull()
+
+  // 제거된 노드 — PRESETS map 부재
+  expect(api.PRESETS['signMessage:tron:raw']).toBeUndefined()
+  expect(api.PRESETS['signMessage:xtz:raw']).toBeUndefined()
+  expect(api.PRESETS['signMessage:dot:raw']).toBeUndefined()
+})
+
+it('T-U-SIGNMSG-REMOVED-02: 지원되는 signMessage 노드(Astar/stellar/solana)는 유지됨', () => {
+  const api = (window as any)._playgroundTestAPI
+
+  expect(document.querySelector('[data-method-id="signMessage:dot:raw:astar"]')).toBeTruthy()
+  expect(document.querySelector('[data-method-id="signMessage:xlm:raw"]')).toBeTruthy()
+  expect(document.querySelector('[data-method-id="signMessage:sol:raw"]')).toBeTruthy()
+
+  // Astar preset(paraChain 지원 경로)은 유지
+  const astarPresets = api.PRESETS['signMessage:dot:raw:astar']
+  expect(Array.isArray(astarPresets)).toBe(true)
+  expect(astarPresets.length).toBeGreaterThan(0)
+})

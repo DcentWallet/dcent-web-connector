@@ -604,47 +604,17 @@
           ],
         },
         {
-          kind: 'family',
-          label: 'Tron',
-          items: [
-            {
-              kind: 'method',
-              id: 'signMessage:tron:raw',
-              label: 'signMessage (raw)',
-              chainId: 'tron:0x2b6653dc/slip44:195',
-              metaKind: 'raw',
-            },
-          ],
-        },
-        {
+          // m09-04-22-fix: relay chain(dot:raw, slip44/354)은 wm signMessage가 isParaChain 가드로
+          // throw(internal_process / Tx Sign Fail)하여 제거. Astar 등 paraChain(slip44/810)만 지원.
+          // (Tron/Tezos signMessage는 wm slot이 DC-2296 hotfix로 disabled → family 통째 제거.)
           kind: 'family',
           label: 'Polkadot',
           items: [
             {
               kind: 'method',
-              id: 'signMessage:dot:raw',
-              label: 'signMessage (raw) — Polkadot',
-              chainId: 'polkadot:91b171bb158e2d3848fa23a9f1c25182/slip44:354',
-              metaKind: 'raw',
-            },
-            {
-              kind: 'method',
               id: 'signMessage:dot:raw:astar',
               label: 'signMessage (raw) — Astar',
               chainId: 'polkadot:9eb76c5184c4ab8679d2d5d819fdf90b/slip44:810',
-              metaKind: 'raw',
-            },
-          ],
-        },
-        {
-          kind: 'family',
-          label: 'Tezos',
-          items: [
-            {
-              kind: 'method',
-              id: 'signMessage:xtz:raw',
-              label: 'signMessage (raw)',
-              chainId: 'tezos:NetXdQprcVkpaWU/slip44:1729',
               metaKind: 'raw',
             },
           ],
@@ -796,22 +766,12 @@
         message: 'Hello Solana!',
       },
     ],
-    'signMessage:tron:raw': [
+    // m09-04-22-fix: tron/tezos signMessage preset 제거 (wm slot DC-2296 disabled),
+    // polkadot relay preset 제거 — 지원되는 Astar(paraChain) preset만 유지.
+    'signMessage:dot:raw:astar': [
       {
-        label: 'Tron raw message',
-        message: 'Hello Tron!',
-      },
-    ],
-    'signMessage:dot:raw': [
-      {
-        label: 'Polkadot raw message',
-        message: 'Hello Polkadot!',
-      },
-    ],
-    'signMessage:xtz:raw': [
-      {
-        label: 'Tezos raw message',
-        message: 'Hello Tezos!',
+        label: 'Astar raw message',
+        message: 'Hello Astar!',
       },
     ],
     'signMessage:xlm:raw': [
@@ -1891,6 +1851,48 @@
     })
   }
 
+  // ── _signDataGetAddressClick (m09-04-22-fix) ──
+  // signData 폼의 chainId/keyPath로 dcent.getAddress 호출 → 응답 address(payment)를 field-address에 채운다.
+  // Cardano getAddress 응답은 { address, rewardAddress? } (m09-04-21) — payment 주소(address)를 사용.
+  // signTransaction sender-resolver와 동일 패턴. 기존 헬퍼(_summarizeGetAddressResult/_unwrapV1Envelope/
+  // appendLog/normalizeError/_getDcent) 재사용 (reuse-shared-utils).
+  function _signDataGetAddressClick (chainIdEl, keyPathEl, hintEl) {
+    var chainId = chainIdEl ? chainIdEl.value.trim() : ''
+    var keyPath = keyPathEl ? keyPathEl.value.trim() : ''
+    function setHint (msg, isErr) {
+      if (hintEl) {
+        hintEl.textContent = msg
+        hintEl.style.color = isErr ? '#c00' : '#888'
+      }
+    }
+    if (!chainId || !keyPath) {
+      setHint('chainId / keyPath 필요', true)
+      return
+    }
+    var dcent = _getDcent()
+    if (!dcent || typeof dcent.getAddress !== 'function') {
+      setHint('dcent.getAddress 사용 불가', true)
+      return
+    }
+    setHint('getAddress 요청 중...', false)
+    var startMs = Date.now()
+    var req = { chainId: chainId, keyPath: keyPath }
+    Promise.resolve(dcent.getAddress(req)).then(_unwrapV1Envelope).then(function (result) {
+      var address = _summarizeGetAddressResult(result).address
+      if (typeof address !== 'string' || !address) {
+        setHint('getAddress 응답에서 address 추출 실패', true)
+        return
+      }
+      var addrEl = document.getElementById('field-address')
+      if (addrEl) addrEl.value = address
+      appendLog({ method: 'getAddress', request: req, response: result, latencyMs: Date.now() - startMs })
+      setHint('✅ ' + address, false)
+    }).catch(function (err) {
+      appendLog({ method: 'getAddress', request: req, error: normalizeError(err), latencyMs: Date.now() - startMs })
+      setHint('getAddress 실패 — 결과 로그 확인', true)
+    })
+  }
+
   // ── renderSignDataForm (m10-01-14) ──
   // Cardano CIP-8 / CIP-95 message signing (signData).
   // SDK 핸들러(DcentSdkClient signData ~1087)는 { keyPath, address, payload }를 wm signDataFromWire로
@@ -1915,6 +1917,28 @@
       value: '',
       placeholder: 'addr1... or stake/DRep credential hex',
     })
+
+    // m09-04-22-fix: signData address는 반드시 연결된 디바이스 소유 주소여야 하므로,
+    // static placeholder 대신 getAddress로 실제 payment 주소를 채우는 버튼 제공
+    // (signTransaction sender resolver와 동일 UX).
+    var sdResolveRow = document.createElement('div')
+    sdResolveRow.className = 'form-row'
+    sdResolveRow.style.cssText = 'margin-bottom:8px;padding:6px;background:#f7f7f7;border-radius:4px;'
+    var sdResolveBtn = document.createElement('button')
+    sdResolveBtn.id = 'btn-signdata-getaddress'
+    sdResolveBtn.type = 'button'
+    sdResolveBtn.textContent = '📡 getAddress → fill address'
+    sdResolveBtn.style.cssText = 'font-size:11px;padding:4px 8px;'
+    var sdResolveHint = document.createElement('span')
+    sdResolveHint.id = 'signdata-getaddress-hint'
+    sdResolveHint.style.cssText = 'font-size:10px;color:#888;margin-left:8px;'
+    sdResolveHint.textContent = '연결된 디바이스의 payment 주소로 채움 (address는 디바이스 소유 필수)'
+    sdResolveBtn.addEventListener('click', function () {
+      _signDataGetAddressClick(sdChainIdEl, sdKeyPathEl, sdResolveHint)
+    })
+    sdResolveRow.appendChild(sdResolveBtn)
+    sdResolveRow.appendChild(sdResolveHint)
+    formFields.appendChild(sdResolveRow)
 
     var sdPayloadEl = appendFormRow('payload', 'Payload (hex sign bytes)', 'textarea', {
       value: '',

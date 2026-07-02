@@ -359,10 +359,49 @@
     return clone
   }
 
+  // ── STACKS sender substitution helper (m02-05-70) ──
+  // Stacks 서명자는 항상 디바이스 계정(spending condition, 키에서 파생). SIP-010 transfer 의
+  // sender 인자는 서명자와 같아야 유효하므로(자기 토큰만 전송 가능) device 주소로 치환한다.
+  //  - form-E contractCall: functionArgs[1] = sender. 문자열('SP...') 또는 Clarity 값
+  //    ({type:'principal', value:'SP...'}) 두 shape 모두 지원.
+  //  - form-D descriptor: top-level `from` = sender(wm builder 의 resolveDescriptorSender 입력).
+  // 보존: contractAddress/contractName/functionName, functionArgs[0](amount)/[2](recipient)/[3](memo),
+  //       token.contract/to/amount 등. native STX(tokenTransfer)는 sender 필드 없음(키 파생) → no-op.
+  function _substituteStacksSender (txObj, walletAddress) {
+    if (typeof txObj === 'string') return txObj
+    if (!txObj || typeof txObj !== 'object') return txObj
+    if (!walletAddress || typeof walletAddress !== 'string') return txObj
+    var clone
+    try {
+      clone = JSON.parse(JSON.stringify(txObj))
+    } catch (e) {
+      return txObj
+    }
+    // form-D descriptor: sender = top-level `from`.
+    if (clone.token && typeof clone.token === 'object') {
+      clone.from = walletAddress
+    }
+    // form-E contractCall transfer: sender = functionArgs[1].
+    if (Array.isArray(clone.functionArgs) && clone.functionArgs.length > 1) {
+      var arg = clone.functionArgs[1]
+      if (arg && typeof arg === 'object' && Object.prototype.hasOwnProperty.call(arg, 'value')) {
+        arg.value = walletAddress // Clarity 값 형태 {type:'principal', value}
+      } else {
+        clone.functionArgs[1] = walletAddress // 평문 'SP...' 형태
+      }
+    }
+    // 일부 shape 의 top-level sender 도 함께 치환(방어).
+    if (Object.prototype.hasOwnProperty.call(clone, 'sender')) {
+      clone.sender = walletAddress
+    }
+    return clone
+  }
+
   // family-aware sender substitution dispatcher. 치환 가능: ethereum(from) / solana / algorand /
-  // tezos / hedera / xrp / xahau / constellation / tron / conflux / havah / cosmos / near.
+  // tezos / hedera / xrp / xahau / constellation / tron / conflux / havah / cosmos / near / stacks.
   // EVM(ethereum)은 보통 from 생략(signer 암시)이라 _substituteFromField 가 대개 no-op.
-  // payload 에 sender 필드가 없는 family(bitcoin / stellar / polkadot / vechain / fil / stacks /
+  // stacks(m02-05-70): SIP-010 form-E functionArgs[1] / form-D from 을 치환(native STX는 no-op).
+  // payload 에 sender 필드가 없는 family(bitcoin / stellar / polkadot / vechain / fil /
   // cardano-CBOR)는 미등록 — 원본 그대로 반환 (no-op). 버튼은 전 family 노출되며, no-op 은
   // 클릭 핸들러가 JSON 무변화로 감지해 안내한다.
   function _substituteSenderByFamily (txObj, family, walletAddress) {
@@ -377,6 +416,7 @@
     if (family === 'conflux' || family === 'havah') return _substituteFromField(txObj, walletAddress)
     if (family === 'cosmos') return _substituteCosmosSender(txObj, walletAddress)
     if (family === 'near') return _substituteNearSender(txObj, walletAddress)
+    if (family === 'stacks') return _substituteStacksSender(txObj, walletAddress)
     return txObj
   }
 
@@ -1916,7 +1956,7 @@
     havah: 'placeholder from 을 wallet hx 주소로 치환',
     cosmos: 'msgs[].value.from_address 를 wallet cosmos1... 로 치환',
     near: 'placeholder sender 를 wallet .near 계정으로 치환',
-    stacks: 'SIP-010 토큰: sender(functionArgs[1])는 nested라 버튼 미지원 — 수동 수정 (native STX는 키에서 파생)',
+    stacks: 'SIP-010 토큰: sender(form-E functionArgs[1] 또는 form-D from)를 wallet SP 주소로 치환 (native STX는 sender 필드 없음 — 키에서 파생)',
   }
   function _appendSenderResolveRow (family) {
     var resolveRow = document.createElement('div')

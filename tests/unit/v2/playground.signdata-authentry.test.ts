@@ -109,12 +109,14 @@ it('T-U-SIGNDATA-01: signData:ada:cip8 노드가 cardano chainId로 트리에 �
   expect(dom).toBeTruthy()
 })
 
-it('T-U-SIGNDATA-02: signData dispatcher가 { method, chainId, payload:{ keyPath, address, payload } } wire를 전송한다', () => {
+it('T-U-SIGNDATA-02: signData dispatcher가 { method, chainId, payload:{ keyPath, address(hex), payload } } wire를 전송한다', () => {
   const mockSign = jest.fn().mockResolvedValue({ header: { status: 'success' }, body: { parameter: { signature: 'sig', key: 'k' } } })
+  // 유효 hex address (57 bytes)
+  const HEX57 = '0102030405060708090a0b0c0d0e0f101112131415161718191a1b1c1d1e1f202122232425262728292a2b2c2d2e2f303132333435363738'
   selectAndSend('signData:ada:cip8', {
     chainId: 'cip34:1-764824073',
     keyPath: "m/44'/1815'/0'/0/0",
-    address: 'addr1qxy...',
+    address: HEX57,
     payload: 'deadbeef',
   }, mockSign)
 
@@ -122,8 +124,41 @@ it('T-U-SIGNDATA-02: signData dispatcher가 { method, chainId, payload:{ keyPath
   expect(mockSign).toHaveBeenCalledWith({
     method: 'signData',
     chainId: 'cip34:1-764824073',
-    payload: { keyPath: "m/44'/1815'/0'/0/0", address: 'addr1qxy...', payload: 'deadbeef' },
+    payload: { keyPath: "m/44'/1815'/0'/0/0", address: HEX57, payload: 'deadbeef' },
   })
+})
+
+it('T-U-SIGNDATA-02b: bech32 addr1 입력은 hex로 정규화되어 wire에 실린다', () => {
+  const mockSign = jest.fn().mockResolvedValue({ header: { status: 'success' }, body: { parameter: {} } })
+  selectAndSend('signData:ada:cip8', {
+    chainId: 'cip34:1-764824073',
+    keyPath: "m/44'/1815'/0'/0/0",
+    address: REF_ADDR_BECH32,
+    payload: 'deadbeef',
+  }, mockSign)
+
+  expect(mockSign).toHaveBeenCalledTimes(1)
+  expect(mockSign.mock.calls[0][0].payload.address).toBe(REF_ADDR_HEX)
+})
+
+it('T-U-SIGNDATA-02c: hex도 bech32도 아닌/짧은 address는 dispatcher 호출 0건 (hex ≥28B 강제)', () => {
+  const mockShort = jest.fn()
+  selectAndSend('signData:ada:cip8', {
+    chainId: 'cip34:1-764824073',
+    keyPath: "m/44'/1815'/0'/0/0",
+    address: 'deadbeef', // 4 bytes < 28
+    payload: 'deadbeef',
+  }, mockShort)
+  expect(mockShort).not.toHaveBeenCalled()
+
+  const mockGarbage = jest.fn()
+  selectAndSend('signData:ada:cip8', {
+    chainId: 'cip34:1-764824073',
+    keyPath: "m/44'/1815'/0'/0/0",
+    address: 'not-a-valid-address',
+    payload: 'deadbeef',
+  }, mockGarbage)
+  expect(mockGarbage).not.toHaveBeenCalled()
 })
 
 it('T-U-SIGNDATA-03: address 누락 시 dispatcher 호출 0건 (boundary-validation)', () => {
@@ -143,7 +178,7 @@ it('T-U-SIGNDATA-04: 빈 payload는 유효 — CIP-8 opaque empty payload 수용
   selectAndSend('signData:ada:cip8', {
     chainId: 'cip34:1-764824073',
     keyPath: "m/44'/1815'/0'/0/0",
-    address: 'addr1qxy...',
+    address: REF_ADDR_HEX, // 유효 hex address (57 bytes)
     payload: '',
   }, mockSign)
 

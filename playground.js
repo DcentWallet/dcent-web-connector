@@ -1889,6 +1889,8 @@
           hex += (b < 16 ? '0' : '') + b.toString(16)
         }
       }
+      // bech32 padding 검증: 남은 bits<5 && leftover bit이 0이어야 유효 (malformed data 거부)
+      if (bits >= 5 || ((acc << (8 - bits)) & 0xff) !== 0) return ''
       return hex
     }
     // 이미 hex — 0x 제거 후 그대로 (짝수 길이 hex만)
@@ -1937,8 +1939,8 @@
         return
       }
       var hex = _cardanoBech32ToHex(address)
-      if (!hex) {
-        setHint('주소 hex 변환 실패: ' + address, true)
+      if (!hex || hex.length < 56) {
+        setHint('주소 hex 변환 실패/길이부족(≥28B): ' + address, true)
         return
       }
       var addrEl = document.getElementById('field-address')
@@ -3131,7 +3133,7 @@
 
     var chainId = chainIdEl ? chainIdEl.value : methodDef.chainId
     var keyPath = keyPathEl ? keyPathEl.value.trim() : ''
-    var address = addressEl ? addressEl.value.trim() : ''
+    var addressRaw = addressEl ? addressEl.value.trim() : ''
     // payload는 opaque sign bytes — 빈 문자열도 유효(SDK signData 핸들러가 empty payload 수용).
     var signPayload = payloadEl ? payloadEl.value.trim() : ''
 
@@ -3140,8 +3142,16 @@
       showFieldError('keyPath', keyPathError)
       return
     }
-    if (!address) {
+    if (!addressRaw) {
       showFieldError('address', 'Address is required (payment / stake / DRep hex)')
+      return
+    }
+    // m09-04-22-fix: signData address는 hex(payment/stake/DRep bytes, ≥28 bytes) 요구.
+    // bech32(addr1…) 입력은 hex로 정규화, hex는 그대로. 유효하지 않으면 client-side 차단
+    // (wm signCardanoData의 hexToBytes+≥28B 계약을 미리 강제 — 디바이스 cryptic 실패 방지).
+    var address = _cardanoBech32ToHex(addressRaw)
+    if (!address || address.length < 56) {
+      showFieldError('address', 'Address must be hex (or bech32 addr1…) of ≥28 bytes — use 📡 getAddress')
       return
     }
 

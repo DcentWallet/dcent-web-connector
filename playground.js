@@ -1799,6 +1799,39 @@
     })
   }
 
+  // ── renderPresetSelector (m09-04-22) ──
+  // signMessage-family(index-based) 폼 3곳(signMessage / signData / signAuthEntry) 공용 preset selector.
+  // PRESETS[presetKey]가 있으면 field-preset select를 렌더하고, change 시 fillFn(presetObj)를 호출한다.
+  // ⚠️ JSON-list 기반 selector(account/bitcoinTx/evm/nonEvm)와는 shape이 달라 공용화 대상 아님 (reuse-shared-utils).
+  function renderPresetSelector (presetKey, fillFn) {
+    var presets = PRESETS[presetKey]
+    if (presets && presets.length > 0) {
+      var presetRow = document.createElement('div')
+      presetRow.className = 'form-row'
+      var presetLabel = document.createElement('label')
+      presetLabel.textContent = 'Preset'
+      var presetSelect = document.createElement('select')
+      presetSelect.id = 'field-preset'
+      var defaultOpt = document.createElement('option')
+      defaultOpt.value = ''
+      defaultOpt.textContent = '-- select preset --'
+      presetSelect.appendChild(defaultOpt)
+      presets.forEach(function (p, i) {
+        var opt = document.createElement('option')
+        opt.value = i
+        opt.textContent = p.label
+        presetSelect.appendChild(opt)
+      })
+      presetSelect.addEventListener('change', function () {
+        var idx = parseInt(presetSelect.value, 10)
+        if (!isNaN(idx) && presets[idx]) fillFn(presets[idx])
+      })
+      presetRow.appendChild(presetLabel)
+      presetRow.appendChild(presetSelect)
+      formFields.appendChild(presetRow)
+    }
+  }
+
   function renderSignMessageForm (methodDef) {
     // chainId — 사용자가 자유 입력 가능 (CAIP-19 pass-through). 같은 family의 chain들을 datalist로 제공.
     var smFamily = (allChainsMap[methodDef.chainId] || {}).family
@@ -1837,36 +1870,10 @@
     }
 
     // preset selector
-    var presets = PRESETS[methodDef.id]
-    if (presets && presets.length > 0) {
-      var presetRow = document.createElement('div')
-      presetRow.className = 'form-row'
-      var presetLabel = document.createElement('label')
-      presetLabel.textContent = 'Preset'
-      var presetSelect = document.createElement('select')
-      presetSelect.id = 'field-preset'
-      var defaultOpt = document.createElement('option')
-      defaultOpt.value = ''
-      defaultOpt.textContent = '-- select preset --'
-      presetSelect.appendChild(defaultOpt)
-      presets.forEach(function (p, i) {
-        var opt = document.createElement('option')
-        opt.value = i
-        opt.textContent = p.label
-        presetSelect.appendChild(opt)
-      })
-      presetSelect.addEventListener('change', function () {
-        var idx = parseInt(presetSelect.value, 10)
-        if (!isNaN(idx) && presets[idx]) {
-          var p = presets[idx]
-          var msgEl = document.getElementById('field-message')
-          if (msgEl && p.message !== undefined) msgEl.value = p.message
-        }
-      })
-      presetRow.appendChild(presetLabel)
-      presetRow.appendChild(presetSelect)
-      formFields.appendChild(presetRow)
-    }
+    renderPresetSelector(methodDef.id, function (p) {
+      var msgEl = document.getElementById('field-message')
+      if (msgEl && p.message !== undefined) msgEl.value = p.message
+    })
   }
 
   // ── renderSignDataForm (m10-01-14) ──

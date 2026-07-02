@@ -780,19 +780,21 @@
         message: 'Hello Stellar!',
       },
     ],
-    // m09-04-22: signData-family(index-based) preset — 값은 shape 시연용 placeholder.
-    // 실서명 정합(CIP-8 CBOR / Soroban XDR 유효성)은 HW smoke 담당 (verification-exemption).
+    // m09-04-22-fix: signData preset은 payload만 제공 — address는 반드시 디바이스 소유 주소여야
+    // 하고 hex 형태이므로 📡 getAddress 버튼으로 채운다 (static 주소는 ownership mismatch로 거부됨).
     'signData:ada:cip8': [
       {
-        label: 'Cardano CIP-8 payment (자리표시자 — 디바이스 실계정 self payment 주소로 교체 가능)',
-        address: 'addr1qxy2lpan99fcnhhyj...replace-with-device-payment-address',
+        label: 'Cardano CIP-8 payload (address는 📡 getAddress로 채우세요)',
         payload: '48656c6c6f2043617264616e6f', // "Hello Cardano" utf8→hex (CIP-8 opaque sign bytes)
       },
     ],
+    // m09-04-22-fix: 유효한 SorobanAuthorizationEntry XDR 샘플 (@stellar/stellar-sdk 오프라인 생성,
+    // roundtrip 검증). 더미 컨트랙트/nonce — 온체인 실제 auth는 아니지만 shape 유효 →
+    // 디바이스가 파싱+서명 가능. 진짜 통합 테스트는 실제 dApp의 authEntry로 교체.
     'signAuthEntry:xlm:soroban': [
       {
-        label: 'Stellar Soroban auth entry (자리표시자 — base64 XDR로 교체 가능)',
-        authEntry: 'AAAAAQAAAAA...replace-with-real-soroban-authorization-entry-xdr',
+        label: 'Stellar Soroban auth entry (유효 샘플 XDR — 디바이스 파싱/서명용)',
+        authEntry: 'AAAAAQAAAAAAAAAAc3b96I5M1hzA+ylKF4az8dBh9fLxyldGX6qTIhG5RtYAAAAAB1vNFQAehIAAAAABAAAAAAAAAAE/DDS/k60NmXHQTMyQ9wVRHIOKrZc0pKL7DXoD/H/omgAAAAh0cmFuc2ZlcgAAAAIAAAASAAAAAAAAAABzdv3ojkzWHMD7KUoXhrPx0GH18vHKV0ZfqpMiEblG1gAAAAoAAAAAAAAAAAAAAAAAAAABAAAAAA==',
       },
     ],
   }
@@ -1812,7 +1814,7 @@
     var smFamily = (allChainsMap[methodDef.chainId] || {}).family
     var smChainIdEl = appendFormRow('chainId', 'Chain ID (CAIP-19)', 'input', {
       value: methodDef.chainId,
-      datalist: _chainIdOptions(smFamily),
+      datalist: _chainIdOptions(smFamily, _signMsgExcludeUnsupported(smFamily)),
     })
 
     // keyPath — chainId 변경 시 자동으로 그 chain의 defaultKeyPath로 갱신
@@ -1851,11 +1853,57 @@
     })
   }
 
+  // ── _cardanoBech32ToHex (m09-04-22-fix) ──
+  // Cardano bech32 주소(addr1.../addr_test1.../stake1.../drep1...)를 raw 바이트 hex로 디코드한다.
+  // wm signCardanoData가 address를 hexToBytes로 처리(≥28 bytes 요구)하므로, getAddress의
+  // bech32 응답을 hex로 변환해야 signData가 동작한다. 입력이 이미 hex면(0x optional) 정규화만.
+  // BIP-173 bech32 charset. Cardano는 길이 제한 없는 변형이라 checksum 검증 생략(getAddress 신뢰).
+  // 반환: hex string (실패 시 '').
+  var _BECH32_CHARSET = 'qpzry9x8gf2tvdw0s3jn54khce6mua7l'
+  function _cardanoBech32ToHex (addr) {
+    if (typeof addr !== 'string' || !addr) return ''
+    var s = addr.trim()
+    // Cardano bech32 HRP: addr / addr_test / stake / stake_test / drep ...
+    if (/^(addr|stake|drep)(_test)?1[0-9ac-hj-np-z]+$/i.test(s)) {
+      var lower = s.toLowerCase()
+      var pos = lower.lastIndexOf('1')
+      if (pos < 1) return ''
+      var dataPart = lower.slice(pos + 1)
+      var words = []
+      for (var i = 0; i < dataPart.length; i++) {
+        var v = _BECH32_CHARSET.indexOf(dataPart.charAt(i))
+        if (v === -1) return ''
+        words.push(v)
+      }
+      if (words.length < 6) return ''
+      words = words.slice(0, words.length - 6) // 마지막 6 word = checksum 제거
+      var acc = 0
+      var bits = 0
+      var hex = ''
+      for (var j = 0; j < words.length; j++) {
+        acc = (acc << 5) | words[j]
+        bits += 5
+        while (bits >= 8) {
+          bits -= 8
+          var b = (acc >> bits) & 0xff
+          hex += (b < 16 ? '0' : '') + b.toString(16)
+        }
+      }
+      return hex
+    }
+    // 이미 hex — 0x 제거 후 그대로 (짝수 길이 hex만)
+    var hexCandidate = s.replace(/^0x/i, '')
+    if (/^[0-9a-f]+$/i.test(hexCandidate) && hexCandidate.length % 2 === 0) {
+      return hexCandidate.toLowerCase()
+    }
+    return ''
+  }
+
   // ── _signDataGetAddressClick (m09-04-22-fix) ──
-  // signData 폼의 chainId/keyPath로 dcent.getAddress 호출 → 응답 address(payment)를 field-address에 채운다.
-  // Cardano getAddress 응답은 { address, rewardAddress? } (m09-04-21) — payment 주소(address)를 사용.
-  // signTransaction sender-resolver와 동일 패턴. 기존 헬퍼(_summarizeGetAddressResult/_unwrapV1Envelope/
-  // appendLog/normalizeError/_getDcent) 재사용 (reuse-shared-utils).
+  // signData 폼의 chainId/keyPath로 dcent.getAddress 호출 → 응답 payment 주소(bech32)를
+  // hex로 변환하여 field-address에 채운다 (signData는 hex address 요구).
+  // Connect 게이트 적용 — Send와 일관되게 state.connected 필요 (facade 직접 호출 우회 방지).
+  // 기존 헬퍼(_summarizeGetAddressResult/_unwrapV1Envelope/appendLog/normalizeError/_getDcent) 재사용.
   function _signDataGetAddressClick (chainIdEl, keyPathEl, hintEl) {
     var chainId = chainIdEl ? chainIdEl.value.trim() : ''
     var keyPath = keyPathEl ? keyPathEl.value.trim() : ''
@@ -1864,6 +1912,10 @@
         hintEl.textContent = msg
         hintEl.style.color = isErr ? '#c00' : '#888'
       }
+    }
+    if (!state.connected) {
+      setHint('먼저 상단 [Connect]로 연결하세요', true)
+      return
     }
     if (!chainId || !keyPath) {
       setHint('chainId / keyPath 필요', true)
@@ -1884,10 +1936,15 @@
         setHint('getAddress 응답에서 address 추출 실패', true)
         return
       }
+      var hex = _cardanoBech32ToHex(address)
+      if (!hex) {
+        setHint('주소 hex 변환 실패: ' + address, true)
+        return
+      }
       var addrEl = document.getElementById('field-address')
-      if (addrEl) addrEl.value = address
+      if (addrEl) addrEl.value = hex
       appendLog({ method: 'getAddress', request: req, response: result, latencyMs: Date.now() - startMs })
-      setHint('✅ ' + address, false)
+      setHint('✅ ' + hex.slice(0, 16) + '… (payment hex)', false)
     }).catch(function (err) {
       appendLog({ method: 'getAddress', request: req, error: normalizeError(err), latencyMs: Date.now() - startMs })
       setHint('getAddress 실패 — 결과 로그 확인', true)
@@ -2388,16 +2445,25 @@
   // ── chainId datalist 옵션 빌더 ──
   // family가 지정되면 같은 family의 chain들만, 없으면 전체 allChainsMap을 옵션으로 제공.
   // 사용자가 직접 chainId를 타이핑하거나 dropdown에서 선택할 수 있다.
-  function _chainIdOptions (family) {
+  // excludeFn(cid, entry) → true면 datalist에서 제외 (선택적).
+  function _chainIdOptions (family, excludeFn) {
     var options = []
     if (!allChainsMap) return options
     Object.keys(allChainsMap).forEach(function (cid) {
       var entry = allChainsMap[cid]
       if (!entry) return
       if (family && entry.family !== family) return
+      if (typeof excludeFn === 'function' && excludeFn(cid, entry)) return
       options.push({ value: cid, label: entry.displayName })
     })
     return options
+  }
+
+  // m09-04-22-fix: signMessage에서 polkadot relay(slip44:354)는 미지원(wm isParaChain 가드 throw).
+  // datalist 자동완성에서 relay chainId를 제외한다 (paraChain=Astar 등만 노출).
+  function _signMsgExcludeUnsupported (family) {
+    if (family !== 'polkadot') return null
+    return function (cid) { return cid.indexOf('slip44:354') !== -1 }
   }
 
   // chainId input의 변경(타이핑/datalist 선택)을 keyPath input의 defaultKeyPath로 동기화.
@@ -3806,6 +3872,8 @@
     // m09-04-21: getPublicKey / getAddress 응답 요약 helper (undefined-safe, pure)
     _summarizeGetPublicKeyResult: _summarizeGetPublicKeyResult,
     _summarizeGetAddressResult: _summarizeGetAddressResult,
+    // m09-04-22-fix: Cardano bech32→hex (signData address hex 변환) 회귀 테스트용 노출
+    _cardanoBech32ToHex: _cardanoBech32ToHex,
     // b08-01: envelope unwrap helper + popup-only onConnect 검증용 노출
     _unwrapV1Envelope: _unwrapV1Envelope,
     // placeholder substitution helpers — unit testable

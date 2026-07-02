@@ -285,19 +285,20 @@ function pickPreset(idx: number): void {
   sel.dispatchEvent(new Event('change'))
 }
 
-it('T-U-PRESET-SD-01: PRESETS[signData:ada:cip8] 존재 + 각 엔트리 {label,address,payload} shape', () => {
+it('T-U-PRESET-SD-01: PRESETS[signData:ada:cip8] 존재 + {label,payload} shape (address는 getAddress로)', () => {
   const api = (window as any)._playgroundTestAPI
   const presets = api.PRESETS['signData:ada:cip8']
   expect(Array.isArray(presets)).toBe(true)
   expect(presets.length).toBeGreaterThan(0)
   presets.forEach((p: any) => {
     expect(typeof p.label).toBe('string')
-    expect(typeof p.address).toBe('string')
     expect(typeof p.payload).toBe('string')
+    // m09-04-22-fix: address는 hex+디바이스 소유 필수라 preset에 없음 (📡 getAddress로 채움)
+    expect(p.address).toBeUndefined()
   })
 })
 
-it('T-U-PRESET-SD-02: signData 폼 preset selector → field-address/field-payload 채움', () => {
+it('T-U-PRESET-SD-02: signData 폼 preset selector → field-payload 채움 (address 미변경)', () => {
   const api = (window as any)._playgroundTestAPI
   const p = api.PRESETS['signData:ada:cip8'][0]
   selectNode('signData:ada:cip8')
@@ -306,13 +307,14 @@ it('T-U-PRESET-SD-02: signData 폼 preset selector → field-address/field-paylo
   expect(sel).toBeTruthy()
   pickPreset(0)
 
-  const addrEl = document.getElementById('field-address') as HTMLInputElement
   const plEl = document.getElementById('field-payload') as HTMLTextAreaElement
-  expect(addrEl.value).toBe(p.address)
   expect(plEl.value).toBe(p.payload)
+  // preset은 address를 채우지 않는다 (getAddress 담당)
+  const addrEl = document.getElementById('field-address') as HTMLInputElement
+  expect(addrEl.value).toBe('')
 })
 
-it('T-U-PRESET-AE-01: PRESETS[signAuthEntry:xlm:soroban] 존재 + 각 엔트리 {label,authEntry} shape', () => {
+it('T-U-PRESET-AE-01: PRESETS[signAuthEntry:xlm:soroban] 존재 + 유효 XDR (placeholder 아님)', () => {
   const api = (window as any)._playgroundTestAPI
   const presets = api.PRESETS['signAuthEntry:xlm:soroban']
   expect(Array.isArray(presets)).toBe(true)
@@ -320,6 +322,11 @@ it('T-U-PRESET-AE-01: PRESETS[signAuthEntry:xlm:soroban] 존재 + 각 엔트리 
   presets.forEach((p: any) => {
     expect(typeof p.label).toBe('string')
     expect(typeof p.authEntry).toBe('string')
+    // m09-04-22-fix: 실제 생성한 유효 SorobanAuthorizationEntry XDR — placeholder 금지
+    expect(p.authEntry).not.toContain('replace')
+    expect(p.authEntry.length).toBeGreaterThan(100)
+    // base64 형식 (device가 파싱할 수 있는 문자셋)
+    expect(/^[A-Za-z0-9+/=]+$/.test(p.authEntry)).toBe(true)
   })
 })
 
@@ -352,11 +359,17 @@ it('T-U-PRESET-RG-01: signMessage 폼 preset selector 회귀 0 — 공유 헬퍼
 // ─────────────────────────────────────────────────────────
 // m09-04-22-fix: signData getAddress-채움 버튼 (실제 디바이스 payment 주소)
 // ─────────────────────────────────────────────────────────
-it('T-U-SIGNDATA-GA-01: signData getAddress 버튼이 디바이스 payment 주소로 field-address를 채운다', async () => {
+// 알려진 mainnet base address ↔ raw bytes hex (bech32 npm 라이브러리로 디코드한 reference 벡터)
+const REF_ADDR_BECH32 =
+  'addr1qx2fxv2umyhttkxyxp8x0dlpdt3k6cwng5pxj3jhsydzer3n0d3vllmyqwsx5wktcd8cc3sq835lu7drv2xwl2wywfgse35a3x'
+const REF_ADDR_HEX =
+  '019493315cd92eb5d8c4304e67b7e16ae36d61d34502694657811a2c8e337b62cfff6403a06a3acbc34f8c46003c69fe79a3628cefa9c47251'
+
+it('T-U-SIGNDATA-GA-01: signData getAddress 버튼이 디바이스 payment 주소를 hex로 변환해 field-address를 채운다', async () => {
   const api = (window as any)._playgroundTestAPI
   const mockGetAddress = jest
     .fn()
-    .mockResolvedValue({ address: 'addr1qDEVICE_PAYMENT', rewardAddress: 'stake1DEVICE' })
+    .mockResolvedValue({ address: REF_ADDR_BECH32, rewardAddress: 'stake1DEVICE' })
   const dcent = makeMockDcent()
   ;(dcent as any).getAddress = mockGetAddress
 
@@ -376,9 +389,19 @@ it('T-U-SIGNDATA-GA-01: signData getAddress 버튼이 디바이스 payment 주�
   expect(typeof gaArg.keyPath).toBe('string')
   expect(gaArg.keyPath.length).toBeGreaterThan(0)
 
-  // 응답의 payment 주소(address)가 field-address에 주입됨 (rewardAddress 아님)
+  // bech32 payment 주소가 raw hex로 변환되어 주입됨 (signData는 hex address 요구)
   const addrEl = document.getElementById('field-address') as HTMLInputElement
-  expect(addrEl.value).toBe('addr1qDEVICE_PAYMENT')
+  expect(addrEl.value).toBe(REF_ADDR_HEX)
+})
+
+it('T-U-SIGNDATA-GA-03: 미연결 상태에서는 getAddress 버튼이 facade를 호출하지 않는다 (Connect 게이트)', () => {
+  // simulateConnect 하지 않음 → state.connected = false
+  const mockGetAddress = jest.fn()
+  selectNode('signData:ada:cip8')
+  ;(window as any).dcent = { getAddress: mockGetAddress }
+  ;(document.getElementById('btn-signdata-getaddress') as HTMLButtonElement).click()
+  expect(mockGetAddress).not.toHaveBeenCalled()
+  delete (window as any).dcent
 })
 
 it('T-U-SIGNDATA-GA-02: getAddress 응답에 address 없으면 field-address 미변경 (boundary-validation)', async () => {
@@ -429,4 +452,56 @@ it('T-U-SIGNMSG-REMOVED-02: 지원되는 signMessage 노드(Astar/stellar/solana
   const astarPresets = api.PRESETS['signMessage:dot:raw:astar']
   expect(Array.isArray(astarPresets)).toBe(true)
   expect(astarPresets.length).toBeGreaterThan(0)
+})
+
+// ─────────────────────────────────────────────────────────
+// m09-04-22-fix: Cardano bech32 → hex 변환 (signData address)
+// ─────────────────────────────────────────────────────────
+it('T-U-BECH32-01: _cardanoBech32ToHex — reference 벡터 + hex passthrough + edge', () => {
+  const api = (window as any)._playgroundTestAPI
+  const f = api._cardanoBech32ToHex
+
+  // 알려진 mainnet base address → raw bytes hex (external 라이브러리 bech32와 bytewise 동등)
+  expect(f(REF_ADDR_BECH32)).toBe(REF_ADDR_HEX)
+
+  // 이미 hex면 정규화만 (0x 제거, 소문자)
+  expect(f('0x019493')).toBe('019493')
+  expect(f('AABBCC')).toBe('aabbcc')
+
+  // 형식 불량 / 빈 입력 → ''
+  expect(f('')).toBe('')
+  expect(f('not-an-address')).toBe('')
+  expect(f('odd-len-hex-abc')).toBe('')
+})
+
+// ─────────────────────────────────────────────────────────
+// m09-04-22-fix: signMessage datalist에서 미지원 polkadot relay 제외
+// ─────────────────────────────────────────────────────────
+it('T-U-SIGNMSG-DATALIST-01: Astar signMessage 폼 datalist가 polkadot relay(slip44:354)를 제외한다', () => {
+  const api = (window as any)._playgroundTestAPI
+  const chains = [
+    {
+      chainId: 'polkadot:91b171bb158e2d3848fa23a9f1c25182/slip44:354',
+      family: 'polkadot',
+      displayName: 'Polkadot',
+      defaultKeyPath: "m/44'/354'/0'/0/0",
+    },
+    {
+      chainId: 'polkadot:9eb76c5184c4ab8679d2d5d819fdf90b/slip44:810',
+      family: 'polkadot',
+      displayName: 'Astar',
+      defaultKeyPath: "m/44'/810'/0'/0/0",
+    },
+  ]
+  api.simulateNonEvmLoad(chains, [])
+  selectNode('signMessage:dot:raw:astar')
+
+  const datalist = document.getElementById('datalist-chainId') as HTMLDataListElement
+  expect(datalist).toBeTruthy()
+  const values = Array.from(datalist.querySelectorAll('option')).map(
+    (o) => (o as HTMLOptionElement).value
+  )
+  // relay(slip44:354)는 자동완성에서 제외, Astar(slip44:810)는 포함
+  expect(values.some((v) => v.indexOf('slip44:354') !== -1)).toBe(false)
+  expect(values.some((v) => v.indexOf('slip44:810') !== -1)).toBe(true)
 })

@@ -820,6 +820,21 @@
         message: 'Hello Stellar!',
       },
     ],
+    // m09-04-22: signData-family(index-based) preset — 값은 shape 시연용 placeholder.
+    // 실서명 정합(CIP-8 CBOR / Soroban XDR 유효성)은 HW smoke 담당 (verification-exemption).
+    'signData:ada:cip8': [
+      {
+        label: 'Cardano CIP-8 payment (자리표시자 — 디바이스 실계정 self payment 주소로 교체 가능)',
+        address: 'addr1qxy2lpan99fcnhhyj...replace-with-device-payment-address',
+        payload: '48656c6c6f2043617264616e6f', // "Hello Cardano" utf8→hex (CIP-8 opaque sign bytes)
+      },
+    ],
+    'signAuthEntry:xlm:soroban': [
+      {
+        label: 'Stellar Soroban auth entry (자리표시자 — base64 XDR로 교체 가능)',
+        authEntry: 'AAAAAQAAAAA...replace-with-real-soroban-authorization-entry-xdr',
+      },
+    ],
   }
 
   // ── 전역 상태 ──
@@ -1911,6 +1926,14 @@
     sdNote.style.cssText = 'font-size:10px;color:#aaa;margin-bottom:6px;'
     sdNote.textContent = 'Cardano CIP-8/CIP-95 — address must belong to the connected device. Returns { signature, key }.'
     formFields.appendChild(sdNote)
+
+    // preset selector
+    renderPresetSelector(methodDef.id, function (p) {
+      var addrEl = document.getElementById('field-address')
+      if (addrEl && p.address !== undefined) addrEl.value = p.address
+      var plEl = document.getElementById('field-payload')
+      if (plEl && p.payload !== undefined) plEl.value = p.payload
+    })
   }
 
   // ── renderSignAuthEntryForm (m10-01-11) ──
@@ -1942,6 +1965,12 @@
     saNote.style.cssText = 'font-size:10px;color:#aaa;margin-bottom:6px;'
     saNote.textContent = 'Stellar Soroban — authEntry is opaque XDR. Returns { signedAuthEntry, signerAddress }.'
     formFields.appendChild(saNote)
+
+    // preset selector
+    renderPresetSelector(methodDef.id, function (p) {
+      var aeEl = document.getElementById('field-authEntry')
+      if (aeEl && p.authEntry !== undefined) aeEl.value = p.authEntry
+    })
   }
 
   // ── renderSignTxEvmForm ──

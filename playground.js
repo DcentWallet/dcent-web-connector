@@ -1860,14 +1860,42 @@
   // BIP-173 bech32 charset. Cardano는 길이 제한 없는 변형이라 checksum 검증 생략(getAddress 신뢰).
   // 반환: hex string (실패 시 '').
   var _BECH32_CHARSET = 'qpzry9x8gf2tvdw0s3jn54khce6mua7l'
+  var _BECH32_GEN = [0x3b6a57b2, 0x26508e6d, 0x1ea119fa, 0x3d4233dd, 0x2a1462b3]
+  // BIP-173 polymod — checksum 검증용 (Cardano는 길이 제한 없는 bech32 변형).
+  function _bech32Polymod (values) {
+    var chk = 1
+    for (var i = 0; i < values.length; i++) {
+      var top = chk >>> 25
+      chk = (((chk & 0x1ffffff) << 5) >>> 0) ^ values[i]
+      for (var j = 0; j < 5; j++) {
+        if ((top >> j) & 1) chk ^= _BECH32_GEN[j]
+      }
+      chk = chk >>> 0
+    }
+    return chk >>> 0
+  }
+  function _bech32HrpExpand (hrp) {
+    var ret = []
+    var k
+    for (k = 0; k < hrp.length; k++) ret.push(hrp.charCodeAt(k) >> 5)
+    ret.push(0)
+    for (k = 0; k < hrp.length; k++) ret.push(hrp.charCodeAt(k) & 31)
+    return ret
+  }
+  function _bech32VerifyChecksum (hrp, words) {
+    return _bech32Polymod(_bech32HrpExpand(hrp).concat(words)) === 1
+  }
   function _cardanoBech32ToHex (addr) {
     if (typeof addr !== 'string' || !addr) return ''
     var s = addr.trim()
     // Cardano bech32 HRP: addr / addr_test / stake / stake_test / drep ...
     if (/^(addr|stake|drep)(_test)?1[0-9ac-hj-np-z]+$/i.test(s)) {
+      // BIP-173: mixed-case 금지 (전부 소문자 또는 전부 대문자만 허용).
+      if (s !== s.toLowerCase() && s !== s.toUpperCase()) return ''
       var lower = s.toLowerCase()
       var pos = lower.lastIndexOf('1')
       if (pos < 1) return ''
+      var hrp = lower.slice(0, pos)
       var dataPart = lower.slice(pos + 1)
       var words = []
       for (var i = 0; i < dataPart.length; i++) {
@@ -1876,6 +1904,8 @@
         words.push(v)
       }
       if (words.length < 6) return ''
+      // BIP-173 checksum 검증 (체크섬 word 포함 전체로) — 실패 시 거부 (typo/corruption 차단).
+      if (!_bech32VerifyChecksum(hrp, words)) return ''
       words = words.slice(0, words.length - 6) // 마지막 6 word = checksum 제거
       var acc = 0
       var bits = 0

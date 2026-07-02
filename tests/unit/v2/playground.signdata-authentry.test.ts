@@ -507,6 +507,14 @@ it('T-U-BECH32-01: _cardanoBech32ToHex — reference 벡터 + hex passthrough + 
   expect(f('')).toBe('')
   expect(f('not-an-address')).toBe('')
   expect(f('odd-len-hex-abc')).toBe('')
+
+  // BIP-173 checksum 검증: 첫 data char(q→p) 변조 → '' (typo/corruption 거부)
+  const corrupted = REF_ADDR_BECH32.slice(0, 5) + 'p' + REF_ADDR_BECH32.slice(6)
+  expect(corrupted).not.toBe(REF_ADDR_BECH32)
+  expect(f(corrupted)).toBe('')
+
+  // mixed-case → '' (BIP-173 전부 소문자/대문자만 허용)
+  expect(f('A' + REF_ADDR_BECH32.slice(1))).toBe('')
 })
 
 // ─────────────────────────────────────────────────────────

@@ -455,6 +455,32 @@
     }
   },
   {
+    "id": "vechain-vip180-transfer",
+    "label": "VeChain VIP-180 token transfer (SHA)",
+    "family": "vechain",
+    "applicableChainIds": [
+      "vechain:b1ac3413d346d43539627e6be7ec1b4a/slip44:818"
+    ],
+    "note": "토큰 전송 — VeChain VIP-180(ERC-20 호환) transfer. wm keystone VECHAIN 어댑터(m02-05-75 / DC-3096)가 wire의 clauses[0]={to:토큰 컨트랙트, value:'0x0', data:transfer(address,uint256) calldata}를 extractVechainTokenIdentity(selector 0xa9059cbb)로 식별 → TokenAccount 합성 → convertTransaction이 recipient/amount를 calldata에서 remap → buildClauses가 transfer(recipient,amount) 재인코딩 서명. ★native VET value는 0x0 그대로(native VET 이동 0). 이게 75 이전엔 device가 'native VET / amount 0 / opaque data'로 blind-display 하던 지점 — 자산은 정확히 이동했으나 사용자가 토큰임을 확인 못 함. clauses[0].to=토큰 컨트랙트, calldata=0xa9059cbb + pad32(recipient) + pad32(amount). 현재 SHA(Safe Haven, contract 0x5db3c8a942333f6468176a870db36eef120a34dc, 18 decimals), amount=0xDE0B6B3A7640000(=1e18=1 SHA). VTHO 예시는 to=0x0000000000000000000000000000456E65726779. ⚠️ calldata 안의 recipient(selector 8자 다음 32바이트 중 하위 40 hex)를 본인 디바이스 VeChain 계정(0x…, EVM-style 20B)으로 교체(self-send라 asset risk 0). ⚠️ 반드시 mainnet(slip44:818) — VIP-180 토큰은 vechain-erc20.json registry(parent=VECHAIN)에 등록됐거나 tier-2 RPC(getTokenInfoWithCurrency)로 해석돼야 함, 미해석은 keystone -32602(silent native VET 차단). native VET는 vet-transfer preset 참조. clauses는 단일 transfer만(multi-clause 2개 이상 → extractor undefined → native 경로). gas/gasPriceCoef 제공 시 wm prepare skip(RPC 미호출). blockRef/nonce는 송금 전 갱신. §9 검증: 서명 hex를 verify-wire-sign VECHAIN 디코더로 대조(assetKind=token / recipient / signer=device).",
+    "sourceUrl": "https://docs.vechain.org/introduction-to-vechain/dual-token-economic-model/vethor-vtho",
+    "transaction": {
+      "chainTag": 74,
+      "blockRef": "0x0000000000000000",
+      "expiration": 720,
+      "clauses": [
+        {
+          "to": "0x5db3c8a942333f6468176a870db36eef120a34dc",
+          "value": "0x0",
+          "data": "0xa9059cbb00000000000000000000000070997970c51812dc3a010c7d01b50e0d17dc79c80000000000000000000000000000000000000000000000000de0b6b3a7640000"
+        }
+      ],
+      "gasPriceCoef": 0,
+      "gas": 80000,
+      "dependsOn": null,
+      "nonce": "0x0"
+    }
+  },
+  {
     "id": "sol-spl-transfer",
     "label": "Solana SPL token transfer (plain JSON, data: 0x hex)",
     "family": "solana",
@@ -959,6 +985,70 @@
       "counter": "1",
       "gasLimit": "10307",
       "storageLimit": "257"
+    }
+  },
+  {
+    "id": "dag-dor-metagraph-transfer",
+    "label": "Constellation DOR metagraph L0 token transfer — form-D descriptor",
+    "family": "constellation",
+    "applicableChainIds": [
+      "constellation:mainnet/slip44:1137"
+    ],
+    "note": "metagraph L0 토큰(DOR) 전송 — form-D descriptor (m02-05-60). ★native DAG 와 wire payload 가 byte-identical(source/destination/amount/fee) 이라 metagraphId 를 transaction.token.contract 로 out-of-band carrier. wm 이 token.contract='DAG0Cyy…'(metagraphId) 를 tier-1 registry(metagraph-token.json, DOR 등록)로 해석 → metagraph TokenAccount 합성 → constellation/transaction.ts:108 metagraph 분기 → getMetagraphApi 가 token.extra.l0Url/l1Url/feesCurrencyId 로 L0/L1 endpoint 서명. native DAG(getDag4Network) 아님. ★추출기·builder·어댑터 불필요(descriptor→resolve→account-driven). ★DOR 는 등록 토큰(tier-1) — 미등록 metagraph 는 endpoint(extra) 부재로 서명 불가(-32602), 등록 토큰만 지원. convertTransaction 은 token 무시하고 top-level source/destination/amount 서명. amount 단위 DATUM(1 DOR=1e8, decimals 8) → 100000000=1 DOR. ⚠️ '🔑 Resolve sender from device' 로 source(+placeholder destination) 를 디바이스 DAG 주소로 치환(self-send). DAG 는 체크섬 검증 있어 zero-placeholder 는 표시 깨짐 — 반드시 resolve-sender 클릭 또는 유효 DAG 입력. ⚠️ SDK wm refresh(m02-05-60 회귀 반영)+connector 재빌드. ⚠️ mainnet. 검증: /verify-wire-sign CONSTELLATION (metagraph token=DOR, native DAG 아님; secp256k1 signer=device).",
+    "sourceUrl": "https://docs.constellationnetwork.io/",
+    "transaction": {
+      "type": "transfer",
+      "source": "DAG0000000000000000000000000000000000000000",
+      "destination": "DAG0000000000000000000000000000000000000001",
+      "amount": "100000000",
+      "fee": "0",
+      "token": {
+        "contract": "DAG0CyySf35ftDQDQBnd1bdQ9aPyUdacMghpnCuM",
+        "decimals": 8,
+        "symbol": "DOR"
+      }
+    }
+  },
+  {
+    "id": "dag-custom-metagraph-transfer",
+    "label": "Constellation metagraph transfer — form-D descriptor (미등록/커스텀 토큰 → -32602)",
+    "family": "constellation",
+    "applicableChainIds": [
+      "constellation:mainnet/slip44:1137"
+    ],
+    "note": "미등록(커스텀) metagraph 토큰 전송 시도 — form-D descriptor (m02-05-60, T-SEC-CONSTELLATION-UNREGISTERED-01). ★★constellation 은 형제(Havah/Hedera/Stellar/Stacks/Tezos)와 달리 미등록 토큰이 tier-3 descriptor 합성으로도 서명 불가 → keystone -32602. 이유: metagraph 서명은 토큰별 D'CENT 게이트웨이 endpoint(extra.l0Url/l1Url/feesCurrencyId)를 요구하는데 이는 wm registry(metagraph-token.json)에만 존재. tier-3 합성은 extra 를 못 채우고 resolveCustomTokenDeviceStoreId 도 deviceStoreId 를 결정 못 함(어댑터 없음 + chainInfo.tokenGroupName 없음) → -32602 로 선차단. ★이 preset 의 기대 결과 = -32602(성공 아님). native DAG 로 silent 오서명되지 않는 것(silent native 0)을 확인하는 negative/가드 검증용 — DOR/PACA 등록 토큰은 dag-dor-metagraph-transfer preset 으로 서명. contract=DAG5UnregisteredMetagraphIdZZZZZZZZZZZZZZ 는 registry 미등록(회귀 테스트 T-SEC-CONSTELLATION-UNREGISTERED-01 과 동일 값, valid DAG 포맷이나 DOR/PACA 아님). decimals 를 빼도(01b) 동일하게 -32602. ⚠️ -32602 는 m02-05-60 픽스 없이도 기존 resolver 로 발생하므로 SDK refresh 전에도 재현됨(성공 경로 DOR 만 60 픽스 필요). ⚠️ mainnet. 서명이 성립 안 하므로 /verify-wire-sign 대상 아님 — 요청 후 에러 코드 -32602 확인이 검증.",
+    "sourceUrl": "https://docs.constellationnetwork.io/",
+    "transaction": {
+      "type": "transfer",
+      "source": "DAG0000000000000000000000000000000000000000",
+      "destination": "DAG0000000000000000000000000000000000000001",
+      "amount": "100000000",
+      "fee": "0",
+      "token": {
+        "contract": "DAG5UnregisteredMetagraphIdZZZZZZZZZZZZZZ",
+        "decimals": 8,
+        "symbol": "UNREG"
+      }
+    }
+  },
+  {
+    "id": "sol-spl-descriptor-transfer",
+    "label": "Solana SPL token transfer — form-D descriptor (미등록/커스텀 토큰)",
+    "family": "solana",
+    "applicableChainIds": [
+      "solana:EtWTRABZaYq6iMfeYKouRu166VU2xqa1/slip44:501"
+    ],
+    "note": "미등록(커스텀) SPL 토큰 전송 — form-D descriptor. wm m02-05-73(DC-3093) buildSplTransferFromDescriptor 가 transaction.token={contract:mint,to:owner,amount,decimals} 를 Case-4 봉투({type:transfer, sender, recipient, amount}) 로 빌드 → 공유 prepareTransaction(checkAssociation)+buildTransaction(createTransferCheckedInstruction) 이 수신자 ATA 파생 + SPL transferChecked 재구성 → 서명. ★form-E(sol-spl-transfer, opaque instructions)와 달리 spl-token.json/spl-devnet.json registry 등록 불필요 — 미등록 mint 도 토큰으로 식별되어 서명(form-E 는 opaque 라 mint 표시 못 함). ★★SOLANA 는 형제(hedera/stellar/stacks/tezos, offline rebuild)와 달리 prepare 가 devnet RPC 를 호출한다(수신자 ATA isAssociated getAccountInfo + getLatestBlockhash + getFeeForMessage) → contract 는 devnet 실존 SPL mint 여야 RPC 로 해석됨. ★contract 은 실존 미등록 mint 로 미리 채워둠 — Gh9ZwEmdLJ8DscKNTkTqPbNwLNNBjuSzaG9Vp2KGtKJr(devnet spl-token-faucet USDC-Dev, classic Token program, decimals 6, on-chain 실존 확인). wm spl-devnet.json 등록 4종(USDC 4zMMC9…/WFC 7sSCCR…/WMM 29NECD…/HzwqbKZ…)에 없음 → form-D 미등록 경로 검증용. 다른 미등록 mint 로 바꾸려면 contract+decimals 를 함께 교체(등록 4종 제외). ⚠️ feePayer = 서명 authority(= sender-ATA owner). form-D descriptor 엔 sender 가 없어 wm resolveDescriptorSender 가 transaction.sender??from??feePayer 로 읽는다 → 반드시 본인 디바이스 devnet SOL pubkey 로 교체(부재 시 -32602, 디바이스 불일치 시 addSignature not-required-to-sign). 상단 🔑 Resolve sender from device 버튼이 solana feePayer 를 지원하면 자동 치환, 아니면 수동 교체. ⚠️ token.to = 수신자 owner wallet(NOT ATA — wm 가 ATA 파생). self-send 권장 = 본인 디바이스 devnet SOL 주소(ATA-of-ATA 이중파생 방지). amount = token base units(재스케일 없음, 예 decimals 6 → 1000000=1.0 토큰). decimals 는 교체한 mint 의 실제 decimals(u8, 0-255) — createTransferCheckedInstruction 에 u8 로 인코딩되므로 정확해야 함. ★R4 base58 검증: mint/to/feePayer 가 32바이트 base58 pubkey 가 아니면 builder 가 -32602(downstream new PublicKey generic error 아님). ★R5 decimals 비정수/범위밖(0-255) → -32602. amount NaN/음수/비정수 → -32602. Token-2022: 미등록 Token-2022 mint 은 classic(TOKEN_PROGRAM_ID)으로 빌드돼 온체인 clean-fail(자산 misdirection 0, 본 child 비스코프 — classic SPL 만). ⚠️ SDK wm 을 m02-05-73(DC-3093) 포함본으로 refresh + connector 재빌드 후 실행. ⚠️ Solana Devnet(isTestnet → deviceStoreId SPL-DEVNET). 검증: /verify-wire-sign SOLANA (transferChecked mint=token, native SOL 아님; ed25519 signer=device). ★SPL 서명 바이트에 mint 포함 → byte-proof authoritative(온체인 broadcast 불요).",
+    "sourceUrl": "https://spl.solana.com/token",
+    "transaction": {
+      "token": {
+        "contract": "Gh9ZwEmdLJ8DscKNTkTqPbNwLNNBjuSzaG9Vp2KGtKJr",
+        "to": "11111111111111111111111111111111",
+        "amount": "1000000",
+        "decimals": 6,
+        "symbol": "USDC-Dev"
+      },
+      "feePayer": "11111111111111111111111111111111"
     }
   }
 ]

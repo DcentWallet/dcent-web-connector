@@ -405,14 +405,15 @@ describe('sign() — transport option throw + backward compat', () => {
     const openSpy = jest
       .spyOn(window, 'open')
       .mockImplementation(() => mockPopup as unknown as Window)
-    // singleton popUpUrl = 'http://localhost:5173' → 같은 origin으로 handshake auto-respond.
-    installHandshakeAutoRespond(mockPopup, 'http://localhost:5173')
+    // singleton은 popUpUrl 미지정 → PopupTransport 기본값(https://bridge.dcentwallet.com/v2).
+    // 그 origin(DEFAULT_ORIGIN)으로 handshake auto-respond (형제 T-U 테스트와 동일).
+    installHandshakeAutoRespond(mockPopup, DEFAULT_ORIGIN)
     try {
       setTransport('ble') // 공개 API → singleton _pendingTransport
       const { transport } = ensureSingleton()
       const sendPromise = transport.send({ id: 'st03', method: 'signTransaction', params: {} })
       await flushHandshake()
-      dispatchResponse('http://localhost:5173', {
+      dispatchResponse(DEFAULT_ORIGIN, {
         id: 'st03',
         result: { header: { version: '1.0', status: 'success' }, body: { command: 'signTransaction' } },
       })

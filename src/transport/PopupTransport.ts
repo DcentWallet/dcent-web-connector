@@ -15,7 +15,15 @@ import { toWireTransport } from '../sign/_sanitizeTransportOption'
 export interface PopupTransportOptions {
   /** popup으로 열 sdk URL. 기본 'https://bridge.dcentwallet.com/v2' */
   popUpUrl?: string
-  /** 응답 대기 timeout (ms). 기본 60000 (60s, v1 동일) */
+  /**
+   * 응답 대기 timeout (ms). 기본 180000 (180s / 3분).
+   *
+   * 60s(v1 동일)에서 상향: CIP-95(Cardano governance/DRep) 등 디바이스 서명을
+   * 2회 받아야 하는 흐름은 사용자 confirm × 2 + 화면 확인 시간으로 60s를 넘겨
+   * connector layer(TIMEOUT 5006)가 먼저 끊는 사례가 있었다. interactive 서명은
+   * 사람을 기다리므로 넉넉한 backstop이 필요. dApp이 더 짧게/길게 원하면
+   * `setTimeOutMs` / 생성자 `timeoutMs`로 override 가능.
+   */
   timeoutMs?: number
   /** postMessage 보안 origin. 미지정 시 popUpUrl의 URL.origin */
   origin?: string
@@ -96,7 +104,7 @@ export class PopupTransport implements MessageTransport {
 
   constructor (options: PopupTransportOptions = {}) {
     this.popUpUrl = options.popUpUrl ?? 'https://bridge.dcentwallet.com/v2'
-    this.timeoutMs = options.timeoutMs ?? 60000
+    this.timeoutMs = options.timeoutMs ?? 180000
     this.origin = options.origin ?? new URL(this.popUpUrl).origin
     this.protocolVersion = options.protocolVersion ?? '2.0'
     // boundary-validation: readyTimeoutMs는 양의 유한 number만 허용. 미지정 시 default 10s.

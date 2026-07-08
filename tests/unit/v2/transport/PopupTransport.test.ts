@@ -272,7 +272,8 @@ describe('PopupTransport', () => {
   // ===== T-U-07: origin mismatch =====
   describe('T-U-07: origin mismatch silent drop', () => {
     it('다른 origin의 메시지는 무시 — pending 영향 0', async () => {
-      transport = new PopupTransport()
+      // timeout을 assertion 수단으로만 사용 — default(180s)와 분리해 60000으로 고정
+      transport = new PopupTransport({ timeoutMs: 60000 })
       const promise = transport.send(makeEnvelope('req-1'))
       await flushHandshake()
 
@@ -294,7 +295,8 @@ describe('PopupTransport', () => {
       ['T-U-08c (id 누락)', { result: 'no-id' }],
       ['T-U-08d (id non-string)', { id: 123, result: 'x' }],
     ])('%s → silent drop, pending unchanged', async (_label, badData) => {
-      transport = new PopupTransport()
+      // timeout을 assertion 수단으로만 사용 — default(180s)와 분리해 60000으로 고정
+      transport = new PopupTransport({ timeoutMs: 60000 })
       const promise = transport.send(makeEnvelope('req-1'))
       await flushHandshake()
 
@@ -310,7 +312,8 @@ describe('PopupTransport', () => {
   // ===== T-U-09: unknown id silent drop =====
   describe('T-U-09: unknown id silent drop', () => {
     it('모르는 id의 응답은 무시 (이미 timeout 처리된 후 도착할 수 있음)', async () => {
-      transport = new PopupTransport()
+      // timeout을 assertion 수단으로만 사용 — default(180s)와 분리해 60000으로 고정
+      transport = new PopupTransport({ timeoutMs: 60000 })
       const promise = transport.send(makeEnvelope('req-1'))
       await flushHandshake()
 
@@ -439,7 +442,16 @@ describe('PopupTransport', () => {
       expect(openSpy).toHaveBeenCalledWith(DEFAULT_URL, '_blank')
       expect(mockPopup.postMessage).toHaveBeenCalledWith(expect.any(Object), DEFAULT_ORIGIN)
 
+      // default timeout = 180000 (60s에서 상향, CIP-95 2회 서명 대응).
+      // 60000으로의 회귀를 잡기 위해: 60s 시점엔 아직 pending, 180s에 TIMEOUT.
+      let settled = false
+      promise.then(() => { settled = true }, () => { settled = true })
+
       jest.advanceTimersByTime(60000)
+      await Promise.resolve()
+      expect(settled).toBe(false) // 60s에 안 끊김 → default > 60s 증명
+
+      jest.advanceTimersByTime(120000) // 총 180s
       await expect(promise).rejects.toMatchObject({ code: ErrorCode.TIMEOUT })
 
       await transport.close()
@@ -575,8 +587,9 @@ describe('PopupTransport', () => {
 
   // ===== T-U-HS-05: handshake timeout =====
   describe('T-U-HS-05: handshake timeout', () => {
-    it('default 60s 안에 ack 안 옴 → TIMEOUT reject + close()', async () => {
-      transport = new PopupTransport()
+    it('timeoutMs 안에 ack 안 옴 → TIMEOUT reject + close()', async () => {
+      // handshake timeout도 this.timeoutMs를 공유 — assertion 수단으로 60000 고정
+      transport = new PopupTransport({ timeoutMs: 60000 })
       // handshake auto-respond 비활성화 (응답 안 옴)
       mockPopup.postMessage.mockImplementation(() => { /* swallow */ })
 

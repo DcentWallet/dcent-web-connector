@@ -587,9 +587,9 @@ describe('PopupTransport', () => {
 
   // ===== T-U-HS-05: handshake timeout =====
   describe('T-U-HS-05: handshake timeout', () => {
-    it('timeoutMs 안에 ack 안 옴 → TIMEOUT reject + close()', async () => {
-      // handshake timeout도 this.timeoutMs를 공유 — assertion 수단으로 60000 고정
-      transport = new PopupTransport({ timeoutMs: 60000 })
+    it('handshakeTimeoutMs 안에 ack 안 옴 → TIMEOUT reject + close()', async () => {
+      // handshake는 전용 handshakeTimeoutMs 사용 — assertion 수단으로 60000 고정
+      transport = new PopupTransport({ handshakeTimeoutMs: 60000 })
       // handshake auto-respond 비활성화 (응답 안 옴)
       mockPopup.postMessage.mockImplementation(() => { /* swallow */ })
 
@@ -600,6 +600,46 @@ describe('PopupTransport', () => {
 
       await expect(promise).rejects.toMatchObject({ code: ErrorCode.TIMEOUT })
       expect(mockPopup.close).toHaveBeenCalled()
+    })
+  })
+
+  // ===== T-U-HS-07: handshake timeout이 request timeoutMs(180s)에 커플링되지 않음 =====
+  // Claude 크로스 리뷰 WARNING 회귀 가드 (PR #175): timeoutMs 180s 상향이
+  // handshake ack까지 상속하면 dead popup이 190s 붙잡는 latency 회귀. handshake는
+  // 전용 default 60s를 유지해야 한다.
+  describe('T-U-HS-07: handshake timeout decoupled from request timeoutMs', () => {
+    it('timeoutMs=180000(default)여도 handshake는 60s에 TIMEOUT (180s 미상속)', async () => {
+      // request timeout만 180s, handshakeTimeoutMs는 미지정 → default 60s
+      transport = new PopupTransport({ timeoutMs: 180000 })
+      mockPopup.postMessage.mockImplementation(() => { /* ack 안 옴 */ })
+
+      const promise = transport.send(makeEnvelope('req-1'))
+      let settled = false
+      promise.then(() => { settled = true }, () => { settled = true })
+      await flushHandshake()
+
+      // 59s 시점: 아직 pending (60s 미도달)
+      jest.advanceTimersByTime(59000)
+      await Promise.resolve()
+      expect(settled).toBe(false)
+
+      // 60s 시점: handshake TIMEOUT (180s를 기다리지 않음)
+      jest.advanceTimersByTime(1000)
+      await expect(promise).rejects.toMatchObject({ code: ErrorCode.TIMEOUT })
+      expect(mockPopup.close).toHaveBeenCalled()
+    })
+  })
+
+  // ===== T-U-HS-08: handshakeTimeoutMs boundary-validation =====
+  describe('T-U-HS-08: handshakeTimeoutMs 검증', () => {
+    it.each([
+      ['0', 0],
+      ['음수', -1],
+      ['NaN', NaN],
+      ['Infinity', Number.POSITIVE_INFINITY],
+    ])('%s → INVALID_PARAMS throw', (_label, bad) => {
+      expect(() => new PopupTransport({ handshakeTimeoutMs: bad as number }))
+        .toThrow(ProviderError)
     })
   })
 

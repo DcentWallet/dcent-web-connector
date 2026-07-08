@@ -1857,7 +1857,8 @@
   // Cardano bech32 주소(addr1.../addr_test1.../stake1.../drep1...)를 raw 바이트 hex로 디코드한다.
   // wm signCardanoData가 address를 hexToBytes로 처리(≥28 bytes 요구)하므로, getAddress의
   // bech32 응답을 hex로 변환해야 signData가 동작한다. 입력이 이미 hex면(0x optional) 정규화만.
-  // BIP-173 bech32 charset. Cardano는 길이 제한 없는 변형이라 checksum 검증 생략(getAddress 신뢰).
+  // BIP-173 bech32 charset. Cardano는 90-char 길이 제한이 없는 변형이지만, checksum(polymod)
+  // 자체는 길이와 무관하게 유효하므로 _bech32VerifyChecksum으로 검증한다(오타/손상 주소 거부).
   // 반환: hex string (실패 시 '').
   var _BECH32_CHARSET = 'qpzry9x8gf2tvdw0s3jn54khce6mua7l'
   var _BECH32_GEN = [0x3b6a57b2, 0x26508e6d, 0x1ea119fa, 0x3d4233dd, 0x2a1462b3]

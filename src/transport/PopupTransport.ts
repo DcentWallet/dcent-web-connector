@@ -34,6 +34,16 @@ export interface PopupTransportOptions {
    * 미수신 시 silent fallback으로 `_handshake`를 즉시 송신 (구 sdk 호환). m07-02 B Gate.
    */
   readyTimeoutMs?: number
+  /**
+   * `_handshake` ack 대기 timeout (ms). 기본 60000 (60s).
+   *
+   * ⚠️ `timeoutMs`(request/response, 180s)와 **분리**한다. handshake ack는
+   * 사람이 개입하지 않는 기계-대-기계 popup-load 확인 신호라, interactive 서명용
+   * 180s backstop을 상속하면 dead/blocked/wrong-URL popup이 최대 190s(readyTimeout
+   * 10s + handshake 180s) 동안 dApp promise를 붙잡는 실패경로 latency 회귀가 생긴다.
+   * handshake는 popup 로드 직후 즉시 응답되므로 60s로 충분하다 (PR #175 이전 동작 유지).
+   */
+  handshakeTimeoutMs?: number
 }
 
 /**
@@ -78,6 +88,7 @@ export class PopupTransport implements MessageTransport {
   private readonly origin: string
   private readonly protocolVersion: string
   private readonly readyTimeoutMs: number
+  private readonly handshakeTimeoutMs: number
   private timeoutMs: number
 
   private popupWindow: Window | null = null
@@ -118,6 +129,19 @@ export class PopupTransport implements MessageTransport {
       )
     } else {
       this.readyTimeoutMs = ready
+    }
+    // boundary-validation: handshakeTimeoutMs도 양의 유한 number만 허용. 미지정 시 default 60s.
+    // timeoutMs(180s)와 분리 — handshake ack는 human-gated 아님 (Claude 크로스 리뷰 WARNING).
+    const hs = options.handshakeTimeoutMs
+    if (hs === undefined) {
+      this.handshakeTimeoutMs = 60000
+    } else if (typeof hs !== 'number' || !Number.isFinite(hs) || hs <= 0) {
+      throw new ProviderError(
+        ErrorCode.INVALID_PARAMS,
+        `handshakeTimeoutMs must be a positive finite number, got ${String(hs)}`,
+      )
+    } else {
+      this.handshakeTimeoutMs = hs
     }
   }
 
@@ -403,7 +427,7 @@ export class PopupTransport implements MessageTransport {
         this.pending.delete(handshakeId)
         const err = new ProviderError(
           ErrorCode.TIMEOUT,
-          `Handshake timed out after ${this.timeoutMs}ms`,
+          `Handshake timed out after ${this.handshakeTimeoutMs}ms`,
         )
         // m07-02: handshake error는 send의 .then(_, errHandler)가 받아 reject되어야 함.
         // close()가 preHandshakeRejecters로 DISCONNECTED를 먼저 던지면 actual error가 가려짐.
@@ -413,7 +437,7 @@ export class PopupTransport implements MessageTransport {
           /* defensive noop */
         })
         reject(err)
-      }, this.timeoutMs)
+      }, this.handshakeTimeoutMs)
 
       this.pending.set(handshakeId, {
         resolve: (response) => {

@@ -344,6 +344,102 @@
     }
   },
   {
+    "id": "ada-cbor-signtx-cip95-vote-deleg",
+    "label": "Cardano dApp signTransaction (CIP-95 — 투표권 위임 vote delegation)",
+    "family": "cardano",
+    "applicableChainIds": [
+      "cip34:1-764824073",
+      "cip34:0-2"
+    ],
+    "note": "댑 요청 — CIP-95 거버넌스. api.signTx(CBOR)에 vote_deleg_cert(CSL VoteDelegation kind=15)가 담긴 tx. 사용자의 투표권을 특정 DRep에게 위임한다. wm cardano/witness-analyzer(DC-2965)가 cert를 감지해 stake witness path를 추가 서명(cbor-signer 경로 = connector-wire). 예시 CBOR(wm fixture signTx-vote-deleg)은 placeholder input(aaaa...) + stake credential(2222...) → DRep(3333...). 디바이스는 CBOR body 해시만 서명(UTXO 미검증)하므로 서명 동작 확인용이며 broadcast 불가 — 본인 stake key/실제 UTXO/실제 DRep ID로 교체해야 실제 위임.",
+    "sourceUrl": "https://cips.cardano.org/cips/cip95/",
+    "transaction": {
+      "txCbor": "84a40081825820aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa00018182581d61f0f0f0f0f0f0f0f0f0f0f0f0f0f0f0f0f0f0f0f0f0f0f0f0f0f0f0f01a000f4240021a00030d40048183098200581c222222222222222222222222222222222222222222222222222222228200581c33333333333333333333333333333333333333333333333333333333a0f5f6"
+    }
+  },
+  {
+    "id": "ada-cbor-signtx-cip95-drep-vote",
+    "label": "Cardano dApp signTransaction (CIP-95 — DRep 투표 voting_procedures)",
+    "family": "cardano",
+    "applicableChainIds": [
+      "cip34:1-764824073",
+      "cip34:0-2"
+    ],
+    "note": "댑 요청 — CIP-95 거버넌스. api.signTx(CBOR)에 voting_procedures(DRep key voter 1 + governance action 1)가 담긴 tx. 등록된 DRep이 거버넌스 안건에 투표한다. wm witness-analyzer(DC-2965)가 voter를 감지해 drep witness path를 추가 서명. 예시 CBOR(wm fixture signTx-vote-drep-simple)은 DRep key voter(3333...) + gov action(bbbb...). ⚠️ 미지원(fail-closed throw): CC Hot/DRep-script/SPO voter, committee cold. placeholder input이라 서명 확인용 — broadcast 불가.",
+    "sourceUrl": "https://cips.cardano.org/cips/cip95/",
+    "transaction": {
+      "txCbor": "84a40081825820aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa00018182581d61f0f0f0f0f0f0f0f0f0f0f0f0f0f0f0f0f0f0f0f0f0f0f0f0f0f0f0f01a000f4240021a00030d4013a18202581c33333333333333333333333333333333333333333333333333333333a1825820bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb008201f6a0f5f6"
+    }
+  },
+  {
+    "id": "ada-structured-signtx-ordinary",
+    "label": "Cardano signTransaction (structured — ordinary, 편집 가능)",
+    "family": "cardano",
+    "applicableChainIds": [
+      "cip34:1-764824073",
+      "cip34:0-2"
+    ],
+    "note": "wm m02-05-79 구현됨 — structured cardanoSignTransaction 스타일 params(inputs/outputs/fee/ttl)를 wm가 host-side로 CBOR 조립 후 서명. opaque txCbor(ada-cbor-signtx)과 달리 필드 편집 가능(이 preset의 목적). **최소 입력 스키마**: input은 prev_hash(+txHash alias)와 prev_index(+index alias)만 필수. path/amount는 optional. ① path는 무시됨 — 서명 키는 상단 Key Path 필드(=account.addressPath)로 결정 (D'CENT legacy Cardano = m/44'/1815'/0'/0/0). ② amount는 있으면 밸런스 검증(Σinput==Σoutput+fee)까지 수행, 없으면 스킵(단일 input이면 amount 불필요). 디바이스는 host-built CBOR body 해시만 서명(UTXO 미검증) → placeholder input(aaaa)로 서명 동작 확인 가능하나 broadcast 불가 — 본인 실제 UTXO/주소로 교체해야 실전송. output.address는 유효 bech32(CSL 체크섬 검증) 필수 — 예시는 enterprise mainnet placeholder(payment keyhash f2*28). amount/fee 단위 lovelace.",
+    "transaction": {
+      "signingMode": "ORDINARY_TRANSACTION",
+      "inputs": [
+        {
+          "prev_hash": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+          "prev_index": 0
+        }
+      ],
+      "outputs": [
+        {
+          "address": "addr1v8e09uhj7te09uhj7te09uhj7te09uhj7te09uhj7te09us0kxhfc",
+          "amount": "2000000"
+        }
+      ],
+      "fee": "170000",
+      "ttl": "100000000",
+      "networkId": 1,
+      "protocolMagic": 764824073
+    }
+  },
+  {
+    "id": "ada-structured-signtx-vote-deleg",
+    "label": "Cardano signTransaction (structured — CIP-95 vote delegation, 편집 가능)",
+    "family": "cardano",
+    "applicableChainIds": [
+      "cip34:1-764824073",
+      "cip34:0-2"
+    ],
+    "note": "wm m02-05-80 구현됨 — structured params(inputs/outputs/fee/ttl + certificates[])를 wm가 host-side로 CBOR 조립 후 서명. opaque txCbor(ada-cbor-signtx-cip95-vote-deleg)의 편집 가능 버전. certificates[]에 VOTE_DELEGATION(stake credential→DRep 위임). **최소 입력 스키마**: input은 prev_hash(+txHash alias)/prev_index(+index alias)만 필수(path/amount optional). cert 필드는 CSL/witness-analyzer 정본 — type=UPPERCASE enum, keyHash=28-byte(56 hex) stake credential, drep={type:'KEY_HASH',keyHash} | {type:'ALWAYS_ABSTAIN'} | {type:'ALWAYS_NO_CONFIDENCE'}. witness path는 wm witness-analyzer(DC-2965/m02-05-36)가 cert를 감지해 stake witness로 자동 판정(cbor-signer 경로). 서명 키는 상단 Key Path(=account.addressPath)로 결정. keyHash/drep.keyHash는 결정적 placeholder(실 owner/key 무관, CBOR body 인코딩용) — 디바이스는 host-built CBOR body 해시만 서명(UTXO 미검증)하므로 서명 확인용, broadcast 불가. 본인 stake key/실 UTXO/실 DRep ID로 교체해야 실 위임. output.address는 유효 bech32(CSL 체크섬 검증) 필수. amount/fee/deposit 단위 lovelace.",
+    "sourceUrl": "https://cips.cardano.org/cips/cip95/",
+    "transaction": {
+      "signingMode": "ORDINARY_TRANSACTION",
+      "inputs": [
+        {
+          "prev_hash": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+          "prev_index": 0
+        }
+      ],
+      "outputs": [
+        {
+          "address": "addr1qyenxvenxvenxvenxvenxvenxvenxvenxvenxvenxvenxv6yg3zyg3zyg3zyg3zyg3zyg3zyg3zyg3zyg3zyg3zyg3zqjeq96c",
+          "amount": "1000000"
+        }
+      ],
+      "fee": "200000",
+      "ttl": "21084865",
+      "networkId": 1,
+      "certificates": [
+        {
+          "type": "VOTE_DELEGATION",
+          "keyHash": "a0a0a0a0a0a0a0a0a0a0a0a0a0a0a0a0a0a0a0a0a0a0a0a0a0a0a0a0",
+          "drep": {
+            "type": "KEY_HASH",
+            "keyHash": "c0c0c0c0c0c0c0c0c0c0c0c0c0c0c0c0c0c0c0c0c0c0c0c0c0c0c0c0"
+          }
+        }
+      ]
+    }
+  },
+  {
     "id": "near-transfer",
     "label": "NEAR Protocol transfer (mainnet)",
     "family": "near",
@@ -548,11 +644,41 @@
     "applicableChainIds": [
       "near:mainnet/slip44:397"
     ],
-    "note": "토큰 전송 — NEAR NEP-141 ft_transfer. near-api-js Transaction shape(signerId/receiverId/actions[]). wm near/wire-convert가 FunctionCall action을 contract_call로 변환(SUPPORTED_ACTION_TYPES). receiverId=토큰 컨트랙트 계정(예: usdt.tether-token.near), args={receiver_id, amount}는 ⚠️JSON 객체(base64 아님, wm가 structuredClone). amount는 토큰 base units(USDT NEAR=6 decimals → 1000000=1 USDT). deposit='1'(yoctoNEAR, NEP-141 보안 요구), gas=30 TGas. ⚠️ signerId는 device 실 on-chain NEAR 계정이어야 서명 유효(access-key를 view_access_key_list RPC로 조회 — near-transfer note 참조). receiver_id/signerId/receiverId 교체 후 송금. blockHash/nonce는 prepareTransaction이 RPC로 덮어씀.",
+    "note": "토큰 전송 — NEAR NEP-141 ft_transfer (★ tier-1 등록 토큰 = USDT). near-api-js Transaction shape(signerId/receiverId/actions[]). wm near/wire-convert가 FunctionCall action을 contract_call로 변환(SUPPORTED_ACTION_TYPES). receiverId=토큰 컨트랙트 계정(usdt.tether-token.near = near-token.json tier-1 등록, RPC 없이 symbol/decimals 해석), args={receiver_id, amount}는 ⚠️JSON 객체(base64 아님, wm가 structuredClone). amount는 토큰 base units(USDT NEAR=6 decimals → 1000000=1 USDT). deposit='1'(yoctoNEAR, NEP-141 보안 요구), gas=30 TGas. ⚠️ signerId는 device 실 on-chain NEAR 계정이어야 서명 유효 → 상단 '🔑 Resolve sender from device' 버튼으로 signerId를 디바이스 NEAR 계정(getAddress)으로 자동 치환(m02-05-70 dispatcher가 near→signerId/sender 지원). ⚠️ 단 그 (implicit) 계정이 on-chain 활성(funded)이어야 view_access_key_list RPC 통과 — 미활성이면 'Invalid public key size (0)'(near-transfer note 참조). receiver_id(수신자)는 self-send 시 동일 signerId로, 아니면 실 수신 계정으로 교체. receiverId(토큰 컨트랙트)는 그대로. blockHash/nonce는 prepareTransaction이 RPC로 덮어씀.\n\n【m02-05-50 (DISPLAY-only fix) §9 device 검수】 서명은 fix 前/後 동일하게 정확(sig_hash byte-identical) — 고치는 것은 device 화면 표시뿐. ▸ fix 前(현재 wm): device Amount 자리에 garbage(펌웨어가 sig_hash를 네이티브 NEAR Transfer로 오파싱, '02' 토큰 옵션 누락). ▸ fix 後: 'USDT 1.0 → receiver.near'처럼 올바른 token symbol/수량/수신자 표시 + optionParam 끝 '02' 포함. 두 상태 모두 서명 자체는 유효(broadcast 시 정상 이동) — 본 게이트는 표시 정확성 + sig 불변 증명용. tier-2(미등록 RPC) 경로는 near-ft-transfer-unregistered preset 참조.",
     "sourceUrl": "https://nomicon.io/Standards/Tokens/FungibleToken/Core",
     "transaction": {
       "signerId": "sender.near",
       "receiverId": "usdt.tether-token.near",
+      "actions": [
+        {
+          "type": "FunctionCall",
+          "params": {
+            "methodName": "ft_transfer",
+            "args": {
+              "receiver_id": "receiver.near",
+              "amount": "1000000"
+            },
+            "gas": "30000000000000",
+            "deposit": "1"
+          }
+        }
+      ],
+      "blockHash": "GJp9NRJGBnXqWJAKFxkzD8p9cJTiSNi1J3UWKVBbcfRw",
+      "nonce": 0
+    }
+  },
+  {
+    "id": "near-ft-transfer-unregistered",
+    "label": "NEAR NEP-141 token transfer (미등록 → RPC fallback)",
+    "family": "near",
+    "applicableChainIds": [
+      "near:mainnet/slip44:397"
+    ],
+    "note": "토큰 전송 — NEAR NEP-141 ft_transfer (★ tier-2 = near-token.json 미등록 토큰). near-ft-transfer(tier-1 USDT)와 동일 shape이나 receiverId=native USDC(17208628f84f5d6ad33f0da3bbbeb27ffcb398eac501a31bd6ad2011e36133a1 = Circle 네이티브 USDC, 레지스트리 미등록 — 브릿지 USDC.E와 별개). m02-05-50 keystone 3-tier resolver의 tier-2 경로 검증용: tier-1 registry miss → tokenMetadataHook이 ft_metadata RPC로 symbol/decimals 조회(USDC=6 decimals) → TokenAccount 합성. amount=1000000(6 decimals 가정 1 USDC). ⚠️ symbol/decimals는 sign 시점 ft_metadata RPC가 확정하므로 device 표시는 RPC 응답 기준. 【m02-05-50 §9 device】 fix 前=garbage / fix 後='USDC 1.0 → receiver.near'. RPC 실패/timeout·완전 미존재 컨트랙트면 keystone resolver가 -32602 loud fail(silent native 서명 아님 — T-SEC-NEAR-LOUDFAIL-01). loud-fail만 따로 보려면 receiverId를 존재하지 않는 계정(예: nonexistent-token.near)으로 교체. ⚠️ signerId는 상단 '🔑 Resolve sender from device' 버튼으로 디바이스 NEAR 계정 자동 치환(on-chain 활성 계정이어야 view_access_key_list 통과 — near-ft-transfer note 참조). receiver_id는 self-send 시 signerId와 동일하게.",
+    "sourceUrl": "https://nomicon.io/Standards/Tokens/FungibleToken/Metadata",
+    "transaction": {
+      "signerId": "sender.near",
+      "receiverId": "17208628f84f5d6ad33f0da3bbbeb27ffcb398eac501a31bd6ad2011e36133a1",
       "actions": [
         {
           "type": "FunctionCall",
@@ -596,6 +722,21 @@
       ],
       "memo": "",
       "maxTransactionFee": 100000000
+    }
+  },
+  {
+    "id": "hedera-unsigned-passthrough",
+    "label": "Hedera unsignedTx blind-sign (TokenCreate)",
+    "family": "hedera",
+    "applicableChainIds": [
+      "hedera:mainnet/slip44:3030"
+    ],
+    "note": "★ blind-sign 패스스루 (m02-05-86 / v1 getHederaSignedTransaction parity). 외부에서 이미 빌드·freeze한 Hedera Transaction 직렬화 bytes(unsignedTx, hex)를 operation 무관(TokenCreate/TokenMint/TokenBurn/associate/임의 op)하게 device가 blind-sign. structured 경로(transfer=hbar-transfer, HTS=hedera-hts-transfer, associate=m02-05-83)가 커버 못 하는 전 op를 한 번에 닫음 → 이 preset은 structured가 못 하는 TokenCreate 예시. 【payload key = `unsignedTx`(camelCase, v1 public param과 동일)】 — wm convertTransaction이 obj.unsignedTx 감지 → extra.unsignedTxBytes carry → signTransaction 최상단(전처리 이전) Transaction.fromBytes 복원/검증 → signWith(bodyBytes → device sign) → toBytes() broadcast-ready. `unsigned_tx`(snake_case) alias도 수용. Stellar {xdr} 패스스루(m02-05-18)와 동형. symbol/decimals는 display 힌트(blind-sign은 rich display 제한 — v1 동일). 아래 hex는 treasury=0.0.587690(self 계정) TokenCreate(DPD, 2 decimals, initialSupply 100000), 고정 validStart로 결정적. ⚠️ 실서명 유효하려면 tx의 서명자 계정(treasury/operator)이 디바이스 실 Hedera 계정과 일치해야 함(현재 0.0.587690=self). malformed/비-Transaction bytes → -32602. §9 byte-proof: 반환 signed tx의 bodyBytes = 입력 unsignedTx의 bodyBytes 동일(host tx 무변형, signature만 부착) — broadcast 미수행 시 asset risk 0.",
+    "sourceUrl": "https://docs.hedera.com/hedera/sdks-and-apis/sdks/token-service/define-a-token",
+    "transaction": {
+      "unsignedTx": "0a9d012a9a010a95010a160a080880e2cfaa06100012080800100018aaef23180012060800100018031880bcc1960b2202087832256d30322d30352d383620626c696e642d7369676e20706173737468726f7567682064656d6fea01410a164443454e5420506173737468726f7567682044656d6f1203445044180220a08d062a080800100018aaef236a0808f1b28ed60610007a050880ceda038801001200",
+      "symbol": "HBAR",
+      "decimals": 8
     }
   },
   {
@@ -861,6 +1002,66 @@
     }
   },
   {
+    "id": "stellar-soroban-invoke-hello",
+    "label": "Stellar Soroban invokeHostFunction — hello(symbol)",
+    "family": "stellar",
+    "applicableChainIds": [
+      "stellar:pubnet/slip44:148"
+    ],
+    "note": "Soroban 컨트랙트 호출(invokeHostFunction) — dApp signTransaction wire 경로 plumbing 검증용. wm stellar convertTransaction 이 {type:'invokeHostFunction', contractAddress, functionName, args} 를 extra.stellarOpParams 로 carry → signTransaction 이 getAccountInfo(실제 seq) 후 buildInvokeHostFunctionOperation 로 Soroban op 봉투 빌드 → 서명. ★canonical hello-world 예제(hello(to:symbol)) — args 는 scv_symbol 1개. ⚠️ wire 빌더(buildScValFromSummary)는 현재 scv_symbol/scv_address/scv_bytes 3종만 지원 — i128/u64/vec 등은 'unsupported SCVal type' throw. 실제 토큰 transfer/swap(amount:i128)은 이 경로로 아직 미검증(별도 wm 확장 필요). ★contractAddress 는 결정적 placeholder C-strkey(미배포, = StrKey.encodeContract(0x01×32), CRC16 체크섬 유효). ⚠️ buildInvokeHostFunctionOperation 은 args 처리 전에 Address.fromString(contractAddress) 로 먼저 파싱하므로 반드시 체크섬 유효한 C-strkey(또는 G)여야 한다 — 체크섬 깨진 문자열(길이·prefix 만 맞는 가짜)은 'Unsupported address type' throw(2026-07-07 실측: 이전 CV2X… placeholder 가 이 사유로 실패). Stellar 서명은 로컬 envelope 빌드+해시 서명, on-chain fetch 없음, broadcast 안 함(§9 byte-proof) 이라 미배포 컨트랙트라도 strkey 만 유효하면 서명 검증 가능. 실제 dApp 은 배포된 컨트랙트 C-address 를 넣는다. keyPath 는 chains.json 에서 자동(m/44'/148'/0'). ⚠️ mainnet(slip44:148) 이지만 broadcast 안 하므로 asset risk 0. 검증: /verify-wire-sign STELLAR (invokeHostFunction op, ed25519=device 계정 키).",
+    "sourceUrl": "https://developers.stellar.org/docs/build/smart-contracts/getting-started/hello-world",
+    "transaction": {
+      "type": "invokeHostFunction",
+      "contractAddress": "CAAQCAIBAEAQCAIBAEAQCAIBAEAQCAIBAEAQCAIBAEAQCAIBAEAQC526",
+      "functionName": "hello",
+      "args": [
+        {
+          "type": "scv_symbol",
+          "value": "world"
+        }
+      ],
+      "fee": 100,
+      "sequenceNumber": "0"
+    }
+  },
+  {
+    "id": "stellar-soroban-invoke-set-admin",
+    "label": "Stellar Soroban invokeHostFunction — set_admin(address)",
+    "family": "stellar",
+    "applicableChainIds": [
+      "stellar:pubnet/slip44:148"
+    ],
+    "note": "Soroban 컨트랙트 호출(invokeHostFunction) — scv_address arg 경로 검증용. set_admin(new_admin:address) 은 흔한 admin 패턴 — args 는 scv_address 1개(Address.fromString 은 G-account/C-contract 둘 다 수용). 나머지 동작은 stellar-soroban-invoke-hello 노트와 동일(convertTransaction → stellarOpParams carry → buildInvokeHostFunctionOperation, 로컬 서명, broadcast 없음). ⚠️ wire 빌더는 scv_symbol/scv_address/scv_bytes 3종만 지원. ★args.value 를 본인 디바이스 Stellar 계정(G...) 으로 교체해 self 대상으로 두면 의미 명확. contractAddress placeholder(미배포, = StrKey.encodeContract(0x01×32), CRC16 체크섬 유효) — buildInvokeHostFunctionOperation 이 args 전에 Address.fromString(contractAddress) 로 먼저 파싱하므로 체크섬 유효한 C-strkey 필수(가짜 문자열은 'Unsupported address type' throw). §9 byte-proof 라 서명 검증엔 무방. ⚠️ mainnet(slip44:148), broadcast 안 함. 검증: /verify-wire-sign STELLAR (invokeHostFunction, ed25519=device).",
+    "sourceUrl": "https://developers.stellar.org/docs/build/smart-contracts/example-contracts/deployer",
+    "transaction": {
+      "type": "invokeHostFunction",
+      "contractAddress": "CAAQCAIBAEAQCAIBAEAQCAIBAEAQCAIBAEAQCAIBAEAQCAIBAEAQC526",
+      "functionName": "set_admin",
+      "args": [
+        {
+          "type": "scv_address",
+          "value": "GC6OISCEYJSHTO6QBZYVT52B4ZW63BCVTNCFYLUJQK5FUKLJP6L2XNAJ"
+        }
+      ],
+      "fee": 100,
+      "sequenceNumber": "0"
+    }
+  },
+  {
+    "id": "stellar-xdr-passthrough-blind-sign",
+    "label": "Stellar XDR passthrough — blind-sign 임의 envelope (v1 getStellarSignedTransaction 상위호환)",
+    "family": "stellar",
+    "applicableChainIds": [
+      "stellar:pubnet/slip44:148"
+    ],
+    "note": "★v1 parity 검증용. v1 dcent-web-connector getStellarSignedTransaction 은 host 가 만든 트랜잭션의 signature base 를 디바이스가 블라인드 서명하던 방식(op-type 무관). v2 wire 는 그 상위호환 경로를 갖는다: transaction={xdr:'<base64 envelope>'} → convertTransaction 최상단 분기(transaction.ts:628)가 extra.envelopeXdr 로 carry → signTransaction 이 signStellarEnvelopeXdr(walletconnect blind-sign, sig_hash 32B 만 디바이스 전송)로 서명. ★임의 operation 전부 서명 가능 — 이 샘플은 구조화(structured) 경로가 지원하지 않는 클래식 op 'bumpSequence' envelope 이라, structured 7종(payment/pathPayment×2/manageData/invokeHostFunction/createAccount/changeTrust)을 넘어서는 parity 초과분을 증명한다. accountMerge/manageOffer/setOptions/claimableBalance/i128-args Soroban 등도 동일하게 XDR 로 넣으면 서명됨. wm 은 parseStellarEnvelope 로 구조 검증(최대 ~180KB base64) 후 서명. ⚠️ envelope 내부 source 계정이 placeholder(GDQP2KPQ...)라 서명은 되지만 broadcast 불가 — 실기기 §9 는 byte-proof(디바이스가 이 envelope 해시를 서명하는가)만 확인하면 충분. 실제 broadcast-가능 테스트를 원하면 @stellar/stellar-base TransactionBuilder 로 source=본인 디바이스 Stellar 계정(G...)인 envelope 을 rebuild 해 xdr 만 교체. keyPath 는 chains.json 에서 자동(m/44'/148'/0'). ⚠️ mainnet(slip44:148), broadcast 안 함. 검증: /verify-wire-sign STELLAR (envelope op=bumpSequence, ed25519=device 키).",
+    "sourceUrl": "https://dev-docs.dcentwallet.com/dcent-biometric-wallet-for-pc/dcent-web-connector/stellar",
+    "transaction": {
+      "xdr": "AAAAAgAAAADg/SnwMpB8JNdtEYcw4I0BEQPjTPpXaKVzlY2HVpQObgAAAGQAAAAAAAAAAQAAAAEAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAEAAAAAAAAACwAAAAA7msoAAAAAAAAAAAA=",
+      "fee": 100
+    }
+  },
+  {
     "id": "stacks-sip010-descriptor-transfer",
     "label": "Stacks SIP-010 transfer — form-D descriptor (미등록/커스텀 토큰)",
     "family": "stacks",
@@ -1049,6 +1250,279 @@
         "symbol": "USDC-Dev"
       },
       "feePayer": "11111111111111111111111111111111"
+    }
+  },
+  {
+    "id": "xrp-accountset",
+    "label": "XRP AccountSet",
+    "family": "xrp",
+    "applicableChainIds": [
+      "xrpl:0/slip44:144"
+    ],
+    "note": "XRP Ledger AccountSet — set account flags/options (e.g. SetFlag asfRequireDest=1). Edit fields before send.",
+    "sourceUrl": "https://xrpl.org/accountset.html",
+    "transaction": {
+      "TransactionType": "AccountSet",
+      "Account": "rHb9CJAWyB4rj91VRWn96DkukG4bwdtyTh",
+      "Fee": "12",
+      "Sequence": 1,
+      "SetFlag": 1,
+      "Flags": 2147483648
+    }
+  },
+  {
+    "id": "xrp-trustset",
+    "label": "XRP TrustSet (trust line)",
+    "family": "xrp",
+    "applicableChainIds": [
+      "xrpl:0/slip44:144"
+    ],
+    "note": "XRP Ledger TrustSet — create/modify a trust line to an issued currency. Edit LimitAmount before send.",
+    "sourceUrl": "https://xrpl.org/trustset.html",
+    "transaction": {
+      "TransactionType": "TrustSet",
+      "Account": "rHb9CJAWyB4rj91VRWn96DkukG4bwdtyTh",
+      "Fee": "12",
+      "Sequence": 1,
+      "Flags": 2147483648,
+      "LimitAmount": {
+        "currency": "USD",
+        "issuer": "rvYAfWj5gh67oV6fW32ZzP3Aw4Eubs59B",
+        "value": "1000"
+      }
+    }
+  },
+  {
+    "id": "ada-structured-signtx-stake-registration",
+    "label": "Cardano signTransaction (structured — stake registration + delegation, 편집 가능)",
+    "family": "cardano",
+    "applicableChainIds": [
+      "cip34:1-764824073",
+      "cip34:0-2"
+    ],
+    "note": "wm m02-05-80 구현됨 — structured certificates[]로 stake key 등록(STAKE_REGISTRATION, deposit) + 풀 위임(STAKE_DELEGATION, poolKeyHash)을 한 tx로. wm witness-analyzer가 cert를 감지해 stake witness path 자동 서명. **최소 스키마**: input은 prev_hash/prev_index만 필수. cert 필드(CSL/witness-analyzer 정본): STAKE_REGISTRATION={type,keyHash(28-byte hex),deposit(lovelace)}; STAKE_DELEGATION={type,keyHash,poolKeyHash(28-byte hex 풀 키-해시)}. keyHash/poolKeyHash는 결정적 placeholder(CBOR body 인코딩용) — 디바이스는 host-built CBOR body 해시만 서명, 서명 확인용이며 broadcast 불가(본인 stake key/실 UTXO/실 pool ID로 교체 시 실 등록·위임). deposit은 프로토콜 key deposit(예 2 ADA). amount/fee/deposit 단위 lovelace.",
+    "transaction": {
+      "signingMode": "ORDINARY_TRANSACTION",
+      "inputs": [
+        {
+          "prev_hash": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+          "prev_index": 0
+        }
+      ],
+      "outputs": [
+        {
+          "address": "addr1qyenxvenxvenxvenxvenxvenxvenxvenxvenxvenxvenxv6yg3zyg3zyg3zyg3zyg3zyg3zyg3zyg3zyg3zyg3zyg3zqjeq96c",
+          "amount": "1000000"
+        }
+      ],
+      "fee": "200000",
+      "ttl": "21084865",
+      "networkId": 1,
+      "certificates": [
+        {
+          "type": "STAKE_REGISTRATION",
+          "keyHash": "a0a0a0a0a0a0a0a0a0a0a0a0a0a0a0a0a0a0a0a0a0a0a0a0a0a0a0a0",
+          "deposit": "2000000"
+        },
+        {
+          "type": "STAKE_DELEGATION",
+          "keyHash": "a0a0a0a0a0a0a0a0a0a0a0a0a0a0a0a0a0a0a0a0a0a0a0a0a0a0a0a0",
+          "poolKeyHash": "b0b0b0b0b0b0b0b0b0b0b0b0b0b0b0b0b0b0b0b0b0b0b0b0b0b0b0b0"
+        }
+      ]
+    }
+  },
+  {
+    "id": "ada-structured-signtx-withdrawal",
+    "label": "Cardano signTransaction (structured — reward withdrawal, 편집 가능)",
+    "family": "cardano",
+    "applicableChainIds": [
+      "cip34:1-764824073",
+      "cip34:0-2"
+    ],
+    "note": "wm m02-05-80 구현됨 — structured withdrawals[]로 스테이킹 보상 인출. wm witness-analyzer가 key-credential reward 주소를 감지해 stake witness path 자동 서명(script-credential reward는 fail-closed). **최소 스키마**: input은 prev_hash/prev_index만 필수. withdrawals=[{rewardAddress, amount}] — rewardAddress는 bech32 reward(stake) 주소(stake1…/stake_test1…, CSL RewardAddress 파싱), amount는 인출 lovelace. rewardAddress는 결정적 placeholder(CBOR body 인코딩용) — 디바이스는 host-built CBOR body 해시만 서명, 서명 확인용이며 broadcast 불가(본인 실 reward 주소/실 UTXO로 교체 시 실 인출). amount/fee 단위 lovelace.",
+    "transaction": {
+      "signingMode": "ORDINARY_TRANSACTION",
+      "inputs": [
+        {
+          "prev_hash": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+          "prev_index": 0
+        }
+      ],
+      "outputs": [
+        {
+          "address": "addr1qyenxvenxvenxvenxvenxvenxvenxvenxvenxvenxvenxv6yg3zyg3zyg3zyg3zyg3zyg3zyg3zyg3zyg3zyg3zyg3zqjeq96c",
+          "amount": "1000000"
+        }
+      ],
+      "fee": "200000",
+      "ttl": "21084865",
+      "networkId": 1,
+      "withdrawals": [
+        {
+          "rewardAddress": "stake1u8gdp5xs6rgdp5xs6rgdp5xs6rgdp5xs6rgdp5xs6rgdp5qsy63p4",
+          "amount": "1500000"
+        }
+      ]
+    }
+  },
+  {
+    "id": "ada-structured-signtx-drep-vote",
+    "label": "Cardano signTransaction (structured — CIP-95 DRep vote, 편집 가능)",
+    "family": "cardano",
+    "applicableChainIds": [
+      "cip34:1-764824073",
+      "cip34:0-2"
+    ],
+    "note": "wm m02-05-80 구현됨 — structured voting_procedures[]로 등록된 DRep이 거버넌스 안건에 투표. wm witness-analyzer가 DRep key voter를 감지해 drep witness path 자동 서명(CC Hot/DRep-script/SPO voter는 fail-closed). **최소 스키마**: input은 prev_hash/prev_index만 필수. voting_procedures=[{voter:{type:'DREP_KEY',keyHash(28-byte hex)}, govActionId:{txHash(32-byte hex),index}, vote:'YES'|'NO'|'ABSTAIN'}]. keyHash/govActionId.txHash는 결정적 placeholder(CBOR body 인코딩용) — 디바이스는 host-built CBOR body 해시만 서명, 서명 확인용이며 broadcast 불가(본인 DRep key/실 gov action id로 교체 시 실 투표). amount/fee 단위 lovelace.",
+    "sourceUrl": "https://cips.cardano.org/cips/cip95/",
+    "transaction": {
+      "signingMode": "ORDINARY_TRANSACTION",
+      "inputs": [
+        {
+          "prev_hash": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+          "prev_index": 0
+        }
+      ],
+      "outputs": [
+        {
+          "address": "addr1qyenxvenxvenxvenxvenxvenxvenxvenxvenxvenxvenxv6yg3zyg3zyg3zyg3zyg3zyg3zyg3zyg3zyg3zyg3zyg3zqjeq96c",
+          "amount": "1000000"
+        }
+      ],
+      "fee": "200000",
+      "ttl": "21084865",
+      "networkId": 1,
+      "voting_procedures": [
+        {
+          "voter": {
+            "type": "DREP_KEY",
+            "keyHash": "c0c0c0c0c0c0c0c0c0c0c0c0c0c0c0c0c0c0c0c0c0c0c0c0c0c0c0c0"
+          },
+          "govActionId": {
+            "txHash": "bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb",
+            "index": 0
+          },
+          "vote": "YES"
+        }
+      ]
+    }
+  },
+  {
+    "id": "ada-structured-signtx-mint",
+    "label": "Cardano signTransaction (structured — token mint/burn, 편집 가능)",
+    "family": "cardano",
+    "applicableChainIds": [
+      "cip34:1-764824073",
+      "cip34:0-2"
+    ],
+    "note": "wm m02-05-81 구현됨 — structured mint[]로 native 토큰 발행/소각(tx body key 9). **최소 스키마**: input은 prev_hash/prev_index만 필수. mint=[{policyId(28-byte hex), tokens:[{assetNameHex(0..32-byte hex, default asset=''), amount}]}] (tokenAmounts/assetNameBytes alias 수용). amount는 **부호있는** 정수 문자열(양수=발행, 음수=소각, 0 금지). 예시 assetNameHex=744443454e54('tDCENT'). policy witness path 판정은 m02-05-82 담당 — 본 preset은 body key 9 직렬화+서명 확인용, broadcast 불가(본인 정책/실 UTXO로 교체 시 실 발행). policyId/assetNameHex는 결정적 placeholder. amount(mint)는 토큰 base units, fee 단위 lovelace.",
+    "transaction": {
+      "signingMode": "ORDINARY_TRANSACTION",
+      "inputs": [
+        {
+          "prev_hash": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+          "prev_index": 0
+        }
+      ],
+      "outputs": [
+        {
+          "address": "addr1qyenxvenxvenxvenxvenxvenxvenxvenxvenxvenxvenxv6yg3zyg3zyg3zyg3zyg3zyg3zyg3zyg3zyg3zyg3zyg3zqjeq96c",
+          "amount": "1000000"
+        }
+      ],
+      "fee": "200000",
+      "ttl": "21084865",
+      "networkId": 1,
+      "mint": [
+        {
+          "policyId": "bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb",
+          "tokens": [
+            {
+              "assetNameHex": "744443454e54",
+              "amount": "1000000"
+            }
+          ]
+        }
+      ]
+    }
+  },
+  {
+    "id": "ada-structured-signtx-plutus",
+    "label": "Cardano signTransaction (structured — plutus collateral/refInput/scriptDataHash, 편집 가능)",
+    "family": "cardano",
+    "applicableChainIds": [
+      "cip34:1-764824073",
+      "cip34:0-2"
+    ],
+    "note": "wm m02-05-81 구현됨 — structured plutus 필드로 스크립트 실행 tx 조립(collateral+referenceInputs+scriptDataHash, body keys 11/13/16/17/18). **최소 스키마**: input은 prev_hash/prev_index만 필수. collateralInputs(또는 collateral alias)=[{prev_hash,prev_index}](담보 UTXO), collateralReturn={address,amount}(잔여 담보 반환), totalCollateral(담보 lovelace), referenceInputs=[{prev_hash,prev_index}](reference script/inline datum), scriptDataHash(32-byte hex, redeemer+datum+cost-model 해시). 모든 hash/주소는 결정적 placeholder(CBOR body 인코딩용) — 디바이스는 host-built CBOR body 해시만 서명, 서명 확인용이며 broadcast 불가(본인 실 UTXO/실 scriptDataHash로 교체 필요). amount/fee/collateral 단위 lovelace.",
+    "transaction": {
+      "signingMode": "ORDINARY_TRANSACTION",
+      "inputs": [
+        {
+          "prev_hash": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+          "prev_index": 0
+        }
+      ],
+      "outputs": [
+        {
+          "address": "addr1qyenxvenxvenxvenxvenxvenxvenxvenxvenxvenxvenxv6yg3zyg3zyg3zyg3zyg3zyg3zyg3zyg3zyg3zyg3zyg3zqjeq96c",
+          "amount": "1000000"
+        }
+      ],
+      "fee": "200000",
+      "ttl": "21084865",
+      "networkId": 1,
+      "collateralInputs": [
+        {
+          "prev_hash": "cccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccc",
+          "prev_index": 1
+        }
+      ],
+      "collateralReturn": {
+        "address": "addr1qyenxvenxvenxvenxvenxvenxvenxvenxvenxvenxvenxv6yg3zyg3zyg3zyg3zyg3zyg3zyg3zyg3zyg3zyg3zyg3zqjeq96c",
+        "amount": "4500000"
+      },
+      "totalCollateral": "500000",
+      "referenceInputs": [
+        {
+          "prev_hash": "cccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccc",
+          "prev_index": 2
+        }
+      ],
+      "scriptDataHash": "abababababababababababababababababababababababababababababababab"
+    }
+  },
+  {
+    "id": "hedera-hts-associate",
+    "label": "Hedera HTS token associate (SAUCE)",
+    "family": "hedera",
+    "applicableChainIds": [
+      "hedera:mainnet/slip44:3030"
+    ],
+    "note": "토큰 연결(수신 준비) — Hedera HTS TokenAssociate. wm m02-05-83 wire 배선: extractHederaTokenIdentity가 {type:'associate', tokenId} shape를 인식 → keystone이 등록 HTS TokenAccount 합성 → convertTransaction associate branch(preparedFee=MAX_ASSOCIATE_TOKEN_TINYBAR_FEE 1.5 HBAR) → signTransaction case 'associate'(무수정) TokenAssociateTransaction 서명. HTS 토큰을 받으려면 수신 계정이 먼저 associate 필요. wire payload = {type:'associate', tokenId(0.0.x), sender(0.0.x), memo?, maxTransactionFee?}. ⚠️ 반드시 등록 토큰(SAUCE 0.0.731861) — 미등록 tokenId는 keystone -32602(hedera-hts-transfer와 동일 registry 요건). ⚠️ accountId(0.0.x)는 키에서 파생 불가 → sender를 본인 디바이스 실 Hedera 계정으로 교체해야 서명 유효(현재 0.0.587690은 self 계정). ⚠️ 반드시 mainnet(slip44:3030). 디바이스는 associate tx 해시만 서명 — 서명 확인용, broadcast 미수행(§9 verify-wire-sign HEDERA). dissociate는 hedera-hts-dissociate 참조.",
+    "sourceUrl": "https://docs.hedera.com/hedera/sdks-and-apis/sdks/token-service/associate-tokens-to-an-account",
+    "transaction": {
+      "type": "associate",
+      "tokenId": "0.0.731861",
+      "sender": "0.0.587690",
+      "memo": ""
+    }
+  },
+  {
+    "id": "hedera-hts-dissociate",
+    "label": "Hedera HTS token dissociate (SAUCE)",
+    "family": "hedera",
+    "applicableChainIds": [
+      "hedera:mainnet/slip44:3030"
+    ],
+    "note": "토큰 연결 해제 — Hedera HTS TokenDissociate. wm m02-05-83 wire 배선: extractHederaTokenIdentity가 {type:'disassociate', tokenId} shape를 인식 → keystone HTS TokenAccount 합성 → convertTransaction disassociate branch(preparedFee=MAX_ASSOCIATE_TOKEN_TINYBAR_FEE 1.5 HBAR) → signTransaction case 'disassociate'(무수정) TokenDissociateTransaction 서명. 더 이상 받지 않을 HTS 토큰의 연결을 해제(잔액 0 필요). wire payload = {type:'disassociate', tokenId(0.0.x), sender(0.0.x), memo?, maxTransactionFee?}. ⚠️ 등록 토큰(SAUCE 0.0.731861) — 미등록은 keystone -32602. ⚠️ sender(0.0.x)는 키 파생 불가 → 본인 디바이스 실 Hedera 계정으로 교체(현재 0.0.587690=self). ⚠️ 반드시 mainnet(slip44:3030). 디바이스는 dissociate tx 해시만 서명 — 서명 확인용, broadcast 미수행(§9 verify-wire-sign HEDERA). associate는 hedera-hts-associate 참조.",
+    "sourceUrl": "https://docs.hedera.com/hedera/sdks-and-apis/sdks/token-service/dissociate-tokens-from-an-account",
+    "transaction": {
+      "type": "disassociate",
+      "tokenId": "0.0.731861",
+      "sender": "0.0.587690",
+      "memo": ""
     }
   }
 ]

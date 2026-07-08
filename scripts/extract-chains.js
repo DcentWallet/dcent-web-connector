@@ -384,20 +384,36 @@ function main () {
     process.exit(1)
   }
 
+  // playground 지원 목록에서 명시적으로 제외할 chainId (denylist).
+  // 이 목록은 **playground 테스트 표면 전용**이며 runtime connector API(src/)에는 영향 없음 —
+  // connector-chain-addition-isolation 룰의 대상(chain enum/정적 라우팅 매핑)이 아니라
+  // 생성기 후처리 필터다. 제외 사유를 각 항목에 명시한다.
+  const EXCLUDED_CHAIN_IDS = new Set([
+    // Flare Network Coston (eip155:16) — device coin_list의 EVM 멀티체인 capability('CHAN')로
+    // 커버되지 않는 전용 deviceStoreId(FLR-COSTON)라 서명 시 5005(device_fw_incompatible) 발생.
+    // wm testnetFor 미연결(등록 갭). playground에서 테스트 불가하므로 지원 목록에서 제외.
+    'eip155:16/slip44:60',
+  ])
+  const publishedChains = allChains.filter(function (c) { return !EXCLUDED_CHAIN_IDS.has(c.chainId) })
+  const excludedCount = allChains.length - publishedChains.length
+
   // 출력 디렉터리 생성
   const outDir = path.dirname(OUTPUT_PATH)
   if (!fs.existsSync(outDir)) fs.mkdirSync(outDir, { recursive: true })
 
-  fs.writeFileSync(OUTPUT_PATH, JSON.stringify(allChains, null, 2) + '\n')
+  fs.writeFileSync(OUTPUT_PATH, JSON.stringify(publishedChains, null, 2) + '\n')
 
   // family별 통계 출력
   const stats = {}
-  const testnetCount = allChains.filter(function (c) { return c.isTestnet }).length
-  for (const c of allChains) {
+  const testnetCount = publishedChains.filter(function (c) { return c.isTestnet }).length
+  for (const c of publishedChains) {
     stats[c.family] = (stats[c.family] || 0) + 1
   }
-  console.log('extract-chains: wrote ' + allChains.length + ' chains to ' + OUTPUT_PATH)
-  console.log('  mainnet: ' + (allChains.length - testnetCount) + ', testnet: ' + testnetCount)
+  if (excludedCount > 0) {
+    console.log('extract-chains: excluded ' + excludedCount + ' chain(s) via denylist')
+  }
+  console.log('extract-chains: wrote ' + publishedChains.length + ' chains to ' + OUTPUT_PATH)
+  console.log('  mainnet: ' + (publishedChains.length - testnetCount) + ', testnet: ' + testnetCount)
   for (const [fam, count] of Object.entries(stats)) {
     console.log('  ' + fam + ': ' + count)
   }

@@ -6,13 +6,6 @@
     "defaultKeyPath": "m/44'/60'/0'/0/0"
   },
   {
-    "chainId": "eip155:16/slip44:60",
-    "family": "ethereum",
-    "displayName": "Flare Network Coston",
-    "defaultKeyPath": "m/44'/60'/0'/0/0",
-    "isTestnet": true
-  },
-  {
     "chainId": "eip155:30/slip44:60",
     "family": "ethereum",
     "displayName": "RSK Smart Bitcoin",

@@ -35,7 +35,7 @@
   {
     "id": "evm-erc20-transfer",
     "label": "EVM ERC-20 token transfer (transfer)",
-    "note": "토큰 전송 — ERC-20 transfer(address,uint256). 예시는 Ethereum mainnet USDT(to=0xdAC17...) 기준 — ⚠️ 다른 EVM 체인에서는 to(토큰 컨트랙트 주소)를 해당 체인의 토큰으로 교체할 것. data 두번째 32바이트(recipient)를 본인 주소로 교체하면 self-send(asset-risk 0). 현재 recipient=0x0(placeholder), amount=0x3e8(=1000 base units, USDT 6 decimals=0.001 USDT). value=0x0(토큰 전송은 native value 0). nonce/fee 송금 전 수정. wm는 data를 opaque pass-through(eth-transaction-convert.js), 기기 펌웨어가 ERC-20 transfer 전용 표시 경로 보유.",
+    "note": "토큰 전송 — ERC-20 transfer(address,uint256). 예시는 Ethereum mainnet USDT(to=0xdAC17...) 기준 — ⚠️ 다른 EVM 체인에서는 to(토큰 컨트랙트 주소)를 해당 체인의 토큰으로 교체할 것. data 두번째 32바이트(recipient)를 본인 주소로 교체하면 self-send(asset-risk 0). 현재 recipient=0x0(placeholder), amount=0x3e8(=1000 base units, USDT 6 decimals=0.001 USDT). value=0x0(토큰 전송은 native value 0). nonce/fee 송금 전 수정. [m02-05-51 keystone + DC-3096 link2 이후] wm이 transfer calldata(0xa9059cbb)를 디코드해 등록 토큰(tier-1)이면 TokenAccount를 합성하고 contract={name,address,to,decimals,value,symbol}를 재구성(eth-transaction-convert.js convertTransaction) → 기기가 토큰 심볼/수량/수신자로 표시·서명. (approve/NFT 등 비-transfer selector는 여전히 opaque pass-through — TypeAccount 경로 무회귀.) 미등록 토큰은 evm-erc20-transfer-unregistered 참조.",
     "sourceUrl": "https://eips.ethereum.org/EIPS/eip-20",
     "applicableChainIds": [
       "eip155:1/slip44:60", "eip155:30/slip44:60", "eip155:8217/slip44:60", "eip155:61/slip44:60",
@@ -64,6 +64,26 @@
       "maxPriorityFeePerGas": "0x3b9aca00",
       "nonce": "0x0",
       "data": "0xa9059cbb000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000003e8"
+    }
+  },
+  {
+    "id": "evm-erc20-transfer-unregistered",
+    "label": "EVM ERC-20 미등록 토큰 transfer — wc처럼 native 서명",
+    "note": "미등록/커스텀 ERC-20 검증 — wm 레지스트리에 없는 컨트랙트로 transfer(0xa9059cbb) 전송. keystone(m02-05-51)이 토큰을 식별하지만 3-tier 해석(등록/descriptor decimals/RPC 메타)에 실패하면, EVM/KLAYTN 어댑터는 nativeFallbackOnUnresolved=true라 -32602로 막지 않고 wc(wc-eth-api)처럼 native TypeAccount로 원 payload({to:컨트랙트, value:0, data:calldata})를 그대로 서명한다 → 기기 펌웨어가 ERC-20 transfer를 파싱해 표시. 즉 미등록 커스텀 토큰도 fail 없이 서명됨(TokenAccount 미합성이라 wm이 심볼/decimals를 주입하진 않고 펌웨어가 generic하게 표시). value=0이라 native ETH는 안 나가고 calldata 그대로라 wrong-asset 위험 0(= wc 동작). data 두번째 word(recipient)를 본인 주소로 교체하면 self-send. ⚠️ to(0xabab..)는 미등록 예시 placeholder — 실제 미등록 ERC-20로 교체해 테스트. 심볼/decimals까지 풍부하게 표시하려면 form-D(transaction.token={contract,to,amount,decimals,symbol}) 사용(EVM customTokenDeviceStoreId enrichment은 후속). 등록 토큰은 evm-erc20-transfer 참조.",
+    "sourceUrl": "https://eips.ethereum.org/EIPS/eip-20",
+    "applicableChainIds": [
+      "eip155:1/slip44:60", "eip155:56/slip44:60", "eip155:137/slip44:60", "eip155:8453/slip44:60",
+      "eip155:10/slip44:60", "eip155:43114/slip44:60"
+    ],
+    "transaction": {
+      "type": 2,
+      "to": "0xabababababababababababababababababababab",
+      "value": "0x0",
+      "gasLimit": "0x186a0",
+      "maxFeePerGas": "0x77359400",
+      "maxPriorityFeePerGas": "0x3b9aca00",
+      "nonce": "0x0",
+      "data": "0xa9059cbb00000000000000000000000070997970c51812dc3a010c7d01b50e0d17dc79c800000000000000000000000000000000000000000000000000000000000003e8"
     }
   },
   {
@@ -132,6 +152,46 @@
       "maxPriorityFeePerGas": "0x3b9aca00",
       "nonce": "0x0",
       "data": "0x42842e0e000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000001"
+    }
+  },
+  {
+    "id": "kaia-kip7-transfer",
+    "label": "Kaia KIP-7(KCT) token transfer — 실수신자/실수량 서명",
+    "note": "Kaia KIP-7(KCT) 토큰 전송 — KIP-7 = ERC-20 transfer(address,uint256) 동일 selector(0xa9059cbb). Kaia는 wm에서 KLAYTN family(eip155:8217/slip44:60, coinType 60 = m/44'/60')로 해석되어 convertKlaytnTransaction이 처리한다. [m02-05-85 이후] keystone(m02-05-51)이 합성한 TokenAccount + KIP-7 calldata를 convertKlaytnTransaction이 디코드해 recipient/amount를 실수신자/실수량으로 remap하고 transaction.contract={address,to,value,symbol,decimals}를 재구성 → 기기가 KCT 심볼/수량/수신자로 표시·서명(txType=SMART_CONTRACT_EXECUTION 0x30). remap 이전엔 buildTransaction이 transaction.contract undefined로 크래시했고, remap 없으면 transfer(토큰컨트랙트,0) 오생성. ⚠️ to는 예시 KCT(oUSDT-like) placeholder — 실제 등록 KCT 컨트랙트로 교체. data 두번째 32바이트(recipient)를 본인 Kaia 주소로 교체하면 self-send(asset-risk 0). recipient=0x0(placeholder), amount=0x3e8(=1000 base units). value=0x0(토큰 전송은 native value 0). type:2로 보내도 KLAYTN은 legacy gas만 사용 — maxFeePerGas가 gas_price fallback. nonce/fee 송금 전 수정. §9 byte-proof: /verify-wire-sign(KLAYTN/KIP-7)로 transfer(실수신자,실수량)+signer=device 확인(broadcast 미수행). 비-transfer(approve/NFT)는 TypeAccount opaque pass-through 무회귀.",
+    "sourceUrl": "https://docs.kaia.io/build/smart-contracts/kaia-compatible-token/",
+    "applicableChainIds": [
+      "eip155:8217/slip44:60"
+    ],
+    "transaction": {
+      "type": 2,
+      "to": "0xcee8faf64bb97a73bb51e115aa89c17ffa8dd167",
+      "value": "0x0",
+      "gasLimit": "0x186a0",
+      "maxFeePerGas": "0x77359400",
+      "maxPriorityFeePerGas": "0x3b9aca00",
+      "nonce": "0x0",
+      "data": "0xa9059cbb000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000003e8"
+    }
+  },
+  {
+    "id": "klaytn-fee-delegation-transfer",
+    "label": "Kaia fee-delegated value transfer — sender 서명(senderTxHashRLP)",
+    "family": "klaytn",
+    "note": "외부 dApp Kaia fee-delegation(FeeDelegatedValueTransfer, 외부 서비스가 fee payer) — 사용자가 sender로 서명. wm m02-05-84: convertKlaytnTransaction이 typeInt(0x09=9)을 kaiaTransaction.txType으로 보존 → signTransaction의 isFeeDelegated(=mode:'sponsor' || ALL_FEE_DELEGATED_TYPES.has(txType))가 true → senderTxHashRLP()(fee payer가 완성할 부분 RLP) 반환. 84 이전엔 mode:'sponsor' 없으면 txHashRLP()(full)로 떨어져 외부 fee payer가 자기 서명을 붙일 수 없었다. **typeInt(정수) 필수** — 9=FeeDelegatedValueTransfer(base). WithRatio(0x0a=10 등)는 feeRatio(1~99) 동반. AccountUpdate(0x21/0x22)/SmartContractDeploy(0x29/0x2a)는 value-transfer shape로 조립 불가라 -32602 fail-closed. from은 생략(디바이스 계정=sender 자동 사용) — 임의 from을 넣으면 sender RLP 불일치. to는 예시 placeholder(0x0)라 본인/실 수신자로 교체, value=송금 wei(현재 0.01 KAIA). Kaia는 legacy gas만 사용 — maxFeePerGas가 gas_price fallback. nonce/fee 송금 전 수정. ★fee payer(외부 서비스)가 senderTxHashRLP에 자기 서명을 append해야 완성 → 이 preset 단독으로는 broadcast 불가(§9 byte-proof: verify-wire-sign(KLAYTN)로 senderTxHashRLP 형식 + signer=device 확인). fee payer 측 서명(kaia_signTransactionAsFeePayer)은 별도 미구현(비스코프). 내부 Gas Pass(mode:'sponsor')는 kaia-kip7-transfer와 별개 경로.",
+    "sourceUrl": "https://docs.kaia.io/references/transaction-types/tx-type-fee-delegated-value-transfer/",
+    "applicableChainIds": [
+      "eip155:8217/slip44:60"
+    ],
+    "transaction": {
+      "typeInt": 9,
+      "to": "0x0000000000000000000000000000000000000000",
+      "value": "0x2386f26fc10000",
+      "gasLimit": "0x186a0",
+      "maxFeePerGas": "0x5d21dba00",
+      "maxPriorityFeePerGas": "0x0",
+      "nonce": "0x0",
+      "chainId": 8217,
+      "data": "0x"
     }
   }
 ]

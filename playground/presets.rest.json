@@ -323,7 +323,7 @@
     "applicableChainIds": [
       "vechain:b1ac3413d346d43539627e6be7ec1b4a/slip44:818"
     ],
-    "note": "토큰 전송 — VeChain VIP-180(ERC-20 호환) token transfer. clauses[0].to=토큰 컨트랙트, value=0x0, data=transfer(address,uint256) calldata. 예시: VTHO(VeThor, contract 0x0000...456E65726779). ⚠️ wm vechain은 clauses[0]만 사용(multi-clause 미지원). data recipient(2번째 32바이트, 현재 0 placeholder)를 본인 주소로 교체 시 self-send. amount=0x3e8. ⚠️ wm는 data opaque pass-through — 기기 펌웨어의 VIP-180 표시 동작은 HW smoke 검증 필요. blockRef/nonce는 송금 전 갱신.",
+    "note": "토큰 전송 — VeChain VIP-180(ERC-20 호환) token transfer (VTHO 예시). clauses[0].to=토큰 컨트랙트, value=0x0, data=transfer(address,uint256) calldata. 예시: VTHO(VeThor, contract 0x0000...456E65726779), amount=0x3e8. ⚠️ wm vechain은 clauses[0]만 사용(multi-clause 미지원). data recipient(selector 다음 32바이트 하위 20B, 현재 0 placeholder)를 본인 주소로 교체 시 self-send. ✅ m02-05-75(DC-3096)부터 wm이 VIP-180을 식별→TokenAccount 합성→device에 토큰 symbol/수량/수신자 표시(더 이상 opaque pass-through 아님). 정식 §9 테스트 preset은 non-evm.json의 vechain-vip180-transfer(SHA, self-send-ready) 참조. blockRef/nonce는 송금 전 갱신.",
     "sourceUrl": "https://docs.vechain.org/core-concepts/transactions",
     "transaction": {
       "chainTag": 74,

@@ -71,7 +71,7 @@ afterEach(() => {
 // T-U-01: 트리 DOM 빌더 — TREE 선언적 객체에서 expected node 개수
 // m11-01-01: Account/Device 그룹 8 method + signMessage 4 method = 12 (기존 5에서 변경)
 // ─────────────────────────────────────────────────────────
-it('T-U-01: 트리 DOM에 24개 non-placeholder method node가 렌더링된다', () => {
+it('T-U-01: 트리 DOM에 21개 non-placeholder method node가 렌더링된다', () => {
   const api = (window as any)._playgroundTestAPI
   expect(api).toBeDefined()
 
@@ -81,12 +81,14 @@ it('T-U-01: 트리 DOM에 24개 non-placeholder method node가 렌더링된다',
   // DC-2309 (b11-01): signMessage 비-EVM family 3종(sol/tron/dot) + Astar → 4→8 → 20
   // m10-01-11/12/14: signMessage Stellar(1) + signData Cardano(1) + signAuthEntry Stellar(1) → 23
   // m09-04-21: Account API에 getPublicKey(1) 추가 → 24
+  // m09-04-22-fix: 미지원 signMessage 3종 제거 — tron/tezos(wm slot DC-2296 disabled) +
+  //   polkadot relay(dot:raw, isParaChain 가드 throw). Astar(paraChain)만 유지 → 24-3 = 21
   const count = api.countMethodNodes()
-  expect(count).toBe(24)
+  expect(count).toBe(21)
 
-  // DOM에는 placeholder 포함 25개 .tree-item (EVM 체인 로드 전 placeholder 1개 추가)
+  // DOM에는 placeholder 포함 22개 .tree-item (EVM 체인 로드 전 placeholder 1개 추가)
   const domItems = document.querySelectorAll('.tree-item')
-  expect(domItems.length).toBe(25) // 24 non-placeholder + 1 EVM loading placeholder
+  expect(domItems.length).toBe(22) // 21 non-placeholder + 1 EVM loading placeholder
 })
 
 // ─────────────────────────────────────────────────────────

@@ -31,6 +31,9 @@ let _transport: PopupTransport | null = null
 let _queue: SerialRequestQueue | null = null
 let _stateListeners: StateListener[] = []
 let _pendingTimeoutMs: number | undefined
+// (DC-2701) 연결 단위 transport 힌트. transport 미생성 시 cache → 다음 ensureSingleton에 적용.
+// undefined = 미설정(default). lifecycle.setTransport가 _setPendingTransport로 등록.
+let _pendingTransport: 'hid' | 'ble' | undefined
 
 /**
  * lazy singleton — 첫 호출 시 PopupTransport + SerialRequestQueue 생성.
@@ -48,6 +51,9 @@ export function ensureSingleton (): {
     _transport = new PopupTransport({})
     if (_pendingTimeoutMs !== undefined) {
       _transport.setTimeoutMs(_pendingTimeoutMs)
+    }
+    if (_pendingTransport !== undefined) {
+      _transport.setPendingTransport(_pendingTransport)
     }
     for (const l of _stateListeners) {
       _transport.on('state', l)
@@ -115,6 +121,20 @@ export function _setPendingTimeout (ms: number): void {
   }
 }
 
+/**
+ * (DC-2701) lifecycle.ts의 setTransport가 사용 — 연결 단위 transport 힌트 등록.
+ * transport가 없으면 cache, 있으면 즉시 setPendingTransport. 다음 ensureSingleton에서 cache 적용.
+ *
+ * first-wins: popup이 이미 열려 handshake가 송신된 뒤면 PopupTransport가 silent ignore한다.
+ * sanitize는 caller(lifecycle.setTransport)가 _sanitizeTransportOption으로 수행.
+ */
+export function _setPendingTransport (transport: 'hid' | 'ble' | undefined): void {
+  _pendingTransport = transport
+  if (_transport) {
+    _transport.setPendingTransport(transport)
+  }
+}
+
 // === 테스트 전용 reset (production에서는 사용하지 않음) ===
 
 /**
@@ -133,4 +153,5 @@ export function _resetForTesting (): void {
   _queue = null
   _stateListeners = []
   _pendingTimeoutMs = undefined
+  _pendingTransport = undefined
 }

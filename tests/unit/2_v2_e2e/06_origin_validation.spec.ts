@@ -34,11 +34,15 @@ describe('[v2 e2e] T-E-06 origin mismatch → TIMEOUT', () => {
 
   it('T-E-06: 잘못된 origin → 5006 TIMEOUT', async () => {
     await page.evaluate((url: string) => {
+      // 잘못된 origin → sdk의 _ready/handshake ack가 connector origin 검증에서 drop됨
+      // → handshake 미완료 → 5006. decoupling(PR #175) 후 handshake는 handshakeTimeoutMs로
+      // 제어되므로 짧게 주어 빠르게 수렴 (구: setTimeoutMs(2000)는 request 경로만 조정).
       ;(window as any).dcentTest.newTransport({
         popUpUrl: url,
         origin: 'https://evil.example.com',
+        handshakeTimeoutMs: 2000,
+        readyTimeoutMs: 500,
       })
-      ;(window as any).dcentTest.setTimeoutMs(2000)
     }, SDK_URL)
 
     const result = await page.evaluate(() => {

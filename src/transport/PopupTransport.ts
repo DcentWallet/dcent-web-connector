@@ -381,7 +381,7 @@ export class PopupTransport implements MessageTransport {
         resolve()
       }
       // Y Timeout fallback — readyTimeoutMs 만료 시 silent resolve. 이후 _handshake 자체가
-      // m02-02의 timeoutMs로 보호되므로 추가 에러 처리 불필요 (error-handling-consistency:
+      // handshakeTimeoutMs로 보호되므로 추가 에러 처리 불필요 (error-handling-consistency:
       // ready signal 자체는 자산과 무관하므로 silent fallback이 정책상 정당).
       this.readyTimer = setTimeout(() => {
         this.readyTimer = null

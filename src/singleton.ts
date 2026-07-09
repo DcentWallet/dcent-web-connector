@@ -27,14 +27,8 @@ import type { TransportState } from './transport/MessageTransport'
 /** state listener 시그니처. lifecycle.ts의 ConnectionListener와 동일 형태. */
 export type StateListener = (state: TransportState) => void
 
-/**
- * 빌드 시점 주입 bridge popup URL (webpack DefinePlugin).
- *   - production 빌드(`--mode production`): `''` → PopupTransport 기본값(v2bridge) 사용
- *   - development 빌드(`--mode development`, `yarn dev`/`build-dev`): `http://localhost:5173`
- *   - `DCENT_BRIDGE_POPUP_URL` 환경변수로 빌드 시 override 가능
- * webpack 미경유 환경(jest 등)에서는 미정의 → `typeof` 가드로 `''` 취급 → PopupTransport 기본값.
- * (하드코딩 override 대신 빌드 분기로 로컬/프로덕션을 나눠 테스트 안정성 확보 — DC-2701 회귀 방지)
- */
+// build-time 주입 bridge popup URL (webpack DefinePlugin). webpack 미경유(jest 등)에서는
+// 미정의 → typeof 가드로 '' 취급 → PopupTransport 기본값.
 declare const __DCENT_BRIDGE_POPUP_URL__: string
 const _bridgePopUpUrl: string =
   typeof __DCENT_BRIDGE_POPUP_URL__ === 'string' ? __DCENT_BRIDGE_POPUP_URL__ : ''

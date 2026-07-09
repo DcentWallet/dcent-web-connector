@@ -7,10 +7,7 @@ const HtmlWebpackPlugin = require('html-webpack-plugin')
 const CopyPlugin = require('copy-webpack-plugin')
 
 module.exports = (env, argv) => {
-    // bridge popup URL 빌드 시점 주입 (singleton.ts `__DCENT_BRIDGE_POPUP_URL__`).
-    //   production 빌드 → '' (PopupTransport 기본값 v2bridge 사용)
-    //   development 빌드(yarn dev/build-dev) → http://localhost:5173 (로컬 SDK dev 서버)
-    //   DCENT_BRIDGE_POPUP_URL 환경변수로 override
+    // bridge popup URL 빌드 시점 주입 (production 기본값 / development localhost).
     const isProd = (argv && argv.mode) === 'production'
     const bridgePopUpUrl =
         process.env.DCENT_BRIDGE_POPUP_URL || (isProd ? '' : 'http://localhost:5173')

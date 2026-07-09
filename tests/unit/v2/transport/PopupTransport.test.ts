@@ -17,8 +17,8 @@ interface MockPopup {
   postMessage: jest.Mock
 }
 
-const DEFAULT_URL = 'https://bridge.dcentwallet.com/v2'
-const DEFAULT_ORIGIN = 'https://bridge.dcentwallet.com'
+const DEFAULT_URL = 'https://v2bridge.dcentwallet.com/'
+const DEFAULT_ORIGIN = 'https://v2bridge.dcentwallet.com'
 
 function makeMockPopup(): MockPopup {
   const popup: MockPopup = {

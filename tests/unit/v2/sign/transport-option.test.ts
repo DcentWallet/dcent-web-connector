@@ -29,7 +29,7 @@ import { ErrorCode } from '../../../../src/error/ErrorCode'
 // Helpers (PopupTransport.test.ts 패턴 재사용 — reuse-shared-utils 룰)
 // ────────────────────────────────────────────────────────────────────────────
 
-const DEFAULT_ORIGIN = 'https://bridge.dcentwallet.com'
+const DEFAULT_ORIGIN = 'https://v2bridge.dcentwallet.com'
 
 interface MockPopup {
   closed: boolean
@@ -405,7 +405,7 @@ describe('sign() — transport option throw + backward compat', () => {
     const openSpy = jest
       .spyOn(window, 'open')
       .mockImplementation(() => mockPopup as unknown as Window)
-    // singleton은 popUpUrl 미지정 → PopupTransport 기본값(https://bridge.dcentwallet.com/v2).
+    // singleton은 (jest에서) popUpUrl 미지정 → PopupTransport 기본값(https://v2bridge.dcentwallet.com/).
     // 그 origin(DEFAULT_ORIGIN)으로 handshake auto-respond (형제 T-U 테스트와 동일).
     installHandshakeAutoRespond(mockPopup, DEFAULT_ORIGIN)
     try {

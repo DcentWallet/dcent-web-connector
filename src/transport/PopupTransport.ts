@@ -13,7 +13,7 @@ import { toWireTransport } from '../sign/_sanitizeTransportOption'
  * 모든 필드 optional — 기본값은 v1과 동일
  */
 export interface PopupTransportOptions {
-  /** popup으로 열 sdk URL. 기본 'https://bridge.dcentwallet.com/v2' */
+  /** popup으로 열 sdk URL. 기본 'https://v2bridge.dcentwallet.com/' */
   popUpUrl?: string
   /**
    * 응답 대기 timeout (ms). 기본 180000 (180s / 3분).
@@ -114,7 +114,7 @@ export class PopupTransport implements MessageTransport {
   private preHandshakeRejecters: Set<(error: ProviderError) => void> = new Set()
 
   constructor (options: PopupTransportOptions = {}) {
-    this.popUpUrl = options.popUpUrl ?? 'https://bridge.dcentwallet.com/v2'
+    this.popUpUrl = options.popUpUrl ?? 'https://v2bridge.dcentwallet.com/'
     this.timeoutMs = options.timeoutMs ?? 180000
     this.origin = options.origin ?? new URL(this.popUpUrl).origin
     this.protocolVersion = options.protocolVersion ?? '2.0'

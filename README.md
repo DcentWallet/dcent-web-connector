@@ -3,7 +3,7 @@
 npm connector for integrating the **D'CENT hardware wallet** into web dApps. It opens a popup served from `https://bridge.dcentwallet.com/v2` and talks to the device over **WebHID (USB)** or **Web Bluetooth** — no native bridge app to install.
 
 - 📘 **v2 Developer Guide** (EN / KO — full API + per-chain reference): [**GitHub Pages**](https://dcentwallet.github.io/dcent-web-connector/) — or download [`docs/index.html`](docs/index.html) and open it in a browser (self-contained, works offline)
-- [Integration guide](docs/index.md) · [Per-family payload contract](docs/v2-payload-contract.md)
+- [Per-family payload contract](docs/v2-payload-contract.md)
 - **v0.16.x (v1) → v2 migration:** [MIGRATION-v1-to-v2.md](./MIGRATION-v1-to-v2.md)
 
 > **v2 is a breaking change from v0.16.x.** The v1 `get*Signed*Transaction/Message` wrappers are replaced by a single `dcent.sign({ method, chainId, payload })`. Existing v0.16.x dApps keep working — see [v0.16.x users](#v016x-v1-users) below.
@@ -74,7 +74,7 @@ v0.16.x is **frozen** (security fixes only). Existing dApps keep working:
 npm i dcent-web-connector@0.16.x
 ```
 
-- Legacy v1 README: [v1/README.md](./v1/README.md)
+- Legacy v1 docs: [README](./v1/README.md) · [Integration Guide](./v1/INTEGRATION-GUIDE.md)
 - v1 → v2 migration guide: [MIGRATION-v1-to-v2.md](./MIGRATION-v1-to-v2.md)
 
 ## Development

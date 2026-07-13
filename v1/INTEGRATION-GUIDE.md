@@ -1,3 +1,8 @@
+> **⚠️ Archived — v0.16.x (v1) Integration Guide.** Documents the legacy v1 API (`get*Signed*` wrappers + native D'CENT Bridge app). These were removed in v2.
+> For **v2** see the [Developer Guide](https://dcentwallet.github.io/dcent-web-connector/) and the [root README](../README.md). Migration: [MIGRATION-v1-to-v2.md](../MIGRATION-v1-to-v2.md).
+
+---
+
 <div style="text-align: right"><img src="./image/dcent-logo.png"</img></div>
 <br><br>
 

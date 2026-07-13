@@ -10,7 +10,7 @@ This is package for connecting WEB and D'CENT biometric wallet.<br>
 User interface is presented in a popup window served from `https://bridge.dcentwallet.com/v2`.
 
 - 📘 **v2 Developer Guide** (EN / KO — full API + per-chain reference): https://dcentwallet.github.io/dcent-web-connector/
-- [Integration](docs/index.md)
+- [Integration](INTEGRATION-GUIDE.md)
 - v0.16.0 → v2 마이그레이션 가이드: [MIGRATION-v1-to-v2.md](./MIGRATION-v1-to-v2.md)
 
 ## Installation

@@ -362,7 +362,6 @@ Bitcoin은 `dcent.sign({ method: 'signTransaction', chainId, payload })`로 서�
     sender: 'alice.near',
     recipient: 'bob.near',
     amount: '1000000000000000000000000',   // yoctoNEAR (1 NEAR = 10^24)
-    nonce: 1,
     blockHash: '11111111111111111111111111111111',
     publicKey: 'ed25519:...'
   }

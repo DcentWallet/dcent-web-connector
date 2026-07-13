@@ -2,11 +2,11 @@
 /**
  * check-payload-contract-coverage.mjs
  *
- * Validates that doc/v2-payload-contract.md has a `### {Family}` section
+ * Validates that docs/v2-payload-contract.md has a `### {Family}` section
  * for every family in playground/chains.json.
  *
  * F = family set from chains.json
- * D = family set from doc/v2-payload-contract.md (### {Family} headers)
+ * D = family set from docs/v2-payload-contract.md (### {Family} headers)
  *
  * Exit 0 = all families covered (F \ D is empty).
  * Exit 1 = missing families (F \ D is non-empty).
@@ -23,8 +23,8 @@ const ROOT = resolve(__dirname, '..')
 const chains = JSON.parse(readFileSync(resolve(ROOT, 'playground/chains.json'), 'utf8'))
 const F = new Set(chains.map((c) => c.family.toLowerCase()))
 
-// D: family set from doc/v2-payload-contract.md (### {Family} headers)
-const doc = readFileSync(resolve(ROOT, 'doc/v2-payload-contract.md'), 'utf8')
+// D: family set from docs/v2-payload-contract.md (### {Family} headers)
+const doc = readFileSync(resolve(ROOT, 'docs/v2-payload-contract.md'), 'utf8')
 const D = new Set(
   [...doc.matchAll(/^### ([A-Za-z][A-Za-z0-9]*)/gm)].map((m) => m[1].toLowerCase())
 )

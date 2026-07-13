@@ -1,94 +1,90 @@
 # dcent-web-connector
-This is package for connecting WEB and D'CENT biometric wallet.<br>
-`dcent-web-connector` is modules for easy integration of D'CENT into 3rd party services.<br>
-User interface is presented in a popup window served from `https://bridge.dcentwallet.com/v2`.
 
-- 📘 **v2 Developer Guide** (EN / KO — full API + per-chain reference): https://dcentwallet.github.io/dcent-web-connector/
-- [Integration](docs/index.md)
-- v0.16.0 → v2 마이그레이션 가이드: [MIGRATION-v1-to-v2.md](./MIGRATION-v1-to-v2.md)
+npm connector for integrating the **D'CENT hardware wallet** into web dApps. It opens a popup served from `https://bridge.dcentwallet.com/v2` and talks to the device over **WebHID (USB)** or **Web Bluetooth** — no native bridge app to install.
 
-## Installation
+- 📘 **v2 Developer Guide** (EN / KO — full API + per-chain reference): **https://dcentwallet.github.io/dcent-web-connector/**
+- [Integration guide](docs/index.md) · [Per-family payload contract](docs/v2-payload-contract.md)
+- **v0.16.x (v1) → v2 migration:** [MIGRATION-v1-to-v2.md](./MIGRATION-v1-to-v2.md)
 
-### Node.js 
-```
+> **v2 is a breaking change from v0.16.x.** The v1 `get*Signed*Transaction/Message` wrappers are replaced by a single `dcent.sign({ method, chainId, payload })`. Existing v0.16.x dApps keep working — see [v0.16.x users](#v016x-v1-users) below.
+
+## Install
+
+```bash
 npm i dcent-web-connector
 ```
 
-## Usage
+Runs in **Chromium browsers** (Chrome, Edge, Brave, Opera). Firefox and Safari do not support WebHID / Web Bluetooth.
+
+## Quick Start
 
 ```js
-// in Node.js
-const DcentWebConnector = require('dcent-web-connector')
+import dcent from 'dcent-web-connector'
 
-var result
-try{
-    result = await DcentWebConnector.info()
-    // If you want to close the popup window.
-    DcentWebConnector.popupWindowClose()
-}catch(e){
-    result = e
+// 1. Pick a transport once (WebHID over USB; 'ble' for Web Bluetooth)
+dcent.setTransport('hid')
+
+// 2. Get an address
+const res = await dcent.getAddress({
+  chainId: 'eip155:1/slip44:60',
+  keyPath: "m/44'/60'/0'/0/0",
+})
+const address = res.body.parameter.address
+
+// 3. Sign a transaction
+const signed = await dcent.sign({
+  method: 'signTransaction',
+  chainId: 'eip155:1/slip44:60',
+  payload: {
+    keyPath: "m/44'/60'/0'/0/0",
+    transaction: { /* chain-specific fields — see the Developer Guide */ },
+  },
+})
+
+if (signed.header.status === 'success') {
+  const rawTx = signed.body.parameter.signature
+  // broadcast rawTx with your own provider
 }
 ```
 
-## Preparence
+Every method takes a `chainId` and a payload and returns the same `{ header, body }` envelope — the call shape does not change from one network to the next. Full per-chain payloads, `chainId` formats, `keyPath` rules, and error codes are in the **[Developer Guide](https://dcentwallet.github.io/dcent-web-connector/)**.
 
-- install `D'CENT Bridge`
+## Transport
 
-    https://bridge.dcentwallet.com/v2/download
+`dcent.setTransport('hid' | 'ble')` selects the browser-native transport — **no D'CENT Bridge app to install**. Each call opens the D'CENT popup where the user approves the action on the device. `dcent.getDeviceInfo()` and `dcent.popupWindowClose()` remain available.
 
-- connect D'CENT device using USB cable
+## Common methods
 
+| Method | Purpose |
+|---|---|
+| `setTransport('hid' \| 'ble')` | Choose WebHID (USB) or Web Bluetooth |
+| `getDeviceInfo()` | Device model / firmware / connection state |
+| `getAddress({ chainId, keyPath })` | Account address for a keyPath |
+| `getPublicKey({ chainId, keyPath })` | Public key for a keyPath |
+| `sign({ method, chainId, payload })` | `method`: `signTransaction` / `signMessage` / … |
+| `popupWindowClose()` | Close the popup |
 
-## Test 
+See the [Developer Guide](https://dcentwallet.github.io/dcent-web-connector/) for the full method + chain reference.
 
-- `tests/unit/0_mock_test` is mockup test.
+## v0.16.x (v1) users
 
-- `tests/unit/1_bridge_test` is test for real D'CENT Device.
-
-### Preparence
-If you want to test `tests/unit/1_bridge_test`,
-
-- run test-server 
-```
-npm run dev
-```
-
-- install `D'CENT Bridge` 
-
-    http://bridge.dcentwallet.com/v2/download
-
-- connect D'CENT device using USB cable
-
-
-
-### Run 
-```
-npm run test
-```
-
-## v2 Playground
-
-The v2 Playground is a manual test page for the connector v2 API.
-
-### Usage
+v0.16.x is **frozen** (security fixes only). Existing dApps keep working:
 
 ```bash
-# 1. Build the v2 bundle
-yarn build
-
-# 2. Open the playground in your browser
-open index-v2.html
-# Or serve locally:
-# yarn dev  →  http://localhost:9090/index-v2.html
+npm i dcent-web-connector@0.16.x
 ```
 
-### Features
+- Legacy v1 README: [v1/README.md](./v1/README.md)
+- v1 → v2 migration guide: [MIGRATION-v1-to-v2.md](./MIGRATION-v1-to-v2.md)
 
-- **Device Indicator** — shows connection status, firmware version, and model
-- **Method Tree** — browse and select connector v2 methods (`getDeviceInfo`, `signMessage`)
-- **Request Log** — append-only log with JSONL export (`Copy all`)
-- **Form (B1 pattern)** — per-method input form with boundary validation
+## Development
 
-> Note: `index-v2.html` and `playground.js` are included in the npm tarball as a living reference for v0.16.0 → v2 migration. See [MIGRATION-v1-to-v2.md](./MIGRATION-v1-to-v2.md) for details.
->
-> **Per-family payload contract (all 20 chain families):** [docs/v2-payload-contract.md](./docs/v2-payload-contract.md)
+```bash
+yarn build          # build the v2 bundle
+open index-v2.html  # v2 Playground (manual test page) — or `yarn dev` → http://localhost:9090/index-v2.html
+yarn test           # unit / mock tests
+```
+
+## License
+
+MIT

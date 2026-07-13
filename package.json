@@ -8,7 +8,7 @@
   "files": [
     "dist/v2/",
     "src/",
-    "doc/",
+    "docs/",
     "playground.js",
     "index-v2.html",
     "MIGRATION-v1-to-v2.md",
@@ -30,8 +30,10 @@
     "extract-chains": "node scripts/extract-chains.js",
     "lint": "eslint --ext .js src-v1 tests playground.js scripts",
     "lint:fix": "eslint --ext .js src-v1 tests playground.js --fix",
-    "lint:md": "markdownlint-cli2 \"doc/v2-payload-contract.md\"",
+    "lint:md": "markdownlint-cli2 \"docs/v2-payload-contract.md\"",
     "check:payload-contract": "node scripts/check-payload-contract-coverage.mjs",
+    "check:payload-shape": "node scripts/check-payload-contract-shape.mjs",
+    "check:docs": "yarn lint:md && yarn check:payload-contract && yarn check:payload-shape",
     "tsc": "tsc --noEmit"
   },
   "jest": {

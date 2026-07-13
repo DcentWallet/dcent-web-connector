@@ -4,10 +4,12 @@
 
 ```js
 const result = await dcent.sign({
-  method: 'signTransaction',  // 또는 'signMessage'
+  method: 'signTransaction',  // 또는 'signMessage' / 'signTypedData' / ...
   chainId: 'eip155:1/slip44:60',
-  keyPath: "m/44'/60'/0'/0/0",
-  payload: { transaction: { /* family-specific shape */ } }
+  payload: {
+    keyPath: "m/44'/60'/0'/0/0",   // ⚠️ keyPath는 payload 안에 위치 (필수)
+    transaction: { /* family-specific shape */ }
+  }
 })
 ```
 
@@ -23,7 +25,7 @@ const result = await dcent.sign({
 | Family | signTransaction | signMessage | 비고 |
 |--------|----------------|-------------|------|
 | algorand | ✅ | ❌ -32601 | |
-| bitcoin | ✅ (`getBitcoinSignedTransaction`) | ❌ N/A | 전용 API 사용 |
+| bitcoin | ✅ (`dcent.sign` — inputs/outputs) | ❌ N/A | txType `p2pkh`/`p2wpkh` |
 | cardano | ✅ (full-CBOR) | ⚠️ -32601 | signMessage: m02-05-30 전 |
 | conflux | ✅ (EVM 호환) | ✅ | EVM family |
 | constellation | ⚠️ -32601 | ❌ -32601 | wm ConstellationAPIImpl 미등록 |
@@ -67,7 +69,7 @@ const result = await dcent.sign({
     firstRound: 1,
     lastRound: 1001,
     genesisID: 'mainnet-v1.0',
-    genesisHash: 'wGHE2Pwdvd7S12BL5FaOP20EGYesN73k'
+    genesisHash: 'wGHE2Pwdvd7S12BL5FaOP20EGYesN73ktiHc0CYz/uo='
   }
 }
 ```
@@ -76,13 +78,22 @@ const result = await dcent.sign({
 
 ### Bitcoin
 
-**지원:** `signTransaction` ✅ (전용 API) | `signMessage` ❌ N/A
+**지원:** `signTransaction` ✅ | `signMessage` ❌ N/A
 
-> **주의:** Bitcoin은 `dcent.sign()` 대신 전용 API `dcent.getBitcoinSignedTransaction()` 또는 `dcent.getBitcoinTransactionObject()` + `addBitcoinTransactionInput()` + `addBitcoinTransactionOutput()` builder 패턴을 사용한다. v2 playground에 P2WPKH, P2PKH preset이 포함되어 있다.
+Bitcoin은 `dcent.sign({ method: 'signTransaction', chainId, payload })`로 서명한다. `payload.transaction`은 UTXO `inputs[]` + `outputs[]` 구조이며, 각 input의 `txType`(`p2pkh`=legacy / `p2wpkh`=native segwit)이 서명 방식을 결정한다 (keyPath는 legacy·segwit 공통으로 항상 `m/44'`). 상태 기반 builder(`getBitcoinTransactionObject` + `addBitcoinTransactionInput`/`addBitcoinTransactionOutput`)도 대안으로 제공된다.
+
+```js
+{
+  transaction: {
+    inputs: [{ rawTransaction: '<prev tx hex>', index: 0, txType: 'p2pkh', keyPath: "m/44'/0'/0'/0/0" }],
+    outputs: [{ txType: 'p2pkh', amount: 990000, addresses: ['<recipient>'] }]
+  }
+}
+```
 
 **chainId 예시:** `bip122:000000000019d6689c085ae165831e93/slip44:0` (BTC mainnet)
 
-**Source:** `playground/presets.bitcoin-tx.json` → `btx:p2wpkh-single`, `btx:p2pkh-single`
+**Source:** `playground/presets.bitcoin-tx.json`
 
 ---
 
@@ -92,16 +103,19 @@ const result = await dcent.sign({
 
 **chainId 예시:** `cip34:1-764824073` (mainnet), `cip34:0-2` (testnet)
 
-**signTransaction payload (simple transfer):**
+**signTransaction payload (structured — ORDINARY_TRANSACTION):**
 
 ```js
-// Source: playground/presets.non-evm.json → ada-transfer
+// Source: playground/presets.non-evm.json → ada-structured-signtx-ordinary
 {
   transaction: {
-    type: 'payment',
-    toAddress: 'addr1...',
-    amount: '1000000',     // lovelace (1 ADA = 1,000,000)
-    ttl: 100000
+    signingMode: 'ORDINARY_TRANSACTION',
+    inputs: [ /* { txHashHex, outputIndex, ... } */ ],
+    outputs: [ /* { address, amount, ... } */ ],
+    fee: '170000',           // lovelace
+    ttl: '100000',
+    networkId: 1,            // 1 = mainnet, 0 = testnet
+    protocolMagic: 764824073
   }
 }
 ```
@@ -112,7 +126,7 @@ const result = await dcent.sign({
 // Full CBOR hex — 어떤 트랜잭션 타입도 처리 가능
 {
   transaction: {
-    cbor: '0x84a500...'   // CBOR-serialized transaction hex
+    txCbor: '0x84a500...'   // CBOR-serialized transaction hex
   }
 }
 ```
@@ -129,17 +143,19 @@ const result = await dcent.sign({
 
 ```js
 // Source: playground/presets.rest.json → cfx-transfer
-// EVM-compatible shape
+// ⚠️ Conflux Core Space는 CIP-37 base32 주소(cfx:...) 필수 — hex(0x) 주소는 디바이스 오류
 {
   transaction: {
-    from: '0x1B25fB6E9579B5fC7BAc3D80Bc1bAd3e63CB9b14',
-    to: '0x0000000000000000000000000000000000000000',
+    from: 'cfx:aar...',
+    to: 'cfx:aar...',
     value: '0x2386f26fc10000',
     gas: '0x5208',
     gasPrice: '0x174876E800',
     nonce: '0x1',
     data: '0x',
-    chainId: 1029              // Conflux Hydra mainnet
+    chainId: '0x405',          // Conflux mainnet (1029, hex string)
+    epochHeight: 100000,       // 필수
+    storageLimit: 0            // 필수
   }
 }
 ```
@@ -160,11 +176,10 @@ const result = await dcent.sign({
 // Source: playground/presets.non-evm.json → dag-transfer
 {
   transaction: {
-    type: 'transfer',
-    sender: 'DAG...',
-    recipient: 'DAG...',
-    amount: '100000000',   // 1 DAG = 100,000,000
-    fee: '0'
+    source: 'DAG...',
+    destination: 'DAG...',
+    amount: 100000000,   // 1 DAG = 100,000,000
+    fee: 0
   }
 }
 ```
@@ -177,17 +192,20 @@ const result = await dcent.sign({
 
 **chainId 예시:** `cosmos:cosmoshub-4/slip44:118`, `cosmos:coreum-mainnet-1/slip44:990`
 
-**signTransaction payload (cosmjs StdSignDoc):**
+**signTransaction payload (Amino SignDoc — 단일 bank `MsgSend`만 지원):**
 
 ```js
 // Source: playground/presets.rest.json → atom-transfer
+// ⚠️ Amino 형식(snake_case) 필수. 단일 MsgSend만 서명 가능 —
+//    CW20/IBC MsgTransfer·다중 메시지·기타 typeUrl은 -32601.
+//    (Protobuf SIGN_MODE_DIRECT 형식은 bodyBytes 필드로 별도 지원)
 {
   transaction: {
     msgs: [{
-      typeUrl: '/cosmos.bank.v1beta1.MsgSend',
+      type: 'cosmos-sdk/MsgSend',
       value: {
-        fromAddress: 'cosmos1...',
-        toAddress: 'cosmos1...',
+        from_address: 'cosmos1...',
+        to_address: 'cosmos1...',
         amount: [{ denom: 'uatom', amount: '1000000' }]
       }
     }],
@@ -245,17 +263,18 @@ const result = await dcent.sign({
 **signMessage payload:**
 
 ```js
-// personal_sign
-{ message: '0x48656c6c6f' }   // hex-encoded bytes
+// method: 'signMessage'  (payload.message = hex-encoded bytes)
+{ message: '0x48656c6c6f' }
 
-// signTypedData_v4 (EIP-712)
+// method: 'signTypedData'  (EIP-712) — payload.data는 JSON.stringify된 문자열, version 동반
 {
-  typedData: {
-    types: { EIP712Domain: [...], Transfer: [...] },
+  data: JSON.stringify({
+    types: { EIP712Domain: [/*...*/], Transfer: [/*...*/] },
     domain: { name: '...', version: '1', chainId: 1 },
     primaryType: 'Transfer',
     message: { to: '0x...', amount: '1000' }
-  }
+  }),
+  version: 'V4'
 }
 ```
 
@@ -277,9 +296,9 @@ const result = await dcent.sign({
     from: 'f1xcbgdhkgkwht3hrrnui3jdopeejsoas2rujnkdi',
     nonce: 1,
     value: '1000000000000000000',   // attoFIL (1 FIL = 10^18)
-    gaslimit: 1000000,
-    gasfeecap: '100000',
-    gaspremium: '100000',
+    gasLimit: 1000000,
+    gasFeeCap: '100000',
+    gasPremium: '100000',
     method: 0,
     params: ''
   }
@@ -312,12 +331,13 @@ const result = await dcent.sign({
 // Source: playground/presets.non-evm.json → hbar-transfer
 {
   transaction: {
-    type: 'cryptoTransfer',
+    type: 'CryptoTransfer',
     transfers: [
       { accountId: '0.0.800', amount: -1000000 },
       { accountId: '0.0.1000', amount: 1000000 }
     ],
-    transactionFee: 100000000   // tinybars
+    maxTransactionFee: 100000000,   // tinybars
+    transactionValidDuration: 120
   }
 }
 ```
@@ -338,10 +358,10 @@ const result = await dcent.sign({
 // Source: playground/presets.non-evm.json → near-transfer
 {
   transaction: {
-    signerId: 'alice.near',
-    receiverId: 'bob.near',
-    nonce: 1,
-    actions: [{ type: 'Transfer', params: { deposit: '1000000000000000000000000' } }],
+    type: 'transfer',
+    sender: 'alice.near',
+    recipient: 'bob.near',
+    amount: '1000000000000000000000000',   // yoctoNEAR (1 NEAR = 10^24)
     blockHash: '11111111111111111111111111111111',
     publicKey: 'ed25519:...'
   }
@@ -367,9 +387,13 @@ const result = await dcent.sign({
       '1EzRDbELEVqAWLKkTTfNP2Mq6ZpKbFAhNfAJtUHBJjGBN1',  // recipient
       '1000000000'   // Planck (1 DOT = 10^10)
     ],
-    era: { type: 'immortal' },
+    era: '0x00',
     nonce: 1,
-    tip: 0
+    tip: 0,
+    specVersion: 1000000,
+    transactionVersion: 26,
+    blockHash: '0x...',
+    genesisHash: '0x91b171bb158e2d3848fa23a9f1c25182fb8e20313b2c1eb49219da7a70ce90c3'
   }
 }
 ```
@@ -466,8 +490,10 @@ const result = await dcent.sign({
     type: 'payment',
     destination: 'GAAZI4TCR3TY5OJHCTJC2A4QSY6CJWJH5IAJTGKIN2ER7LBNVKOCCWN',
     amount: '10.0000000',    // XLM (7 decimal places)
-    asset: { type: 'native' },
-    source: 'GAXELQE2OXLMDFWXL5Q4GV4GZEXW6QI3SULQLV5GFHNLRTLCZ4E3M2Y'
+    asset: { code: 'XLM', issuer: null },   // native
+    memo: '',
+    fee: '100',
+    sequenceNumber: '1'
   }
 }
 ```
@@ -492,8 +518,8 @@ const result = await dcent.sign({
     amount: '1000000',    // mutez (1 XTZ = 1,000,000)
     fee: '1420',
     counter: '1',
-    gas_limit: '10600',
-    storage_limit: '300'
+    gasLimit: '10600',
+    storageLimit: '300'
   }
 }
 ```
@@ -513,7 +539,6 @@ const result = await dcent.sign({
 ```js
 {
   transaction: {
-    type: 'TransferContract',
     raw_data: {
       contract: [{
         type: 'TransferContract',
@@ -536,7 +561,6 @@ const result = await dcent.sign({
 // m02-05-25-wm-tron-trigger-contract-wire 머지 후 지원 예정
 {
   transaction: {
-    type: 'TriggerSmartContract',
     raw_data: {
       contract: [{
         type: 'TriggerSmartContract',
@@ -567,7 +591,7 @@ const result = await dcent.sign({
 // Source: playground/presets.rest.json → vet-transfer (thor-devkit clauses)
 {
   transaction: {
-    chainTag: 196,
+    chainTag: 74,
     blockRef: '0x00000000aabbccdd',
     expiration: 32,
     clauses: [{

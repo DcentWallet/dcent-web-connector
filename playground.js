@@ -1932,6 +1932,180 @@
     return ''
   }
 
+  // ── Bitcoin prevout synthesis (Build & Sign test aid) ──
+  // wm(validateBitcoinPrevoutOwnership)는 각 input의 prevout scriptPubKey가 그 input의 서명
+  // keyPath가 파생하는 주소와 byte 일치할 것을 요구한다(-32602 prevout script does not match).
+  // static preset prev_tx로는 디바이스별 실주소를 알 수 없으므로, Build & Sign 시점에 각 input의
+  // keyPath로 getAddress → 실주소의 output script를 outs[index]로 갖는 synthetic prev_tx를
+  // 생성해 rawTransaction을 교체한다. 브로드캐스트용이 아니라 서명 흐름 시연용 —
+  // value는 wire fee(input-output)>=0만 만족하면 됨. (_bech32* primitive 재사용.)
+  var _BECH32M_CONST = 0x2bc830a3
+  // segwit(BIP-173 v0 / BIP-350 v1+) 주소 → { witver, programHex } (실패 시 null)
+  function _btcSegwitDecode (addr) {
+    if (typeof addr !== 'string' || !addr) return null
+    var s = addr.trim()
+    if (s !== s.toLowerCase() && s !== s.toUpperCase()) return null // mixed-case 금지
+    var lower = s.toLowerCase()
+    var pos = lower.lastIndexOf('1')
+    if (pos < 1) return null
+    var hrp = lower.slice(0, pos)
+    if (hrp !== 'bc' && hrp !== 'tb' && hrp !== 'bcrt') return null
+    var dataPart = lower.slice(pos + 1)
+    var words = []
+    for (var i = 0; i < dataPart.length; i++) {
+      var v = _BECH32_CHARSET.indexOf(dataPart.charAt(i))
+      if (v === -1) return null
+      words.push(v)
+    }
+    if (words.length < 7) return null // >=1 data word + 6 checksum
+    var witver = words[0]
+    if (witver > 16) return null
+    var polymod = _bech32Polymod(_bech32HrpExpand(hrp).concat(words))
+    var expected = witver === 0 ? 1 : _BECH32M_CONST // v0=bech32, v1+=bech32m
+    if (polymod !== expected) return null
+    var prog = words.slice(1, words.length - 6)
+    var acc = 0; var bits = 0; var bytes = []
+    for (var j = 0; j < prog.length; j++) {
+      acc = ((acc << 5) | prog[j]) >>> 0
+      bits += 5
+      while (bits >= 8) { bits -= 8; bytes.push((acc >> bits) & 0xff) }
+    }
+    if (bits >= 5 || ((acc << (8 - bits)) & 0xff) !== 0) return null // padding
+    if (witver === 0 && bytes.length !== 20 && bytes.length !== 32) return null
+    if (bytes.length < 2 || bytes.length > 40) return null
+    var hex = bytes.map(function (b) { return (b < 16 ? '0' : '') + b.toString(16) }).join('')
+    return { witver: witver, programHex: hex }
+  }
+  var _B58_ALPHABET = '123456789ABCDEFGHJKLMNPQRSTUVWXYZabcdefghijkmnopqrstuvwxyz'
+  // base58 → byte array (checksum 미검증 — device 주소는 신뢰 입력). 실패 시 null.
+  function _base58Decode (str) {
+    if (typeof str !== 'string' || !str) return null
+    var bytes = [0]
+    for (var i = 0; i < str.length; i++) {
+      var c = _B58_ALPHABET.indexOf(str.charAt(i))
+      if (c === -1) return null
+      var carry = c
+      for (var j = 0; j < bytes.length; j++) {
+        carry += bytes[j] * 58
+        bytes[j] = carry & 0xff
+        carry >>= 8
+      }
+      while (carry > 0) { bytes.push(carry & 0xff); carry >>= 8 }
+    }
+    for (var k = 0; k < str.length && str.charAt(k) === '1'; k++) bytes.push(0)
+    bytes.reverse()
+    return bytes
+  }
+  // 주소 → scriptPubKey hex. bitcoinjs address.toOutputScript와 byte-identical하도록
+  // 주소 포맷 자체(bech32 vs base58 version byte)로 script 종류를 판정한다. 실패 시 null.
+  function _btcAddressToScriptHex (addr) {
+    var seg = _btcSegwitDecode(addr)
+    if (seg) {
+      var op = seg.witver === 0 ? '00' : (0x50 + seg.witver).toString(16)
+      var lenHex = (seg.programHex.length / 2).toString(16)
+      if (lenHex.length % 2) lenHex = '0' + lenHex
+      return op + lenHex + seg.programHex
+    }
+    var dec = _base58Decode(addr)
+    if (!dec || dec.length !== 25) return null // 1 version + 20 hash + 4 checksum
+    var version = dec[0]
+    var hash = dec.slice(1, 21).map(function (b) { return (b < 16 ? '0' : '') + b.toString(16) }).join('')
+    if (version === 0x00 || version === 0x6f) return '76a914' + hash + '88ac' // p2pkh main/test
+    if (version === 0x05 || version === 0xc4) return 'a914' + hash + '87' // p2sh  main/test
+    return null
+  }
+  // uint → little-endian hex of byteLen bytes (satoshi < 2^53 정확)
+  function _uintToLEHex (n, byteLen) {
+    var hex = ''
+    for (var i = 0; i < byteLen; i++) {
+      var b = (n & 0xff)
+      hex += (b < 16 ? '0' : '') + b.toString(16)
+      n = Math.floor(n / 256)
+    }
+    return hex
+  }
+  function _btcVarInt (n) {
+    if (n < 0xfd) return _uintToLEHex(n, 1)
+    if (n <= 0xffff) return 'fd' + _uintToLEHex(n, 2)
+    if (n <= 0xffffffff) return 'fe' + _uintToLEHex(n, 4)
+    return 'ff' + _uintToLEHex(n, 8)
+  }
+  // 비-witness synthetic prev tx: outs[index]=(scriptHex,valueSat), index 이전은 dust filler(OP_RETURN).
+  function _buildSyntheticPrevTx (scriptHex, index, valueSat) {
+    var DUST = 546
+    var version = '02000000'
+    var vin = '01' +
+      '1111111111111111111111111111111111111111111111111111111111111111' + // dummy prevout hash
+      '00000000' + // prevout index
+      '00' + // empty scriptSig
+      'ffffffff' // sequence
+    var nOut = index + 1
+    var vout = _btcVarInt(nOut)
+    for (var i = 0; i < nOut; i++) {
+      if (i === index) {
+        vout += _uintToLEHex(valueSat, 8) + _btcVarInt(scriptHex.length / 2) + scriptHex
+      } else {
+        vout += _uintToLEHex(DUST, 8) + _btcVarInt(1) + '6a' // OP_RETURN filler
+      }
+    }
+    return version + vin + vout + '00000000'
+  }
+
+  // 각 input의 keyPath로 getAddress → 실주소 script를 outs[index]로 갖는 synthetic prev_tx로
+  // rawTransaction을 교체한다. getAddress 실패/변환 실패 input은 기존 rawTransaction 유지(폴백)
+  // → wm이 실제 원인 에러를 내도록. 반환: Promise<{ synthesized, skipped, notes:[] }>.
+  // 디바이스 순차 호출(같은 keyPath는 캐시)로 병렬 getAddress 회피.
+  function _synthesizeBitcoinPrevouts (builtTx, chainId) {
+    var dcent = _getDcent()
+    var inputs = (builtTx && builtTx.inputs) || []
+    var outputs = (builtTx && builtTx.outputs) || []
+    var result = { synthesized: 0, skipped: 0, notes: [] }
+    if (!dcent || typeof dcent.getAddress !== 'function' || inputs.length === 0) {
+      result.notes.push('getAddress 불가 또는 input 없음 — prevout 합성 skip')
+      return Promise.resolve(result)
+    }
+    var outputTotal = 0
+    for (var o = 0; o < outputs.length; o++) {
+      var amt = Number(outputs[o] && outputs[o].amount)
+      if (isFinite(amt) && amt > 0) outputTotal += amt
+    }
+    var FEE = 2000 // 시연용 고정 fee (wire fee = inputTotal - outputTotal >= 0만 만족하면 됨)
+    var total = outputTotal + FEE
+    var n = inputs.length
+    var base = Math.max(1, Math.floor(total / n))
+    var addrCache = {}
+    var chain = Promise.resolve()
+    inputs.forEach(function (inp, i) {
+      chain = chain.then(function () {
+        var keyPath = inp && inp.keyPath
+        if (!keyPath) { result.skipped++; result.notes.push('input[' + i + '] keyPath 없음 — skip'); return }
+        var valueSat = (i === n - 1) ? (total - base * (n - 1)) : base
+        if (valueSat < 1) valueSat = 1
+        var addrP = addrCache[keyPath]
+        if (!addrP) {
+          addrP = Promise.resolve().then(function () { return dcent.getAddress({ chainId: chainId, keyPath: keyPath }) })
+            .then(_unwrapV1Envelope).then(function (res) {
+              var a = res && (res.address || res.pubkey)
+              return typeof a === 'string' ? a : null
+            })
+          addrCache[keyPath] = addrP
+        }
+        return addrP.then(function (address) {
+          if (!address) { result.skipped++; result.notes.push('input[' + i + '] getAddress 주소 추출 실패 — 기존 prev_tx 유지'); return }
+          var script = _btcAddressToScriptHex(address)
+          if (!script) { result.skipped++; result.notes.push('input[' + i + '] 주소 script 변환 실패 (' + address + ') — 기존 prev_tx 유지'); return }
+          inp.rawTransaction = _buildSyntheticPrevTx(script, (inp.index || 0), valueSat)
+          result.synthesized++
+          result.notes.push('input[' + i + '] prevout ← ' + address.slice(0, 10) + '… (' + valueSat + ' sat)')
+        }, function (err) {
+          result.skipped++
+          result.notes.push('input[' + i + '] getAddress 실패 (' + ((err && err.message) || err) + ') — 기존 prev_tx 유지')
+        })
+      })
+    })
+    return chain.then(function () { return result })
+  }
+
   // ── _signDataGetAddressClick (m09-04-22-fix) ──
   // signData 폼의 chainId/keyPath로 dcent.getAddress 호출 → 응답 payment 주소(bech32)를
   // hex로 변환하여 field-address에 채운다 (signData는 hex address 요구).
@@ -3046,16 +3220,32 @@
         // m09-04-15: builder(getBitcoinTransactionObject/add*)가 v2 flat wire(BitcoinWireTransaction)를
         // 직접 생성하므로 변환 없이 그대로 송신. (unsupported txType/malformed 인자는 add* 시점에 throw됨.)
         // DC-2701: transport는 연결 단위(dcent.setTransport) — sign per-call transport 미지원.
-        var bsSignInput = { method: 'signTransaction', chainId: bsChainId, payload: { keyPath: bsKeyPath, transaction: builtTx } }
-        dcent.sign(bsSignInput).then(_unwrapV1Envelope).then(function (result) {
-          appendLog({
-            method: 'signTransaction',
-            chainId: bsChainId,
-            keyPath: bsKeyPath,
-            request: { chainId: bsChainId, keyPath: bsKeyPath, transaction: builtTx },
-            response: result,
-            latencyMs: Date.now() - startMs,
-            deviceFirmware: state.device && state.device.firmware,
+        // prevout ownership(validateBitcoinPrevoutOwnership): 각 input의 keyPath 실주소로
+        // prev_tx를 합성해 rawTransaction 교체 → outs[index].script == toOutputScript(deviceAddr).
+        // static preset prev_tx는 디바이스별 실주소를 모르므로 여기서 device 주소로 덮어쓴다.
+        _synthesizeBitcoinPrevouts(builtTx, bsChainId).then(function (synth) {
+          var bsSignInput = { method: 'signTransaction', chainId: bsChainId, payload: { keyPath: bsKeyPath, transaction: builtTx } }
+          return dcent.sign(bsSignInput).then(_unwrapV1Envelope).then(function (result) {
+            appendLog({
+              method: 'signTransaction',
+              chainId: bsChainId,
+              keyPath: bsKeyPath,
+              request: { chainId: bsChainId, keyPath: bsKeyPath, transaction: builtTx },
+              response: result,
+              prevoutSynthesis: synth,
+              latencyMs: Date.now() - startMs,
+              deviceFirmware: state.device && state.device.firmware,
+            })
+          }).catch(function (err) {
+            appendLog({
+              method: 'signTransaction',
+              chainId: bsChainId,
+              keyPath: bsKeyPath,
+              request: { chainId: bsChainId, keyPath: bsKeyPath, transaction: builtTx },
+              prevoutSynthesis: synth,
+              error: normalizeError(err),
+              latencyMs: Date.now() - startMs,
+            })
           })
         }).catch(function (err) {
           appendLog({

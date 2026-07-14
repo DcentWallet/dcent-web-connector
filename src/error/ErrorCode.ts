@@ -2,7 +2,7 @@
  * v2 에러 코드 enum
  *
  * JSON-RPC 2.0 표준 (-32700 ~ -32603) + EIP-1193 표준 (4xxx) + D'CENT 디바이스 전용 (5xxx)
- * 총 15개 코드를 정확한 값으로 export한다.
+ * 총 17개 코드(JSON-RPC 5 + EIP-1193 5 + D'CENT 7)를 정확한 값으로 export한다.
  */
 export enum ErrorCode {
   // JSON-RPC 2.0 표준 (-32700 ~ -32603)

@@ -77,7 +77,7 @@ export interface GetPublicKeyV2Input {
  * @example
  *   await dcent.getPublicKey({
  *     chainId: 'cip34:1-764824073',
- *     keyPath: "m/1852'/1815'/0'/0/0",
+ *     keyPath: "m/44'/1815'/0'/0/0",
  *   })
  *   // → { payment: {keyPath, publicKey}, stake: {...}, drep: {...} }
  *

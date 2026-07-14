@@ -1401,3 +1401,134 @@ describe('T-PRESET no-network 완성 필드 (non-evm)', () => {
     })
   })
 })
+
+// ─────────────────────────────────────────────────────────────────────────────
+// T-BLOB-SHAPE-01 / T-BLOB-REMOVE-01 (m09-04-25)
+// ② blob-bypass family — wm이 완성 직렬화 blob을 받으면 RPC 경로 자체를 우회(blind-sign)한다.
+// Solana form-E(feePayer/recentBlockhash 실 값), Hedera/Tezos extra.unsignedTxBytes(=unsignedTx
+// 필드 재사용), Stellar {xdr}는 이미 준비되어 있었음(m09-04-25 이전) — 여기서는 회귀 가드.
+// 구조적으로 no-network 불가한 form-D/structured-token preset(Solana SPL descriptor,
+// Stellar/Hedera/Tezos descriptor)은 playground에서 제거됨 — form-E/blob 예제만 남는다.
+// (Polkadot extra.scaleHex는 실제 파일 배치상 presets.rest.json — signtx-rest.test.ts
+// T-BLOB-SHAPE-01(rest, polkadot) 담당.)
+// ─────────────────────────────────────────────────────────────────────────────
+describe('T-BLOB-SHAPE-01 / T-BLOB-REMOVE-01: blob preset 완성 + 미지원 form 제거 (non-evm)', () => {
+  const presetsPath = path.resolve(__dirname, '../../../playground/presets.non-evm.json')
+  const PRESETS: any[] = JSON.parse(fs.readFileSync(presetsPath, 'utf8'))
+  const byId = (id: string) => PRESETS.find((p) => p.id === id)
+  const SOL_PLACEHOLDER = '11111111111111111111111111111111'
+
+  // compact-u16 reader (Solana legacy wire format) — 이 fixture의 count들은 모두 <128이라
+  // 단일-byte 케이스만 필요하지만, 스펙대로 멀티바이트 continuation도 지원.
+  function readCompactU16(buf: Uint8Array, offset: number): { value: number; next: number } {
+    let value = 0
+    let shift = 0
+    let pos = offset
+    // eslint-disable-next-line no-constant-condition
+    while (true) {
+      const byte = buf[pos]
+      pos += 1
+      value |= (byte & 0x7f) << shift
+      if ((byte & 0x80) === 0) break
+      shift += 7
+    }
+    return { value, next: pos }
+  }
+
+  it('T-BLOB-SHAPE-01: Solana form-E(base58-serialized) — 디코드된 accountKeys[0]/recentBlockhash가 real-format(placeholder 아님)', () => {
+    const case1 = byId('sol-transfer-base58-serialized')
+    expect(case1).toBeDefined()
+    expect(typeof case1.transaction).toBe('string')
+    // ASCII 텍스트 레벨 가드(빠른 회귀 감지) — 아래 바이너리 디코드가 authoritative 검증
+    expect(case1.transaction).not.toContain(SOL_PLACEHOLDER)
+
+    // legacy Transaction wire: [sigCount][sigs...64B][numReqSig][roSigned][roUnsigned]
+    //   [acctKeyCount][acctKeys...32B][recentBlockhash 32B][instructions...]
+    const bytes = base58.decode(case1.transaction)
+    let { value: sigCount, next: pos } = readCompactU16(bytes, 0)
+    expect(sigCount).toBeGreaterThan(0)
+    pos += sigCount * 64 // skip signature placeholders
+
+    pos += 3 // numRequiredSignatures / numReadonlySigned / numReadonlyUnsigned
+    const { value: acctCount, next: acctStart } = readCompactU16(bytes, pos)
+    expect(acctCount).toBeGreaterThan(0)
+    pos = acctStart
+
+    const feePayerBytes = bytes.subarray(pos, pos + 32)
+    pos += acctCount * 32
+    const recentBlockhashBytes = bytes.subarray(pos, pos + 32)
+
+    const feePayerB58 = base58.encode(feePayerBytes)
+    const recentBlockhashB58 = base58.encode(recentBlockhashBytes)
+    expect(feePayerB58).not.toBe(SOL_PLACEHOLDER)
+    expect(recentBlockhashB58).not.toBe(SOL_PLACEHOLDER)
+
+    // 나머지 plain-JSON Solana preset(Case 2a-d)도 feePayer/signer/recentBlockhash가
+    // real-format 값으로 교체됨 (programId=SystemProgram은 프로토콜 상수라 예외 — 아래 별도 단언)
+    ;['sol-transfer', 'sol-transfer-data-hex', 'sol-transfer-data-base58', 'sol-transfer-data-bytes'].forEach((id) => {
+      const tx = byId(id)!.transaction
+      expect(tx.feePayer).not.toBe(SOL_PLACEHOLDER)
+      expect(tx.recentBlockhash).not.toBe(SOL_PLACEHOLDER)
+      const signerKey = tx.instructions[0].keys.find((k: any) => k.isSigner)
+      expect(signerKey.pubkey).not.toBe(SOL_PLACEHOLDER)
+      // SystemProgram.Transfer의 programId는 프로토콜 상수(base58(32 zero bytes))라 보존됨 — placeholder 아님
+      expect(tx.instructions[0].programId).toBe(SOL_PLACEHOLDER)
+    })
+
+    // Case 3 (wm-internal) — sender/recentBlockhash real-format
+    const case3 = byId('sol-transfer-internal')!.transaction
+    expect(case3.sender).not.toBe(SOL_PLACEHOLDER)
+    expect(case3.recentBlockhash).not.toBe(SOL_PLACEHOLDER)
+
+    // sol-spl-transfer — feePayer/ATA×2/owner/recentBlockhash real-format
+    const spl = byId('sol-spl-transfer')!.transaction
+    expect(spl.feePayer).not.toBe(SOL_PLACEHOLDER)
+    expect(spl.recentBlockhash).not.toBe(SOL_PLACEHOLDER)
+    spl.instructions[0].keys.forEach((k: any) => {
+      expect(k.pubkey).not.toBe(SOL_PLACEHOLDER)
+    })
+  })
+
+  it('T-BLOB-SHAPE-01: Hedera/Tezos — extra.unsignedTxBytes 관례(unsignedTx 필드) 존재', () => {
+    // Hedera는 이미 준비됨(m09-04-25 이전) — 회귀 가드
+    const hedera = byId('hedera-unsigned-passthrough')
+    expect(hedera).toBeDefined()
+    expect(typeof hedera.transaction.unsignedTx).toBe('string')
+    expect(hedera.transaction.unsignedTx).toMatch(/^[0-9a-fA-F]+$/)
+
+    // Tezos — 신규 blob preset (Hedera 필드명 재사용, 신규 필드 0)
+    const tezos = byId('tezos-unsigned-passthrough')
+    expect(tezos).toBeDefined()
+    expect(tezos.family).toBe('tezos')
+    expect(typeof tezos.transaction.unsignedTx).toBe('string')
+    expect(tezos.transaction.unsignedTx).toMatch(/^[0-9a-fA-F]+$/)
+    expect(tezos.transaction.unsignedTx.length).toBeGreaterThan(64) // branch(32B)+contents 이상
+  })
+
+  it('T-BLOB-SHAPE-01: Stellar {xdr} — 이미 준비됨(회귀 가드)', () => {
+    const stellar = byId('stellar-xdr-passthrough-blind-sign')
+    expect(stellar).toBeDefined()
+    expect(typeof stellar.transaction.xdr).toBe('string')
+  })
+
+  it('T-BLOB-REMOVE-01: form-D/structured-token descriptor preset 제거됨 (Solana/Stellar/Hedera/Tezos)', () => {
+    const removedIds = [
+      'sol-spl-descriptor-transfer',
+      'stellar-issued-asset-descriptor-transfer',
+      'hedera-hts-descriptor-transfer',
+      'tezos-fa12-descriptor-transfer',
+      'tezos-fa2-descriptor-transfer',
+      'tezos-fa12-ghostnet-descriptor-transfer',
+      'tezos-fa2-ghostnet-descriptor-transfer',
+    ]
+    removedIds.forEach((id) => {
+      expect(byId(id)).toBeUndefined()
+    })
+
+    // 파일 전체 텍스트 레벨에서도 제거된 id가 재등장하지 않아야 함(nav/리스트 잔존 가드)
+    const raw = fs.readFileSync(presetsPath, 'utf8')
+    removedIds.forEach((id) => {
+      expect(raw).not.toContain(`"id": "${id}"`)
+    })
+  })
+})

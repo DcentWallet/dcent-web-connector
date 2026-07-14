@@ -12,6 +12,7 @@
  */
 import * as fs from 'fs'
 import * as path from 'path'
+import { base58 } from '@scure/base'
 
 // ── Playground 로드 helper ──────────────────────────────────────────────────
 function loadPlayground(): void {
@@ -1292,4 +1293,111 @@ it('T-U-CARDANO-01: ada-transfer preset 제거됨 + ada-cbor-signtx(CBOR) 유지
   expect(adaCbor).toBeDefined()
   expect(adaCbor.family).toBe('cardano')
   expect(adaCbor.transaction).toHaveProperty('txCbor')
+})
+
+// ─────────────────────────────────────────────────────────────────────────────
+// T-PRESET-COMPLETE-01 / T-PRESET-FIELDSHAPE-01 (m09-04-24)
+// wm no-network(pure-signer) 계약: ①prepare-skip / ③marker-consume / ②boundary family
+// preset이 완성 consensus 필드를 담아야 wm이 -32602 없이 서명한다. connector preset은
+// 만료성 live 값이 아닌 "대표값(유효 형식)"만 책임 — 서명 시점 실값 주입은 bridge/wm 담당.
+// 여기서는 non-evm.json의 NEAR/Havah/Vechain/Constellation/Stacks/Ripple/Xahau family의
+// field presence + 값 형식만 단언. (Cosmos/Tron/Algorand/Conflux는 signtx-rest 테스트 담당.)
+// ─────────────────────────────────────────────────────────────────────────────
+describe('T-PRESET no-network 완성 필드 (non-evm)', () => {
+  const presetsPath = path.resolve(__dirname, '../../../playground/presets.non-evm.json')
+  const PRESETS: any[] = JSON.parse(fs.readFileSync(presetsPath, 'utf8'))
+  const byId = (id: string) => PRESETS.find((p) => p.id === id)
+  // top-level nonce+fee 보유 Stacks preset(전 preset) — sip010-transfer는 신규 추가, descriptor는 기존 보유.
+  const STACKS_IDS = ['stacks-sip010-transfer', 'stacks-sip010-descriptor-transfer']
+
+  it('T-PRESET-COMPLETE-01(non-evm): NEAR/Havah/Vechain/Constellation/Stacks/XRP 완성 필드 포함', () => {
+    // NEAR ① — nonce + blockHash + publicKey (native+ft 모두)
+    ;['near-transfer', 'near-transfer-testnet', 'near-ft-transfer', 'near-ft-transfer-unregistered'].forEach((id) => {
+      const tx = byId(id)!.transaction
+      expect(tx).toHaveProperty('nonce')
+      expect(tx).toHaveProperty('blockHash')
+      expect(tx).toHaveProperty('publicKey')
+    })
+
+    // Havah ① — stepPrice + stepLimit (fee=0 placeholder 대체)
+    ;['havah-transfer', 'havah-hsp20-transfer', 'havah-hsp20-descriptor-transfer'].forEach((id) => {
+      const tx = byId(id)!.transaction
+      expect(tx).toHaveProperty('stepPrice')
+      expect(tx).toHaveProperty('stepLimit')
+    })
+
+    // Vechain ③ — blockRef (0x0000… placeholder 금지)
+    const vet = byId('vechain-vip180-transfer')!.transaction
+    expect(vet.blockRef).toBeTruthy()
+    expect(vet.blockRef).not.toBe('0x0000000000000000')
+
+    // Constellation ③ — lastRef{ordinal,hash}
+    ;['dag-transfer', 'dag-dor-metagraph-transfer', 'dag-custom-metagraph-transfer'].forEach((id) => {
+      const tx = byId(id)!.transaction
+      expect(tx).toHaveProperty('lastRef')
+      expect(tx.lastRef).toHaveProperty('ordinal')
+      expect(tx.lastRef).toHaveProperty('hash')
+    })
+
+    // Stacks ① — top-level nonce + fee (sip010-transfer에 신규 추가; descriptor는 기존 보유 — 회귀 가드)
+    STACKS_IDS.forEach((id) => {
+      const stx = byId(id)!.transaction
+      expect(stx).toHaveProperty('nonce')
+      expect(stx).toHaveProperty('fee')
+    })
+
+    // Ripple/Xahau ② — LastLedgerSequence + Sequence
+    ;['xrp-payment', 'xrp-iou-payment', 'xrp-accountset', 'xrp-trustset', 'xahau-payment'].forEach((id) => {
+      const tx = byId(id)!.transaction
+      expect(tx).toHaveProperty('LastLedgerSequence')
+      expect(tx).toHaveProperty('Sequence')
+    })
+  })
+
+  it('T-PRESET-FIELDSHAPE-01(non-evm): 신규/변경 필드 값 형식 정합', () => {
+    const ED25519_B58_RE = /^ed25519:[1-9A-HJ-NP-Za-km-z]{43,44}$/ // base58, 32-byte access-key
+    const HEX_RE = /^0x[0-9a-fA-F]+$/
+    const HEX64_RE = /^[0-9a-fA-F]{64}$/
+    const BLOCKREF_RE = /^0x[0-9a-fA-F]{16}$/
+
+    // NEAR publicKey = ed25519: + base58(32 bytes). 전 preset 검증 + base58 decode로 정확히 32바이트.
+    ;['near-transfer', 'near-transfer-testnet', 'near-ft-transfer', 'near-ft-transfer-unregistered'].forEach((id) => {
+      const pk: string = byId(id)!.transaction.publicKey
+      expect(pk).toMatch(ED25519_B58_RE)
+      expect(base58.decode(pk.slice('ed25519:'.length)).length).toBe(32)
+    })
+
+    // Havah stepPrice = 0x-hex > 0 (전 preset)
+    ;['havah-transfer', 'havah-hsp20-transfer', 'havah-hsp20-descriptor-transfer'].forEach((id) => {
+      const sp: string = byId(id)!.transaction.stepPrice
+      expect(sp).toMatch(HEX_RE)
+      expect(parseInt(sp, 16)).toBeGreaterThan(0)
+    })
+
+    // Constellation lastRef.ordinal = number, hash = 64-hex (전 preset)
+    ;['dag-transfer', 'dag-dor-metagraph-transfer', 'dag-custom-metagraph-transfer'].forEach((id) => {
+      const ref = byId(id)!.transaction.lastRef
+      expect(typeof ref.ordinal).toBe('number')
+      expect(ref.hash).toMatch(HEX64_RE)
+    })
+
+    // Ripple/Xahau LastLedgerSequence + Sequence = 양의 정수 (전 preset)
+    ;['xrp-payment', 'xrp-iou-payment', 'xrp-accountset', 'xrp-trustset', 'xahau-payment'].forEach((id) => {
+      const tx = byId(id)!.transaction
+      expect(Number.isInteger(tx.LastLedgerSequence)).toBe(true)
+      expect(tx.LastLedgerSequence).toBeGreaterThan(0)
+      expect(Number.isInteger(tx.Sequence)).toBe(true)
+      expect(tx.Sequence).toBeGreaterThan(0)
+    })
+
+    // Vechain blockRef = 0x + 16 hex (8 bytes)
+    expect(byId('vechain-vip180-transfer')!.transaction.blockRef).toMatch(BLOCKREF_RE)
+
+    // Stacks top-level nonce/fee = decimal string (전 preset)
+    STACKS_IDS.forEach((id) => {
+      const stx = byId(id)!.transaction
+      expect(String(stx.nonce)).toMatch(/^\d+$/)
+      expect(String(stx.fee)).toMatch(/^\d+$/)
+    })
+  })
 })

@@ -231,8 +231,9 @@
       "Destination": "rPT1Sjq2YGrBMTttX4GZHjKu9dyfzbpAYe",
       "Amount": "1000000",
       "Fee": "12",
-      "Sequence": 1,
-      "Flags": 2147483648
+      "Sequence": 42,
+      "Flags": 2147483648,
+      "LastLedgerSequence": 85000000
     }
   },
   {
@@ -251,8 +252,9 @@
       "Destination": "rPT1Sjq2YGrBMTttX4GZHjKu9dyfzbpAYe",
       "Amount": "1000000",
       "Fee": "12",
-      "Sequence": 1,
-      "Flags": 2147483648
+      "Sequence": 42,
+      "Flags": 2147483648,
+      "LastLedgerSequence": 85000000
     }
   },
   {
@@ -459,7 +461,8 @@
       "recipient": "receiver.near",
       "amount": "1000000000000000000000000",
       "blockHash": "GJp9NRJGBnXqWJAKFxkzD8p9cJTiSNi1J3UWKVBbcfRw",
-      "publicKey": "ed25519:11111111111111111111111111111111"
+      "publicKey": "ed25519:BtCjvJYNeN8RoVze7WTsgxN64g3ckSUAwQWNJjdzthwV",
+      "nonce": 112247371000042
     }
   },
   {
@@ -482,7 +485,8 @@
       "recipient": "receiver.testnet",
       "amount": "1000000000000000000000000",
       "blockHash": "GJp9NRJGBnXqWJAKFxkzD8p9cJTiSNi1J3UWKVBbcfRw",
-      "publicKey": "ed25519:11111111111111111111111111111111"
+      "publicKey": "ed25519:BtCjvJYNeN8RoVze7WTsgxN64g3ckSUAwQWNJjdzthwV",
+      "nonce": 112247371000042
     }
   },
   {
@@ -500,7 +504,11 @@
       "source": "DAG0000000000000000000000000000000000000000",
       "destination": "DAG0000000000000000000000000000000000000001",
       "amount": "100000000",
-      "fee": "0"
+      "fee": "0",
+      "lastRef": {
+        "ordinal": 1024,
+        "hash": "58ba6390b751a9e04edea64ada97024798e91519983a94f5992d6a3fd72953b1"
+      }
     }
   },
   {
@@ -520,7 +528,8 @@
       "stepLimit": "0x186a0",
       "nid": "0x100",
       "nonce": "0x1",
-      "version": "0x3"
+      "version": "0x3",
+      "stepPrice": "0x2e90edd000"
     }
   },
   {
@@ -547,7 +556,8 @@
           "_to": "hx99bc2f9ee6aea6f9ed252e3dc48f6a7fdc9e916c",
           "_value": "0xDE0B6B3A7640001"
         }
-      }
+      },
+      "stepPrice": "0x2e90edd000"
     }
   },
   {
@@ -561,7 +571,7 @@
     "sourceUrl": "https://docs.vechain.org/introduction-to-vechain/dual-token-economic-model/vethor-vtho",
     "transaction": {
       "chainTag": 74,
-      "blockRef": "0x0000000000000000",
+      "blockRef": "0x00b3c1e4a5f6d7e8",
       "expiration": 720,
       "clauses": [
         {
@@ -633,8 +643,9 @@
         "value": "10"
       },
       "Fee": "12",
-      "Sequence": 1,
-      "Flags": 2147483648
+      "Sequence": 42,
+      "Flags": 2147483648,
+      "LastLedgerSequence": 85000000
     }
   },
   {
@@ -664,7 +675,8 @@
         }
       ],
       "blockHash": "GJp9NRJGBnXqWJAKFxkzD8p9cJTiSNi1J3UWKVBbcfRw",
-      "nonce": 0
+      "nonce": 112247371000042,
+      "publicKey": "ed25519:BtCjvJYNeN8RoVze7WTsgxN64g3ckSUAwQWNJjdzthwV"
     }
   },
   {
@@ -694,7 +706,8 @@
         }
       ],
       "blockHash": "GJp9NRJGBnXqWJAKFxkzD8p9cJTiSNi1J3UWKVBbcfRw",
-      "nonce": 0
+      "nonce": 112247371000042,
+      "publicKey": "ed25519:BtCjvJYNeN8RoVze7WTsgxN64g3ckSUAwQWNJjdzthwV"
     }
   },
   {
@@ -758,7 +771,9 @@
         "SP3FBR2AGK5H9QBDH3EEN6DF8EK8JY7RX8QJ5SVTE",
         "SP3FBR2AGK5H9QBDH3EEN6DF8EK8JY7RX8QJ5SVTE",
         ""
-      ]
+      ],
+      "nonce": "0",
+      "fee": "180"
     }
   },
   {
@@ -954,7 +969,8 @@
       "stepLimit": "0x186a0",
       "nid": "0x100",
       "nonce": "0x1",
-      "version": "0x3"
+      "version": "0x3",
+      "stepPrice": "0x2e90edd000"
     }
   },
   {
@@ -1207,6 +1223,10 @@
         "contract": "DAG0CyySf35ftDQDQBnd1bdQ9aPyUdacMghpnCuM",
         "decimals": 8,
         "symbol": "DOR"
+      },
+      "lastRef": {
+        "ordinal": 1024,
+        "hash": "58ba6390b751a9e04edea64ada97024798e91519983a94f5992d6a3fd72953b1"
       }
     }
   },
@@ -1229,6 +1249,10 @@
         "contract": "DAG5UnregisteredMetagraphIdZZZZZZZZZZZZZZ",
         "decimals": 8,
         "symbol": "UNREG"
+      },
+      "lastRef": {
+        "ordinal": 1024,
+        "hash": "58ba6390b751a9e04edea64ada97024798e91519983a94f5992d6a3fd72953b1"
       }
     }
   },
@@ -1265,9 +1289,10 @@
       "TransactionType": "AccountSet",
       "Account": "rHb9CJAWyB4rj91VRWn96DkukG4bwdtyTh",
       "Fee": "12",
-      "Sequence": 1,
+      "Sequence": 42,
       "SetFlag": 1,
-      "Flags": 2147483648
+      "Flags": 2147483648,
+      "LastLedgerSequence": 85000000
     }
   },
   {
@@ -1283,13 +1308,14 @@
       "TransactionType": "TrustSet",
       "Account": "rHb9CJAWyB4rj91VRWn96DkukG4bwdtyTh",
       "Fee": "12",
-      "Sequence": 1,
+      "Sequence": 42,
       "Flags": 2147483648,
       "LimitAmount": {
         "currency": "USD",
         "issuer": "rvYAfWj5gh67oV6fW32ZzP3Aw4Eubs59B",
         "value": "1000"
-      }
+      },
+      "LastLedgerSequence": 85000000
     }
   },
   {

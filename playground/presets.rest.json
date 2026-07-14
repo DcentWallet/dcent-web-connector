@@ -132,10 +132,10 @@
     "applicableChainIds": [
       "polkadot:91b171bb158e2d3848fa23a9f1c25182/slip44:354"
     ],
-    "note": "Polkadot balances.transfer extrinsic. args[0]=수신자 주소, args[1]=금액(Planck, 1 DOT = 1e10). ⚠️ wm convertTransaction은 method/args[0]/args[1]만 소비 — era/specVersion/transactionVersion/blockHash/genesisHash는 무시(dead, sign 시 wm가 live getPolkadotApi로 nonce/fee/era 재도출). sender 계정은 keyPath에서 도출(노드 도달 필요). args[0]은 디바이스 DOT 자기 주소 14dyYY72MDtfxAAjFnqwCR3YihV5UrqzMjEAf1ABXJ4vzLZj (self-send). 실서명 검증은 짝 m09-04-13(swproxy e2e).",
+    "note": "⚠️ `balances.transfer` 는 라이브 런타임에 **존재하지 않는다** — Substrate 가 제거하고 `transferAllowDeath` 로 대체했다(실측 2026-07-14: polkadot spec 2003000 / astar spec 2207 의 `balances.*` = transferAllowDeath·transferKeepAlive·transferAll·forceTransfer… — `transfer` 없음). Polkadot balances.transferAllowDeath extrinsic. args[0]=수신자 주소, args[1]=금액(Planck, 1 DOT = 1e10). ⚠️ wm convertTransaction은 method/args[0]/args[1]만 소비 — era/specVersion/transactionVersion/blockHash/genesisHash는 무시(dead, sign 시 wm가 live getPolkadotApi로 nonce/fee/era 재도출). sender 계정은 keyPath에서 도출(노드 도달 필요). args[0]은 디바이스 DOT 자기 주소 14dyYY72MDtfxAAjFnqwCR3YihV5UrqzMjEAf1ABXJ4vzLZj (self-send). 실서명 검증은 짝 m09-04-13(swproxy e2e).",
     "sourceUrl": "https://github.com/polkadot-js/api",
     "transaction": {
-      "method": "balances.transfer",
+      "method": "balances.transferAllowDeath",
       "args": [
         "14dyYY72MDtfxAAjFnqwCR3YihV5UrqzMjEAf1ABXJ4vzLZj",
         "1000000000000"
@@ -549,10 +549,10 @@
     "applicableChainIds": [
       "polkadot:9eb76c5184c4ab8679d2d5d819fdf90b/slip44:810"
     ],
-    "note": "Astar ASTR transfer — wm convertTransaction은 method/args[0]/args[1]만 소비(era/specVersion/blockHash/genesisHash는 wm가 live api로 재도출하므로 preset에서 생략 — sidechain에 mainnet identity auto-fill 방지, 1d4201c 가드). args[0]=SS58(prefix 5) 자기주소 self-send(ZaGqVp3GgGJjTC3nTF45vNfx8CYkmzbJRzpjRNgqa3NQ4r3, DOT 키 재인코딩), args[1]=Planck(decimals 18, 1 token=1e18). applicableChainIds 단일-체인. 실서명 검증은 짝 m09-04-13.",
+    "note": "⚠️ `balances.transfer` 는 라이브 런타임에 **존재하지 않는다** — Substrate 가 제거하고 `transferAllowDeath` 로 대체했다(실측 2026-07-14: polkadot spec 2003000 / astar spec 2207 의 `balances.*` = transferAllowDeath·transferKeepAlive·transferAll·forceTransfer… — `transfer` 없음). Astar ASTR transfer — wm convertTransaction은 method/args[0]/args[1]만 소비(era/specVersion/blockHash/genesisHash는 wm가 live api로 재도출하므로 preset에서 생략 — sidechain에 mainnet identity auto-fill 방지, 1d4201c 가드). args[0]=SS58(prefix 5) 자기주소 self-send(ZaGqVp3GgGJjTC3nTF45vNfx8CYkmzbJRzpjRNgqa3NQ4r3, DOT 키 재인코딩), args[1]=Planck(decimals 18, 1 token=1e18). applicableChainIds 단일-체인. 실서명 검증은 짝 m09-04-13.",
     "sourceUrl": "https://github.com/polkadot-js/api",
     "transaction": {
-      "method": "balances.transfer",
+      "method": "balances.transferAllowDeath",
       "args": [
         "ZaGqVp3GgGJjTC3nTF45vNfx8CYkmzbJRzpjRNgqa3NQ4r3",
         "1000000000000000000"
@@ -569,10 +569,10 @@
     "applicableChainIds": [
       "polkadot:ddb89643205c8fe1c79afeb31f48d50f/slip44:810"
     ],
-    "note": "Shibuya SBY transfer — wm convertTransaction은 method/args[0]/args[1]만 소비(era/specVersion/blockHash/genesisHash는 wm가 live api로 재도출하므로 preset에서 생략 — sidechain에 mainnet identity auto-fill 방지, 1d4201c 가드). args[0]=SS58(prefix 5) 자기주소 self-send(ZaGqVp3GgGJjTC3nTF45vNfx8CYkmzbJRzpjRNgqa3NQ4r3, DOT 키 재인코딩), args[1]=Planck(decimals 18, 1 token=1e18). applicableChainIds 단일-체인. 실서명 검증은 짝 m09-04-13.",
+    "note": "⚠️ `balances.transfer` 는 라이브 런타임에 **존재하지 않는다** — Substrate 가 제거하고 `transferAllowDeath` 로 대체했다(실측 2026-07-14: polkadot spec 2003000 / astar spec 2207 의 `balances.*` = transferAllowDeath·transferKeepAlive·transferAll·forceTransfer… — `transfer` 없음). Shibuya SBY transfer — wm convertTransaction은 method/args[0]/args[1]만 소비(era/specVersion/blockHash/genesisHash는 wm가 live api로 재도출하므로 preset에서 생략 — sidechain에 mainnet identity auto-fill 방지, 1d4201c 가드). args[0]=SS58(prefix 5) 자기주소 self-send(ZaGqVp3GgGJjTC3nTF45vNfx8CYkmzbJRzpjRNgqa3NQ4r3, DOT 키 재인코딩), args[1]=Planck(decimals 18, 1 token=1e18). applicableChainIds 단일-체인. 실서명 검증은 짝 m09-04-13.",
     "sourceUrl": "https://github.com/polkadot-js/api",
     "transaction": {
-      "method": "balances.transfer",
+      "method": "balances.transferAllowDeath",
       "args": [
         "ZaGqVp3GgGJjTC3nTF45vNfx8CYkmzbJRzpjRNgqa3NQ4r3",
         "1000000000000000000"
@@ -589,10 +589,10 @@
     "applicableChainIds": [
       "polkadot:6673c7e2c2b7bde45a60c71ef70d9c7c/slip44:354"
     ],
-    "note": "Creditcoin CTC transfer — wm convertTransaction은 method/args[0]/args[1]만 소비(era/specVersion/blockHash/genesisHash는 wm가 live api로 재도출하므로 preset에서 생략 — sidechain에 mainnet identity auto-fill 방지, 1d4201c 가드). args[0]=SS58(prefix 42) 자기주소 self-send(5FhgQCqxVSdCWdADJ9nw4GDPs5VRnZHrHEVgViApyD3Qp1TZ, DOT 키 재인코딩), args[1]=Planck(decimals 18, 1 token=1e18). applicableChainIds 단일-체인. 실서명 검증은 짝 m09-04-13.",
+    "note": "⚠️ `balances.transfer` 는 라이브 런타임에 **존재하지 않는다** — Substrate 가 제거하고 `transferAllowDeath` 로 대체했다(실측 2026-07-14: polkadot spec 2003000 / astar spec 2207 의 `balances.*` = transferAllowDeath·transferKeepAlive·transferAll·forceTransfer… — `transfer` 없음). Creditcoin CTC transfer — wm convertTransaction은 method/args[0]/args[1]만 소비(era/specVersion/blockHash/genesisHash는 wm가 live api로 재도출하므로 preset에서 생략 — sidechain에 mainnet identity auto-fill 방지, 1d4201c 가드). args[0]=SS58(prefix 42) 자기주소 self-send(5FhgQCqxVSdCWdADJ9nw4GDPs5VRnZHrHEVgViApyD3Qp1TZ, DOT 키 재인코딩), args[1]=Planck(decimals 18, 1 token=1e18). applicableChainIds 단일-체인. 실서명 검증은 짝 m09-04-13.",
     "sourceUrl": "https://github.com/polkadot-js/api",
     "transaction": {
-      "method": "balances.transfer",
+      "method": "balances.transferAllowDeath",
       "args": [
         "5FhgQCqxVSdCWdADJ9nw4GDPs5VRnZHrHEVgViApyD3Qp1TZ",
         "1000000000000000000"
@@ -609,10 +609,10 @@
     "applicableChainIds": [
       "polkadot:8a2e8af69a7892d2e60a77e3df4e0fa0/slip44:354"
     ],
-    "note": "Creditcoin Testnet CTC transfer — wm convertTransaction은 method/args[0]/args[1]만 소비(era/specVersion/blockHash/genesisHash는 wm가 live api로 재도출하므로 preset에서 생략 — sidechain에 mainnet identity auto-fill 방지, 1d4201c 가드). args[0]=SS58(prefix 42) 자기주소 self-send(5FhgQCqxVSdCWdADJ9nw4GDPs5VRnZHrHEVgViApyD3Qp1TZ, DOT 키 재인코딩), args[1]=Planck(decimals 18, 1 token=1e18). applicableChainIds 단일-체인. 실서명 검증은 짝 m09-04-13.",
+    "note": "⚠️ `balances.transfer` 는 라이브 런타임에 **존재하지 않는다** — Substrate 가 제거하고 `transferAllowDeath` 로 대체했다(실측 2026-07-14: polkadot spec 2003000 / astar spec 2207 의 `balances.*` = transferAllowDeath·transferKeepAlive·transferAll·forceTransfer… — `transfer` 없음). Creditcoin Testnet CTC transfer — wm convertTransaction은 method/args[0]/args[1]만 소비(era/specVersion/blockHash/genesisHash는 wm가 live api로 재도출하므로 preset에서 생략 — sidechain에 mainnet identity auto-fill 방지, 1d4201c 가드). args[0]=SS58(prefix 42) 자기주소 self-send(5FhgQCqxVSdCWdADJ9nw4GDPs5VRnZHrHEVgViApyD3Qp1TZ, DOT 키 재인코딩), args[1]=Planck(decimals 18, 1 token=1e18). applicableChainIds 단일-체인. 실서명 검증은 짝 m09-04-13.",
     "sourceUrl": "https://github.com/polkadot-js/api",
     "transaction": {
-      "method": "balances.transfer",
+      "method": "balances.transferAllowDeath",
       "args": [
         "5FhgQCqxVSdCWdADJ9nw4GDPs5VRnZHrHEVgViApyD3Qp1TZ",
         "1000000000000000000"
@@ -707,10 +707,10 @@
     "applicableChainIds": [
       "polkadot:91b171bb158e2d3848fa23a9f1c25182/slip44:354"
     ],
-    "note": "★blind-sign 패스스루 — WIRE-NONETWORK-SDK-CHANGES-2026-07-13.md §2 Polkadot row: 신규 `extra.scaleHex` 필드(SCALE-encoded unsigned call/extrinsic body). Polkadot은 다른 blob family(Stellar xdr/Hedera·Tezos unsignedTx)와 달리 완전 blind-sign이 아니라 partial — wm이 여전히 표시-안전(display-safety) metadata/header RPC(runtime spec/genesis 등)를 수행할 수 있음(consensus-autofill인 nonce/era/blockHash는 안 함). 【payload key = `extra.scaleHex`(신규, method/args와 병행 — method/args는 표시용, 실 서명 바이트는 scaleHex가 authoritative)】. 아래 hex는 대표-포맷(representative-format) balances.transfer call(module=5/call=0 대표 index, amount=1000000000000=1 DOT) SCALE 인코딩 — 실 런타임 call index는 체인마다 다를 수 있음(대표값). dest AccountId32는 args[0](dot-transfer와 동일 self-send SS58 주소)의 SS58-디코드 pubkey와 byte-identical(display↔authoritative 일치, 크로스리뷰 회귀 가드 — 별도 파생값 사용 금지). nonce/tip은 app 제공 유지. 실 서명 검증은 sdk sibling swproxy 하네스(conditional, m09-05-11)에서 확인. broadcast 안 함.",
+    "note": "★blind-sign 패스스루 — `WIRE-NONETWORK-SDK-CHANGES-2026-07-13.md` §2 Polkadot row. 【payload key = `extra.scaleHex`】 SCALE-encoded unsigned call. method/args 는 **표시용**이고 실 서명 바이트는 scaleHex 가 authoritative — wm convert 가 scaleHex 를 우선 채택한다(DC-3217). Polkadot 은 다른 blob family(Stellar xdr / Hedera·Tezos unsignedTx)와 달리 완전 blind-sign 이 아니라 **partial** — wm 이 표시-안전(display-safety) metadata/header RPC 는 계속 수행한다(consensus-autofill 인 nonce/era/blockHash 는 안 함). ⚠️ **blob 은 체인별 인코딩이다 — 대표값이 아니다.** call 앞 2바이트 = (pallet index, call index) 인데 pallet index 가 런타임마다 다르다. 아래 hex 는 **wm 의 POLKADOT provider 가 실제로 붙는 체인**(Polkadot **Asset Hub**/statemint — Asset Hub Migration 이후 balances 가 여기로 이전, blockExplorerUrl 도 assethub-polkadot.subscan.io) 기준 `balances.transferAllowDeath` 인코딩이다: `0x0a00…`(Asset Hub Balances=pallet 10). 같은 바이트가 **릴레이 체인에선 pallet 5=Balances** 라 릴레이 인코딩(`0x0500…`)을 넣으면 Asset Hub 에선 **`preimage.notePreimage` 로 디코드**되어 전혀 다른 call 이 서명된다(실측 2026-07-14). amount=1000000000000(=1 DOT), dest AccountId32 는 args[0](dot-transfer 와 동일 self-send SS58 주소)의 SS58-디코드 pubkey 와 byte-identical(display↔authoritative 일치 — 별도 파생값 사용 금지). nonce/tip 은 app 제공 유지. 실 서명 검증은 sdk sibling swproxy 하네스(m09-05-11). broadcast 안 함.",
     "sourceUrl": "https://github.com/polkadot-js/api",
     "transaction": {
-      "method": "balances.transfer",
+      "method": "balances.transferAllowDeath",
       "args": [
         "14dyYY72MDtfxAAjFnqwCR3YihV5UrqzMjEAf1ABXJ4vzLZj",
         "1000000000000"
@@ -718,7 +718,7 @@
       "nonce": 0,
       "tip": 0,
       "extra": {
-        "scaleHex": "0x050000a0e7e0c97fddb687bb4e3a9b20a47314320c3b4b124c829a1e65b705dd0edb31070010a5d4e8"
+        "scaleHex": "0x0a0000a0e7e0c97fddb687bb4e3a9b20a47314320c3b4b124c829a1e65b705dd0edb31070010a5d4e8"
       }
     }
   }

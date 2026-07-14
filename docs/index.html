@@ -2122,29 +2122,52 @@ dcent.setTransport('hid')   // WebHID over USB — or 'ble' for Bluetooth</pre><
 
 <script>
 DOC.register('get-publickey',{title:'getPublicKey',breadcrumb:'<span>Core API</span> / Account API / getPublicKey',bcko:'<span>Core API</span> / Account API / getPublicKey',
-search:'getPublicKey publicKey payment stake drep cardano governance keyPath account public key cip1852',html:`
+search:'getPublicKey publicKey payment stake drep cardano governance keyPath account public key cip1852 universal all chains single key ed25519 secp256k1',html:`
 <h1 class="pt">getPublicKey</h1>
-<p class="lede">Retrieves the account public keys for <strong>Cardano</strong> — the <code>payment</code>, <code>stake</code>, and <code>drep</code> (governance) keys in a single call. This verb was split out of <code>getAddress</code>, which no longer returns any public key: <code>getAddress</code> now returns the address plus a <code>rewardAddress</code> (stake address).</p>
-<div class="metaband">
-  <div class="cell"><div class="k">Chains</div><div class="val">Cardano</div></div>
-  <div class="cell"><div class="k">Input</div><div class="val">{ chainId, keyPath, addressFormat? }</div></div>
-  <div class="cell"><div class="k">Default keyPath</div><div class="val">m/44'/1815'/<span class=tok-acc>&lt;accountIdx&gt;</span>'/0/0</div></div>
-</div>
-<div class="note info"><span class="ni">i</span><div>D'CENT's Cardano derives on <strong>purpose 44'</strong> (<code>m/44'/1815'/…</code>), matching its getAddress path — <em>not</em> CIP-1852 <code>1852'</code>. The <code>1852'</code> purpose is reserved for future / external CIP-1852 key paths a dApp may pass explicitly.</div></div><div class="note delta"><span class="ni">◆</span><div><strong>Currently Cardano only.</strong> Other chains return <code>method_not_found</code> (-32601). The connector and wire are chain-agnostic (no chain branching), so public-key support for other families can be added later with <strong>no connector change</strong> — this is a documented extension point.</div></div>
+<p class="lede">Retrieves account public keys for <strong>any supported chain</strong>. Most chains return a single <code>{ keyPath, publicKey }</code> for the path you asked for; <strong>Cardano</strong> returns its <code>payment</code>, <code>stake</code> and <code>drep</code> (governance) keys as a bundle in one call. This verb was split out of <code>getAddress</code>, which no longer returns any public key: <code>getAddress</code> now returns the address plus a <code>rewardAddress</code> (stake address — Cardano only).</p>
+<div class="note info"><span class="ni">i</span><div>D'CENT's Cardano derives on <strong>purpose 44'</strong> (<code>m/44'/1815'/…</code>), matching its getAddress path — <em>not</em> CIP-1852 <code>1852'</code>. The <code>1852'</code> purpose is reserved for future / external CIP-1852 key paths a dApp may pass explicitly.</div></div><div class="note delta"><span class="ni">◆</span><div><strong>All families are supported.</strong> The response is a union of two shapes — <strong>Cardano</strong> returns the <code>{ payment, stake, drep }</code> role bundle, every other family returns a single <code>{ keyPath, publicKey }</code>. Branch on the <code>chainId</code> you passed in. <em>Previously this verb was Cardano-only and other chains returned <code>method_not_found</code> (-32601); that is no longer the case.</em></div></div>
+<h2>Requirements</h2>
+<p>Minimum <strong>D'CENT Biometric Wallet</strong> firmware for each method. Below this the request returns the firmware-update error (<code>5005</code>) and the bridge prompts to update.</p>
+<div style="overflow-x:auto"><table class="params"><thead><tr><th>Method</th><th>Min firmware</th></tr></thead><tbody>
+<tr><td><code>getPublicKey</code></td><td><code>2.35.0</code> or higher <span class="muted">— every chain, including Cardano</span></td></tr>
+</tbody></table></div>
 <h2 id="getpublickey-params">Parameters</h2>
 <table class="params"><thead><tr><th>Field</th><th>Type</th><th>Required</th><th>Source</th><th>Description</th></tr></thead><tbody>
-<tr><td><code>chainId</code></td><td class="type">string</td><td><span class="badge b-req">Required</span></td><td><span class="badge b-dapp">App</span></td><td>CAIP-19 chain id — <code>cip34:1-764824073</code> (Cardano)</td></tr>
-<tr><td><code>keyPath</code></td><td class="type">string</td><td><span class="badge b-req">Required</span></td><td><span class="badge b-dapp">App</span></td><td>Account BIP32 path. D'CENT default <code>m/44'/1815'/0'/0/0</code></td></tr>
-<tr><td><code>addressFormat?</code></td><td class="type">enum</td><td><span class="badge b-opt">Optional</span></td><td><span class="badge b-dapp">App</span></td><td>Reserved — Cardano has no address-format variants</td></tr>
+<tr><td><code>chainId</code></td><td class="type">string</td><td><span class="badge b-req">Required</span></td><td><span class="badge b-dapp">App</span></td><td>CAIP-19 chain id of any supported chain — e.g. <code>eip155:1/slip44:60</code>, <code>cip34:1-764824073</code> (Cardano)</td></tr>
+<tr><td><code>keyPath</code></td><td class="type">string</td><td><span class="badge b-req">Required</span></td><td><span class="badge b-dapp">App</span></td><td>BIP32 path of the key to fetch. Must resolve to a currency for this <code>chainId</code>, otherwise <code>-32602</code>. Cardano default <code>m/44'/1815'/0'/0/0</code></td></tr>
 </tbody></table>
 <div class="io-pair"><div class="io-label">Request</div>
 <div class="code"><div class="cb-head"><span>js</span><button class="copy">Copy</button></div>
-<pre>await dcent.getPublicKey({
+<pre>// Any family — single key
+await dcent.getPublicKey({
+  chainId: 'eip155:1/slip44:60',
+  keyPath: "m/44'/60'/0'/0/0"
+})
+
+// Cardano — role bundle
+await dcent.getPublicKey({
   chainId: 'cip34:1-764824073',
   keyPath: "m/44'/1815'/0'/0/0"
 })</pre></div>
+<div class="io-label">Response — all families except Cardano</div>
+<table class="params"><thead><tr><th>Field</th><th>Type</th><th>Description</th></tr></thead><tbody>
+<tr><td><code>body.command</code></td><td class="type">string</td><td><code>getPublicKey</code></td></tr>
+<tr><td><code>parameter.keyPath</code></td><td class="type">string</td><td>The path you requested, returned verbatim (not re-derived)</td></tr>
+<tr><td><code>parameter.publicKey</code></td><td class="type">string</td><td>Public key hex, no <code>0x</code> prefix. Length/encoding follow the chain's curve (e.g. secp256k1 compressed 33 bytes, ed25519 32 bytes).</td></tr>
+</tbody></table>
+<div class="code"><div class="cb-head"><span>json</span><button class="copy">Copy</button></div>
+<pre>{
+  "header": { "version": "1.0", "status": "success" },
+  "body": {
+    "command": "getPublicKey",
+    "parameter": {
+      "keyPath": "m/44'/60'/0'/0/0",
+      "publicKey": "…"
+    }
+  }
+}</pre></div>
 <div class="io-label">Response — Cardano</div>
-<div class="note info"><span class="ni">i</span><div>The response shape is <strong>chain-specific</strong>, not a fixed type. Cardano returns the <code>{ payment, stake, drep }</code> bundle below; other chains, once supported, may return a different shape — branch on <code>chainId</code> rather than assuming these keys.</div></div>
+<div class="note info"><span class="ni">i</span><div>Cardano is the <strong>only</strong> chain that returns a bundle — it needs three CIP-1852 roles at once (payment 0 / stake 2 / drep 3) so a dApp can build staking and governance requests. The <code>keyPath</code> of each role is <em>re-derived</em> from the account you passed, so the returned paths differ from your input.</div></div>
 <table class="params"><thead><tr><th>Field</th><th>Type</th><th>Description</th></tr></thead><tbody>
 <tr><td><code>body.command</code></td><td class="type">string</td><td><code>getPublicKey</code></td></tr>
 <tr><td><code>parameter.payment</code></td><td class="type">{ keyPath, publicKey }</td><td>Payment (spending) key — role 0 (<code>…/0/0</code>)</td></tr>
@@ -2156,27 +2179,50 @@ search:'getPublicKey publicKey payment stake drep cardano governance keyPath acc
 <div class="related"><a href="#/get-address">→ getAddress</a><a href="#/chain-cardano">→ Cardano</a></div>`,
 ko:`
 <h1 class="pt">getPublicKey</h1>
-<p class="lede"><strong>Cardano</strong> 계정 공개키 — <code>payment</code>, <code>stake</code>, <code>drep</code>(거버넌스) 키를 한 번의 호출로 조회합니다. 이 verb는 <code>getAddress</code>에서 분리되었으며, <code>getAddress</code>는 더 이상 공개키를 반환하지 않습니다(주소 + <code>rewardAddress</code>(stake 주소) 반환).</p>
-<div class="metaband">
-  <div class="cell"><div class="k">Chains</div><div class="val">Cardano</div></div>
-  <div class="cell"><div class="k">Input</div><div class="val">{ chainId, keyPath, addressFormat? }</div></div>
-  <div class="cell"><div class="k">Default keyPath</div><div class="val">m/44'/1815'/<span class=tok-acc>&lt;accountIdx&gt;</span>'/0/0</div></div>
-</div>
-<div class="note info"><span class="ni">i</span><div>D'CENT의 Cardano는 getAddress와 동일하게 <strong>purpose 44'</strong>(<code>m/44'/1815'/…</code>)로 파생합니다 — CIP-1852의 <code>1852'</code>가 <em>아닙니다</em>. <code>1852'</code> purpose는 향후/외부 CIP-1852 keyPath(앱이 명시적으로 전달)를 위해 예약되어 있습니다.</div></div><div class="note delta"><span class="ni">◆</span><div><strong>현재 Cardano 전용.</strong> 다른 체인은 <code>method_not_found</code>(-32601)을 반환합니다. connector와 wire는 chain-agnostic(chain 분기 없음)이라 향후 다른 family의 공개키 지원을 <strong>connector 변경 없이</strong> 추가할 수 있습니다 — 문서화된 확장 지점입니다.</div></div>
+<p class="lede"><strong>모든 지원 체인</strong>의 계정 공개키를 조회합니다. 대부분의 체인은 요청한 경로의 <code>{ keyPath, publicKey }</code> 하나를 반환하고, <strong>Cardano</strong>만 <code>payment</code>·<code>stake</code>·<code>drep</code>(거버넌스) 키를 번들로 한 번에 반환합니다. 이 verb는 <code>getAddress</code>에서 분리되었으며, <code>getAddress</code>는 더 이상 공개키를 반환하지 않습니다(주소 + <code>rewardAddress</code>(stake 주소, Cardano 전용) 반환).</p>
+<div class="note info"><span class="ni">i</span><div>D'CENT의 Cardano는 getAddress와 동일하게 <strong>purpose 44'</strong>(<code>m/44'/1815'/…</code>)로 파생합니다 — CIP-1852의 <code>1852'</code>가 <em>아닙니다</em>. <code>1852'</code> purpose는 향후/외부 CIP-1852 keyPath(앱이 명시적으로 전달)를 위해 예약되어 있습니다.</div></div><div class="note delta"><span class="ni">◆</span><div><strong>모든 family를 지원합니다.</strong> 응답은 두 shape의 union입니다 — <strong>Cardano</strong>는 <code>{ payment, stake, drep }</code> role 번들, <strong>그 외 전 family</strong>는 단일 <code>{ keyPath, publicKey }</code>. 호출 시 넘긴 <code>chainId</code>로 분기하세요. <em>이전에는 Cardano 전용이었고 다른 체인은 <code>method_not_found</code>(-32601)을 반환했으나, 더 이상 그렇지 않습니다.</em></div></div>
+<h2>요구사항</h2>
+<p>메서드별 최소 <strong>D'CENT Biometric Wallet</strong> 펌웨어 버전입니다. 미달 시 펌웨어 업데이트 에러(<code>5005</code>)를 반환하고 브리지가 업데이트를 안내합니다.</p>
+<div style="overflow-x:auto"><table class="params"><thead><tr><th>메서드</th><th>최소 펌웨어</th></tr></thead><tbody>
+<tr><td><code>getPublicKey</code></td><td><code>2.35.0</code> 이상 <span class="muted">— Cardano 포함 전 체인</span></td></tr>
+</tbody></table></div>
 <h2 id="getpublickey-params">파라미터</h2>
 <table class="params"><thead><tr><th>Field</th><th>Type</th><th>Required</th><th>Source</th><th>설명</th></tr></thead><tbody>
-<tr><td><code>chainId</code></td><td class="type">string</td><td><span class="badge b-req">Required</span></td><td><span class="badge b-dapp">App</span></td><td>CAIP-19 chain id — <code>cip34:1-764824073</code> (Cardano)</td></tr>
-<tr><td><code>keyPath</code></td><td class="type">string</td><td><span class="badge b-req">Required</span></td><td><span class="badge b-dapp">App</span></td><td>계정 BIP32 path. D'CENT 기본 <code>m/44'/1815'/0'/0/0</code></td></tr>
-<tr><td><code>addressFormat?</code></td><td class="type">enum</td><td><span class="badge b-opt">Optional</span></td><td><span class="badge b-dapp">App</span></td><td>예약 — Cardano는 주소 형식 변형 없음</td></tr>
+<tr><td><code>chainId</code></td><td class="type">string</td><td><span class="badge b-req">Required</span></td><td><span class="badge b-dapp">App</span></td><td>지원하는 모든 체인의 CAIP-19 chain id — 예: <code>eip155:1/slip44:60</code>, <code>cip34:1-764824073</code>(Cardano)</td></tr>
+<tr><td><code>keyPath</code></td><td class="type">string</td><td><span class="badge b-req">Required</span></td><td><span class="badge b-dapp">App</span></td><td>조회할 키의 BIP32 path. 해당 <code>chainId</code>에서 currency로 해석돼야 하며, 아니면 <code>-32602</code>. Cardano 기본 <code>m/44'/1815'/0'/0/0</code></td></tr>
 </tbody></table>
 <div class="io-pair"><div class="io-label">Request</div>
 <div class="code"><div class="cb-head"><span>js</span><button class="copy">Copy</button></div>
-<pre>await dcent.getPublicKey({
+<pre>// 모든 family — 단일 키
+await dcent.getPublicKey({
+  chainId: 'eip155:1/slip44:60',
+  keyPath: "m/44'/60'/0'/0/0"
+})
+
+// Cardano — role 번들
+await dcent.getPublicKey({
   chainId: 'cip34:1-764824073',
   keyPath: "m/44'/1815'/0'/0/0"
 })</pre></div>
-<div class="io-label">Response — Cardano</div>
-<div class="note info"><span class="ni">i</span><div>응답 shape은 고정 타입이 아니라 <strong>체인별로 다릅니다</strong>. Cardano는 아래 <code>{ payment, stake, drep }</code> 번들을 반환하지만, 향후 지원되는 다른 체인은 다른 shape을 반환할 수 있습니다 — 이 키들을 가정하지 말고 <code>chainId</code>로 분기하세요.</div></div>
+<div class="io-label">응답 — Cardano 외 전 family</div>
+<table class="params"><thead><tr><th>Field</th><th>Type</th><th>설명</th></tr></thead><tbody>
+<tr><td><code>body.command</code></td><td class="type">string</td><td><code>getPublicKey</code></td></tr>
+<tr><td><code>parameter.keyPath</code></td><td class="type">string</td><td>요청한 path를 그대로 반환(재파생하지 않음)</td></tr>
+<tr><td><code>parameter.publicKey</code></td><td class="type">string</td><td>공개키 hex, <code>0x</code> prefix 없음. 길이/인코딩은 체인의 curve를 따릅니다(예: secp256k1 compressed 33바이트, ed25519 32바이트).</td></tr>
+</tbody></table>
+<div class="code"><div class="cb-head"><span>json</span><button class="copy">Copy</button></div>
+<pre>{
+  "header": { "version": "1.0", "status": "success" },
+  "body": {
+    "command": "getPublicKey",
+    "parameter": {
+      "keyPath": "m/44'/60'/0'/0/0",
+      "publicKey": "…"
+    }
+  }
+}</pre></div>
+<div class="io-label">응답 — Cardano</div>
+<div class="note info"><span class="ni">i</span><div>번들을 반환하는 체인은 <strong>Cardano뿐</strong>입니다 — CIP-1852의 세 role(payment 0 / stake 2 / drep 3)을 dApp이 한 번에 필요로 하기 때문입니다(스테이킹·거버넌스 요청 조립). 각 role의 <code>keyPath</code>는 전달한 계정 경로에서 <em>재파생</em>되므로 입력한 path와 다릅니다.</div></div>
 <table class="params"><thead><tr><th>Field</th><th>Type</th><th>설명</th></tr></thead><tbody>
 <tr><td><code>body.command</code></td><td class="type">string</td><td><code>getPublicKey</code></td></tr>
 <tr><td><code>parameter.payment</code></td><td class="type">{ keyPath, publicKey }</td><td>payment(지출) 키 — role 0 (<code>…/0/0</code>)</td></tr>

@@ -699,5 +699,27 @@
       "genesisID": "mainnet-v1.0",
       "genesisHash": "wGHE2Pwdvd7S12BL5FaOP20EGYesN73ktiHc0CYz/uo="
     }
+  },
+  {
+    "id": "dot-scalehex-unsigned-passthrough",
+    "label": "Polkadot SCALE-encoded unsigned extrinsic passthrough (blind-sign)",
+    "family": "polkadot",
+    "applicableChainIds": [
+      "polkadot:91b171bb158e2d3848fa23a9f1c25182/slip44:354"
+    ],
+    "note": "★blind-sign 패스스루 — WIRE-NONETWORK-SDK-CHANGES-2026-07-13.md §2 Polkadot row: 신규 `extra.scaleHex` 필드(SCALE-encoded unsigned call/extrinsic body). Polkadot은 다른 blob family(Stellar xdr/Hedera·Tezos unsignedTx)와 달리 완전 blind-sign이 아니라 partial — wm이 여전히 표시-안전(display-safety) metadata/header RPC(runtime spec/genesis 등)를 수행할 수 있음(consensus-autofill인 nonce/era/blockHash는 안 함). 【payload key = `extra.scaleHex`(신규, method/args와 병행 — method/args는 표시용, 실 서명 바이트는 scaleHex가 authoritative)】. 아래 hex는 대표-포맷(representative-format) balances.transfer call(module=5/call=0 대표 index, dest=결정적 파생 AccountId32, amount=1000000000000=1 DOT) SCALE 인코딩 — 실 런타임 call index는 체인마다 다를 수 있음(대표값). nonce/tip은 app 제공 유지. 실 서명 검증은 sdk sibling swproxy 하네스(conditional, m09-05-11)에서 확인. broadcast 안 함.",
+    "sourceUrl": "https://github.com/polkadot-js/api",
+    "transaction": {
+      "method": "balances.transfer",
+      "args": [
+        "14dyYY72MDtfxAAjFnqwCR3YihV5UrqzMjEAf1ABXJ4vzLZj",
+        "1000000000000"
+      ],
+      "nonce": 0,
+      "tip": 0,
+      "extra": {
+        "scaleHex": "0x050000b8c4ab57d0095c7cd1a67e5375cde403bfc8e17a079ac76ac0bc4581ea53531c070010a5d4e8"
+      }
+    }
   }
 ]

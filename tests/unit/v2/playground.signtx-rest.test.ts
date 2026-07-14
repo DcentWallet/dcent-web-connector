@@ -466,3 +466,22 @@ it('T-PRESET-FIELDSHAPE-01(rest): cosmos/tron/algorand/conflux/vechain 값 형�
     expect(restById(id)!.transaction.blockRef).toMatch(BLOCKREF_RE)
   })
 })
+
+// ─────────────────────────────────────────────────────────────────────────────
+// T-BLOB-SHAPE-01 (m09-04-25, Polkadot 부분 — 실제 파일 배치: dot-transfer 등 polkadot family가
+// presets.non-evm.json이 아닌 presets.rest.json에 있어 여기서 검증. WIRE-NONETWORK-SDK-CHANGES
+// §2 Polkadot row: 신규 `extra.scaleHex`(SCALE-encoded unsigned extrinsic) 필드 존재 확인.
+// ─────────────────────────────────────────────────────────────────────────────
+it('T-BLOB-SHAPE-01(rest, polkadot): dot-scalehex-unsigned-passthrough — extra.scaleHex 필드 존재 + hex 형식', () => {
+  const p = restById('dot-scalehex-unsigned-passthrough')
+  expect(p).toBeDefined()
+  expect(p!.family).toBe('polkadot')
+  const tx = p!.transaction
+  expect(tx).toHaveProperty('extra')
+  expect(tx.extra).toHaveProperty('scaleHex')
+  expect(typeof tx.extra.scaleHex).toBe('string')
+  expect(tx.extra.scaleHex).toMatch(/^0x[0-9a-fA-F]+$/)
+  // nonce/tip은 app 제공 유지 (Polkadot은 partial blind-sign — display-safety RPC는 wm이 허용)
+  expect(tx).toHaveProperty('nonce')
+  expect(tx).toHaveProperty('tip')
+})

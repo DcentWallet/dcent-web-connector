@@ -46,17 +46,17 @@
     "applicableChainIds": [
       "solana:5eykt4UsFv8P8NJdTREpY1vzqKqZKvdp/slip44:501"
     ],
-    "note": "Case 2a — plain JSON instructions. SystemProgram.Transfer 의 data 를 {instruction, lamports} 객체로 표현. SystemProgram.Transfer 에만 적용.",
+    "note": "Case 2a — plain JSON instructions. SystemProgram.Transfer 의 data 를 {instruction, lamports} 객체로 표현. SystemProgram.Transfer 에만 적용. [m09-04-25] feePayer/signer + recentBlockhash를 real-format 값(대표값, live 아님)으로 교체 — programId(SystemProgram)는 프로토콜 상수라 보존.",
     "sourceUrl": "https://solana-labs.github.io/solana-web3.js/classes/VersionedTransaction.html",
     "transaction": {
       "version": 0,
-      "feePayer": "11111111111111111111111111111111",
+      "feePayer": "Gv8u221N315GoRx2C6yBNF2jNq379FdvaAp2bL8ywSDk",
       "instructions": [
         {
           "programId": "11111111111111111111111111111111",
           "keys": [
             {
-              "pubkey": "11111111111111111111111111111111",
+              "pubkey": "Gv8u221N315GoRx2C6yBNF2jNq379FdvaAp2bL8ywSDk",
               "isSigner": true,
               "isWritable": true
             },
@@ -72,7 +72,7 @@
           }
         }
       ],
-      "recentBlockhash": "11111111111111111111111111111111"
+      "recentBlockhash": "2zxvZMg8YScxKqW2QQqQHpNzkLgwvVLj8Q1ZQZoFcTZ6"
     }
   },
   {
@@ -82,9 +82,9 @@
     "applicableChainIds": [
       "solana:5eykt4UsFv8P8NJdTREpY1vzqKqZKvdp/slip44:501"
     ],
-    "note": "Case 1 — 가장 안정적. dApp 이 @solana/web3.js 로 Transaction 또는 VersionedTransaction 을 만들고 bs58.encode(tx.serialize({requireAllSignatures: false, verifySignatures: false})) 로 직렬화한 base58 문자열. 모든 instruction type 자동 지원.",
+    "note": "Case 1 — 가장 안정적. dApp 이 @solana/web3.js 로 Transaction 또는 VersionedTransaction 을 만들고 bs58.encode(tx.serialize({requireAllSignatures: false, verifySignatures: false})) 로 직렬화한 base58 문자열. 모든 instruction type 자동 지원. [m09-04-25] form-E 완성: feePayer/recentBlockhash를 real-format 값(대표값, unsigned placeholder signature 포함 legacy Transaction wire)으로 재직렬화 — 기존 1111... placeholder 제거.",
     "sourceUrl": "https://solana-labs.github.io/solana-web3.js/classes/Transaction.html#serialize",
-    "transaction": "4uQeVj5tqViQh7yWWGStvkEG1Zmhx6uasJtWCJziofMMcJzwspspuFyB2WgNHBC4ZBxk5fdtoZUJDrEMy7BUSqi2tFFwhxYpZbJxHB6xRq6FYJgnwQGQS6FShXqYpaSmMUDe2GLrL2cFwczzGgyVdpVbZpgPPpcUFx"
+    "transaction": "3md7BBV9wFjYGnMWcMNyAZcjca2HGfXWZkrU8vvho66z2sJMZFcx6HZdBiAddjo2kzgBv3uZoac3domBRjJJSXkbBvokxTjwLEmhk7fuaR24c5KFFvTCtJtuweqPdFkBtgLPbjx8zjkNmHVpEwRqKwW6PZ8HEt8m9npzN9XXEdfYrwCeYByfVn24fb7E9aZ2AGeJh9dn3VNFKCxc2Y133EJ39Evzh9wwGJyM4DcgM66fjC5tCuV2XJkwBGKbJjxYeztLUTUozuVoM4Hoas2zzN9WReZpJ6QLRNLib"
   },
   {
     "id": "sol-transfer-data-hex",
@@ -93,17 +93,17 @@
     "applicableChainIds": [
       "solana:5eykt4UsFv8P8NJdTREpY1vzqKqZKvdp/slip44:501"
     ],
-    "note": "Case 2b — plain JSON 의 instruction.data 를 0x-prefixed hex string 으로 표현. SystemProgram.Transfer 의 raw bytes(12 bytes: 4-byte instruction tag + 8-byte little-endian lamports). Token / ATA / Memo 등 SystemProgram.Transfer 외의 모든 instruction 에 권장.",
+    "note": "Case 2b — plain JSON 의 instruction.data 를 0x-prefixed hex string 으로 표현. SystemProgram.Transfer 의 raw bytes(12 bytes: 4-byte instruction tag + 8-byte little-endian lamports). Token / ATA / Memo 등 SystemProgram.Transfer 외의 모든 instruction 에 권장. [m09-04-25] feePayer/signer + recentBlockhash를 real-format 값(대표값, live 아님)으로 교체 — programId(SystemProgram)는 프로토콜 상수라 보존.",
     "sourceUrl": "https://solana.com/docs/core/programs",
     "transaction": {
       "version": 0,
-      "feePayer": "11111111111111111111111111111111",
+      "feePayer": "Gv8u221N315GoRx2C6yBNF2jNq379FdvaAp2bL8ywSDk",
       "instructions": [
         {
           "programId": "11111111111111111111111111111111",
           "keys": [
             {
-              "pubkey": "11111111111111111111111111111111",
+              "pubkey": "Gv8u221N315GoRx2C6yBNF2jNq379FdvaAp2bL8ywSDk",
               "isSigner": true,
               "isWritable": true
             },
@@ -116,7 +116,7 @@
           "data": "0x0200000040420f0000000000"
         }
       ],
-      "recentBlockhash": "11111111111111111111111111111111"
+      "recentBlockhash": "2zxvZMg8YScxKqW2QQqQHpNzkLgwvVLj8Q1ZQZoFcTZ6"
     }
   },
   {
@@ -126,17 +126,17 @@
     "applicableChainIds": [
       "solana:5eykt4UsFv8P8NJdTREpY1vzqKqZKvdp/slip44:501"
     ],
-    "note": "Case 2c — plain JSON 의 instruction.data 를 prefix 없는 base58 문자열로 표현. @solana/web3.js bs58.encode 결과와 동일.",
+    "note": "Case 2c — plain JSON 의 instruction.data 를 prefix 없는 base58 문자열로 표현. @solana/web3.js bs58.encode 결과와 동일. [m09-04-25] feePayer/signer + recentBlockhash를 real-format 값(대표값, live 아님)으로 교체 — programId(SystemProgram)는 프로토콜 상수라 보존.",
     "sourceUrl": "https://github.com/cryptocoinjs/bs58",
     "transaction": {
       "version": 0,
-      "feePayer": "11111111111111111111111111111111",
+      "feePayer": "Gv8u221N315GoRx2C6yBNF2jNq379FdvaAp2bL8ywSDk",
       "instructions": [
         {
           "programId": "11111111111111111111111111111111",
           "keys": [
             {
-              "pubkey": "11111111111111111111111111111111",
+              "pubkey": "Gv8u221N315GoRx2C6yBNF2jNq379FdvaAp2bL8ywSDk",
               "isSigner": true,
               "isWritable": true
             },
@@ -149,7 +149,7 @@
           "data": "3Bxs411Dtc7pkFQj"
         }
       ],
-      "recentBlockhash": "11111111111111111111111111111111"
+      "recentBlockhash": "2zxvZMg8YScxKqW2QQqQHpNzkLgwvVLj8Q1ZQZoFcTZ6"
     }
   },
   {
@@ -159,17 +159,17 @@
     "applicableChainIds": [
       "solana:5eykt4UsFv8P8NJdTREpY1vzqKqZKvdp/slip44:501"
     ],
-    "note": "Case 2d — plain JSON 의 instruction.data 를 number array (Uint8Array JSON-serializable form) 로 표현. dApp 측에서 Array.from(uint8Array) 결과 그대로 전달.",
+    "note": "Case 2d — plain JSON 의 instruction.data 를 number array (Uint8Array JSON-serializable form) 로 표현. dApp 측에서 Array.from(uint8Array) 결과 그대로 전달. [m09-04-25] feePayer/signer + recentBlockhash를 real-format 값(대표값, live 아님)으로 교체 — programId(SystemProgram)는 프로토콜 상수라 보존.",
     "sourceUrl": "https://developer.mozilla.org/en-US/docs/Web/JavaScript/Reference/Global_Objects/Uint8Array",
     "transaction": {
       "version": 0,
-      "feePayer": "11111111111111111111111111111111",
+      "feePayer": "Gv8u221N315GoRx2C6yBNF2jNq379FdvaAp2bL8ywSDk",
       "instructions": [
         {
           "programId": "11111111111111111111111111111111",
           "keys": [
             {
-              "pubkey": "11111111111111111111111111111111",
+              "pubkey": "Gv8u221N315GoRx2C6yBNF2jNq379FdvaAp2bL8ywSDk",
               "isSigner": true,
               "isWritable": true
             },
@@ -195,7 +195,7 @@
           ]
         }
       ],
-      "recentBlockhash": "11111111111111111111111111111111"
+      "recentBlockhash": "2zxvZMg8YScxKqW2QQqQHpNzkLgwvVLj8Q1ZQZoFcTZ6"
     }
   },
   {
@@ -205,15 +205,15 @@
     "applicableChainIds": [
       "solana:5eykt4UsFv8P8NJdTREpY1vzqKqZKvdp/slip44:501"
     ],
-    "note": "Case 3 — wm-internal TransactionCommon shape ({type, sender, recipient, amount}). 주로 webview/RN 흐름에서 사용 (RN의 wallet-models 가 미리 만든 객체를 그대로 전달). SDK 에서는 거의 안 씀 — 호환성 용 pass-through.",
+    "note": "Case 3 — wm-internal TransactionCommon shape ({type, sender, recipient, amount}). 주로 webview/RN 흐름에서 사용 (RN의 wallet-models 가 미리 만든 객체를 그대로 전달). SDK 에서는 거의 안 씀 — 호환성 용 pass-through. [m09-04-25] sender/recentBlockhash를 real-format 값(대표값)으로 교체.",
     "sourceUrl": "https://github.com/IotrustGitHub/dcent-wallet-models/blob/main/src/common/types/transaction.ts",
     "transaction": {
       "type": "transfer",
       "family": "solana",
-      "sender": "11111111111111111111111111111111",
+      "sender": "Gv8u221N315GoRx2C6yBNF2jNq379FdvaAp2bL8ywSDk",
       "recipient": "11111111111111111111111111111112",
       "amount": "1000000",
-      "recentBlockhash": "11111111111111111111111111111111"
+      "recentBlockhash": "2zxvZMg8YScxKqW2QQqQHpNzkLgwvVLj8Q1ZQZoFcTZ6"
     }
   },
   {
@@ -593,27 +593,27 @@
     "applicableChainIds": [
       "solana:5eykt4UsFv8P8NJdTREpY1vzqKqZKvdp/slip44:501"
     ],
-    "note": "토큰 전송 — SPL Token transfer. programId=SPL Token program(Tokenkeg...), instruction.data=0x03 + amount(u64 LE) → 현재 0x03e803000000000000(=1000 base units). keys: [source ATA(writable), destination ATA(writable), owner(signer)]. ⚠️ pubkey 3개는 placeholder — 본인 디바이스 SOL 주소에서 파생한 실제 ATA(연관 토큰 계정) + owner pubkey로 교체해야 서명 유효. data-hex 형식은 SystemProgram 외 모든 instruction에 권장(sol-transfer-data-hex와 동일 메커니즘). recentBlockhash는 dApp/RPC가 주입. ⚠️ wm는 직렬화 bytes를 opaque 서명 — 기기 펌웨어의 SPL 표시 동작은 HW smoke 검증 필요. SystemProgram.Transfer 외 instruction은 직렬화(sol-transfer-base58-serialized) 경로가 가장 안정적.",
+    "note": "토큰 전송 — SPL Token transfer. programId=SPL Token program(Tokenkeg...), instruction.data=0x03 + amount(u64 LE) → 현재 0x03e803000000000000(=1000 base units). keys: [source ATA(writable), destination ATA(writable), owner(signer)]. ⚠️ pubkey 3개는 placeholder — 본인 디바이스 SOL 주소에서 파생한 실제 ATA(연관 토큰 계정) + owner pubkey로 교체해야 서명 유효. data-hex 형식은 SystemProgram 외 모든 instruction에 권장(sol-transfer-data-hex와 동일 메커니즘). recentBlockhash는 dApp/RPC가 주입. ⚠️ wm는 직렬화 bytes를 opaque 서명 — 기기 펌웨어의 SPL 표시 동작은 HW smoke 검증 필요. SystemProgram.Transfer 외 instruction은 직렬화(sol-transfer-base58-serialized) 경로가 가장 안정적. [m09-04-25] feePayer/source ATA/destination ATA/owner/recentBlockhash를 real-format 값(대표값)으로 교체 — 실제 서명 유효성은 본인 디바이스 ATA로 재교체 필요(기존 안내 유지).",
     "sourceUrl": "https://spl.solana.com/token",
     "transaction": {
       "version": 0,
-      "feePayer": "11111111111111111111111111111111",
+      "feePayer": "Gv8u221N315GoRx2C6yBNF2jNq379FdvaAp2bL8ywSDk",
       "instructions": [
         {
           "programId": "TokenkegQfeZyiNwAJbNbGKPFXCWuBvf9Ss623VQ5DA",
           "keys": [
             {
-              "pubkey": "11111111111111111111111111111111",
+              "pubkey": "CHwyyEQKYQBX5R88xiv6rdY7XVS2juZVDKa61yXoGDh8",
               "isSigner": false,
               "isWritable": true
             },
             {
-              "pubkey": "11111111111111111111111111111112",
+              "pubkey": "9XEXTBrBHxsYaV6JHKzyuYUuXzsbA6ms69hv7dv59oWG",
               "isSigner": false,
               "isWritable": true
             },
             {
-              "pubkey": "11111111111111111111111111111113",
+              "pubkey": "FEsM9EBEbtJoitGxZaxEWGCzYd2mRD1haHFPTYJREFQw",
               "isSigner": true,
               "isWritable": false
             }
@@ -621,7 +621,7 @@
           "data": "0x03e803000000000000"
         }
       ],
-      "recentBlockhash": "11111111111111111111111111111111"
+      "recentBlockhash": "2zxvZMg8YScxKqW2QQqQHpNzkLgwvVLj8Q1ZQZoFcTZ6"
     }
   },
   {
@@ -974,50 +974,6 @@
     }
   },
   {
-    "id": "hedera-hts-descriptor-transfer",
-    "label": "Hedera HTS token transfer — form-D descriptor (미등록/커스텀 토큰)",
-    "family": "hedera",
-    "applicableChainIds": [
-      "hedera:mainnet/slip44:3030"
-    ],
-    "note": "미등록(커스텀) HTS 토큰 전송 — form-D descriptor. wm m02-05-69 buildHederaTokenTransferFromDescriptor 가 transaction.token={contract,to,amount} 를 CryptoTransfer 봉투(tokenTransfers:[{tokenId,accountId:sender,amount:'-N'},{tokenId,accountId:to,amount:'N'}]) 로 빌드 → 서명. ★form-E(hedera-hts-transfer, SAUCE 0.0.731861)와 달리 hedera-hts.json registry 등록 불필요 — 미등록 tokenId 도 서명 가능(form-E 는 미등록 시 keystone -32602). contract=0.0.9999999 는 registry 에 없는 valid 0.0.x tokenId. descriptor 에 decimals 가 있으면 wm 3-tier resolver 가 tier-3(descriptor)로 합성 → on-chain RPC 없이 해석되므로 tokenId 실재 불필요(§9 byte-proof 는 broadcast 안 함). tokenId/to/from 모두 /^0\\.0\\.\\d+$/ 검증(non-0.0.x → -32602). amount=token base units(decimals 6 → 1500000=1.5토큰, HBAR tinybar 아님, 재스케일 없음). 두 leg(음수=sender debit / 양수=recipient credit) — native HBAR transfers 필드 없음(silent HBAR 오서명 불가). sender 는 transaction.from(0.0.x)에서 read-only. ⚠️ accountId(0.0.x)는 키에서 파생 불가 → token.to/from 을 본인 디바이스 실 Hedera 계정으로 확인/교체(self-send, 양쪽 동일 0.0.587690). ⚠️ recipient TokenAssociate 선행(transfer만, associate 비스코프). ⚠️ 반드시 mainnet(slip44:3030). 검증: /verify-wire-sign HEDERA (tokenTransfers tokenId=token, native HBAR 아님; expectedSignerPubkey 로 검증 — Hedera accountId 키파생 불가).",
-    "sourceUrl": "https://docs.hedera.com/hedera/sdks-and-apis/sdks/token-service/transfer-tokens",
-    "transaction": {
-      "token": {
-        "contract": "0.0.9999999",
-        "to": "0.0.587690",
-        "amount": "1500000",
-        "decimals": 6,
-        "symbol": "TKN"
-      },
-      "from": "0.0.587690"
-    }
-  },
-  {
-    "id": "stellar-issued-asset-descriptor-transfer",
-    "label": "Stellar issued-asset transfer — form-D descriptor (미등록/커스텀 토큰)",
-    "family": "stellar",
-    "applicableChainIds": [
-      "stellar:pubnet/slip44:148"
-    ],
-    "note": "미등록(커스텀) issued-asset 전송 — form-D descriptor. wm m02-05-70 buildStellarIssuedAssetPaymentFromDescriptor 가 transaction.token={contract,to,amount} 를 payment 봉투({type:'payment', asset:{code,issuer}, destination, amount}) 로 빌드 → 서명. ★실존-미등록 토큰: PYUSD(PayPal USD, Stellar mainnet 실존, stellar.expert 검증) 는 우리 wm stellar-ta.json 에 미등록 → form-E 라면 -32602, form-D descriptor(tier-3 decimals) 로는 서명 가능. contract='PYUSD-GDQE7IXJ4HUHV6RQHIUPRJSEZE4DRS5WY577O2FY6YQ5LVWZ7JZTU2V5'(code-issuer, code 5자 alphanumeric12·issuer 56자 G-strkey). ★Stellar 서명은 로컬 rebuild(new Asset(code,issuer)) — on-chain fetch 없음, broadcast 안 함(§9 byte-proof). 합성 contractAddress='0.{issuer}.{code}.'(customTokenContractAddress 훅) → 서명 4-part split 정상. amount=base units(decimals 7 → 10000000=1 PYUSD). ⚠️ token.to 를 본인 디바이스 Stellar 계정(G...)으로 교체(self-send 권장, asset risk 0). ⚠️ SDK wm 을 m02-05-70 포함본으로 refresh 후 실행. ⚠️ mainnet(slip44:148). 검증: /verify-wire-sign STELLAR (asset code=PYUSD/issuer=token, native XLM 아님; ed25519=device).",
-    "sourceUrl": "https://developers.stellar.org/docs/tokens",
-    "transaction": {
-      "token": {
-        "contract": "PYUSD-GDQE7IXJ4HUHV6RQHIUPRJSEZE4DRS5WY577O2FY6YQ5LVWZ7JZTU2V5",
-        "to": "GC6OISCEYJSHTO6QBZYVT52B4ZW63BCVTNCFYLUJQK5FUKLJP6L2XNAJ",
-        "amount": "10000000",
-        "decimals": 7,
-        "symbol": "PYUSD"
-      },
-      "memo": {
-        "type": "none"
-      },
-      "fee": 100,
-      "sequenceNumber": "0"
-    }
-  },
-  {
     "id": "stellar-soroban-invoke-hello",
     "label": "Stellar Soroban invokeHostFunction — hello(symbol)",
     "family": "stellar",
@@ -1103,108 +1059,6 @@
     }
   },
   {
-    "id": "tezos-fa12-descriptor-transfer",
-    "label": "Tezos FA1.2 transfer — form-D descriptor (미등록/커스텀, testnet)",
-    "family": "tezos",
-    "applicableChainIds": [
-      "tezos:NetXdQprcVkpaWU/slip44:1729"
-    ],
-    "note": "미등록(커스텀) FA1.2 전송 — form-D descriptor. wm m02-05-70 buildTezosTokenTransferFromDescriptor(tokenId 미설정 → FA1.2) 가 transfer entrypoint Michelson Pair 봉투로 빌드 → 서명. ★실존-미등록: tzBTC(KT1PWx2mnDueood7fEmfbBDKx1D9BAnnXitn, Tezos mainnet 실존 FA1.2, tzkt 검증, decimals 8) 는 우리 wm xtz-fa.json(QUIPU/PLENTY/YOU/SMAK/kDAO/crDAO/FLAME/WRAP/MTTR/INSTA)에 미등록 → form-E 라면 -32602, form-D(tier-3 decimals)로 서명 가능. ★★Tezos 서명은 Taquito contract.at(KT1) 이 mainnet RPC 로 entrypoints fetch → 실존 컨트랙트 필수(ghostnet 은 펌웨어 getAddress 미지원이라 mainnet 실토큰 사용). amount=base units(decimals 8 → 100000=0.001 tzBTC). ⚠️ 상단 '🔑 Resolve sender from device' 버튼으로 source(서명자)를 디바이스 tz 로 치환. ⚠️ token.to(수신자)를 self-send 시 본인 디바이스 tz 로 교체(기본 burn 주소=유효 placeholder). ⚠️ SDK wm refresh(m02-05-70) + connector 재빌드 후 실행. ⚠️ mainnet(NetXdQprcVkpaWU). 검증: /verify-wire-sign TEZOS (FA1.2 Pair transfer=token, native XTZ 아님; signerPubkey edpk=device).",
-    "sourceUrl": "https://gitlab.com/tezos/tzip/-/blob/master/proposals/tzip-7/tzip-7.md",
-    "transaction": {
-      "token": {
-        "contract": "KT1PWx2mnDueood7fEmfbBDKx1D9BAnnXitn",
-        "to": "tz1burnburnburnburnburnburnburjAYjjX",
-        "amount": "100000",
-        "decimals": 8,
-        "symbol": "tzBTC"
-      },
-      "kind": "transaction",
-      "source": "tz1burnburnburnburnburnburnburjAYjjX",
-      "fee": "1420",
-      "counter": "1",
-      "gasLimit": "10307",
-      "storageLimit": "257"
-    }
-  },
-  {
-    "id": "tezos-fa2-descriptor-transfer",
-    "label": "Tezos FA2 transfer — form-D descriptor (미등록/커스텀, testnet)",
-    "family": "tezos",
-    "applicableChainIds": [
-      "tezos:NetXdQprcVkpaWU/slip44:1729"
-    ],
-    "note": "미등록(커스텀) FA2 전송 — form-D descriptor. wm m02-05-70 buildTezosTokenTransferFromDescriptor(tokenId 설정 → FA2) 가 transfer entrypoint Michelson list 봉투로 빌드 → 서명. ★token_id 는 '0' 만 허용(W1 회귀 — signer token_id=0 하드코딩, ≠'0' → -32602). ★실존-미등록: uUSD(KT1XRPEPXbZK25r3Htzp2o1x7xdMMmfocKNW, Tezos mainnet 실존 FA2 youves, tzkt 검증, token_id 0, decimals 12) 는 우리 wm xtz-fa.json 에 미등록 → form-D tier-3. ★★Taquito contract.at(KT1) mainnet RPC fetch → 실존 컨트랙트 필수. amount=base units(decimals 12 → 1000000000=0.001 uUSD). ⚠️ '🔑 Resolve sender from device' 로 source 치환. ⚠️ token.to self-send 시 디바이스 tz 교체(기본 burn=유효 placeholder). ⚠️ SDK wm refresh + connector 재빌드. ⚠️ mainnet(NetXdQprcVkpaWU). 검증: /verify-wire-sign TEZOS (FA2 list transfer token_id=0=token, native XTZ 아님; signerPubkey edpk=device).",
-    "sourceUrl": "https://gitlab.com/tezos/tzip/-/blob/master/proposals/tzip-12/tzip-12.md",
-    "transaction": {
-      "token": {
-        "contract": "KT1XRPEPXbZK25r3Htzp2o1x7xdMMmfocKNW",
-        "to": "tz1burnburnburnburnburnburnburjAYjjX",
-        "amount": "1000000000",
-        "decimals": 12,
-        "symbol": "uUSD",
-        "tokenId": "0"
-      },
-      "kind": "transaction",
-      "source": "tz1burnburnburnburnburnburnburjAYjjX",
-      "fee": "1420",
-      "counter": "1",
-      "gasLimit": "10307",
-      "storageLimit": "257"
-    }
-  },
-  {
-    "id": "tezos-fa12-ghostnet-descriptor-transfer",
-    "label": "Tezos FA1.2 transfer — form-D descriptor (미등록/커스텀, ghostnet)",
-    "family": "tezos",
-    "applicableChainIds": [
-      "tezos:NetXnHfVqm9iesp/slip44:1729"
-    ],
-    "note": "미등록(커스텀) FA1.2 전송 — form-D descriptor (ghostnet 변형, mainnet 은 tezos-fa12-descriptor-transfer). wm m02-05-70 buildTezosTokenTransferFromDescriptor(tokenId 미설정 → FA1.2) 가 transfer entrypoint Michelson Pair 봉투로 빌드 → 서명. ★실존-미등록: KT1NZFY3nyohgVEJKxCaFbcg4oyhM1akHgvf 는 ghostnet 실배포(m02-05-58 testnet-setup, tezos-fa12-ghostnet-transfer form-E 가 쓰는 컨트랙트)되어 있고 wm xtz-fa-testnet.json 미등록 → form-D tier-3. ★★Taquito contract.at(KT1) 이 ghostnet RPC 로 entrypoints fetch → 실존 필수. ⚠️ 펌웨어가 TEZOS-TESTNET getAddress 미지원 가능(Device firmware does not support TEZOS-TESTNET) — 그 경우 'Resolve sender from device' 안 되니 source/to 를 ghostnet tz 로 수동 입력, 또는 mainnet 변형 사용. ⚠️ ghostnet 리셋 시 testnet-setup CLI(cli.cjs all <기기-tz1>) 재배포 후 destination 교체. amount=base units. ⚠️ SDK wm refresh+connector 재빌드. 검증: /verify-wire-sign TEZOS.",
-    "sourceUrl": "https://gitlab.com/tezos/tzip/-/blob/master/proposals/tzip-7/tzip-7.md",
-    "transaction": {
-      "token": {
-        "contract": "KT1NZFY3nyohgVEJKxCaFbcg4oyhM1akHgvf",
-        "to": "tz1burnburnburnburnburnburnburjAYjjX",
-        "amount": "1000",
-        "decimals": 6,
-        "symbol": "FA12T"
-      },
-      "kind": "transaction",
-      "source": "tz1burnburnburnburnburnburnburjAYjjX",
-      "fee": "1420",
-      "counter": "1",
-      "gasLimit": "10307",
-      "storageLimit": "257"
-    }
-  },
-  {
-    "id": "tezos-fa2-ghostnet-descriptor-transfer",
-    "label": "Tezos FA2 transfer — form-D descriptor (미등록/커스텀, ghostnet)",
-    "family": "tezos",
-    "applicableChainIds": [
-      "tezos:NetXnHfVqm9iesp/slip44:1729"
-    ],
-    "note": "미등록(커스텀) FA2 전송 — form-D descriptor (ghostnet 변형, mainnet 은 tezos-fa2-descriptor-transfer). wm m02-05-70 buildTezosTokenTransferFromDescriptor(tokenId 설정 → FA2) 가 transfer entrypoint Michelson list 봉투로 빌드 → 서명. ★token_id 는 '0' 만 허용(W1, ≠'0' → -32602). ★실존-미등록: KT1LdedBNxSMWE5rFaagXS8Fw9qaneMZ2XEm 는 ghostnet 실배포(m02-05-58 testnet-setup, tezos-fa2-ghostnet-transfer 가 쓰는 컨트랙트, token_id 0 확인)되어 있고 wm xtz-fa-testnet.json 미등록 → form-D tier-3. ★★Taquito contract.at(KT1) ghostnet RPC fetch → 실존 필수. ⚠️ 펌웨어 TEZOS-TESTNET getAddress 미지원 가능 — source/to 수동 입력 또는 mainnet 변형 사용. ⚠️ ghostnet 리셋 시 testnet-setup CLI 재배포. amount=base units. ⚠️ SDK wm refresh+connector 재빌드. 검증: /verify-wire-sign TEZOS.",
-    "sourceUrl": "https://gitlab.com/tezos/tzip/-/blob/master/proposals/tzip-12/tzip-12.md",
-    "transaction": {
-      "token": {
-        "contract": "KT1LdedBNxSMWE5rFaagXS8Fw9qaneMZ2XEm",
-        "to": "tz1burnburnburnburnburnburnburjAYjjX",
-        "amount": "1000000",
-        "decimals": 6,
-        "symbol": "FA2T",
-        "tokenId": "0"
-      },
-      "kind": "transaction",
-      "source": "tz1burnburnburnburnburnburnburjAYjjX",
-      "fee": "1420",
-      "counter": "1",
-      "gasLimit": "10307",
-      "storageLimit": "257"
-    }
-  },
-  {
     "id": "dag-dor-metagraph-transfer",
     "label": "Constellation DOR metagraph L0 token transfer — form-D descriptor",
     "family": "constellation",
@@ -1254,26 +1108,6 @@
         "ordinal": 1024,
         "hash": "58ba6390b751a9e04edea64ada97024798e91519983a94f5992d6a3fd72953b1"
       }
-    }
-  },
-  {
-    "id": "sol-spl-descriptor-transfer",
-    "label": "Solana SPL token transfer — form-D descriptor (미등록/커스텀 토큰)",
-    "family": "solana",
-    "applicableChainIds": [
-      "solana:EtWTRABZaYq6iMfeYKouRu166VU2xqa1/slip44:501"
-    ],
-    "note": "미등록(커스텀) SPL 토큰 전송 — form-D descriptor. wm m02-05-73(DC-3093) buildSplTransferFromDescriptor 가 transaction.token={contract:mint,to:owner,amount,decimals} 를 Case-4 봉투({type:transfer, sender, recipient, amount}) 로 빌드 → 공유 prepareTransaction(checkAssociation)+buildTransaction(createTransferCheckedInstruction) 이 수신자 ATA 파생 + SPL transferChecked 재구성 → 서명. ★form-E(sol-spl-transfer, opaque instructions)와 달리 spl-token.json/spl-devnet.json registry 등록 불필요 — 미등록 mint 도 토큰으로 식별되어 서명(form-E 는 opaque 라 mint 표시 못 함). ★★SOLANA 는 형제(hedera/stellar/stacks/tezos, offline rebuild)와 달리 prepare 가 devnet RPC 를 호출한다(수신자 ATA isAssociated getAccountInfo + getLatestBlockhash + getFeeForMessage) → contract 는 devnet 실존 SPL mint 여야 RPC 로 해석됨. ★contract 은 실존 미등록 mint 로 미리 채워둠 — Gh9ZwEmdLJ8DscKNTkTqPbNwLNNBjuSzaG9Vp2KGtKJr(devnet spl-token-faucet USDC-Dev, classic Token program, decimals 6, on-chain 실존 확인). wm spl-devnet.json 등록 4종(USDC 4zMMC9…/WFC 7sSCCR…/WMM 29NECD…/HzwqbKZ…)에 없음 → form-D 미등록 경로 검증용. 다른 미등록 mint 로 바꾸려면 contract+decimals 를 함께 교체(등록 4종 제외). ⚠️ feePayer = 서명 authority(= sender-ATA owner). form-D descriptor 엔 sender 가 없어 wm resolveDescriptorSender 가 transaction.sender??from??feePayer 로 읽는다 → 반드시 본인 디바이스 devnet SOL pubkey 로 교체(부재 시 -32602, 디바이스 불일치 시 addSignature not-required-to-sign). 상단 🔑 Resolve sender from device 버튼이 solana feePayer 를 지원하면 자동 치환, 아니면 수동 교체. ⚠️ token.to = 수신자 owner wallet(NOT ATA — wm 가 ATA 파생). self-send 권장 = 본인 디바이스 devnet SOL 주소(ATA-of-ATA 이중파생 방지). amount = token base units(재스케일 없음, 예 decimals 6 → 1000000=1.0 토큰). decimals 는 교체한 mint 의 실제 decimals(u8, 0-255) — createTransferCheckedInstruction 에 u8 로 인코딩되므로 정확해야 함. ★R4 base58 검증: mint/to/feePayer 가 32바이트 base58 pubkey 가 아니면 builder 가 -32602(downstream new PublicKey generic error 아님). ★R5 decimals 비정수/범위밖(0-255) → -32602. amount NaN/음수/비정수 → -32602. Token-2022: 미등록 Token-2022 mint 은 classic(TOKEN_PROGRAM_ID)으로 빌드돼 온체인 clean-fail(자산 misdirection 0, 본 child 비스코프 — classic SPL 만). ⚠️ SDK wm 을 m02-05-73(DC-3093) 포함본으로 refresh + connector 재빌드 후 실행. ⚠️ Solana Devnet(isTestnet → deviceStoreId SPL-DEVNET). 검증: /verify-wire-sign SOLANA (transferChecked mint=token, native SOL 아님; ed25519 signer=device). ★SPL 서명 바이트에 mint 포함 → byte-proof authoritative(온체인 broadcast 불요).",
-    "sourceUrl": "https://spl.solana.com/token",
-    "transaction": {
-      "token": {
-        "contract": "Gh9ZwEmdLJ8DscKNTkTqPbNwLNNBjuSzaG9Vp2KGtKJr",
-        "to": "11111111111111111111111111111111",
-        "amount": "1000000",
-        "decimals": 6,
-        "symbol": "USDC-Dev"
-      },
-      "feePayer": "11111111111111111111111111111111"
     }
   },
   {
@@ -1549,6 +1383,19 @@
       "tokenId": "0.0.731861",
       "sender": "0.0.587690",
       "memo": ""
+    }
+  },
+  {
+    "id": "tezos-unsigned-passthrough",
+    "label": "Tezos pre-forged operation passthrough (blind-sign)",
+    "family": "tezos",
+    "applicableChainIds": [
+      "tezos:NetXdQprcVkpaWU/slip44:1729"
+    ],
+    "note": "★blind-sign 패스스루 (Hedera unsigned-passthrough와 동형, unsignedTx 필드 재사용 — 신규 필드 0). 외부에서 이미 forge한 Tezos operation bytes(hex, branch(32B)+contents)를 device가 blind-sign. 【payload key = `unsignedTx`(Hedera와 동일 관례) — wm convertTransaction이 obj.unsignedTx 감지 시 family=tezos로 extra.unsignedTxBytes carry】. 아래 hex는 대표-포맷(representative-format) forged 'transaction' operation(source/destination은 결정적 파생 tz1, fee=400/counter=1/gasLimit=1000/storageLimit=0/amount=1000000 mutez, parameters 없음) — 실 프로토콜 바이트 정확성은 sdk sibling swproxy 하네스에서 wm 파싱으로 검증(conditional, m09-05-11). malformed bytes → -32602. broadcast 안 함(§9 byte-proof만 대상).",
+    "sourceUrl": "https://tezos.gitlab.io/shell/p2p_api.html",
+    "transaction": {
+      "unsignedTx": "288f8bb117200c366cade5c8f22e0854cc99429853dcc9b35287cc9cdcc8e3c66c00338cdba49ec68d3e14903e4fd37db865a990ed22900301e80700c0843d0041812f66a66258718eb77f7bdc4f89e2f151af8a00"
     }
   }
 ]

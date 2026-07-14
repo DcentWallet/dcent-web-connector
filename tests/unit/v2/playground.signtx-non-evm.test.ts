@@ -1307,6 +1307,8 @@ describe('T-PRESET no-network 완성 필드 (non-evm)', () => {
   const presetsPath = path.resolve(__dirname, '../../../playground/presets.non-evm.json')
   const PRESETS: any[] = JSON.parse(fs.readFileSync(presetsPath, 'utf8'))
   const byId = (id: string) => PRESETS.find((p) => p.id === id)
+  // top-level nonce+fee 보유 Stacks preset(전 preset) — sip010-transfer는 신규 추가, descriptor는 기존 보유.
+  const STACKS_IDS = ['stacks-sip010-transfer', 'stacks-sip010-descriptor-transfer']
 
   it('T-PRESET-COMPLETE-01(non-evm): NEAR/Havah/Vechain/Constellation/Stacks/XRP 완성 필드 포함', () => {
     // NEAR ① — nonce + blockHash + publicKey (native+ft 모두)
@@ -1337,10 +1339,12 @@ describe('T-PRESET no-network 완성 필드 (non-evm)', () => {
       expect(tx.lastRef).toHaveProperty('hash')
     })
 
-    // Stacks ① — top-level nonce + fee (form-E preset에 추가)
-    const stx = byId('stacks-sip010-transfer')!.transaction
-    expect(stx).toHaveProperty('nonce')
-    expect(stx).toHaveProperty('fee')
+    // Stacks ① — top-level nonce + fee (sip010-transfer에 신규 추가; descriptor는 기존 보유 — 회귀 가드)
+    STACKS_IDS.forEach((id) => {
+      const stx = byId(id)!.transaction
+      expect(stx).toHaveProperty('nonce')
+      expect(stx).toHaveProperty('fee')
+    })
 
     // Ripple/Xahau ② — LastLedgerSequence + Sequence
     ;['xrp-payment', 'xrp-iou-payment', 'xrp-accountset', 'xrp-trustset', 'xahau-payment'].forEach((id) => {
@@ -1389,9 +1393,11 @@ describe('T-PRESET no-network 완성 필드 (non-evm)', () => {
     // Vechain blockRef = 0x + 16 hex (8 bytes)
     expect(byId('vechain-vip180-transfer')!.transaction.blockRef).toMatch(BLOCKREF_RE)
 
-    // Stacks top-level nonce/fee = decimal string
-    const stx = byId('stacks-sip010-transfer')!.transaction
-    expect(String(stx.nonce)).toMatch(/^\d+$/)
-    expect(String(stx.fee)).toMatch(/^\d+$/)
+    // Stacks top-level nonce/fee = decimal string (전 preset)
+    STACKS_IDS.forEach((id) => {
+      const stx = byId(id)!.transaction
+      expect(String(stx.nonce)).toMatch(/^\d+$/)
+      expect(String(stx.fee)).toMatch(/^\d+$/)
+    })
   })
 })

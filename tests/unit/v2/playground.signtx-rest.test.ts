@@ -367,17 +367,23 @@ it('T-U-REST-SCOPE-01: 신규 cosmos/polkadot preset payload 식별자 ↔ appli
 // wm no-network(pure-signer) 계약: ①prepare-skip / ③marker-consume family preset이
 // 완성 consensus 필드를 담아야 wm이 -32602 없이 서명한다. connector preset은 만료성
 // live 값이 아닌 "대표값(유효 형식)"만 책임 — 서명 시점 실값 주입은 bridge/wm 담당.
-// 여기서는 rest.json의 cosmos/tron/algorand/conflux family field presence + 값 형식만 단언.
+// 여기서는 rest.json의 cosmos/tron/algorand/conflux/vechain family field presence + 값 형식만 단언.
+// (COMPLETE와 FIELDSHAPE가 같은 ID 배열을 공유 — subset sampling으로 미검증 preset이 회귀하는 구멍 방지.)
+// trx-trc20-descriptor-transfer(form-D descriptor)는 raw_data가 없어 ref_block 필드가 없다 —
+// wm이 descriptor→raw_data를 구성하므로 여기서 완성 대상이 아님(Solana form-D 제외와 동형). 의도적 제외.
 // ─────────────────────────────────────────────────────────────────────────────
 const restById = (id: string) => SAMPLE_REST_PRESETS.find((x: any) => x.id === id)
+const COSMOS_IDS = [
+  'atom-transfer', 'coreum-transfer', 'coreum-assetft-transfer', 'coreum-testnet-transfer',
+  'hippo-transfer', 'hippo-testnet-transfer', 'cosmos-assetft-descriptor-transfer',
+]
+const TRON_RAW_IDS = ['trx-transfer', 'trx-trc20-transfer', 'trx-trc20-approve'] // descriptor 제외(raw_data 없음)
+const ALGO_IDS = ['algo-payment', 'algo-asa-transfer', 'algo-asa-descriptor-transfer']
+const VET_IDS = ['vet-transfer', 'vet-vip180-transfer']
 
-it('T-PRESET-COMPLETE-01(rest): cosmos/tron/algorand/conflux preset이 no-network 완성 필드를 포함', () => {
+it('T-PRESET-COMPLETE-01(rest): cosmos/tron/algorand/conflux/vechain preset이 no-network 완성 필드를 포함', () => {
   // Cosmos ① — account_number/sequence + 완성 fee(gas+amount). placeholder("0") 금지.
-  const cosmosIds = [
-    'atom-transfer', 'coreum-transfer', 'coreum-assetft-transfer', 'coreum-testnet-transfer',
-    'hippo-transfer', 'hippo-testnet-transfer', 'cosmos-assetft-descriptor-transfer',
-  ]
-  cosmosIds.forEach((id) => {
+  COSMOS_IDS.forEach((id) => {
     const tx = restById(id)!.transaction
     expect(tx).toHaveProperty('account_number')
     expect(tx).toHaveProperty('sequence')
@@ -389,8 +395,7 @@ it('T-PRESET-COMPLETE-01(rest): cosmos/tron/algorand/conflux preset이 no-networ
   })
 
   // Tron ③ — raw_data ref_block_bytes/ref_block_hash (placeholder 0000/0000… 금지)
-  const tronRawIds = ['trx-transfer', 'trx-trc20-transfer', 'trx-trc20-approve']
-  tronRawIds.forEach((id) => {
+  TRON_RAW_IDS.forEach((id) => {
     const rd = restById(id)!.transaction.raw_data
     expect(rd.ref_block_bytes).toBeTruthy()
     expect(rd.ref_block_bytes).not.toBe('0000')
@@ -400,8 +405,7 @@ it('T-PRESET-COMPLETE-01(rest): cosmos/tron/algorand/conflux preset이 no-networ
   expect(restById('trx-transfer')!.transaction.fee_limit).toBeGreaterThan(0)
 
   // Algorand ③ — firstRound/lastRound (placeholder 1/1000 금지) + genesis 필드
-  const algoIds = ['algo-payment', 'algo-asa-transfer', 'algo-asa-descriptor-transfer']
-  algoIds.forEach((id) => {
+  ALGO_IDS.forEach((id) => {
     const tx = restById(id)!.transaction
     expect(tx.firstRound).toBeGreaterThan(1)
     expect(tx.lastRound).toBeGreaterThan(tx.firstRound)
@@ -414,15 +418,23 @@ it('T-PRESET-COMPLETE-01(rest): cosmos/tron/algorand/conflux preset이 no-networ
   expect(cfx.epochHeight).toBeTruthy()
   expect(cfx.epochHeight).not.toBe('0x0')
   ;['gas', 'gasPrice', 'storageLimit', 'nonce'].forEach((f) => expect(cfx).toHaveProperty(f))
+
+  // Vechain ③ — blockRef (placeholder 0x0000… 금지). rest.json에 vet-transfer/vet-vip180-transfer 존재.
+  VET_IDS.forEach((id) => {
+    const tx = restById(id)!.transaction
+    expect(tx.blockRef).toBeTruthy()
+    expect(tx.blockRef).not.toBe('0x0000000000000000')
+    expect(tx.blockRef).toMatch(/^0x[0-9a-fA-F]{16}$/)
+  })
 })
 
-it('T-PRESET-FIELDSHAPE-01(rest): cosmos/tron/algorand/conflux 값 형식 정합', () => {
+it('T-PRESET-FIELDSHAPE-01(rest): cosmos/tron/algorand/conflux/vechain 값 형식 정합 (전 preset)', () => {
   const HEX_RE = /^0x[0-9a-fA-F]+$/
   const DEC_STR_RE = /^\d+$/
+  const BLOCKREF_RE = /^0x[0-9a-fA-F]{16}$/
 
-  // Cosmos: account_number/sequence = decimal string
-  restById('atom-transfer')!.transaction // ensure fixture present
-  ;['atom-transfer', 'coreum-transfer', 'hippo-transfer'].forEach((id) => {
+  // Cosmos: account_number/sequence = decimal string (전 preset)
+  COSMOS_IDS.forEach((id) => {
     const tx = restById(id)!.transaction
     expect(typeof tx.account_number).toBe('string')
     expect(tx.account_number).toMatch(DEC_STR_RE)
@@ -430,17 +442,27 @@ it('T-PRESET-FIELDSHAPE-01(rest): cosmos/tron/algorand/conflux 값 형식 정합
     expect(tx.sequence).toMatch(DEC_STR_RE)
   })
 
-  // Tron: ref_block_bytes/ref_block_hash = lowercase hex (no 0x prefix)
-  const rd = restById('trx-transfer')!.transaction.raw_data
-  expect(rd.ref_block_bytes).toMatch(/^[0-9a-f]+$/)
-  expect(rd.ref_block_hash).toMatch(/^[0-9a-f]{16}$/)
+  // Tron: ref_block_bytes/ref_block_hash = lowercase hex (no 0x prefix) — 전 raw_data preset
+  TRON_RAW_IDS.forEach((id) => {
+    const rd = restById(id)!.transaction.raw_data
+    expect(rd.ref_block_bytes).toMatch(/^[0-9a-f]+$/)
+    expect(rd.ref_block_hash).toMatch(/^[0-9a-f]{16}$/)
+  })
 
-  // Algorand: firstRound/lastRound = positive integers
-  const algo = restById('algo-payment')!.transaction
-  expect(Number.isInteger(algo.firstRound)).toBe(true)
-  expect(Number.isInteger(algo.lastRound)).toBe(true)
-  expect(algo.firstRound).toBeGreaterThan(0)
+  // Algorand: firstRound/lastRound = positive integers, firstRound<lastRound (전 preset)
+  ALGO_IDS.forEach((id) => {
+    const algo = restById(id)!.transaction
+    expect(Number.isInteger(algo.firstRound)).toBe(true)
+    expect(Number.isInteger(algo.lastRound)).toBe(true)
+    expect(algo.firstRound).toBeGreaterThan(0)
+    expect(algo.lastRound).toBeGreaterThan(algo.firstRound)
+  })
 
   // Conflux: epochHeight = 0x-hex
   expect(restById('cfx-transfer')!.transaction.epochHeight).toMatch(HEX_RE)
+
+  // Vechain: blockRef = 0x + 16 hex (전 preset)
+  VET_IDS.forEach((id) => {
+    expect(restById(id)!.transaction.blockRef).toMatch(BLOCKREF_RE)
+  })
 })

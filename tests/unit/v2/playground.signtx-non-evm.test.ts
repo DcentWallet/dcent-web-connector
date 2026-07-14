@@ -12,6 +12,7 @@
  */
 import * as fs from 'fs'
 import * as path from 'path'
+import { base58 } from '@scure/base'
 
 // ── Playground 로드 helper ──────────────────────────────────────────────────
 function loadPlayground(): void {
@@ -1353,24 +1354,31 @@ describe('T-PRESET no-network 완성 필드 (non-evm)', () => {
     const ED25519_B58_RE = /^ed25519:[1-9A-HJ-NP-Za-km-z]{43,44}$/ // base58, 32-byte access-key
     const HEX_RE = /^0x[0-9a-fA-F]+$/
     const HEX64_RE = /^[0-9a-fA-F]{64}$/
+    const BLOCKREF_RE = /^0x[0-9a-fA-F]{16}$/
 
-    // NEAR publicKey = ed25519 base58 (all-1 placeholder 32-char은 이 regex 불통과)
-    ;['near-transfer', 'near-ft-transfer'].forEach((id) => {
-      expect(byId(id)!.transaction.publicKey).toMatch(ED25519_B58_RE)
+    // NEAR publicKey = ed25519: + base58(32 bytes). 전 preset 검증 + base58 decode로 정확히 32바이트.
+    ;['near-transfer', 'near-transfer-testnet', 'near-ft-transfer', 'near-ft-transfer-unregistered'].forEach((id) => {
+      const pk: string = byId(id)!.transaction.publicKey
+      expect(pk).toMatch(ED25519_B58_RE)
+      expect(base58.decode(pk.slice('ed25519:'.length)).length).toBe(32)
     })
 
-    // Havah stepPrice = 0x-hex > 0
-    const hv = byId('havah-transfer')!.transaction
-    expect(hv.stepPrice).toMatch(HEX_RE)
-    expect(parseInt(hv.stepPrice, 16)).toBeGreaterThan(0)
+    // Havah stepPrice = 0x-hex > 0 (전 preset)
+    ;['havah-transfer', 'havah-hsp20-transfer', 'havah-hsp20-descriptor-transfer'].forEach((id) => {
+      const sp: string = byId(id)!.transaction.stepPrice
+      expect(sp).toMatch(HEX_RE)
+      expect(parseInt(sp, 16)).toBeGreaterThan(0)
+    })
 
-    // Constellation lastRef.ordinal = number, hash = 64-hex
-    const dag = byId('dag-transfer')!.transaction.lastRef
-    expect(typeof dag.ordinal).toBe('number')
-    expect(dag.hash).toMatch(HEX64_RE)
+    // Constellation lastRef.ordinal = number, hash = 64-hex (전 preset)
+    ;['dag-transfer', 'dag-dor-metagraph-transfer', 'dag-custom-metagraph-transfer'].forEach((id) => {
+      const ref = byId(id)!.transaction.lastRef
+      expect(typeof ref.ordinal).toBe('number')
+      expect(ref.hash).toMatch(HEX64_RE)
+    })
 
-    // Ripple/Xahau LastLedgerSequence = 양의 정수, Sequence = 양의 정수
-    ;['xrp-payment', 'xahau-payment'].forEach((id) => {
+    // Ripple/Xahau LastLedgerSequence + Sequence = 양의 정수 (전 preset)
+    ;['xrp-payment', 'xrp-iou-payment', 'xrp-accountset', 'xrp-trustset', 'xahau-payment'].forEach((id) => {
       const tx = byId(id)!.transaction
       expect(Number.isInteger(tx.LastLedgerSequence)).toBe(true)
       expect(tx.LastLedgerSequence).toBeGreaterThan(0)
@@ -1379,6 +1387,11 @@ describe('T-PRESET no-network 완성 필드 (non-evm)', () => {
     })
 
     // Vechain blockRef = 0x + 16 hex (8 bytes)
-    expect(byId('vechain-vip180-transfer')!.transaction.blockRef).toMatch(/^0x[0-9a-fA-F]{16}$/)
+    expect(byId('vechain-vip180-transfer')!.transaction.blockRef).toMatch(BLOCKREF_RE)
+
+    // Stacks top-level nonce/fee = decimal string
+    const stx = byId('stacks-sip010-transfer')!.transaction
+    expect(String(stx.nonce)).toMatch(/^\d+$/)
+    expect(String(stx.fee)).toMatch(/^\d+$/)
   })
 })

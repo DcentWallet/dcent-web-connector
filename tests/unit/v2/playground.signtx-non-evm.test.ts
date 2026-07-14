@@ -1418,12 +1418,50 @@ describe('T-BLOB-SHAPE-01 / T-BLOB-REMOVE-01: blob preset 완성 + 미지원 for
   const byId = (id: string) => PRESETS.find((p) => p.id === id)
   const SOL_PLACEHOLDER = '11111111111111111111111111111111'
 
-  it('T-BLOB-SHAPE-01: Solana form-E(base58-serialized) — real-format feePayer/recentBlockhash, placeholder 제거', () => {
+  // compact-u16 reader (Solana legacy wire format) — 이 fixture의 count들은 모두 <128이라
+  // 단일-byte 케이스만 필요하지만, 스펙대로 멀티바이트 continuation도 지원.
+  function readCompactU16(buf: Uint8Array, offset: number): { value: number; next: number } {
+    let value = 0
+    let shift = 0
+    let pos = offset
+    // eslint-disable-next-line no-constant-condition
+    while (true) {
+      const byte = buf[pos]
+      pos += 1
+      value |= (byte & 0x7f) << shift
+      if ((byte & 0x80) === 0) break
+      shift += 7
+    }
+    return { value, next: pos }
+  }
+
+  it('T-BLOB-SHAPE-01: Solana form-E(base58-serialized) — 디코드된 accountKeys[0]/recentBlockhash가 real-format(placeholder 아님)', () => {
     const case1 = byId('sol-transfer-base58-serialized')
     expect(case1).toBeDefined()
     expect(typeof case1.transaction).toBe('string')
-    // ASCII 텍스트 레벨에서 all-ones placeholder 패턴이 포함되지 않아야 함
+    // ASCII 텍스트 레벨 가드(빠른 회귀 감지) — 아래 바이너리 디코드가 authoritative 검증
     expect(case1.transaction).not.toContain(SOL_PLACEHOLDER)
+
+    // legacy Transaction wire: [sigCount][sigs...64B][numReqSig][roSigned][roUnsigned]
+    //   [acctKeyCount][acctKeys...32B][recentBlockhash 32B][instructions...]
+    const bytes = base58.decode(case1.transaction)
+    let { value: sigCount, next: pos } = readCompactU16(bytes, 0)
+    expect(sigCount).toBeGreaterThan(0)
+    pos += sigCount * 64 // skip signature placeholders
+
+    pos += 3 // numRequiredSignatures / numReadonlySigned / numReadonlyUnsigned
+    const { value: acctCount, next: acctStart } = readCompactU16(bytes, pos)
+    expect(acctCount).toBeGreaterThan(0)
+    pos = acctStart
+
+    const feePayerBytes = bytes.subarray(pos, pos + 32)
+    pos += acctCount * 32
+    const recentBlockhashBytes = bytes.subarray(pos, pos + 32)
+
+    const feePayerB58 = base58.encode(feePayerBytes)
+    const recentBlockhashB58 = base58.encode(recentBlockhashBytes)
+    expect(feePayerB58).not.toBe(SOL_PLACEHOLDER)
+    expect(recentBlockhashB58).not.toBe(SOL_PLACEHOLDER)
 
     // 나머지 plain-JSON Solana preset(Case 2a-d)도 feePayer/signer/recentBlockhash가
     // real-format 값으로 교체됨 (programId=SystemProgram은 프로토콜 상수라 예외 — 아래 별도 단언)

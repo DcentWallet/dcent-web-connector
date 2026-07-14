@@ -485,3 +485,19 @@ it('T-BLOB-SHAPE-01(rest, polkadot): dot-scalehex-unsigned-passthrough — extra
   expect(tx).toHaveProperty('nonce')
   expect(tx).toHaveProperty('tip')
 })
+
+// 크로스리뷰(Codex) 발견 회귀 가드: args[0](display용 SS58)와 extra.scaleHex(authoritative,
+// signing 대상) 내부의 AccountId32가 byte-identical해야 한다 — 둘이 다르면 dApp 개발자가
+// "표시된 수신자"와 "실제 서명되는 수신자"가 다른 예제를 참고하게 되는 sign/display mismatch.
+it('T-BLOB-SHAPE-01(rest, polkadot): args[0] SS58 pubkey == scaleHex 내 AccountId32 (display/authoritative 일치)', () => {
+  const p = restById('dot-scalehex-unsigned-passthrough')!
+  const tx = p.transaction
+  const displayPubkey = decodeSs58(tx.args[0]).pubkey
+
+  // scaleHex = 0x + callIndex(2B) + MultiAddress tag(1B) + AccountId32(32B) + Compact<Balance>
+  const hex = (tx.extra.scaleHex as string).slice(2)
+  const bytes = Buffer.from(hex, 'hex')
+  const accountId32 = bytes.subarray(3, 35)
+
+  expect(bytesEq(displayPubkey, new Uint8Array(accountId32))).toBe(true)
+})

@@ -2927,14 +2927,7 @@ dcent.addBitcoinTransactionOutput(tx, 'p2pkh', 990000, recipient)
 </div>
 <div class="note delta"><span class="ni">◆</span><div>Cardano <code>signData</code>는 완전 구현됨(COSE_Sign1) — 커넥터 opaque pass-through → <code>DcentSdkClient</code> <code>signDataFromWire</code> → 브리지 <code>cardano/signData.ts</code> <code>signCardanoData</code>(CIP-8/CIP-30 payment + CIP-95 stake/DRep) 확인. <span class="muted">(브리지에서 확인)</span> — <a href="#/known-differences">알려진 차이</a> 참조.</div></div>
 <h2 id="ada-signtransaction">signTransaction</h2>
-<h3>변형 — 간편 송금</h3>
-<div class="code"><div class="cb-head"><span>payload.transaction</span><button class="copy">복사</button></div>
-<pre>{\n  \"senderAddress\": \"addr1&lt;…&gt;\",\n  \"receiverAddress\": \"addr1&lt;…&gt;\",\n  \"lovelaceToSend\": \"1000000\"\n}</pre></div>
-<table class="params"><thead><tr><th>필드</th><th>필수</th><th>단위</th><th>비고</th></tr></thead><tbody>
-<tr><td><code>senderAddress</code></td><td><span class="badge b-real">Required-Real</span></td><td>—</td><td>잔액 있는 기기 주소(UTXO 필요)</td></tr>
-<tr><td><code>receiverAddress</code></td><td><span class="badge b-real">Required-Real</span></td><td>—</td><td>수신자</td></tr>
-<tr><td><code>lovelaceToSend</code></td><td><span class="badge b-req">필수</span></td><td>lovelace</td><td>1 ADA = 1e6</td></tr>
-</tbody></table>
+<div class="note info"><span class="ni">ℹ</span><div>간편 송금(<code>senderAddress</code> / <code>receiverAddress</code> / <code>lovelaceToSend</code>)은 UTXO 조회(RPC)가 필요해 <code>signTransaction</code> wire에서 미지원(<code>-32602</code>) — 완성된 <code>txCbor</code> 또는 structured(<code>inputs</code>/<code>outputs</code>) 트랜잭션으로 보내세요.</div></div>
 <h3>변형 — CIP-30 CBOR</h3>
 <div class="code"><div class="cb-head"><span>payload.transaction</span><button class="copy">복사</button></div>
 <pre>{\n  \"txCbor\": \"84a3008182582…\"\n}   // app이 @emurgo/csl로 생성</pre></div>

@@ -320,7 +320,10 @@ it('T-U-REST-POLKADOT-01: polkadot 형제망 preset method/args/SS58/단일-체�
     expect(p.family).toBe('polkadot')
     expect(p.applicableChainIds).toEqual([c.chainId])
     const tx = p.transaction
-    expect(tx.method).toBe('balances.transfer')
+    // `balances.transfer` 는 라이브 런타임에 없다 — Substrate 가 제거하고 `transferAllowDeath` 로
+    // 대체했다(a779a8a 실측: @polkadot/api metadata, polkadot spec 2003000 / astar 2207 의
+    // balances.* 에 `transfer` 부재). 그 커밋이 preset 만 교정하고 이 단언을 안 고쳐 red 였다.
+    expect(tx.method).toBe('balances.transferAllowDeath')
     expect(Array.isArray(tx.args)).toBe(true)
     expect(tx.args.length).toBe(2)
     // args[0] = SS58 자기주소: 디코드하여 network prefix 정확 일치 + pubkey가 dot 레퍼런스와 동일(self-key 재인코딩)

@@ -213,6 +213,7 @@
       ],
       "gasPriceCoef": 0,
       "gas": 21000,
+      "fee": "210000000000000000",
       "dependsOn": null,
       "nonce": "0x0"
     }
@@ -338,6 +339,7 @@
       ],
       "gasPriceCoef": 0,
       "gas": 80000,
+      "fee": "800000000000000000",
       "dependsOn": null,
       "nonce": "0x0"
     }

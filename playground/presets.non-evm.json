@@ -582,6 +582,7 @@
       ],
       "gasPriceCoef": 0,
       "gas": 80000,
+      "fee": "800000000000000000",
       "dependsOn": null,
       "nonce": "0x0"
     }
@@ -681,32 +682,26 @@
   },
   {
     "id": "near-ft-transfer-unregistered",
-    "label": "NEAR NEP-141 token transfer (미등록 → RPC fallback)",
+    "label": "NEAR NEP-141 token transfer (미등록 토큰 → form-D descriptor)",
     "family": "near",
     "applicableChainIds": [
       "near:mainnet/slip44:397"
     ],
-    "note": "토큰 전송 — NEAR NEP-141 ft_transfer (★ tier-2 = near-token.json 미등록 토큰). near-ft-transfer(tier-1 USDT)와 동일 shape이나 receiverId=native USDC(17208628f84f5d6ad33f0da3bbbeb27ffcb398eac501a31bd6ad2011e36133a1 = Circle 네이티브 USDC, 레지스트리 미등록 — 브릿지 USDC.E와 별개). m02-05-50 keystone 3-tier resolver의 tier-2 경로 검증용: tier-1 registry miss → tokenMetadataHook이 ft_metadata RPC로 symbol/decimals 조회(USDC=6 decimals) → TokenAccount 합성. amount=1000000(6 decimals 가정 1 USDC). ⚠️ symbol/decimals는 sign 시점 ft_metadata RPC가 확정하므로 device 표시는 RPC 응답 기준. 【m02-05-50 §9 device】 fix 前=garbage / fix 後='USDC 1.0 → receiver.near'. RPC 실패/timeout·완전 미존재 컨트랙트면 keystone resolver가 -32602 loud fail(silent native 서명 아님 — T-SEC-NEAR-LOUDFAIL-01). loud-fail만 따로 보려면 receiverId를 존재하지 않는 계정(예: nonexistent-token.near)으로 교체. ⚠️ signerId는 상단 '🔑 Resolve sender from device' 버튼으로 디바이스 NEAR 계정 자동 치환(on-chain 활성 계정이어야 view_access_key_list 통과 — near-ft-transfer note 참조). receiver_id는 self-send 시 signerId와 동일하게.",
-    "sourceUrl": "https://nomicon.io/Standards/Tokens/FungibleToken/Metadata",
+    "note": "토큰 전송 — NEAR NEP-141 ft_transfer (★ **wm 미등록 토큰** = form-D descriptor 경로). receiverId 대신 **transaction.token descriptor**({contract,to,amount,decimals})를 보내면 wm 빌더(buildNep141TransferFromDescriptor)가 form-E FunctionCall(ft_transfer, deposit=1 yocto, gas 30 TGas)로 합성한다 → 미등록 토큰도 **RPC 0으로** 서명된다. contract=17208628f84f5d6ad33f0da3bbbeb27ffcb398eac501a31bd6ad2011e36133a1 (Circle 네이티브 USDC, near-token.json 미등록 — 브릿지 USDC.E와 별개). amount=1000000 = 1 USDC(6 decimals).\n\n⚠️ **2026-07-15 전면 재작성 — 이전 note의 'tier-2 RPC fallback' 서술은 더 이상 사실이 아니다.** 예전엔 tier-1 registry miss → tokenMetadataHook이 ft_metadata RPC로 symbol/decimals를 조회해 TokenAccount를 합성했으나, m02-08-15가 그 tier-2 RPC 조회를 **noNetwork에서 게이팅**했고 bridge는 noNetwork를 **상시** 설정한다(DcentSdkClient — dApp payload 값에 의존하지 않음). 따라서 v2 wire에서 이 preset의 예전 form-E shape은 -32602 'cannot resolve token …(not in registry, RPC metadata…)'로 **반드시 실패**한다(실측). 미등록 토큰의 유일한 서명 경로가 form-D다.\n\n⚠️ **decimals는 필수** — 타입상 optional이지만 noNetwork에선 tier-3가 typeof decimals === 'number' && Number.isFinite를 요구한다(m02-08-15). 빼면 tier-2로 내려가 -32602. **decimals는 서명 바이트에 안 들어간다**(재스케일 0 — amount는 이미 base units) — device 표시용이다. 그래서 값이 틀려도 서명은 되지만 기기 화면 수량이 틀리게 보인다.\n\n**loud-fail(silent native 방지)**: descriptor 없이 top-level contract만 보내면 -32602 \"'token' descriptor is required for NEP-141 transfer\" — native NEAR로 몰래 서명되지 않는다(T-SEC-NEAR-LOUDFAIL-01).\n\n**v2 wire 공통**: publicKey 싣지 않기(§5.07 게이트가 기기 키와 불일치 시 -32602), top-level fee 필수(없으면 incomplete), blockHash/nonce도 앱 제공. signerId/to는 '🔑 Resolve sender from device'로 기기 계정 치환. 서명만 볼 거면 계정이 on-chain에 없어도 된다(RPC 0). byte-proof 회귀: bridge apps/bridge/src/__tests__/integration/swproxy-sign.near.test.ts (T-DEV-NEAR-01).",
+    "sourceUrl": "https://nomicon.io/Standards/Tokens/FungibleToken/Core",
     "transaction": {
       "signerId": "sender.near",
-      "receiverId": "17208628f84f5d6ad33f0da3bbbeb27ffcb398eac501a31bd6ad2011e36133a1",
-      "actions": [
-        {
-          "type": "FunctionCall",
-          "params": {
-            "methodName": "ft_transfer",
-            "args": {
-              "receiver_id": "receiver.near",
-              "amount": "1000000"
-            },
-            "gas": "30000000000000",
-            "deposit": "1"
-          }
-        }
-      ],
+      "receiverId": "sender.near",
+      "token": {
+        "contract": "17208628f84f5d6ad33f0da3bbbeb27ffcb398eac501a31bd6ad2011e36133a1",
+        "to": "receiver.near",
+        "amount": "1000000",
+        "decimals": 6,
+        "symbol": "USDC"
+      },
       "blockHash": "GJp9NRJGBnXqWJAKFxkzD8p9cJTiSNi1J3UWKVBbcfRw",
       "nonce": 112247371000042,
+      "fee": "100000000000000000000",
       "publicKey": "ed25519:BtCjvJYNeN8RoVze7WTsgxN64g3ckSUAwQWNJjdzthwV"
     }
   },

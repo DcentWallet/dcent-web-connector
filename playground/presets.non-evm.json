@@ -589,12 +589,12 @@
   },
   {
     "id": "sol-spl-transfer",
-    "label": "Solana SPL token transfer (plain JSON, data: 0x hex)",
+    "label": "Solana SPL token transferChecked (mint 명시, plain JSON)",
     "family": "solana",
     "applicableChainIds": [
       "solana:5eykt4UsFv8P8NJdTREpY1vzqKqZKvdp/slip44:501"
     ],
-    "note": "토큰 전송 — SPL Token transfer. programId=SPL Token program(Tokenkeg...), instruction.data=0x03 + amount(u64 LE) → 현재 0x03e803000000000000(=1000 base units). keys: [source ATA(writable), destination ATA(writable), owner(signer)]. ⚠️ pubkey 3개는 placeholder — 본인 디바이스 SOL 주소에서 파생한 실제 ATA(연관 토큰 계정) + owner pubkey로 교체해야 서명 유효. data-hex 형식은 SystemProgram 외 모든 instruction에 권장(sol-transfer-data-hex와 동일 메커니즘). recentBlockhash는 dApp/RPC가 주입. ⚠️ wm는 직렬화 bytes를 opaque 서명 — 기기 펌웨어의 SPL 표시 동작은 HW smoke 검증 필요. SystemProgram.Transfer 외 instruction은 직렬화(sol-transfer-base58-serialized) 경로가 가장 안정적. [m09-04-25] feePayer/source ATA/destination ATA/owner/recentBlockhash를 real-format 값(대표값)으로 교체 — 실제 서명 유효성은 본인 디바이스 ATA로 재교체 필요(기존 안내 유지).",
+    "note": "토큰 전송 — SPL Token **transferChecked**(0x0c). programId=SPL Token program(Tokenkeg...). data = 0x0c + amount(u64 LE) + decimals(u8) → 현재 0x0ce80300000000000006 (=1000 base units, dec 6). keys = [source ATA(writable), **mint**(readonly), destination ATA(writable), owner(signer)]. ★ 2026-07-20 transfer(0x03) → transferChecked(0x0c) 전환: **transfer 에는 mint 를 담을 자리가 구조적으로 없어**(data=tag+amount, keys=3개) 실제 토큰 컨트랙트를 preset 에 세팅할 수 없었다. transferChecked 는 mint 를 key index 1 로 명시하고 decimals 를 온체인 mint 와 **대조 검증**하므로 자릿수 불일치를 런타임이 직접 거부한다(TOKEN-REGISTRY-CONTRACT.md §6-4 계열 사고 예방). mint=EPjFWdd5AufqSSqeM2qN1xzybapC8G4wEGGkZwyTDt1v 은 Circle USDC mainnet(dec 6, 온체인 실재 확증). ⚠️ source/destination ATA 는 **연결 계정 + mint 에서 파생**해야 유효하다 — 하네스(prepareSolana)가 Associated Token Account 를 파생해 치환한다(self-send). preset 의 ATA 값은 형식 예시일 뿐이다. ⚠️ broadcast 하려면 그 ATA 가 온체인에 **초기화**돼 있어야 한다(미초기화면 체인이 거부) — 서명 검증과 별개. recentBlockhash 는 하네스가 실값으로 교체. wm 은 직렬화 bytes 를 opaque 서명하며 transferChecked 를 이미 인지한다(wm solana/types.ts, utils.ts). 기기 펌웨어의 SPL 표시 동작은 HW smoke 검증 필요.",
     "sourceUrl": "https://spl.solana.com/token",
     "transaction": {
       "version": 0,
@@ -609,6 +609,11 @@
               "isWritable": true
             },
             {
+              "pubkey": "EPjFWdd5AufqSSqeM2qN1xzybapC8G4wEGGkZwyTDt1v",
+              "isSigner": false,
+              "isWritable": false
+            },
+            {
               "pubkey": "9XEXTBrBHxsYaV6JHKzyuYUuXzsbA6ms69hv7dv59oWG",
               "isSigner": false,
               "isWritable": true
@@ -619,7 +624,7 @@
               "isWritable": false
             }
           ],
-          "data": "0x03e803000000000000"
+          "data": "0x0ce80300000000000006"
         }
       ],
       "recentBlockhash": "2zxvZMg8YScxKqW2QQqQHpNzkLgwvVLj8Q1ZQZoFcTZ6"
@@ -950,15 +955,15 @@
     "applicableChainIds": [
       "havah:mainnet/slip44:858"
     ],
-    "note": "미등록(커스텀) 토큰 전송 — form-D descriptor. wm m02-05-68 buildHavahHsp20TransferFromDescriptor 가 transaction.token={contract,to,amount} 를 ICON SCORE call envelope({to:cx컨트랙트, dataType:'call', data:{method:'transfer', params:{_to,_value}}, value:'0x0'}) 로 빌드 → 서명. ★form-E(havah-hsp20-transfer)와 달리 registry(havah-hsp20.json: PER/ttUSDTe/XPER 3개뿐) 등록 불필요 — 미등록 HSP-20 컨트랙트도 서명 가능. contract=cx6f26c8cadb28264c7ae7d3899c9a7e7dcc3ea9cc 는 registry 에 없는 미등록 valid-format(cx+40hex) 컨트랙트. descriptor 에 decimals 가 있으면 wm 3-tier resolver 가 tier-3(descriptor)로 합성 → on-chain RPC 없이 해석되므로 컨트랙트 실재 불필요(§9 byte-proof 는 broadcast 안 함). token.contract 는 cx+40hex 전체 형식 검증(비정상 cx 주소 -32602). _value=base units hex(재스케일 없음). 봉투 필드(from/stepLimit/nid/nonce/version)는 보존됨 — stepLimit 제공 시 preparedFee 생성(popup-bridge 크래시 회피). decimals/symbol 은 tier-3 표시용. ⚠️ token.to/from 을 본인 디바이스 HAVAH 계정(hx...)으로 교체(self-send 권장, asset risk 0). 실재 미등록 토큰으로 바꾸려면 token.contract 를 PER/ttUSDTe/XPER 아닌 임의 cx 로 교체. ⚠️ 반드시 mainnet(slip44:858). 검증: /verify-wire-sign HAVAH (assetKind=token, native HVH 아님; txParams 에 device timestamp 포함 필요).",
+    "note": "미등록(커스텀) 토큰 전송 — form-D descriptor. wm m02-05-68 buildHavahHsp20TransferFromDescriptor 가 transaction.token={contract,to,amount} 를 ICON SCORE call envelope({to:cx컨트랙트, dataType:'call', data:{method:'transfer', params:{_to,_value}}, value:'0x0'}) 로 빌드 → 서명. ★form-E(havah-hsp20-transfer)와 달리 registry(havah-hsp20.json: PER/ttUSDTe/XPER 3개뿐) 등록 불필요 — 미등록 HSP-20 컨트랙트도 서명 가능. contract=cxd8303731bf989a1597a6d38505d7a9483c4d9a38 은 GODH(dec 6) — HAVAH mainnet 온체인 실재 + havah-hsp20.json 미등록 (2026-07-20 RPC 확증): icx_call symbol()=GODH, decimals()=0x6. descriptor 에 decimals 가 있으면 wm 3-tier resolver 가 tier-3(descriptor)로 합성 → on-chain RPC 없이 해석되므로 컨트랙트 실재 여부는 서명에 영향 없다(noNetwork). 그럼에도 실재 토큰을 쓰는 이유: 실재하지 않으면 [wm 미등록] 과 [네트워크 미등록] 이 겹쳐 검증 전제가 무너진다(TOKEN-REGISTRY-CONTRACT.md §0). 이전 값 cx6f26c8… 는 ContractNotFound(계정 자체 부재)인 합성값이었다. token.contract 는 cx+40hex 전체 형식 검증(비정상 cx 주소 -32602). _value=base units hex(재스케일 없음). 봉투 필드(from/stepLimit/nid/nonce/version)는 보존됨 — stepLimit 제공 시 preparedFee 생성(popup-bridge 크래시 회피). decimals/symbol 은 tier-3 표시용. ⚠️ token.to/from 을 본인 디바이스 HAVAH 계정(hx...)으로 교체(self-send 권장, asset risk 0). 다른 토큰으로 교체할 때는 (a) 온체인 실재 (b) havah-hsp20.json 미등록 두 조건을 모두 확인할 것(§0). ⚠️ HAVAH testnet(Vega/Altair)은 DNS 레코드가 삭제되어 소멸했으므로 이 preset 은 mainnet chainId 로만 유효하다. ⚠️ 반드시 mainnet(slip44:858). 검증: /verify-wire-sign HAVAH (assetKind=token, native HVH 아님; txParams 에 device timestamp 포함 필요).",
     "sourceUrl": "https://docs.havah.io/havah-juwon/specifications/hsp-20",
     "transaction": {
       "token": {
-        "contract": "cx6f26c8cadb28264c7ae7d3899c9a7e7dcc3ea9cc",
+        "contract": "cxd8303731bf989a1597a6d38505d7a9483c4d9a38",
         "to": "hx99bc2f9ee6aea6f9ed252e3dc48f6a7fdc9e916c",
-        "amount": "1000000000000000000",
-        "decimals": 18,
-        "symbol": "TKN"
+        "amount": "1000000",
+        "decimals": 6,
+        "symbol": "GODH"
       },
       "from": "hx99bc2f9ee6aea6f9ed252e3dc48f6a7fdc9e916c",
       "stepLimit": "0x186a0",
@@ -1086,7 +1091,7 @@
     "applicableChainIds": [
       "constellation:mainnet/slip44:1137"
     ],
-    "note": "미등록(커스텀) metagraph 토큰 전송 시도 — form-D descriptor (m02-05-60, T-SEC-CONSTELLATION-UNREGISTERED-01). ★★constellation 은 형제(Havah/Hedera/Stellar/Stacks/Tezos)와 달리 미등록 토큰이 tier-3 descriptor 합성으로도 서명 불가 → keystone -32602. 이유: metagraph 서명은 토큰별 D'CENT 게이트웨이 endpoint(extra.l0Url/l1Url/feesCurrencyId)를 요구하는데 이는 wm registry(metagraph-token.json)에만 존재. tier-3 합성은 extra 를 못 채우고 resolveCustomTokenDeviceStoreId 도 deviceStoreId 를 결정 못 함(어댑터 없음 + chainInfo.tokenGroupName 없음) → -32602 로 선차단. ★이 preset 의 기대 결과 = -32602(성공 아님). native DAG 로 silent 오서명되지 않는 것(silent native 0)을 확인하는 negative/가드 검증용 — DOR/PACA 등록 토큰은 dag-dor-metagraph-transfer preset 으로 서명. contract=DAG5UnregisteredMetagraphIdZZZZZZZZZZZZZZ 는 registry 미등록(회귀 테스트 T-SEC-CONSTELLATION-UNREGISTERED-01 과 동일 값, valid DAG 포맷이나 DOR/PACA 아님). decimals 를 빼도(01b) 동일하게 -32602. ⚠️ -32602 는 m02-05-60 픽스 없이도 기존 resolver 로 발생하므로 SDK refresh 전에도 재현됨(성공 경로 DOR 만 60 픽스 필요). ⚠️ mainnet. 서명이 성립 안 하므로 /verify-wire-sign 대상 아님 — 요청 후 에러 코드 -32602 확인이 검증.",
+    "note": "미등록(커스텀) metagraph 토큰 전송 시도 — form-D descriptor (m02-05-60, T-SEC-CONSTELLATION-UNREGISTERED-01). ★★constellation 은 형제(Havah/Hedera/Stellar/Stacks/Tezos)와 달리 미등록 토큰이 tier-3 descriptor 합성으로도 서명 불가 → keystone -32602. 이유: metagraph 서명은 토큰별 D'CENT 게이트웨이 endpoint(extra.l0Url/l1Url/feesCurrencyId)를 요구하는데 이는 wm registry(metagraph-token.json)에만 존재. tier-3 합성은 extra 를 못 채우고 resolveCustomTokenDeviceStoreId 도 deviceStoreId 를 결정 못 함(어댑터 없음 + chainInfo.tokenGroupName 없음) → -32602 로 선차단. ★이 preset 의 기대 결과 = -32602(성공 아님). native DAG 로 silent 오서명되지 않는 것(silent native 0)을 확인하는 negative/가드 검증용 — DOR/PACA 등록 토큰은 dag-dor-metagraph-transfer preset 으로 서명. contract=DAG5UnregisteredMetagraphIdZZZZZZZZZZZZZZ 는 registry 미등록(회귀 테스트 T-SEC-CONSTELLATION-UNREGISTERED-01 과 동일 값, DOR/PACA 아님. ★ 2026-07-20 값 교체 — 이전 값 `DAG5UnregisteredMetagraphIdZZZZZZZZZZZZZZ` 은 **DAG 주소 형식 자체가 무효**였다(길이 41자, 정상은 40자 = DAG + parity 1 + base58 36; 게다가 base58 알파벳에 없는 [I] 포함). 그래서 -32602 가 나더라도 그것이 [registry 미등록] 게이트를 통과한 결과인지 주소 형식 검증에서 먼저 걸린 결과인지 구분할 수 없었다 — negative test 가 엉뚱한 이유로 통과하던 상태. 현재 값 `DAG0UnregisteredMetagraphZZZZZZZZZZZZZZZ` 는 **형식 유효 + 미등록**이라 게이트를 정확히 겨냥한다: 길이 40, base58 위반 0, parity 자릿수 0 = body 숫자합 mod 9 (규칙은 실재 metagraph DAG0CyyS… 로 역검증), constellation mainnet 등록 metagraph 16건에 미포함(be-mainnet API 조회). ⚠️ 자매 wm 회귀 테스트 `T-SEC-CONSTELLATION-UNREGISTERED-01`(constellation/__tests__/wire-metagraph-sign.test.ts:175,197)은 preset 을 import 하지 않고 **자체 지역 상수**로 옛 값을 쓰므로 이 교체와 무관하게 통과한다. 다만 그 테스트도 같은 무효 주소를 쓰고 있어 동일한 \"엉뚱한 이유로 통과\" 위험이 있다(wm 소유 영역 — 보고만 하고 수정하지 않음)). decimals 를 빼도(01b) 동일하게 -32602. ⚠️ -32602 는 m02-05-60 픽스 없이도 기존 resolver 로 발생하므로 SDK refresh 전에도 재현됨(성공 경로 DOR 만 60 픽스 필요). ⚠️ mainnet. 서명이 성립 안 하므로 /verify-wire-sign 대상 아님 — 요청 후 에러 코드 -32602 확인이 검증.",
     "sourceUrl": "https://docs.constellationnetwork.io/",
     "transaction": {
       "type": "transfer",
@@ -1095,7 +1100,7 @@
       "amount": "100000000",
       "fee": "0",
       "token": {
-        "contract": "DAG5UnregisteredMetagraphIdZZZZZZZZZZZZZZ",
+        "contract": "DAG0UnregisteredMetagraphZZZZZZZZZZZZZZZ",
         "decimals": 8,
         "symbol": "UNREG"
       },

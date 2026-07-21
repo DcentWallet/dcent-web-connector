@@ -270,12 +270,6 @@
     "defaultKeyPath": "m/44'/60'/0'/0/0"
   },
   {
-    "chainId": "eip155:888888888/slip44:60",
-    "family": "ethereum",
-    "displayName": "Ancient8",
-    "defaultKeyPath": "m/44'/60'/0'/0/0"
-  },
-  {
     "chainId": "eip155:88888/slip44:60",
     "family": "ethereum",
     "displayName": "Chiliz",

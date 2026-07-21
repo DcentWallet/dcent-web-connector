@@ -164,10 +164,17 @@ export interface AccountListV2Payload {
  * 생성되므로 caller mutation은 내부 상태를 오염시키지 않는다 (T-SEC-MUT-01).
  */
 export interface DeviceInfoPayload {
-  /** 하드웨어 device_id — 연결된 디바이스 고유 식별자 */
-  device_id?: string
-  /** 펌웨어 버전 (예: 'v2.8.1') */
-  fw_version?: string
+  /**
+   * 하드웨어 디바이스 고유 식별자.
+   *
+   * ⚠️ (문서↔코드 감사 C3, 2026-07-21) **v1 의 `device_id` 가 아니라 `deviceId` 다.**
+   * bridge 가 wire 로 내보내는 실제 키는 `deviceId`/`version` 인데(`DeviceInfoResult.ts`),
+   * 이 타입이 v1 이름(`device_id`/`fw_version`)을 선언하고 있어 dApp 이 타입을 믿고 읽으면
+   * 항상 `undefined` 였다. v2 는 wire 키로 통일한다(사용자 결정 2026-07-21).
+   */
+  deviceId?: string
+  /** 펌웨어 버전 (예: '2.8.1'). v1 의 `fw_version` 에 대응 — wire 키는 `version`. */
+  version?: string
   /** KSM 버전 (보안 칩 펌웨어) */
   ksm_version?: string
   /** 디바이스 상태 (예: 'initialised') */
@@ -183,4 +190,14 @@ export interface DeviceInfoPayload {
   /** 디바이스 부착 여부 */
   isAttached?: boolean
 }
+
+/**
+ * 컴파일 타임 계약 고정 — `deviceId` / `version` 이 wire 키다.
+ *
+ * `tsconfig.json` 의 `include` 는 `src/**` 뿐이라 `tests/**` 는 `tsc` 가 보지 않고,
+ * 단위 테스트도 babel-jest 라 타입 주석이 지워진다(크로스 리뷰 지적). 따라서 이름이 되돌아가는
+ * 회귀는 **여기서만** 컴파일 에러로 잡힌다. 필드명을 v1 이름으로 되돌리면 이 선언이 깨진다.
+ */
+const _deviceInfoWireKeyContract: DeviceInfoPayload = { deviceId: '', version: '' }
+void _deviceInfoWireKeyContract
 /* eslint-enable camelcase */

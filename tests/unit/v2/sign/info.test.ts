@@ -50,7 +50,7 @@ describe('read-only info functions — m08-01-02.5', () => {
     const { transport } = ensureSingleton()
     const sendSpy = jest.spyOn(transport, 'send').mockResolvedValue({
       id: 'req-dev',
-      result: { device_id: 'D-XYZ', label: 'mywallet' },
+      result: { deviceId: 'D-XYZ', label: 'mywallet' },
     })
 
     const resp = await getDeviceInfo()
@@ -58,7 +58,7 @@ describe('read-only info functions — m08-01-02.5', () => {
     expect(sendSpy).toHaveBeenCalledTimes(1)
     expect(sendSpy.mock.calls[0][0].method).toBe('getDeviceInfo')
     expect(sendSpy.mock.calls[0][0].params).toBeUndefined()
-    expect(resp.body.parameter?.device_id).toBe('D-XYZ')
+    expect(resp.body.parameter?.deviceId).toBe('D-XYZ')
   })
 
   test('T-U-ACC-01: getAccountInfo() → _call({method: "getAccountInfo"})', async () => {
@@ -90,8 +90,9 @@ describe('T-U-TYPE-* — DeviceInfoPayload / V1Response generic 타입 계약', 
     const empty: DeviceInfoPayload = {}
     expect(empty).toBeDefined()
     // 부분 필드 할당도 가능
-    const partial: DeviceInfoPayload = { device_id: 'D1', label: 'mywallet', connectType: 'usb' }
-    expect(partial.device_id).toBe('D1')
+    const partial: DeviceInfoPayload = { deviceId: 'D1', version: '2.8.1', label: 'mywallet', connectType: 'usb' }
+    expect(partial.deviceId).toBe('D1')
+    expect(partial.version).toBe('2.8.1')
     expect(partial.label).toBe('mywallet')
     expect(partial.connectType).toBe('usb')
   })
@@ -101,9 +102,9 @@ describe('T-U-TYPE-* — DeviceInfoPayload / V1Response generic 타입 계약', 
     jest.spyOn(transport, 'send').mockResolvedValue({
       id: 'r-dev',
       result: {
-        device_id: 'D-123',
+        deviceId: 'D-123',
         label: 'test',
-        fw_version: 'v2.8.1',
+        version: '2.8.1',
         connectType: 'usb',
         coin_list: [{ name: 'ETHEREUM' }],
         fingerprint: { max: 5, enrolled: 2 },
@@ -114,9 +115,9 @@ describe('T-U-TYPE-* — DeviceInfoPayload / V1Response generic 타입 계약', 
     })
     const resp = await getDeviceInfo()
     // Typed narrow: parameter가 DeviceInfoPayload 필드를 전부 carry
-    expect(resp.body.parameter?.device_id).toBe('D-123')
+    expect(resp.body.parameter?.deviceId).toBe('D-123')
     expect(resp.body.parameter?.label).toBe('test')
-    expect(resp.body.parameter?.fw_version).toBe('v2.8.1')
+    expect(resp.body.parameter?.version).toBe('2.8.1')
     expect(resp.body.parameter?.connectType).toBe('usb')
     expect(resp.body.parameter?.coin_list?.[0]?.name).toBe('ETHEREUM')
     expect(resp.body.parameter?.fingerprint).toEqual({ max: 5, enrolled: 2 })

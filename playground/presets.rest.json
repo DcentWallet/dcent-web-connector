@@ -225,7 +225,7 @@
     "applicableChainIds": [
       "tron:0x2b6653dc/slip44:195"
     ],
-    "note": "TRON TRX 송금 — TronWeb-native shape (raw_data.contract[0].type=TransferContract, wm tron/wire-convert.js). amount 단위 SUN (1 TRX = 1e6 SUN). owner_address/to_address 는 base58(T...) 또는 hex(41...) 모두 허용. ref_block_*/expiration/timestamp 는 wm 가 getNodeInfo 로 재생성하므로 정적 placeholder OK. owner_address==to_address self-send (asset-risk 0). 수정 후 송금.",
+    "note": "TRON TRX 송금 — TronWeb-native shape (raw_data.contract[0].type=TransferContract, wm tron/wire-convert.js). amount 단위 SUN (1 TRX = 1e6 SUN). owner_address/to_address 는 base58(T...) 또는 hex(41...) 모두 허용. ⚠️ ref_block_bytes/ref_block_hash 는 앱이 최신 solid block 에서 만들어 넣어야 하는 필수 입력이다(TAPOS — 참조 블록이 최근 65536 블록 이내). 브리지는 noNetwork 로 서명하므로 아무것도 재생성하지 않는다. 이 preset 의 값은 형식 예시일 뿐 stale 이므로 **서명 데모 전용**이며 그대로 broadcast 하면 TaposError 로 거부된다. expiration/timestamp 는 wm 가 로컬(Date.now)에서 생성한다. owner_address==to_address self-send (asset-risk 0). 수정 후 송금.",
     "sourceUrl": "https://github.com/tronprotocol/tronweb",
     "transaction": {
       "raw_data": {
@@ -658,7 +658,7 @@
     "applicableChainIds": [
       "tron:0x2b6653dc/slip44:195"
     ],
-    "note": "미등록(커스텀) 토큰 전송 — form-D descriptor. wm m02-05-68 buildTrc20TransferFromDescriptor 가 transaction.token={contract,to,amount} 를 TRC-20 transfer calldata(a9059cbb + pad32(to) + pad32(amount)) 로 빌드 → generic {type:'trigger'} shape → 서명. ★form-E(trx-trc20-transfer, raw_data 봉투)와 달리 registry 등록 불필요 — 미등록 TRC-20 컨트랙트도 서명 가능. contract=TThzxNRLrW2Brp9DcTQU8i4Wd9udCWEdZ3 은 stUSDT(JustLend staked USDT, dec 18) — **TRON mainnet 온체인 실재 + trc-token.json 미등록**(2026-07-20 RPC 확증: getcontract bytecode 有, symbol()=stUSDT, decimals()=18). descriptor 에 decimals 가 있으면 wm 3-tier resolver 가 tier-3(descriptor)로 합성 → on-chain RPC 없이 해석된다. ⚠️ 온체인 실재 토큰을 쓰는 이유: 서명 자체는 실재와 무관하나(noNetwork), 실재하지 않는 컨트랙트를 쓰면 'wm 미등록' 과 '네트워크 미등록' 이 겹쳐 검증 전제가 무너진다(TOKEN-REGISTRY-CONTRACT.md §0). owner 는 transaction.owner_address(또는 from)에서 read-only — 없으면 sender undefined → convertTransaction -32602(오서명 방지). amount=base units 문자열(×10^decimals 재스케일 금지). ref_block_*/expiration/timestamp 는 wm 가 getNodeInfo 로 재생성. ⚠️ token.to/owner_address 를 본인 디바이스 TRON 계정(T...)으로 교체(self-send 권장, asset risk 0). 다른 토큰으로 교체할 때는 (a) 온체인 실재 (b) trc-token.json 미등록 두 조건을 모두 확인할 것(§0). 검증: /verify-wire-sign TRON (assetKind=token, native TRX 아님, signer=owner).",
+    "note": "미등록(커스텀) 토큰 전송 — form-D descriptor. wm m02-05-68 buildTrc20TransferFromDescriptor 가 transaction.token={contract,to,amount} 를 TRC-20 transfer calldata(a9059cbb + pad32(to) + pad32(amount)) 로 빌드 → generic {type:'trigger'} shape → 서명. ★form-E(trx-trc20-transfer, raw_data 봉투)와 달리 registry 등록 불필요 — 미등록 TRC-20 컨트랙트도 서명 가능. contract=TThzxNRLrW2Brp9DcTQU8i4Wd9udCWEdZ3 은 stUSDT(JustLend staked USDT, dec 18) — **TRON mainnet 온체인 실재 + trc-token.json 미등록**(2026-07-20 RPC 확증: getcontract bytecode 有, symbol()=stUSDT, decimals()=18). descriptor 에 decimals 가 있으면 wm 3-tier resolver 가 tier-3(descriptor)로 합성 → on-chain RPC 없이 해석된다. ⚠️ 온체인 실재 토큰을 쓰는 이유: 서명 자체는 실재와 무관하나(noNetwork), 실재하지 않는 컨트랙트를 쓰면 'wm 미등록' 과 '네트워크 미등록' 이 겹쳐 검증 전제가 무너진다(TOKEN-REGISTRY-CONTRACT.md §0). owner 는 transaction.owner_address(또는 from)에서 read-only — 없으면 sender undefined → convertTransaction -32602(오서명 방지). amount=base units 문자열(×10^decimals 재스케일 금지). ⚠️ ref_block_bytes/ref_block_hash 는 no-network 서명의 **필수 입력**이며 앱이 최신 solid block 에서 만들어 넣어야 한다(TAPOS: 참조 블록이 최근 65536 블록 이내여야 broadcast 가능). 이 preset 의 값은 형식 예시일 뿐 stale 이므로 **서명 데모 전용** — 그대로 broadcast 하면 거부된다. ⚠️ token.to/owner_address 를 본인 디바이스 TRON 계정(T...)으로 교체(self-send 권장, asset risk 0). 다른 토큰으로 교체할 때는 (a) 온체인 실재 (b) trc-token.json 미등록 두 조건을 모두 확인할 것(§0). 검증: /verify-wire-sign TRON (assetKind=token, native TRX 아님, signer=owner).",
     "sourceUrl": "https://developers.tron.network/docs/trc20-contract-interaction",
     "transaction": {
       "token": {
@@ -668,7 +668,11 @@
         "decimals": 18,
         "symbol": "stUSDT"
       },
-      "owner_address": "TJRabPrwbZy45sbavfcjinPJC18kjpRTv8"
+      "owner_address": "TJRabPrwbZy45sbavfcjinPJC18kjpRTv8",
+      "raw_data": {
+        "ref_block_bytes": "b801",
+        "ref_block_hash": "e4a5f6d7c8b9a0e1"
+      }
     }
   },
   {

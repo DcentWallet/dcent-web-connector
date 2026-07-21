@@ -37,7 +37,10 @@ v2에서 다음 21개 v1 sign wrapper가 **제거**됐다. 호출하면 `undefin
 
 진입점 동일 — `import dcent from 'dcent-web-connector'` (default export object). named export도 추가 제공.
 
-- **read-only**: `info`, `getDeviceInfo`, `getAccountInfo`, `getAddress`, `getPublicKey`, `getXPUB`, `setLabel`, `syncAccount`, `selectAddress`
+- **read-only**: `info`, `getDeviceInfo`, `getAddress`, `getXPUB`, `setLabel`, `selectAddress`
+  - \u26a0\ufe0f `getAccountInfo` \ub294 \uc774\ub984\uc740 \uac19\uc73c\ub098 **\uc751\ub2f5 shape \uac00 v2 \ub85c \ubc14\ub00c\uc5c8\ub2e4** (`V1Response<AccountListV2Payload>` \u2014 `src/sign/types.ts:124`).
+  - \u26a0\ufe0f `syncAccount` \ub294 **\uc785\ub825\uc774 breaking** \uc774\ub2e4: v1 `{coin_group, coin_name, label}` \u2192 v2 `{chainId, contractAddress?, keyPath, label}` (`src/sign/configure.ts:50`). v1 shape \ub294 \uac70\ubd80\ub41c\ub2e4.
+  - \ud83c\udd95 `getPublicKey` \ub294 v1 \ub300\uc751 \ud568\uc218\uac00 \uc5c6\ub294 **v2 \uc2e0\uaddc verb** \ub2e4 (`src/sign/publicKey.ts:9`).
 - **Bitcoin tx builder**: `getBitcoinTransactionObject`, `addBitcoinTransactionInput`, `addBitcoinTransactionOutput`
 - **lifecycle**: `setTimeOutMs`, `setConnectionListener`, `popupWindowClose`
 - **enum**: `coinType`, `coinGroup`, `coinName`, `bitcoinTxType`, `klaytnTxType`, `xrpTxType`, `state`, `coinDecimals`

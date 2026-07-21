@@ -671,7 +671,7 @@ Bitcoin은 `dcent.sign({ method: 'signTransaction', chainId, payload })`로 서�
 
 **지원:** `signTransaction` ◐ 경로 존재 (Payment / AccountSet / TrustSet) | `signMessage` ❌ `-32601`
 
-> `Payment` TransactionType만 지원. Offer, TrustSet 등 비-Payment 타입은 `-32601` 반환.
+> 실측(2026-07-21) — `Payment` / `AccountSet` / `TrustSet` 모두 `-32601` 이 아니다. 완성 `tx_json`(`Fee`·`Sequence`·`LastLedgerSequence`)을 넣으면 서명 경로로 진입한다.
 
 **chainId 예시:** `xrpl:0/slip44:144`
 

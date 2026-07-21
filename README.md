@@ -1,6 +1,6 @@
 # dcent-web-connector
 
-npm connector for integrating the **D'CENT hardware wallet** into web dApps. It opens a popup served from `https://bridge.dcentwallet.com/v2` and talks to the device over **WebHID (USB)** or **Web Bluetooth** — no native bridge app to install.
+npm connector for integrating the **D'CENT hardware wallet** into web dApps. It opens a popup served from `https://v2bridge.dcentwallet.com/` and talks to the device over **WebHID (USB)** or **Web Bluetooth** — no native bridge app to install.
 
 - 📘 **v2 Developer Guide** (EN / KO — full API + per-chain reference): [**GitHub Pages**](https://dcentwallet.github.io/dcent-web-connector/) — or download [`docs/index.html`](docs/index.html) and open it in a browser (self-contained, works offline)
 - [Per-family payload contract](docs/v2-payload-contract.md)
@@ -82,7 +82,10 @@ npm i dcent-web-connector@0.16.x
 ```bash
 yarn build          # build the v2 bundle
 open index-v2.html  # v2 Playground (manual test page) — or `yarn dev` → http://localhost:9090/index-v2.html
-yarn test           # unit / mock tests
+yarn test           # v1 legacy suite (lint + jest puppeteer)
+yarn unit-v2        # v2 unit tests (jest.v2.config.js)
+yarn unit-v2-e2e    # v2 e2e tests
+yarn check:docs     # docs lint + payload-contract coverage/shape
 ```
 
 ## License

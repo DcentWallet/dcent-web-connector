@@ -1505,24 +1505,90 @@ describe('T-BLOB-SHAPE-01 / T-BLOB-REMOVE-01: blob preset 완성 + 미지원 for
     expect(tezos.transaction.unsignedTx.length).toBeGreaterThan(64) // branch(32B)+contents 이상
   })
 
+  // T-TEZ-BLOB-BYTES-01 (2026-07-21) — blob 의 **바이트 구조**를 Tezos p2p 인코딩으로 전수 검증.
+  //
+  //   ⚠️ 이 테스트가 없어서 실제 결함이 프로덕션 preset 으로 나갔다: destination 을
+  //   `contract_id`(22B = kind 1B + public_key_hash 21B) 가 아니라 **bare public_key_hash(21B)**
+  //   로 인코딩해 kind 바이트 `0x00` 이 누락돼 있었고, 그 결과 뒤따르는 parameters flag 가
+  //   밀려 blob 이 1바이트 짧았다. 실기기(시뮬레이터) 펌웨어가 `invalid_format` 으로 **정당하게**
+  //   거부했으나, 위 T-BLOB-SHAPE-01 은 hex charset + `length > 64` 만 봐서 통과시켰다.
+  //
+  //   교훈: blind-sign blob 은 wm/connector 가 파싱하지 않으므로(opaque hex) **preset 자체가
+  //   유일한 정확성 보증 지점**이다. 구조 단언 없이는 아무도 못 잡는다.
+  //
+  //   참조: https://tezos.gitlab.io/shell/p2p_api.html (transaction tag 0x6c)
+  it('T-TEZ-BLOB-BYTES-01: tezos-unsigned-passthrough blob 이 유효한 Tezos transaction 인코딩', () => {
+    const hex = byId('tezos-unsigned-passthrough').transaction.unsignedTx as string
+    const b = Buffer.from(hex, 'hex')
+    let i = 0
+    const zarith = (): bigint => {
+      let r = 0n
+      let s = 0n
+      for (;;) {
+        const c = b[i++]
+        expect(c).toBeDefined() // 조기 소진 = malformed
+        r |= BigInt(c & 0x7f) << s
+        if ((c & 0x80) === 0) break
+        s += 7n
+      }
+      return r
+    }
+
+    i += 32 // branch (block hash)
+    expect(b[i++]).toBe(0x6c) // tag 108 = Transaction
+
+    // source: public_key_hash = curve(1B) + hash(20B). **contract_id 아님 — kind 바이트 없음**
+    expect([0x00, 0x01, 0x02]).toContain(b[i++]) // tz1/tz2/tz3
+    i += 20
+
+    expect(zarith()).toBe(400n) // fee (mutez)
+    expect(zarith()).toBe(1n) // counter
+    expect(zarith()).toBe(1000n) // gas_limit
+    expect(zarith()).toBe(0n) // storage_limit
+    expect(zarith()).toBe(1000000n) // amount (mutez)
+
+    // destination: contract_id = kind(1B) + public_key_hash(21B). ★누락됐던 지점
+    expect(b[i++]).toBe(0x00) // kind 0x00 = implicit (0x01 = originated KT1)
+    expect([0x00, 0x01, 0x02]).toContain(b[i++]) // pkh curve — 0x41 이면 kind 바이트 누락
+    i += 20
+
+    expect(b[i++]).toBe(0x00) // parameters flag = 없음
+
+    // 정확히 소진 — 잔여/부족 둘 다 malformed
+    expect(b.length - i).toBe(0)
+  })
+
   it('T-BLOB-SHAPE-01: Stellar {xdr} — 이미 준비됨(회귀 가드)', () => {
     const stellar = byId('stellar-xdr-passthrough-blind-sign')
     expect(stellar).toBeDefined()
     expect(typeof stellar.transaction.xdr).toBe('string')
   })
 
-  it('T-BLOB-REMOVE-01: form-D/structured-token descriptor preset 제거됨 (Stellar/Hedera/Tezos)', () => {
+  it('T-BLOB-REMOVE-01: form-D/structured-token descriptor preset 제거됨 (Stellar/Hedera)', () => {
     // ⚠️ Solana(`sol-spl-descriptor-transfer`)는 이 목록에서 **제외**됐다 — 2026-07-21 wm
     //   `signTransactionFromWire` §5.2c 가 no-network 에서 form-D 를 열었기 때문(아래 T-SOL-FORMD-01).
     //   DC-3233 당시의 "구조적으로 no-network 불가" 전제가 Solana 에 한해 더는 성립하지 않는다.
-    //   Stellar/Hedera/Tezos 는 여전히 불가라 그대로 유지한다.
+    //
+    // ⚠️ **Tezos 도 2026-07-21 제외** — 단, Solana 와 사유가 다르다. Solana 는 wm 이 이미 열려서
+    //   빠졌지만, Tezos 는 **아직 안 열렸는데도** form-D 를 정식 경로로 채택했다:
+    //     · form-E(`parameters` Michelson)는 wm registry 등록 토큰에서만 동작 → dApp 에 비공개
+    //       allowlist 를 강요한다. form-D 는 앱이 `decimals` 를 실어 미등록 토큰도 동일하게 동작.
+    //       → registry 는 서명 전제조건이 아니라 **표시 보강**이어야 한다는 정책 결정.
+    //     · 실측(2026-07-21, 실기기 Shadownet): form-D 로 토큰 해석은 **통과**했고
+    //       (`currency=XTZ-FA-TESTNET/KT1NZFY3…`), 그다음 `signTransactionFromWire.ts:1730` 게이트가
+    //       `extra.unsignedTxBytes` 를 요구해 막혔다. 즉 남은 병목은 **토큰이 아니라 forge** 다.
+    //     · 그 게이트를 여는 것이 자매 objective `m04-02`(앱이 `extra.branch` 32B 제공 →
+    //       wm 이 `@taquito/local-forging` 으로 structured forge). 그때까지 tezos form-D preset 은
+    //       `-32602` 로 실패하며, 그 실패가 **갭의 회귀 신호**다.
+    //   제거된 form-E: tezos-fa12/fa2-transfer(+shadownet 변형) — wm 코드 경로는 backward-compat 유지.
     const removedIds = [
       'stellar-issued-asset-descriptor-transfer',
       'hedera-hts-descriptor-transfer',
-      'tezos-fa12-descriptor-transfer',
-      'tezos-fa2-descriptor-transfer',
-      'tezos-fa12-ghostnet-descriptor-transfer',
-      'tezos-fa2-ghostnet-descriptor-transfer',
+      // form-E(registry 의존) — form-D 단일 경로 정책으로 preset 에서 제외
+      'tezos-fa12-transfer',
+      'tezos-fa2-transfer',
+      'tezos-fa12-shadownet-transfer',
+      'tezos-fa2-shadownet-transfer',
     ]
     removedIds.forEach((id) => {
       expect(byId(id)).toBeUndefined()

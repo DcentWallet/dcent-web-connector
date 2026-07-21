@@ -1511,9 +1511,12 @@ describe('T-BLOB-SHAPE-01 / T-BLOB-REMOVE-01: blob preset 완성 + 미지원 for
     expect(typeof stellar.transaction.xdr).toBe('string')
   })
 
-  it('T-BLOB-REMOVE-01: form-D/structured-token descriptor preset 제거됨 (Solana/Stellar/Hedera/Tezos)', () => {
+  it('T-BLOB-REMOVE-01: form-D/structured-token descriptor preset 제거됨 (Stellar/Hedera/Tezos)', () => {
+    // ⚠️ Solana(`sol-spl-descriptor-transfer`)는 이 목록에서 **제외**됐다 — 2026-07-21 wm
+    //   `signTransactionFromWire` §5.2c 가 no-network 에서 form-D 를 열었기 때문(아래 T-SOL-FORMD-01).
+    //   DC-3233 당시의 "구조적으로 no-network 불가" 전제가 Solana 에 한해 더는 성립하지 않는다.
+    //   Stellar/Hedera/Tezos 는 여전히 불가라 그대로 유지한다.
     const removedIds = [
-      'sol-spl-descriptor-transfer',
       'stellar-issued-asset-descriptor-transfer',
       'hedera-hts-descriptor-transfer',
       'tezos-fa12-descriptor-transfer',
@@ -1530,5 +1533,32 @@ describe('T-BLOB-SHAPE-01 / T-BLOB-REMOVE-01: blob preset 완성 + 미지원 for
     removedIds.forEach((id) => {
       expect(raw).not.toContain(`"id": "${id}"`)
     })
+  })
+
+  // 2026-07-21 — Solana form-D 재도입. wm 이 no-network 에서 요구하는 **완성 3필드**를 preset 이
+  //   갖고 있지 않으면 dApp 이 그대로 보냈을 때 `-32602` 가 난다(wm signTransactionFromWire §5.2c).
+  //   또한 수신 ATA 를 preset 에 실으면 "앱이 목적지를 정한다"는 잘못된 관례가 생긴다 —
+  //   wm 은 owner+mint 로 오프라인 파생하므로 실어봐야 무시되고 오해만 남는다.
+  it('T-SOL-FORMD-01: Solana form-D descriptor preset — no-network 완성 3필드 + ATA 미포함', () => {
+    const p = byId('sol-spl-descriptor-transfer')
+    expect(p).toBeDefined()
+    expect(p.family).toBe('solana')
+
+    const tx = p.transaction
+    // ① descriptor(tier-3) — decimals 가 유일한 출처라 없으면 토큰 해석 자체가 불가
+    expect(typeof tx.token.contract).toBe('string')
+    expect(typeof tx.token.to).toBe('string')
+    expect(typeof tx.token.decimals).toBe('number')
+    expect(String(tx.token.amount)).toMatch(/^\d+$/)
+    // ② no-network 완성 필드 3종
+    expect(typeof tx.recentBlockhash).toBe('string')
+    expect(tx.recentBlockhash).toBe(tx.recentBlockhash.trim()) // wm 이 non-trimmed 를 거부
+    expect(Number.isInteger(tx.preparedFee.fee)).toBe(true)
+    expect(tx.preparedFee.fee).toBeGreaterThan(0)
+    expect(typeof tx.extra.isAssociated).toBe('boolean')
+    // ③ form-E 혼입 금지 — instructions 가 있으면 form-E 로 분기해 descriptor 가 죽는다
+    expect(tx.instructions).toBeUndefined()
+    // ④ 수신 ATA 는 싣지 않는다 (wm 오프라인 파생)
+    expect(tx.extra.associatedTokenAddress).toBeUndefined()
   })
 })

@@ -631,6 +631,33 @@
     }
   },
   {
+    "id": "sol-spl-descriptor-transfer",
+    "label": "Solana SPL 토큰 전송 (form-D descriptor — 기기 심볼/금액 표시)",
+    "family": "solana",
+    "applicableChainIds": [
+      "solana:5eykt4UsFv8P8NJdTREpY1vzqKqZKvdp/slip44:501"
+    ],
+    "note": "토큰 전송 — **form-D descriptor**(구조화 SPL transfer). form-E(직렬화/instructions)와 달리 wire 에 `token:{contract,to,amount,decimals,symbol}` 만 담고, instruction 조립·ATA 파생은 wm 이 한다. ★ 이 경로가 **기기 화면에 SPL 심볼/금액이 표시되는 유일한 경로**다 — form-E 는 직렬화 bytes 를 opaque blind-sign 하므로 기기가 토큰을 알 수 없다. no-network(wire) 서명 계약(wm signTransactionFromWire §5.2c): 앱이 **`recentBlockhash`(base58 32B, trim 된 값) + `preparedFee.fee`(양의 정수 lamports) + `extra.isAssociated`(boolean)** 를 완성해 보내야 한다. 셋 중 하나라도 없으면 `-32602`(wm 은 blockhash/fee/ATA 상태를 조회하지 않음). 수신 ATA 는 앱이 보내지 않는다 — wm 이 owner+mint 로 **오프라인 파생**한다(표시≠서명 리다이렉션 차단). `extra.isAssociated=false` 면 wm 이 ATA 생성 instruction 을 함께 넣는다(기기 표시도 그에 맞게 바뀜). mint=EPjFWdd5AufqSSqeM2qN1xzybapC8G4wEGGkZwyTDt1v 은 Circle USDC mainnet(dec 6). ⚠️ 하네스(prepareSolana)가 sender/token.to→연결 계정(self-send), recentBlockhash→실값, isAssociated→실 ATA 존재 여부, devnet 은 mint→실재 devnet USDC 로 치환한다. preset 값은 형식 예시다.",
+    "sourceUrl": "https://spl.solana.com/token",
+    "transaction": {
+      "sender": "Gv8u221N315GoRx2C6yBNF2jNq379FdvaAp2bL8ywSDk",
+      "recentBlockhash": "GJp9NRJGBnXqWJAKFxkzD8p9cJTiSNi1J3UWKVBbcfRw",
+      "preparedFee": {
+        "fee": 5000
+      },
+      "extra": {
+        "isAssociated": true
+      },
+      "token": {
+        "contract": "EPjFWdd5AufqSSqeM2qN1xzybapC8G4wEGGkZwyTDt1v",
+        "to": "Gv8u221N315GoRx2C6yBNF2jNq379FdvaAp2bL8ywSDk",
+        "amount": "1000",
+        "decimals": 6,
+        "symbol": "USDC"
+      }
+    }
+  },
+  {
     "id": "xrp-iou-payment",
     "label": "XRP issued-currency (IOU) Payment",
     "family": "xrp",

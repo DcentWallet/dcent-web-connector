@@ -15,35 +15,42 @@ const result = await dcent.sign({
 
 **진실 출처(source of truth):** `playground/chains.json` (family → chainId 매핑) + `playground/presets.*.json` (payload shape 예시).
 
-> **지원 상태** 는 현재 wm(`@iotrustgithub/dcent-wallet-models`) family 등록 상태를 반영한다.
-> ⚠️ _미지원_ 으로 표기된 family/method는 wm에서 `-32601 Method not found`를 반환한다.
+> **지원 상태는 실측값이다** (2026-07-21, swproxy 하네스 — signMessage 152 chain 전수 / signTransaction 86 preset · 367 case).
+>
+> - ✅ — 서명까지 도달 확인
+> - ◐ — 경로는 존재하나 현재 예시 payload 로는 서명 미도달(아래 사유 참고). **미지원이 아니다**
+> - ❌ `-32601` — 브리지가 그 method 를 지원하지 않는다는 **유일한 신뢰 신호**
+>
+> `-32602` 는 미지원이 아니라 **payload 가 덜 채워졌다**는 뜻이다. 브리지는 네트워크 접근 없이 서명하므로
+> nonce · sequence · fee · blockhash 같은 consensus 필드를 앱이 완성해 보내야 한다(각 family 섹션 참고).
 
 ---
 
 ## 지원 상태 요약
 
-| Family | signTransaction | signMessage | 비고 |
+| Family | signTransaction | signMessage | 실측 비고 |
 |--------|----------------|-------------|------|
-| algorand | ✅ | ❌ -32601 | |
-| bitcoin | ✅ (`dcent.sign` — inputs/outputs) | ❌ N/A | txType `p2pkh`/`p2wpkh` |
-| cardano | ✅ (full-CBOR) | ⚠️ -32601 | signMessage: m02-05-30 전 |
-| conflux | ✅ (EVM 호환) | ✅ | EVM family |
-| constellation | ⚠️ -32601 | ❌ -32601 | wm ConstellationAPIImpl 미등록 |
-| cosmos | ✅ | ❌ -32601 | |
-| ethereum | ✅ | ✅ | EVM family |
-| fil | ✅ | ❌ -32601 | |
-| havah | ✅ (EVM 호환) | ✅ | EVM family |
-| hedera | ⚠️ -32601 | ❌ -32601 | wm HederaAPIImpl 미등록 |
-| near | ⚠️ -32601 | ❌ -32601 | wm NearAPIImpl 미등록 |
-| polkadot | ✅ | ❌ -32601 | |
-| solana | ✅ | ✅ | |
-| stacks | ✅ | ❌ -32601 | |
-| stellar | ⚠️ -32601 | ⚠️ -32601 | wm StellarAPIImpl 미등록 |
-| tezos | ✅ | ❌ -32601 | |
-| tron | ✅ (TRX transfer) / ⚠️ TRC20 -32601 | ❌ -32601 | TRC20: m02-05-25 전 |
-| vechain | ✅ | ❌ -32601 | |
-| xahau | ⚠️ -32601 | ❌ -32601 | wm XahauAPIImpl 미등록 |
-| xrp | ✅ (Payment) / ❌ 비-Payment -32601 | ❌ -32601 | Payment만 지원 |
+| algorand | ✅ | ❌ `-32601` | payment / ASA / ASA descriptor 서명 |
+| bitcoin | ◐ | ❌ `-32601` | 하네스가 실계정 UTXO 를 못 만들어 미도달(prevout 불일치) |
+| cardano | ✅ | ❌ `-32601` | full-CBOR 10 preset 서명 |
+| conflux | ◐ | ❌ `-32601` | `storageLimit` / `epochHeight` 완성 필요 |
+| constellation | ✅ | ❌ `-32601` | 지원 metagraph(DOR) 서명. 미지원 metagraph 는 `-32602` |
+| cosmos | ✅ | ❌ `-32601` | Amino 7 preset 서명 |
+| ethereum | ✅ | ✅ | signMessage 94 chain 중 91 서명. **XDC(`eip155:50/51`)만 `-32601`** |
+| fil | ✅ | ❌ `-32601` | |
+| havah | ✅ (EVM 호환) | ❌ `-32601` | EVM 호환이지만 signMessage 는 미지원 |
+| hedera | ✅ | ❌ `-32601` | `extra.unsignedTxBytes` passthrough 서명. structured 는 `-32602` |
+| klaytn (Kaia) | ✅ | ✅ | ethereum family 로 처리 |
+| near | ◐ | ❌ `-32601` | 예시 `publicKey` 가 기기 파생 키와 달라 미도달 |
+| polkadot | ✅ (`extra.scaleHex`) | ✅ parachain / ❌ relay `-32601` | relay chain(Polkadot)만 signMessage 미지원 |
+| solana | ✅ | ✅ | form-D descriptor 서명 |
+| stacks | ✅ | ❌ `-32601` | |
+| stellar | ✅ (`{xdr}`) | ✅ | structured payment / Soroban 은 `-32602` |
+| tezos | ◐ | ❌ `-32601` | pre-forged `extra.unsignedTxBytes` 필요 |
+| tron | ✅ | ❌ `-32601` | TRX / TRC20 transfer / approve 서명 |
+| vechain | ✅ | ❌ `-32601` | |
+| xahau | ◐ | ❌ `-32601` | `tx_json` 의 `Sequence` / `LastLedgerSequence` 완성 필요 |
+| xrp | ◐ | ❌ `-32601` | 동일 (Payment / AccountSet / TrustSet 모두 `-32601` 아님) |
 
 ---
 
@@ -51,7 +58,7 @@ const result = await dcent.sign({
 
 ### Algorand
 
-**지원:** `signTransaction` ✅ | `signMessage` ❌
+**지원:** `signTransaction` ✅ | `signMessage` ❌ `-32601`
 
 **chainId 예시:** `algorand:wGHE2Pwdvd7S12BL5FaOP20EGYesN73k/slip44:283`
 
@@ -78,7 +85,7 @@ const result = await dcent.sign({
 
 ### Bitcoin
 
-**지원:** `signTransaction` ✅ | `signMessage` ❌ N/A
+**지원:** `signTransaction` ◐ 경로 존재 | `signMessage` ❌ `-32601`
 
 Bitcoin은 `dcent.sign({ method: 'signTransaction', chainId, payload })`로 서명한다. `payload.transaction`은 UTXO `inputs[]` + `outputs[]` 구조이며, 각 input의 `txType`(`p2pkh`=legacy / `p2wpkh`=native segwit)이 서명 방식을 결정한다 (keyPath는 legacy·segwit 공통으로 항상 `m/44'`). 상태 기반 builder(`getBitcoinTransactionObject` + `addBitcoinTransactionInput`/`addBitcoinTransactionOutput`)도 대안으로 제공된다.
 
@@ -99,7 +106,7 @@ Bitcoin은 `dcent.sign({ method: 'signTransaction', chainId, payload })`로 서�
 
 ### Cardano
 
-**지원:** `signTransaction` ✅ (full-CBOR 지원, m02-05-35/36/37 MERGED_TO_EPIC) | `signMessage` ⚠️ -32601 (m02-05-30 전)
+**지원:** `signTransaction` ✅ (full-CBOR) | `signMessage` ❌ `-32601`
 
 **chainId 예시:** `cip34:1-764824073` (mainnet), `cip34:0-2` (testnet)
 
@@ -135,7 +142,7 @@ Bitcoin은 `dcent.sign({ method: 'signTransaction', chainId, payload })`로 서�
 
 ### Conflux
 
-**지원:** `signTransaction` ✅ | `signMessage` ✅
+**지원:** `signTransaction` ◐ 경로 존재 | `signMessage` ❌ `-32601`
 
 **chainId 예시:** `conflux:cfx/slip44:503`
 
@@ -164,13 +171,13 @@ Bitcoin은 `dcent.sign({ method: 'signTransaction', chainId, payload })`로 서�
 
 ### Constellation
 
-**지원:** `signTransaction` ⚠️ -32601 | `signMessage` ❌ -32601
+**지원:** `signTransaction` ✅ | `signMessage` ❌ `-32601`
 
-> wm ConstellationAPIImpl이 WalletConnect를 통해 아직 등록되지 않아 `-32601 Method not found` 반환.
+> 실측 — 지원되는 metagraph(예: DOR) 전송은 서명된다. 미지원 metagraph id 는 `-32602`(gateway endpoint 부재).
 
 **chainId 예시:** `constellation:mainnet/slip44:1137`
 
-**signTransaction payload (등록 후 예상 shape):**
+**signTransaction payload:**
 
 ```js
 // Source: playground/presets.non-evm.json → dag-transfer
@@ -188,7 +195,7 @@ Bitcoin은 `dcent.sign({ method: 'signTransaction', chainId, payload })`로 서�
 
 ### Cosmos
 
-**지원:** `signTransaction` ✅ | `signMessage` ❌ -32601
+**지원:** `signTransaction` ✅ | `signMessage` ❌ `-32601`
 
 **chainId 예시:** `cosmos:cosmoshub-4/slip44:118`, `cosmos:coreum-mainnet-1/slip44:990`
 
@@ -282,7 +289,7 @@ Bitcoin은 `dcent.sign({ method: 'signTransaction', chainId, payload })`로 서�
 
 ### Fil
 
-**지원:** `signTransaction` ✅ | `signMessage` ❌ -32601
+**지원:** `signTransaction` ✅ | `signMessage` ❌ `-32601`
 
 **chainId 예시:** `fil:f/slip44:461`
 
@@ -309,7 +316,7 @@ Bitcoin은 `dcent.sign({ method: 'signTransaction', chainId, payload })`로 서�
 
 ### Havah
 
-**지원:** `signTransaction` ✅ (EVM 호환) | `signMessage` ✅
+**지원:** `signTransaction` ✅ (EVM 호환) | `signMessage` ❌ `-32601`
 
 **chainId 예시:** `havah:mainnet/slip44:858` (mainnet), `havah:testnet/slip44:858` (testnet)
 
@@ -319,13 +326,13 @@ Bitcoin은 `dcent.sign({ method: 'signTransaction', chainId, payload })`로 서�
 
 ### Hedera
 
-**지원:** `signTransaction` ⚠️ -32601 | `signMessage` ❌ -32601
+**지원:** `signTransaction` ✅ (`extra.unsignedTxBytes`) | `signMessage` ❌ `-32601`
 
-> wm HederaAPIImpl이 WalletConnect를 통해 아직 등록되지 않아 `-32601 Method not found` 반환.
+> 실측 — `hedera-unsigned-passthrough`(pre-built Transaction bytes)는 서명된다. structured 요청은 노드 타임스탬프가 필요해 `-32602`.
 
 **chainId 예시:** `hedera:mainnet/slip44:3030`
 
-**signTransaction payload (등록 후 예상 shape):**
+**signTransaction payload:**
 
 ```js
 // Source: playground/presets.non-evm.json → hbar-transfer
@@ -346,13 +353,13 @@ Bitcoin은 `dcent.sign({ method: 'signTransaction', chainId, payload })`로 서�
 
 ### Near
 
-**지원:** `signTransaction` ⚠️ -32601 | `signMessage` ❌ -32601
+**지원:** `signTransaction` ◐ 경로 존재 | `signMessage` ❌ `-32601`
 
-> wm NearAPIImpl이 WalletConnect를 통해 아직 등록되지 않아 `-32601 Method not found` 반환.
+> 실측 — `-32601` 은 발생하지 않는다. 현재 preset 은 `publicKey` 가 기기 파생 키와 달라 `-32602`(app 이 실제 access-key 를 넣어야 함).
 
 **chainId 예시:** `near:mainnet/slip44:397`
 
-**signTransaction payload (등록 후 예상 shape):**
+**signTransaction payload:**
 
 ```js
 // Source: playground/presets.non-evm.json → near-transfer
@@ -372,7 +379,7 @@ Bitcoin은 `dcent.sign({ method: 'signTransaction', chainId, payload })`로 서�
 
 ### Polkadot
 
-**지원:** `signTransaction` ✅ | `signMessage` ❌ -32601
+**지원:** `signTransaction` ✅ (`extra.scaleHex`) | `signMessage` ✅ (parachain만)
 
 **chainId 예시:** `polkadot:91b171bb158e2d3848fa23a9f1c25182/slip44:354`
 
@@ -440,6 +447,33 @@ Bitcoin은 `dcent.sign({ method: 'signTransaction', chainId, payload })`로 서�
 }
 ```
 
+**signTransaction payload — SPL 토큰: form-D descriptor (기기가 심볼/금액을 표시하는 유일한 형태)**
+
+```js
+// Source: playground/presets.non-evm.json → sol-spl-descriptor-transfer
+// instructions 대신 token descriptor 를 보낸다. instruction 조립과 수신 ATA 파생은 브리지가 한다.
+// 브리지는 네트워크 접근 없이 서명하므로 아래 3개를 앱이 완성해 보내야 한다 (빠지면 -32602):
+//   recentBlockhash    — base58 32바이트, 앞뒤 공백 없이
+//   preparedFee.fee    — 양의 정수 lamports (기기가 표시하는 수수료)
+//   extra.isAssociated — 수신자 ATA 존재 여부. false 면 브리지가 ATA 생성 instruction 을 함께 넣는다
+// 수신 ATA 는 보내지 않는다 — 브리지가 owner+mint 로 오프라인 파생한다(앱이 표시 목적지를 못 바꾼다).
+{
+  transaction: {
+    sender: '<owner pubkey>',
+    recentBlockhash: '<blockhash>',
+    preparedFee: { fee: 5000 },
+    extra: { isAssociated: true },
+    token: {
+      contract: 'EPjFWdd5AufqSSqeM2qN1xzybapC8G4wEGGkZwyTDt1v',  // mint
+      to: '<수신자 owner 지갑 주소 — ATA 아님>',
+      amount: '1000',      // base units (decimals 반영 전)
+      decimals: 6,
+      symbol: 'USDC'
+    }
+  }
+}
+```
+
 **signMessage payload:**
 
 ```js
@@ -450,7 +484,7 @@ Bitcoin은 `dcent.sign({ method: 'signTransaction', chainId, payload })`로 서�
 
 ### Stacks
 
-**지원:** `signTransaction` ✅ | `signMessage` ❌ -32601
+**지원:** `signTransaction` ✅ | `signMessage` ❌ `-32601`
 
 **chainId 예시:** `stacks:1/slip44:5757`
 
@@ -474,14 +508,13 @@ Bitcoin은 `dcent.sign({ method: 'signTransaction', chainId, payload })`로 서�
 
 ### Stellar
 
-**지원:** `signTransaction` ⚠️ -32601 | `signMessage` ⚠️ -32601
+**지원:** `signTransaction` ✅ (`{xdr}` envelope) | `signMessage` ✅
 
-> wm StellarAPIImpl이 WalletConnect를 통해 아직 등록되지 않아 `signTransaction`이 `-32601` 반환.
-> `signMessage`도 m02-05-30 전까지 `-32601` 반환.
+> 실측 — `stellar-xdr-passthrough-blind-sign`(완성 XDR)은 서명된다. structured payment / Soroban 은 계정 sequence·시뮬레이션이 필요해 `-32602`.
 
 **chainId 예시:** `stellar:pubnet/slip44:148`
 
-**signTransaction payload (등록 후 예상 shape):**
+**signTransaction payload:**
 
 ```js
 // Source: playground/presets.non-evm.json → xlm-payment
@@ -502,7 +535,7 @@ Bitcoin은 `dcent.sign({ method: 'signTransaction', chainId, payload })`로 서�
 
 ### Tezos
 
-**지원:** `signTransaction` ✅ | `signMessage` ❌ -32601
+**지원:** `signTransaction` ◐ 경로 존재 | `signMessage` ❌ `-32601`
 
 **chainId 예시:** `tezos:NetXdQprcVkpaWU/slip44:1729`
 
@@ -528,9 +561,9 @@ Bitcoin은 `dcent.sign({ method: 'signTransaction', chainId, payload })`로 서�
 
 ### Tron
 
-**지원:** `signTransaction` ✅ (TRX transfer) / ⚠️ TRC20 -32601 | `signMessage` ❌ -32601
+**지원:** `signTransaction` ✅ (TRX / TRC20 / approve) | `signMessage` ❌ `-32601`
 
-> TRC20 `TriggerSmartContract`는 sister wm m02-05-25 전까지 `-32601 Method not found` 반환.
+> 실측 — TRC20 `TriggerSmartContract` 도 서명된다. descriptor 형태는 `ref_block_*` 완성 필드가 없으면 `-32602`.
 
 **chainId 예시:** `tron:0x2b6653dc/slip44:195`
 
@@ -555,10 +588,9 @@ Bitcoin은 `dcent.sign({ method: 'signTransaction', chainId, payload })`로 서�
 }
 ```
 
-**signTransaction payload — TRC20 TriggerSmartContract (⚠️ -32601 until m02-05-25):**
+**signTransaction payload — TRC20 TriggerSmartContract:**
 
 ```js
-// m02-05-25-wm-tron-trigger-contract-wire 머지 후 지원 예정
 {
   transaction: {
     raw_data: {
@@ -581,7 +613,7 @@ Bitcoin은 `dcent.sign({ method: 'signTransaction', chainId, payload })`로 서�
 
 ### VeChain
 
-**지원:** `signTransaction` ✅ | `signMessage` ❌ -32601
+**지원:** `signTransaction` ✅ | `signMessage` ❌ `-32601`
 
 **chainId 예시:** `vechain:b1ac3413d346d43539627e6be7ec1b4a/slip44:818`
 
@@ -610,13 +642,13 @@ Bitcoin은 `dcent.sign({ method: 'signTransaction', chainId, payload })`로 서�
 
 ### Xahau
 
-**지원:** `signTransaction` ⚠️ -32601 | `signMessage` ❌ -32601
+**지원:** `signTransaction` ◐ 경로 존재 | `signMessage` ❌ `-32601`
 
-> wm XahauAPIImpl이 WalletConnect를 통해 아직 등록되지 않아 `-32601 Method not found` 반환.
+> 실측 — `-32601` 은 발생하지 않는다. `tx_json` 에 `Sequence` / `LastLedgerSequence` / `Fee` 가 완성돼야 서명된다(없으면 `-32602`).
 
 **chainId 예시:** `xahau:mainnet/slip44:144`, `xahau:testnet/slip44:21337`
 
-**signTransaction payload (등록 후 예상 shape — XRP와 동일 구조):**
+**signTransaction payload (XRP와 동일 구조):**
 
 ```js
 // Source: playground/presets.non-evm.json → xahau-payment
@@ -637,7 +669,7 @@ Bitcoin은 `dcent.sign({ method: 'signTransaction', chainId, payload })`로 서�
 
 ### XRP
 
-**지원:** `signTransaction` ✅ (Payment) / ❌ 비-Payment -32601 | `signMessage` ❌ -32601
+**지원:** `signTransaction` ◐ 경로 존재 (Payment / AccountSet / TrustSet) | `signMessage` ❌ `-32601`
 
 > `Payment` TransactionType만 지원. Offer, TrustSet 등 비-Payment 타입은 `-32601` 반환.
 
@@ -666,7 +698,7 @@ Bitcoin은 `dcent.sign({ method: 'signTransaction', chainId, payload })`로 서�
 
 | 코드 | 의미 |
 |------|------|
-| `-32601` | Method not found — family가 wm에 미등록이거나 method가 미지원 |
+| `-32601` | Method not found — family 가 브리지에서 미지원이거나 method 가 미지원 |
 | `-32602` | Invalid params — 잘못된 payload (keyPath 누락, 타입 불일치 등) |
 | `-32603` | Internal error — 디바이스 통신 오류 또는 예기치 않은 실패 |
 

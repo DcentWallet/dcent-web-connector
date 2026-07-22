@@ -531,3 +531,29 @@ it('T-U-REST-COSMOS-AMT-01: atom-transfer 금액은 실기기 잔액 범위 안 
   // 잔액 안에서 성립해야 하는 부등식: amount + fee ≤ 실측 잔액(50874 uatom)
   expect(Number(send.amount) + Number(fee.amount[0].amount)).toBeLessThanOrEqual(50874)
 })
+
+// ─────────────────────────────────────────────────────────────────────────────
+// T-U-REST-COSMOS-DESC-01: form-D descriptor 는 온체인 실토큰과 정합해야 한다
+//
+// 이 preset 의 전제는 [coreum mainnet 온체인 실재 + wm smart-token.json 미등록] 이다.
+// descriptor(symbol/decimals)가 실제 토큰과 어긋나면 기기 화면이 **틀린 값을 보여주고도
+// 서명이 성립**한다 — 표시=서명 계약이 깨지는 가장 위험한 형태다.
+//
+// txd-core1pjt5… = TXDex Rewards Token, symbol TXD, precision 6
+// (2026-07-22 /coreum/asset/ft/v1/tokens + /cosmos/bank/.../denoms_metadata 조회 확증)
+// 실기기 화면 실측: "1 XRP"(이전 drop- 토큰) — descriptor 가 그대로 표시되므로
+// descriptor 가 틀리면 사용자가 틀린 자산명을 보고 서명한다.
+it('T-U-REST-COSMOS-DESC-01: descriptor 의 symbol/decimals 가 온체인 토큰과 일치', () => {
+  const p = SAMPLE_REST_PRESETS.find((x: any) => x.id === 'cosmos-assetft-descriptor-transfer')
+  expect(p).toBeDefined()
+  const t = p.transaction.token
+  // denom 의 subunit prefix(txd-) 와 symbol(TXD) 은 같은 토큰을 가리켜야 한다
+  const subunit = String(t.contract).split('-')[0]
+  expect(subunit).toBe('txd')
+  expect(String(t.symbol).toLowerCase()).toBe(subunit)
+  expect(t.decimals).toBe(6) // 온체인 precision
+  // amount 는 base units — decimals 6 기준 1 토큰. 검증 계정 보유량(100 TXD) 안에 있어야
+  // 온체인 성공까지 도달한다(이전 drop- 토큰은 잔액 0 이라 항상 실패했다).
+  expect(Number(t.amount)).toBeLessThanOrEqual(1000000)
+  expect(Number(t.amount)).toBeGreaterThan(0)
+})

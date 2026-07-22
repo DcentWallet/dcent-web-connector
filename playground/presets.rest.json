@@ -764,7 +764,7 @@
     "applicableChainIds": [
       "polkadot:91b171bb158e2d3848fa23a9f1c25182/slip44:354"
     ],
-    "note": "★blind-sign 패스스루 — `WIRE-NONETWORK-SDK-CHANGES-2026-07-13.md` §2 Polkadot row. 【payload key = `extra.scaleHex`】 SCALE-encoded unsigned call. method/args 는 **표시용**이고 실 서명 바이트는 scaleHex 가 authoritative — wm convert 가 scaleHex 를 우선 채택한다(DC-3217). Polkadot 은 다른 blob family(Stellar xdr / Hedera·Tezos unsignedTx)와 달리 완전 blind-sign 이 아니라 **partial** — wm 이 표시-안전(display-safety) metadata/header RPC 는 계속 수행한다(consensus-autofill 인 nonce/era/blockHash 는 안 함). ⚠️ **blob 은 체인별 인코딩이다 — 대표값이 아니다.** call 앞 2바이트 = (pallet index, call index) 인데 pallet index 가 런타임마다 다르다. 아래 hex 는 **wm 의 POLKADOT provider 가 실제로 붙는 체인**(Polkadot **Asset Hub**/statemint — Asset Hub Migration 이후 balances 가 여기로 이전, blockExplorerUrl 도 assethub-polkadot.subscan.io) 기준 `balances.transferAllowDeath` 인코딩이다: `0x0a00…`(Asset Hub Balances=pallet 10). 같은 바이트가 **릴레이 체인에선 pallet 5=Balances** 라 릴레이 인코딩(`0x0500…`)을 넣으면 Asset Hub 에선 **`preimage.notePreimage` 로 디코드**되어 전혀 다른 call 이 서명된다(실측 2026-07-14). amount=1000000000000 (=**100 DOT** — DOT decimals 는 10 이다. 이전 note 의 “1 DOT” 은 오기, 실측 정정 2026-07-22), dest AccountId32 는 args[0](dot-transfer 와 동일 self-send SS58 주소)의 SS58-디코드 pubkey 와 byte-identical(display↔authoritative 일치 — 별도 파생값 사용 금지). nonce/tip 은 app 제공 유지. 실 서명 검증은 sdk sibling swproxy 하네스(m09-05-11). broadcast 안 함.",
+    "note": "★blind-sign 패스스루 — `WIRE-NONETWORK-SDK-CHANGES-2026-07-13.md` §2 Polkadot row. 【payload key = `extra.scaleHex`】 SCALE-encoded unsigned call. method/args 는 **표시용**이고 실 서명 바이트는 scaleHex 가 authoritative — wm convert 가 scaleHex 를 우선 채택한다(DC-3217). Polkadot 은 다른 blob family(Stellar xdr / Hedera·Tezos unsignedTx)와 달리 완전 blind-sign 이 아니라 **partial** — wm 이 표시-안전(display-safety) metadata/header RPC 는 계속 수행한다(consensus-autofill 인 nonce/era/blockHash 는 안 함). ⚠️ **blob 은 체인별 인코딩이다 — 대표값이 아니다.** call 앞 2바이트 = (pallet index, call index) 인데 pallet index 가 런타임마다 다르다. 아래 hex 는 **wm 의 POLKADOT provider 가 실제로 붙는 체인**(Polkadot **Asset Hub**/statemint — Asset Hub Migration 이후 balances 가 여기로 이전, blockExplorerUrl 도 assethub-polkadot.subscan.io) 기준 `balances.transferAllowDeath` 인코딩이다: `0x0a00…`(Asset Hub Balances=pallet 10). 같은 바이트가 **릴레이 체인에선 pallet 5=Balances** 라 릴레이 인코딩(`0x0500…`)을 넣으면 Asset Hub 에선 **`preimage.notePreimage` 로 디코드**되어 전혀 다른 call 이 서명된다(실측 2026-07-14). amount=1000000000000 (=**100 DOT** — DOT decimals 는 10 이다. 이전 note 의 “1 DOT” 은 오기, 실측 정정 2026-07-22), dest AccountId32 는 args[0](dot-transfer 와 동일 self-send SS58 주소)의 SS58-디코드 pubkey 와 byte-identical(display↔authoritative 일치 — 별도 파생값 사용 금지). nonce/tip 은 app 제공 유지. 실 서명 검증은 sdk sibling swproxy 하네스(m09-05-11). broadcast 안 함. 【2026-07-22 확정 형태 — noNetwork pure-signer】 이 preset 은 **blob 형태(Form A)** 다. `extra.scaleHex` 가 call 을 통째로 담고(그래서 `method`/`args` 는 사람이 읽기 위한 주석이며 wm 은 읽지 않는다), call 에 들어있지 않은 나머지 서명 payload 값(`era`·`nonce`·`tip`·`blockHash`·`genesisHash`·`specVersion`·`transactionVersion`)과 표시용 `fee` 는 **앱이 전부 제공**한다. Form B(decoded) 와 달리 `extra.scaleHex` 는 **실 blob**(placeholder 아님) 이다 — 이 preset 의 존재 이유가 blind-sign 경로 검증이라 재조립하지 않고 그대로 서명한다. ⚠️ 아래 fresh state 는 placeholder(가짜값)이며 prepare 가 치환한다: `era`·`blockHash`·`genesisHash`·`specVersion`·`transactionVersion`·`nonce`·`fee`. `genesisHash` 는 chainId 가 아니라 **실제 서명 대상 provider** 에서 읽는다 — 실측 2026-07-22: 이 preset 의 chainId 는 릴레이(`91b171bb…`)를 가리키지만 wm 이 붙는 곳은 **Asset Hub**(genesis `0x68d56f15…`, specVersion 2003001)다. 하드코딩하면 조용히 무효 서명이 된다.",
     "sourceUrl": "https://github.com/polkadot-js/api",
     "transaction": {
       "method": "balances.transferAllowDeath",
@@ -772,8 +772,14 @@
         "14dyYY72MDtfxAAjFnqwCR3YihV5UrqzMjEAf1ABXJ4vzLZj",
         "1000000000000"
       ],
+      "era": "0x00",
       "nonce": 0,
       "tip": 0,
+      "fee": "0",
+      "specVersion": 0,
+      "transactionVersion": 0,
+      "blockHash": "0x0000000000000000000000000000000000000000000000000000000000000000",
+      "genesisHash": "0x0000000000000000000000000000000000000000000000000000000000000000",
       "extra": {
         "scaleHex": "0x0a0000a0e7e0c97fddb687bb4e3a9b20a47314320c3b4b124c829a1e65b705dd0edb31070010a5d4e8"
       }

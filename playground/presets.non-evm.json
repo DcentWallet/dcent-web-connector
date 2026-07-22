@@ -1250,13 +1250,10 @@
     "applicableChainIds": [
       "tezos:NetXdQprcVkpaWU/slip44:1729"
     ],
-    "note": "★blind-sign 패스스루 (Hedera unsigned-passthrough와 동형, unsignedTx 필드 재사용 — 신규 필드 0). 외부에서 이미 forge한 Tezos operation bytes(hex, branch(32B)+contents)를 device가 blind-sign. 【payload key = `unsignedTx`(Hedera와 동일 관례) — wm convertTransaction이 obj.unsignedTx 감지 시 family=tezos로 extra.unsignedTxBytes carry】. 아래 hex는 대표-포맷(representative-format) forged 'transaction' operation(source/destination은 결정적 파생 tz1, fee=400/counter=1/gasLimit=1000/storageLimit=0/amount=1000000 mutez, parameters 없음) — 바이트 구조는 Tezos p2p 인코딩으로 전수 검증됨(T-TEZ-BLOB-BYTES-01) — branch(32B)+tag 0x6c+source pkh(21B)+zarith 5필드+destination contract_id(22B: kind 0x00 + pkh 21B)+parameters flag, 잔여 0B. ⚠️2026-07-21 정정: destination 을 contract_id(22B) 가 아니라 bare pkh(21B) 로 인코딩해 kind 바이트 0x00 이 누락돼 있었고, 실기기(시뮬레이터) 펌웨어가 invalid_format 으로 정당하게 거부했다. 1바이트 삽입으로 수정. malformed bytes → -32602. broadcast 안 함(§9 byte-proof만 대상). ⚠️ **`preparedFee.fee` 필수** — wm no-network wire 는 수수료를 조회하지 않는다(실측 에러: `-32602 'preparedFee.fee' is required in no-network wire mode (family=TEZOS)` — app must provide a complete transaction). 값 400 은 **blob 안에 이미 인코딩된 fee 를 디코드해서 맞춘 것**이다(2026-07-22 실측: branch BL29QSKw… / source tz1QLbtt… / dest tz1RcPNX… / fee 400 / counter 1 / gas 1000 / storage 0 / amount 1000000). 지어낸 값이 아니며, blob 이 바뀌면 이 값도 함께 바꿔야 한다. 📌 이 preset 은 **blind-sign 경로 전용**이다 — blob 의 branch 는 정적이라 TTL(~120블록)이 이미 만료됐고 source 도 기기 주소가 아니므로 **broadcast 는 성립하지 않는다**. 서명 산출까지가 검증 대상.",
+    "note": "★blind-sign 패스스루 (Hedera unsigned-passthrough와 동형, unsignedTx 필드 재사용 — 신규 필드 0). 외부에서 이미 forge한 Tezos operation bytes(hex, branch(32B)+contents)를 device가 blind-sign. 【payload key = `unsignedTx`(Hedera와 동일 관례) — wm convertTransaction이 obj.unsignedTx 감지 시 family=tezos로 extra.unsignedTxBytes carry】. 아래 hex는 대표-포맷(representative-format) forged 'transaction' operation(source/destination은 결정적 파생 tz1, fee=400/counter=1/gasLimit=1000/storageLimit=0/amount=1000000 mutez, parameters 없음) — 바이트 구조는 Tezos p2p 인코딩으로 전수 검증됨(T-TEZ-BLOB-BYTES-01) — branch(32B)+tag 0x6c+source pkh(21B)+zarith 5필드+destination contract_id(22B: kind 0x00 + pkh 21B)+parameters flag, 잔여 0B. ⚠️2026-07-21 정정: destination 을 contract_id(22B) 가 아니라 bare pkh(21B) 로 인코딩해 kind 바이트 0x00 이 누락돼 있었고, 실기기(시뮬레이터) 펌웨어가 invalid_format 으로 정당하게 거부했다. 1바이트 삽입으로 수정. malformed bytes → -32602. broadcast 안 함(§9 byte-proof만 대상).",
     "sourceUrl": "https://tezos.gitlab.io/shell/p2p_api.html",
     "transaction": {
-      "unsignedTx": "288f8bb117200c366cade5c8f22e0854cc99429853dcc9b35287cc9cdcc8e3c66c00338cdba49ec68d3e14903e4fd37db865a990ed22900301e80700c0843d000041812f66a66258718eb77f7bdc4f89e2f151af8a00",
-      "preparedFee": {
-        "fee": "400"
-      }
+      "unsignedTx": "288f8bb117200c366cade5c8f22e0854cc99429853dcc9b35287cc9cdcc8e3c66c00338cdba49ec68d3e14903e4fd37db865a990ed22900301e80700c0843d000041812f66a66258718eb77f7bdc4f89e2f151af8a00"
     }
   },
   {

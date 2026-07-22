@@ -126,7 +126,7 @@
     "applicableChainIds": [
       "solana:5eykt4UsFv8P8NJdTREpY1vzqKqZKvdp/slip44:501"
     ],
-    "note": "Case 2c — plain JSON 의 instruction.data 를 prefix 없는 base58 문자열로 표현. @solana/web3.js bs58.encode 결과와 동일. [m09-04-25] feePayer/signer + recentBlockhash를 real-format 값(대표값, live 아님)으로 교체 — programId(SystemProgram)는 프로토콜 상수라 보존.",
+    "note": "Case 2c — plain JSON 의 instruction.data 를 prefix 없는 base58 문자열로 표현. @solana/web3.js bs58.encode 결과와 동일. [m09-04-25] feePayer/signer + recentBlockhash를 real-format 값(대표값, live 아님)으로 교체 — programId(SystemProgram)는 프로토콜 상수라 보존. ⚠️ 2026-07-22 정정: data 가 '3Bxs411Dtc7pkFQj'(=100,000,000 lamports = 0.1 SOL) 로 형제 preset 3종(1,000,000 = 0.001 SOL)과 100배 어긋나 있었다. 실기기 검증에서 온체인 tx 4f4bX9ncn3Gw…(devnet) 의 parsed lamports=100000000 로 확인. base58 만 재인코딩 대상에서 누락된 것으로 보인다. '3Bxs4Bc3VYuGVB19'(=0200000040420f0000000000) 로 교체하고 T-U-NEVM-SOL-DATA-EQ-01 로 4종 등가성을 고정했다.",
     "sourceUrl": "https://github.com/cryptocoinjs/bs58",
     "transaction": {
       "version": 0,
@@ -146,7 +146,7 @@
               "isWritable": true
             }
           ],
-          "data": "3Bxs411Dtc7pkFQj"
+          "data": "3Bxs4Bc3VYuGVB19"
         }
       ],
       "recentBlockhash": "2zxvZMg8YScxKqW2QQqQHpNzkLgwvVLj8Q1ZQZoFcTZ6"

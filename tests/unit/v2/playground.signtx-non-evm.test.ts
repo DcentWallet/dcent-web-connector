@@ -1092,6 +1092,58 @@ it('T-U-NEVM-06: Solana multi-format presets — Case 1/2a-d/3 모두 존재 + s
 })
 
 // ─────────────────────────────────────────────────────────────────────────────
+// T-U-NEVM-SOL-DATA-EQ-01: Case 2a~2d 는 "같은 tx 의 다른 표현" 이다 — **값이 동일해야 한다**
+//
+// 실기기 검증 2026-07-22 에서 발견: `sol-transfer-data-base58` 의 data 가
+// '3Bxs411Dtc7pkFQj'(= 100,000,000 lamports = 0.1 SOL) 로, 형제 3종
+// (1,000,000 lamports = 0.001 SOL)과 **100배** 어긋나 있었다.
+// 온체인 tx `4f4bX9ncn3Gw…`(devnet slot 477990483) 의 parsed lamports=100000000 으로 확정.
+//
+// 바로 위 T-U-NEVM-06 이 이 결함을 통과시킨 이유: **shape 만 검사**했다(타입·정규식·바이트 범위).
+// 네 표현을 실제로 디코드해 **바이트 동등성**을 보지 않으면 값 드리프트는 잡히지 않는다.
+// Solana 는 기기 화면이 blind-sign 이라 사람 눈으로도 못 잡는다(같은 세션 실측).
+// ─────────────────────────────────────────────────────────────────────────────
+it('T-U-NEVM-SOL-DATA-EQ-01: Solana Case 2a~2d 의 instruction.data 가 바이트 동일', () => {
+  const presetsPath = path.resolve(__dirname, '../../../playground/presets.non-evm.json')
+  const presets: any[] = JSON.parse(fs.readFileSync(presetsPath, 'utf8'))
+  const byId = Object.fromEntries(presets.map((p) => [p.id, p]))
+  const dataOf = (id: string) => byId[id].transaction.instructions[0].data
+
+  // 표현 → bytes 정규화 (Case 2a 객체는 SystemProgram.Transfer 인코딩 규칙으로 조립)
+  const fromObject = (d: any): Uint8Array => {
+    const buf = new Uint8Array(12)
+    new DataView(buf.buffer).setUint32(0, d.instruction, true) // 4-byte LE tag
+    new DataView(buf.buffer).setBigUint64(4, BigInt(d.lamports), true) // 8-byte LE lamports
+    return buf
+  }
+  const fromHex = (s: string): Uint8Array =>
+    Uint8Array.from(Buffer.from(s.replace(/^0x/, ''), 'hex'))
+
+  const bytes = {
+    '2a object': fromObject(dataOf('sol-transfer')),
+    '2b hex': fromHex(dataOf('sol-transfer-data-hex')),
+    '2c base58': base58.decode(dataOf('sol-transfer-data-base58')),
+    '2d bytes': Uint8Array.from(dataOf('sol-transfer-data-bytes')),
+  }
+
+  const hex = (u: Uint8Array) => Buffer.from(u).toString('hex')
+  const ref = hex(bytes['2a object'])
+
+  // ① 네 표현이 모두 동일 바이트
+  for (const [label, u] of Object.entries(bytes)) {
+    expect(`${label}=${hex(u)}`).toBe(`${label}=${ref}`) // 실패 시 어느 표현인지 즉시 보이게
+  }
+
+  // ② 그 바이트가 SystemProgram.Transfer 로 해석되는지 (tag=2)
+  const dv = new DataView(bytes['2a object'].buffer, bytes['2a object'].byteOffset)
+  expect(bytes['2a object'].length).toBe(12)
+  expect(dv.getUint32(0, true)).toBe(2)
+
+  // ③ 금액이 preset 세트의 공통 기준값(0.001 SOL)인지 — 드리프트 방지 앵커
+  expect(Number(dv.getBigUint64(4, true))).toBe(1_000_000)
+})
+
+// ─────────────────────────────────────────────────────────────────────────────
 // T-DATA-01: chains.json — 모든 entry chainId가 CAIP-19 형식
 // ─────────────────────────────────────────────────────────────────────────────
 it('T-DATA-01: chains.json — 모든 entry chainId가 CAIP-19 형식 (namespace:ref/slip44:N)', () => {

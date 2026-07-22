@@ -1218,13 +1218,14 @@
     "applicableChainIds": [
       "hedera:mainnet/slip44:3030"
     ],
-    "note": "토큰 연결(수신 준비) — Hedera HTS TokenAssociate. wm m02-05-83 wire 배선: extractHederaTokenIdentity가 {type:'associate', tokenId} shape를 인식 → keystone이 등록 HTS TokenAccount 합성 → convertTransaction associate branch(preparedFee=MAX_ASSOCIATE_TOKEN_TINYBAR_FEE 1.5 HBAR) → signTransaction case 'associate'(무수정) TokenAssociateTransaction 서명. HTS 토큰을 받으려면 수신 계정이 먼저 associate 필요. wire payload = {type:'associate', tokenId(0.0.x), sender(0.0.x), memo?, maxTransactionFee?}. ⚠️ 반드시 등록 토큰(SAUCE 0.0.731861) — 미등록 tokenId는 keystone -32602(hedera-hts-transfer와 동일 registry 요건). ⚠️ accountId(0.0.x)는 키에서 파생 불가 → sender를 본인 디바이스 실 Hedera 계정으로 교체해야 서명 유효(현재 0.0.587690은 self 계정). ⚠️ 반드시 mainnet(slip44:3030). 디바이스는 associate tx 해시만 서명 — 서명 확인용, broadcast 미수행(§9 verify-wire-sign HEDERA). dissociate는 hedera-hts-dissociate 참조.",
+    "note": "토큰 연결(수신 준비) — Hedera HTS TokenAssociate. wm m02-05-83 wire 배선: extractHederaTokenIdentity가 {type:'associate', tokenId} shape를 인식 → keystone이 등록 HTS TokenAccount 합성 → convertTransaction associate branch(preparedFee=MAX_ASSOCIATE_TOKEN_TINYBAR_FEE 1.5 HBAR) → signTransaction case 'associate'(무수정) TokenAssociateTransaction 서명. HTS 토큰을 받으려면 수신 계정이 먼저 associate 필요. wire payload = {type:'associate', tokenId(0.0.x), sender(0.0.x), memo?, maxTransactionFee?}. ⚠️ 반드시 등록 토큰(SAUCE 0.0.731861) — 미등록 tokenId는 keystone -32602(hedera-hts-transfer와 동일 registry 요건). ⚠️ accountId(0.0.x)는 키에서 파생 불가 → sender를 본인 디바이스 실 Hedera 계정으로 교체해야 서명 유효(현재 0.0.587690은 self 계정). ⚠️ 반드시 mainnet(slip44:3030). 디바이스는 associate tx 해시만 서명 — 서명 확인용, broadcast 미수행(§9 verify-wire-sign HEDERA). dissociate는 hedera-hts-dissociate 참조. 【2026-07-22】 `maxTransactionFee` 를 명시 선언한다(120000000 tinybar = 1.2 HBAR). wm 은 이미 앱 값을 우선한다 — `resolveHederaMaxTransactionFee(obj.maxTransactionFee, MAX_ASSOCIATE_TOKEN_TINYBAR_FEE)` (`hedera/transaction.ts`), 상수 1.5 HBAR 는 **강제값이 아니라 기본값**이다. 선언이 없으면 앱이 수수료 상한을 표현할 방법이 없고 wire 가 그 경로를 검증하지도 못한다. 값을 기본값(1.5)과 다르게 둔 이유는 **앱 값이 실제로 서명 payload/기기 화면까지 가는지 실기기로 판별**하기 위해서다.",
     "sourceUrl": "https://docs.hedera.com/hedera/sdks-and-apis/sdks/token-service/associate-tokens-to-an-account",
     "transaction": {
       "type": "associate",
       "tokenId": "0.0.731861",
       "sender": "0.0.587690",
-      "memo": ""
+      "memo": "",
+      "maxTransactionFee": 120000000
     }
   },
   {
@@ -1234,13 +1235,14 @@
     "applicableChainIds": [
       "hedera:mainnet/slip44:3030"
     ],
-    "note": "토큰 연결 해제 — Hedera HTS TokenDissociate. wm m02-05-83 wire 배선: extractHederaTokenIdentity가 {type:'disassociate', tokenId} shape를 인식 → keystone HTS TokenAccount 합성 → convertTransaction disassociate branch(preparedFee=MAX_ASSOCIATE_TOKEN_TINYBAR_FEE 1.5 HBAR) → signTransaction case 'disassociate'(무수정) TokenDissociateTransaction 서명. 더 이상 받지 않을 HTS 토큰의 연결을 해제(잔액 0 필요). wire payload = {type:'disassociate', tokenId(0.0.x), sender(0.0.x), memo?, maxTransactionFee?}. ⚠️ 등록 토큰(SAUCE 0.0.731861) — 미등록은 keystone -32602. ⚠️ sender(0.0.x)는 키 파생 불가 → 본인 디바이스 실 Hedera 계정으로 교체(현재 0.0.587690=self). ⚠️ 반드시 mainnet(slip44:3030). 디바이스는 dissociate tx 해시만 서명 — 서명 확인용, broadcast 미수행(§9 verify-wire-sign HEDERA). associate는 hedera-hts-associate 참조.",
+    "note": "토큰 연결 해제 — Hedera HTS TokenDissociate. wm m02-05-83 wire 배선: extractHederaTokenIdentity가 {type:'disassociate', tokenId} shape를 인식 → keystone HTS TokenAccount 합성 → convertTransaction disassociate branch(preparedFee=MAX_ASSOCIATE_TOKEN_TINYBAR_FEE 1.5 HBAR) → signTransaction case 'disassociate'(무수정) TokenDissociateTransaction 서명. 더 이상 받지 않을 HTS 토큰의 연결을 해제(잔액 0 필요). wire payload = {type:'disassociate', tokenId(0.0.x), sender(0.0.x), memo?, maxTransactionFee?}. ⚠️ 등록 토큰(SAUCE 0.0.731861) — 미등록은 keystone -32602. ⚠️ sender(0.0.x)는 키 파생 불가 → 본인 디바이스 실 Hedera 계정으로 교체(현재 0.0.587690=self). ⚠️ 반드시 mainnet(slip44:3030). 디바이스는 dissociate tx 해시만 서명 — 서명 확인용, broadcast 미수행(§9 verify-wire-sign HEDERA). associate는 hedera-hts-associate 참조. 【2026-07-22】 `maxTransactionFee` 를 명시 선언한다(120000000 tinybar = 1.2 HBAR). wm 은 이미 앱 값을 우선한다 — `resolveHederaMaxTransactionFee(obj.maxTransactionFee, MAX_ASSOCIATE_TOKEN_TINYBAR_FEE)` (`hedera/transaction.ts`), 상수 1.5 HBAR 는 **강제값이 아니라 기본값**이다. 선언이 없으면 앱이 수수료 상한을 표현할 방법이 없고 wire 가 그 경로를 검증하지도 못한다. 값을 기본값(1.5)과 다르게 둔 이유는 **앱 값이 실제로 서명 payload/기기 화면까지 가는지 실기기로 판별**하기 위해서다.",
     "sourceUrl": "https://docs.hedera.com/hedera/sdks-and-apis/sdks/token-service/dissociate-tokens-from-an-account",
     "transaction": {
       "type": "disassociate",
       "tokenId": "0.0.731861",
       "sender": "0.0.587690",
-      "memo": ""
+      "memo": "",
+      "maxTransactionFee": 120000000
     }
   },
   {

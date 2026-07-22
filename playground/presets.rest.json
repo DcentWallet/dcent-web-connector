@@ -132,7 +132,7 @@
     "applicableChainIds": [
       "polkadot:91b171bb158e2d3848fa23a9f1c25182/slip44:354"
     ],
-    "note": "⚠️ `balances.transfer` 는 라이브 런타임에 **존재하지 않는다** — Substrate 가 제거하고 `transferAllowDeath` 로 대체했다(실측 2026-07-14: polkadot spec 2003000 / astar spec 2207 의 `balances.*` = transferAllowDeath·transferKeepAlive·transferAll·forceTransfer… — `transfer` 없음). Polkadot balances.transferAllowDeath extrinsic. args[0]=수신자 주소, args[1]=금액(Planck, 1 DOT = 1e10). ⚠️ wm convertTransaction은 method/args[0]/args[1]만 소비 — era/specVersion/transactionVersion/blockHash/genesisHash는 무시(dead, sign 시 wm가 live getPolkadotApi로 nonce/fee/era 재도출). sender 계정은 keyPath에서 도출(노드 도달 필요). args[0]은 디바이스 DOT 자기 주소 14dyYY72MDtfxAAjFnqwCR3YihV5UrqzMjEAf1ABXJ4vzLZj (self-send). 실서명 검증은 짝 m09-04-13(swproxy e2e).",
+    "note": "⚠️ `balances.transfer` 는 라이브 런타임에 **존재하지 않는다** — Substrate 가 제거하고 `transferAllowDeath` 로 대체했다(실측 2026-07-14: polkadot spec 2003000 / astar spec 2207 의 `balances.*` = transferAllowDeath·transferKeepAlive·transferAll·forceTransfer… — `transfer` 없음). Polkadot balances.transferAllowDeath extrinsic. args[0]=수신자 주소, args[1]=금액(Planck, 1 DOT = 1e10). ⚠️ wm convertTransaction은 method/args[0]/args[1]만 소비 — era/specVersion/transactionVersion/blockHash/genesisHash는 무시(dead, sign 시 wm가 live getPolkadotApi로 nonce/fee/era 재도출). sender 계정은 keyPath에서 도출(노드 도달 필요). args[0]은 디바이스 DOT 자기 주소 14dyYY72MDtfxAAjFnqwCR3YihV5UrqzMjEAf1ABXJ4vzLZj (self-send). 실서명 검증은 짝 m09-04-13(swproxy e2e). ⚠️ **`extra.scaleHex` 는 placeholder(`\"0x\"`)** — noNetwork 게이트(5.3b/DC-3217)가 decoded-method 입력을 설계상 거부하므로 실제 dApp payload 에는 이 필드가 반드시 들어간다. preset 은 형태만 선언하고 앱이 `method`/`args` 로 조립한 실 SCALE blob 으로 **값만 치환**한다(preset 형태 보존 규칙). placeholder 를 `\"0x00\"` 같은 문법상 유효한 hex 로 두면 하네스가 진짜 blob 으로 오인해 **그것을 그대로 서명**하므로 반드시 빈 body(`\"0x\"`)여야 한다.",
     "sourceUrl": "https://github.com/polkadot-js/api",
     "transaction": {
       "method": "balances.transferAllowDeath",
@@ -146,7 +146,10 @@
       "specVersion": 9430,
       "transactionVersion": 24,
       "blockHash": "0x91b171bb158e2d3848fa23a9f1c25182fb8e20313b2c1eb49219da7a70ce90c3",
-      "genesisHash": "0x91b171bb158e2d3848fa23a9f1c25182fb8e20313b2c1eb49219da7a70ce90c3"
+      "genesisHash": "0x91b171bb158e2d3848fa23a9f1c25182fb8e20313b2c1eb49219da7a70ce90c3",
+      "extra": {
+        "scaleHex": "0x"
+      }
     }
   },
   {
@@ -581,7 +584,7 @@
     "applicableChainIds": [
       "polkadot:9eb76c5184c4ab8679d2d5d819fdf90b/slip44:810"
     ],
-    "note": "⚠️ `balances.transfer` 는 라이브 런타임에 **존재하지 않는다** — Substrate 가 제거하고 `transferAllowDeath` 로 대체했다(실측 2026-07-14: polkadot spec 2003000 / astar spec 2207 의 `balances.*` = transferAllowDeath·transferKeepAlive·transferAll·forceTransfer… — `transfer` 없음). Astar ASTR transfer — wm convertTransaction은 method/args[0]/args[1]만 소비(era/specVersion/blockHash/genesisHash는 wm가 live api로 재도출하므로 preset에서 생략 — sidechain에 mainnet identity auto-fill 방지, 1d4201c 가드). args[0]=SS58(prefix 5) 자기주소 self-send(ZaGqVp3GgGJjTC3nTF45vNfx8CYkmzbJRzpjRNgqa3NQ4r3, DOT 키 재인코딩), args[1]=Planck(decimals 18, 1 token=1e18). applicableChainIds 단일-체인. 실서명 검증은 짝 m09-04-13.",
+    "note": "⚠️ `balances.transfer` 는 라이브 런타임에 **존재하지 않는다** — Substrate 가 제거하고 `transferAllowDeath` 로 대체했다(실측 2026-07-14: polkadot spec 2003000 / astar spec 2207 의 `balances.*` = transferAllowDeath·transferKeepAlive·transferAll·forceTransfer… — `transfer` 없음). Astar ASTR transfer — wm convertTransaction은 method/args[0]/args[1]만 소비(era/specVersion/blockHash/genesisHash는 wm가 live api로 재도출하므로 preset에서 생략 — sidechain에 mainnet identity auto-fill 방지, 1d4201c 가드). args[0]=SS58(prefix 5) 자기주소 self-send(ZaGqVp3GgGJjTC3nTF45vNfx8CYkmzbJRzpjRNgqa3NQ4r3, DOT 키 재인코딩), args[1]=Planck(decimals 18, 1 token=1e18). applicableChainIds 단일-체인. 실서명 검증은 짝 m09-04-13. ⚠️ **`extra.scaleHex` 는 placeholder(`\"0x\"`)** — noNetwork 게이트(5.3b/DC-3217)가 decoded-method 입력을 설계상 거부하므로 실제 dApp payload 에는 이 필드가 반드시 들어간다. preset 은 형태만 선언하고 앱이 `method`/`args` 로 조립한 실 SCALE blob 으로 **값만 치환**한다(preset 형태 보존 규칙). placeholder 를 `\"0x00\"` 같은 문법상 유효한 hex 로 두면 하네스가 진짜 blob 으로 오인해 **그것을 그대로 서명**하므로 반드시 빈 body(`\"0x\"`)여야 한다.",
     "sourceUrl": "https://github.com/polkadot-js/api",
     "transaction": {
       "method": "balances.transferAllowDeath",
@@ -591,7 +594,10 @@
       ],
       "era": "0x00",
       "nonce": 0,
-      "tip": 0
+      "tip": 0,
+      "extra": {
+        "scaleHex": "0x"
+      }
     }
   },
   {
@@ -601,7 +607,7 @@
     "applicableChainIds": [
       "polkadot:ddb89643205c8fe1c79afeb31f48d50f/slip44:810"
     ],
-    "note": "⚠️ `balances.transfer` 는 라이브 런타임에 **존재하지 않는다** — Substrate 가 제거하고 `transferAllowDeath` 로 대체했다(실측 2026-07-14: polkadot spec 2003000 / astar spec 2207 의 `balances.*` = transferAllowDeath·transferKeepAlive·transferAll·forceTransfer… — `transfer` 없음). Shibuya SBY transfer — wm convertTransaction은 method/args[0]/args[1]만 소비(era/specVersion/blockHash/genesisHash는 wm가 live api로 재도출하므로 preset에서 생략 — sidechain에 mainnet identity auto-fill 방지, 1d4201c 가드). args[0]=SS58(prefix 5) 자기주소 self-send(ZaGqVp3GgGJjTC3nTF45vNfx8CYkmzbJRzpjRNgqa3NQ4r3, DOT 키 재인코딩), args[1]=Planck(decimals 18, 1 token=1e18). applicableChainIds 단일-체인. 실서명 검증은 짝 m09-04-13.",
+    "note": "⚠️ `balances.transfer` 는 라이브 런타임에 **존재하지 않는다** — Substrate 가 제거하고 `transferAllowDeath` 로 대체했다(실측 2026-07-14: polkadot spec 2003000 / astar spec 2207 의 `balances.*` = transferAllowDeath·transferKeepAlive·transferAll·forceTransfer… — `transfer` 없음). Shibuya SBY transfer — wm convertTransaction은 method/args[0]/args[1]만 소비(era/specVersion/blockHash/genesisHash는 wm가 live api로 재도출하므로 preset에서 생략 — sidechain에 mainnet identity auto-fill 방지, 1d4201c 가드). args[0]=SS58(prefix 5) 자기주소 self-send(ZaGqVp3GgGJjTC3nTF45vNfx8CYkmzbJRzpjRNgqa3NQ4r3, DOT 키 재인코딩), args[1]=Planck(decimals 18, 1 token=1e18). applicableChainIds 단일-체인. 실서명 검증은 짝 m09-04-13. ⚠️ **`extra.scaleHex` 는 placeholder(`\"0x\"`)** — noNetwork 게이트(5.3b/DC-3217)가 decoded-method 입력을 설계상 거부하므로 실제 dApp payload 에는 이 필드가 반드시 들어간다. preset 은 형태만 선언하고 앱이 `method`/`args` 로 조립한 실 SCALE blob 으로 **값만 치환**한다(preset 형태 보존 규칙). placeholder 를 `\"0x00\"` 같은 문법상 유효한 hex 로 두면 하네스가 진짜 blob 으로 오인해 **그것을 그대로 서명**하므로 반드시 빈 body(`\"0x\"`)여야 한다.",
     "sourceUrl": "https://github.com/polkadot-js/api",
     "transaction": {
       "method": "balances.transferAllowDeath",
@@ -611,7 +617,10 @@
       ],
       "era": "0x00",
       "nonce": 0,
-      "tip": 0
+      "tip": 0,
+      "extra": {
+        "scaleHex": "0x"
+      }
     }
   },
   {
@@ -621,7 +630,7 @@
     "applicableChainIds": [
       "polkadot:6673c7e2c2b7bde45a60c71ef70d9c7c/slip44:354"
     ],
-    "note": "⚠️ `balances.transfer` 는 라이브 런타임에 **존재하지 않는다** — Substrate 가 제거하고 `transferAllowDeath` 로 대체했다(실측 2026-07-14: polkadot spec 2003000 / astar spec 2207 의 `balances.*` = transferAllowDeath·transferKeepAlive·transferAll·forceTransfer… — `transfer` 없음). Creditcoin CTC transfer — wm convertTransaction은 method/args[0]/args[1]만 소비(era/specVersion/blockHash/genesisHash는 wm가 live api로 재도출하므로 preset에서 생략 — sidechain에 mainnet identity auto-fill 방지, 1d4201c 가드). args[0]=SS58(prefix 42) 자기주소 self-send(5FhgQCqxVSdCWdADJ9nw4GDPs5VRnZHrHEVgViApyD3Qp1TZ, DOT 키 재인코딩), args[1]=Planck(decimals 18, 1 token=1e18). applicableChainIds 단일-체인. 실서명 검증은 짝 m09-04-13.",
+    "note": "⚠️ `balances.transfer` 는 라이브 런타임에 **존재하지 않는다** — Substrate 가 제거하고 `transferAllowDeath` 로 대체했다(실측 2026-07-14: polkadot spec 2003000 / astar spec 2207 의 `balances.*` = transferAllowDeath·transferKeepAlive·transferAll·forceTransfer… — `transfer` 없음). Creditcoin CTC transfer — wm convertTransaction은 method/args[0]/args[1]만 소비(era/specVersion/blockHash/genesisHash는 wm가 live api로 재도출하므로 preset에서 생략 — sidechain에 mainnet identity auto-fill 방지, 1d4201c 가드). args[0]=SS58(prefix 42) 자기주소 self-send(5FhgQCqxVSdCWdADJ9nw4GDPs5VRnZHrHEVgViApyD3Qp1TZ, DOT 키 재인코딩), args[1]=Planck(decimals 18, 1 token=1e18). applicableChainIds 단일-체인. 실서명 검증은 짝 m09-04-13. ⚠️ **`extra.scaleHex` 는 placeholder(`\"0x\"`)** — noNetwork 게이트(5.3b/DC-3217)가 decoded-method 입력을 설계상 거부하므로 실제 dApp payload 에는 이 필드가 반드시 들어간다. preset 은 형태만 선언하고 앱이 `method`/`args` 로 조립한 실 SCALE blob 으로 **값만 치환**한다(preset 형태 보존 규칙). placeholder 를 `\"0x00\"` 같은 문법상 유효한 hex 로 두면 하네스가 진짜 blob 으로 오인해 **그것을 그대로 서명**하므로 반드시 빈 body(`\"0x\"`)여야 한다.",
     "sourceUrl": "https://github.com/polkadot-js/api",
     "transaction": {
       "method": "balances.transferAllowDeath",
@@ -631,7 +640,10 @@
       ],
       "era": "0x00",
       "nonce": 0,
-      "tip": 0
+      "tip": 0,
+      "extra": {
+        "scaleHex": "0x"
+      }
     }
   },
   {
@@ -641,7 +653,7 @@
     "applicableChainIds": [
       "polkadot:8a2e8af69a7892d2e60a77e3df4e0fa0/slip44:354"
     ],
-    "note": "⚠️ `balances.transfer` 는 라이브 런타임에 **존재하지 않는다** — Substrate 가 제거하고 `transferAllowDeath` 로 대체했다(실측 2026-07-14: polkadot spec 2003000 / astar spec 2207 의 `balances.*` = transferAllowDeath·transferKeepAlive·transferAll·forceTransfer… — `transfer` 없음). Creditcoin Testnet CTC transfer — wm convertTransaction은 method/args[0]/args[1]만 소비(era/specVersion/blockHash/genesisHash는 wm가 live api로 재도출하므로 preset에서 생략 — sidechain에 mainnet identity auto-fill 방지, 1d4201c 가드). args[0]=SS58(prefix 42) 자기주소 self-send(5FhgQCqxVSdCWdADJ9nw4GDPs5VRnZHrHEVgViApyD3Qp1TZ, DOT 키 재인코딩), args[1]=Planck(decimals 18, 1 token=1e18). applicableChainIds 단일-체인. 실서명 검증은 짝 m09-04-13.",
+    "note": "⚠️ `balances.transfer` 는 라이브 런타임에 **존재하지 않는다** — Substrate 가 제거하고 `transferAllowDeath` 로 대체했다(실측 2026-07-14: polkadot spec 2003000 / astar spec 2207 의 `balances.*` = transferAllowDeath·transferKeepAlive·transferAll·forceTransfer… — `transfer` 없음). Creditcoin Testnet CTC transfer — wm convertTransaction은 method/args[0]/args[1]만 소비(era/specVersion/blockHash/genesisHash는 wm가 live api로 재도출하므로 preset에서 생략 — sidechain에 mainnet identity auto-fill 방지, 1d4201c 가드). args[0]=SS58(prefix 42) 자기주소 self-send(5FhgQCqxVSdCWdADJ9nw4GDPs5VRnZHrHEVgViApyD3Qp1TZ, DOT 키 재인코딩), args[1]=Planck(decimals 18, 1 token=1e18). applicableChainIds 단일-체인. 실서명 검증은 짝 m09-04-13. ⚠️ **`extra.scaleHex` 는 placeholder(`\"0x\"`)** — noNetwork 게이트(5.3b/DC-3217)가 decoded-method 입력을 설계상 거부하므로 실제 dApp payload 에는 이 필드가 반드시 들어간다. preset 은 형태만 선언하고 앱이 `method`/`args` 로 조립한 실 SCALE blob 으로 **값만 치환**한다(preset 형태 보존 규칙). placeholder 를 `\"0x00\"` 같은 문법상 유효한 hex 로 두면 하네스가 진짜 blob 으로 오인해 **그것을 그대로 서명**하므로 반드시 빈 body(`\"0x\"`)여야 한다.",
     "sourceUrl": "https://github.com/polkadot-js/api",
     "transaction": {
       "method": "balances.transferAllowDeath",
@@ -651,7 +663,10 @@
       ],
       "era": "0x00",
       "nonce": 0,
-      "tip": 0
+      "tip": 0,
+      "extra": {
+        "scaleHex": "0x"
+      }
     }
   },
   {

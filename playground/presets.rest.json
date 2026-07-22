@@ -378,7 +378,7 @@
     "applicableChainIds": [
       "cosmos:coreum-mainnet-1/slip44:990"
     ],
-    "note": "Coreum CORE transfer — wm Amino SignDoc(MsgSend). denom ucore.  from/to=core1n9a7x46880h6qrtjmvwxrlgt0yprj7029k55sc(디바이스 self-send, atom 키 재인코딩). account_number/sequence는 대표값 — network 모드=wm live REST 덮어쓰기, no-network 모드=preset 값 그대로 사용. applicableChainIds 단일-체인(1d4201c 가드). 실서명 검증은 짝 m09-04-13.",
+    "note": "Coreum CORE transfer — wm Amino SignDoc(MsgSend). denom ucore.  from/to=core1n9a7x46880h6qrtjmvwxrlgt0yprj7029k55sc(디바이스 self-send, atom 키 재인코딩). account_number/sequence는 대표값 — network 모드=wm live REST 덮어쓰기, no-network 모드=preset 값 그대로 사용. applicableChainIds 단일-체인(1d4201c 가드). 실서명 검증은 짝 m09-04-13. ⚠️ amount=10000 (0.01 TX) — 값을 키우지 말 것. Coreum mainnet 은 faucet 이 없어 실기기 계정 잔액이 소액이다(2026-07-22 실측 0.592 TX). 이전 값 1000000(1 TX)은 잔액을 초과해 온체인 실행이 불가능했다 — atom-transfer 가 같은 이유로 블록 32144289 에서 insufficient funds 로 실패한 선례가 있다. self-send 라도 검증 시점에 잔액 ≥ amount + fee 여야 한다. fee 는 preset 값이 아니라 prepare 가 wm 산출값으로 교체한다(Coreum 은 동적 수수료 모델).",
     "sourceUrl": "https://github.com/cosmos/cosmjs",
     "transaction": {
       "chain_id": "coreum-mainnet-1",
@@ -402,7 +402,7 @@
             "amount": [
               {
                 "denom": "ucore",
-                "amount": "1000000"
+                "amount": "10000"
               }
             ]
           }

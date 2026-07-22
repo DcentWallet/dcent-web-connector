@@ -557,3 +557,26 @@ it('T-U-REST-COSMOS-DESC-01: descriptor 의 symbol/decimals 가 온체인 토큰
   expect(Number(t.amount)).toBeLessThanOrEqual(1000000)
   expect(Number(t.amount)).toBeGreaterThan(0)
 })
+
+// T-U-REST-COSMOS-AMT-02: mainnet cosmos preset 금액이 실기기 잔액 범위 안인지
+//
+// cosmoshub / coreum mainnet 은 **faucet 이 없어** 실기기 계정 잔액이 소액이다. 금액이
+// 잔액을 넘으면 서명·수수료가 다 맞아도 실행에서 insufficient funds 로 끝나 온체인
+// 검증(VERIFIED)에 도달할 수 없다. 실측(2026-07-22):
+//   atom-transfer   1 ATOM > 0.0509 ATOM → 블록 32144289 code 5
+//   coreum-transfer 1 TX   > 0.592 TX    (교체 전)
+// 수수료는 preset 값이 아니라 prepare 가 wm 산출값으로 채우므로 여기서 가드하지 않는다.
+it('T-U-REST-COSMOS-AMT-02: mainnet preset 금액이 소액 유지 (온체인 성공 가능)', () => {
+  const CASES = [
+    { id: 'atom-transfer', denom: 'uatom', maxBase: 100000 },   // ≤ 0.1 ATOM
+    { id: 'coreum-transfer', denom: 'ucore', maxBase: 100000 }, // ≤ 0.1 TX
+  ]
+  CASES.forEach((c) => {
+    const p = SAMPLE_REST_PRESETS.find((x: any) => x.id === c.id)
+    expect(p).toBeDefined()
+    const send = p.transaction.msgs[0].value.amount[0]
+    expect(send.denom).toBe(c.denom)
+    expect(Number(send.amount)).toBeGreaterThan(0)
+    expect(Number(send.amount)).toBeLessThanOrEqual(c.maxBase)
+  })
+})

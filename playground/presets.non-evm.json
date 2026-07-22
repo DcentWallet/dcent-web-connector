@@ -205,7 +205,7 @@
     "applicableChainIds": [
       "solana:5eykt4UsFv8P8NJdTREpY1vzqKqZKvdp/slip44:501"
     ],
-    "note": "Case 3 — wm-internal TransactionCommon shape ({type, sender, recipient, amount}). 주로 webview/RN 흐름에서 사용 (RN의 wallet-models 가 미리 만든 객체를 그대로 전달). SDK 에서는 거의 안 씀 — 호환성 용 pass-through. [m09-04-25] sender/recentBlockhash를 real-format 값(대표값)으로 교체.",
+    "note": "Case 3 — wm-internal TransactionCommon shape ({type, sender, recipient, amount}). 주로 webview/RN 흐름에서 사용 (RN의 wallet-models 가 미리 만든 객체를 그대로 전달). SDK 에서는 거의 안 씀 — 호환성 용 pass-through. [m09-04-25] sender/recentBlockhash를 real-format 값(대표값)으로 교체. ⚠️ noNetwork 계약: wm 은 blockhash/fee 를 RPC 로 조회하지 않는다 — 앱이 실값으로 채워 보내야 한다. sender / recentBlockhash / preparedFee.fee 세 값은 여기 있는 것이 **대표값(live 아님)** 이며 앱(prepare)이 교체한다. m04-01-21(DC-3370) 이후 5.2c 게이트가 Case-4 구조화 native 에 recentBlockhash + preparedFee.fee 를 요구한다 — 실기기 검증 2026-07-22 에서 preparedFee 부재로 -32602 차단됨을 확인하고 필드를 추가했다.",
     "sourceUrl": "https://github.com/IotrustGitHub/dcent-wallet-models/blob/main/src/common/types/transaction.ts",
     "transaction": {
       "type": "transfer",
@@ -213,7 +213,10 @@
       "sender": "Gv8u221N315GoRx2C6yBNF2jNq379FdvaAp2bL8ywSDk",
       "recipient": "11111111111111111111111111111112",
       "amount": "1000000",
-      "recentBlockhash": "2zxvZMg8YScxKqW2QQqQHpNzkLgwvVLj8Q1ZQZoFcTZ6"
+      "recentBlockhash": "2zxvZMg8YScxKqW2QQqQHpNzkLgwvVLj8Q1ZQZoFcTZ6",
+      "preparedFee": {
+        "fee": 5000
+      }
     }
   },
   {

@@ -178,13 +178,16 @@
       "tezos:NetXdQprcVkpaWU/slip44:1729",
       "tezos:NetXnHfVqm9iesp/slip44:1729"
     ],
-    "note": "Tezos transaction operation (taquito). amount 단위는 mutez (1 XTZ = 1,000,000). source/destination/amount 수정 후 송금.",
+    "note": "Tezos transaction operation (taquito). amount 단위는 mutez (1 XTZ = 1,000,000). source/destination/amount 수정 후 송금. `counter`/`extra.branch` 는 **대표값(placeholder)** — 앱이 체인 실값으로 치환한다(counter 는 조회값+1). wm 이 `extra.branch` 로 local-forge 하므로(signTransactionFromWire → forgeTezosLocally) 앱은 forge 하지 않는다. branch placeholder 는 형제 FA preset 들과 동일한 Genesis 해시.",
     "sourceUrl": "https://github.com/ecadlabs/taquito",
     "transaction": {
       "kind": "transaction",
       "source": "tz1burnburnburnburnburnburnburjAYjjX",
       "fee": "1420",
       "counter": "1",
+      "extra": {
+        "branch": "BLockGenesisGenesisGenesisGenesisGenesisf79b5d1CoW2"
+      },
       "gasLimit": "10307",
       "storageLimit": "257",
       "amount": "1000000",

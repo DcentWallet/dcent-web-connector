@@ -213,10 +213,10 @@ Bitcoin은 `dcent.sign({ method: 'signTransaction', chainId, payload })`로 서�
       value: {
         from_address: 'cosmos1...',
         to_address: 'cosmos1...',
-        amount: [{ denom: 'uatom', amount: '1000000' }]
+        amount: [{ denom: 'uatom', amount: '10000' }]
       }
     }],
-    fee: { amount: [{ denom: 'uatom', amount: '500' }], gas: '200000' },
+    fee: { amount: [{ denom: 'uatom', amount: '5000' }], gas: '200000' },
     memo: '',
     chain_id: 'cosmoshub-4',
     account_number: '1',

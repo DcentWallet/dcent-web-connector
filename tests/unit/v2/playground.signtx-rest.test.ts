@@ -504,3 +504,30 @@ it('T-BLOB-SHAPE-01(rest, polkadot): args[0] SS58 pubkey == scaleHex 내 Account
 
   expect(bytesEq(displayPubkey, new Uint8Array(accountId32))).toBe(true)
 })
+
+// ─────────────────────────────────────────────────────────────────────────────
+// T-U-REST-COSMOS-AMT-01: cosmos preset 금액이 온체인 성공 가능 범위인지
+//
+// 실기기 검증(2026-07-22)에서 atom-transfer 가 **브로드캐스트는 수락(code 0)** 됐으나 실행
+// 단계에서 실패했다: `spendable balance 50874uatom is smaller than 1000000uatom:
+// insufficient funds` (블록 32144289). cosmoshub 는 메인넷이라 faucet 이 없어 실기기 계정
+// 잔액이 소액이고, self-send 라도 검증 시점에 `잔액 ≥ amount + fee` 여야 한다.
+//
+// 금액을 다시 키우면 온체인 검증(VERIFIED)이 영구히 불가능해지므로 상한을 가드한다.
+it('T-U-REST-COSMOS-AMT-01: atom-transfer 금액은 실기기 잔액 범위 안 (온체인 성공 가능)', () => {
+  const p = SAMPLE_REST_PRESETS.find((x: any) => x.id === 'atom-transfer')
+  expect(p).toBeDefined()
+  const send = p.transaction.msgs[0].value.amount[0]
+  expect(send.denom).toBe('uatom')
+  // 1 ATOM(1e6)은 실기기 잔액(~0.05 ATOM)을 초과해 실행 실패했다 → 소액 유지
+  expect(Number(send.amount)).toBeLessThanOrEqual(100000) // ≤ 0.1 ATOM
+  expect(Number(send.amount)).toBeGreaterThan(0)
+
+  // fee 는 cosmoshub 최소가스가격을 충족해야 브로드캐스트가 수락된다(5000 은 실측 통과값)
+  const fee = p.transaction.fee
+  expect(fee.amount[0].denom).toBe('uatom')
+  expect(Number(fee.amount[0].amount)).toBeGreaterThanOrEqual(5000)
+
+  // 잔액 안에서 성립해야 하는 부등식: amount + fee ≤ 실측 잔액(50874 uatom)
+  expect(Number(send.amount) + Number(fee.amount[0].amount)).toBeLessThanOrEqual(50874)
+})

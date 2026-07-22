@@ -71,7 +71,7 @@
     "applicableChainIds": [
       "cosmos:cosmoshub-4/slip44:118"
     ],
-    "note": "Cosmos Hub MsgSend — wm 기대 형식 Amino SignDoc (msgs[].type + from_address/to_address/chain_id snake_case). amount 단위 uatom (1 ATOM = 1e6). ⚠️ from_address는 디바이스 실 cosmoshub 계정이어야 서명 성공(self-send 시 to_address 동일). account_number/sequence/pub_key는 대표값(유효 형식) — network 모드에선 wm가 sign 시 live REST로 덮어쓰고, no-network 모드에선 preset 값 그대로 사용 — sender가 on-chain 미존재면 404. 현재 from/to=cosmos1n9a7x46880h6qrtjmvwxrlgt0yprj702kcv0hr (디바이스 self-send). 실서명 검증은 짝 m09-04-13(swproxy e2e).",
+    "note": "Cosmos Hub MsgSend — wm 기대 형식 Amino SignDoc (msgs[].type + from_address/to_address/chain_id snake_case). amount 단위 uatom (1 ATOM = 1e6). ⚠️ from_address는 디바이스 실 cosmoshub 계정이어야 서명 성공(self-send 시 to_address 동일). account_number/sequence/pub_key는 대표값(유효 형식) — network 모드에선 wm가 sign 시 live REST로 덮어쓰고, no-network 모드에선 preset 값 그대로 사용 — sender가 on-chain 미존재면 404. 현재 from/to=cosmos1n9a7x46880h6qrtjmvwxrlgt0yprj702kcv0hr (디바이스 self-send). 실서명 검증은 짝 m09-04-13(swproxy e2e). ⚠️ amount=10000 (0.01 ATOM) — 값을 키우지 말 것. cosmoshub는 메인넷이라 faucet이 없어 실기기 계정 잔액이 소액이다. 이전 값 1000000(1 ATOM)은 실기기 검증에서 브로드캐스트는 수락(code 0)됐으나 실행 단계에서 `spendable balance 50874uatom is smaller than 1000000uatom: insufficient funds`로 실패했다(2026-07-22, 블록 32144289). self-send라도 검증 시점에 잔액 ≥ amount + fee 여야 하므로, 온체인 성공까지 도달하려면 amount는 잔액 규모 안에 있어야 한다. fee 5000 uatom은 cosmoshub 최소가스가격을 충족하므로 유지.",
     "sourceUrl": "https://github.com/cosmos/cosmjs",
     "transaction": {
       "chain_id": "cosmoshub-4",
@@ -95,7 +95,7 @@
             "amount": [
               {
                 "denom": "uatom",
-                "amount": "1000000"
+                "amount": "10000"
               }
             ]
           }

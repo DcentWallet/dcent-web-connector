@@ -928,7 +928,6 @@
       "nonce": "0",
       "fee": "180",
       "anchorMode": 3,
-      "postConditionMode": 1,
       "network": "mainnet"
     }
   },

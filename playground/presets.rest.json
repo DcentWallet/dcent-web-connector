@@ -167,6 +167,26 @@
       "fee": "180",
       "nonce": "0",
       "anchorMode": 3,
+      "network": "mainnet"
+    }
+  },
+  {
+    "id": "stacks-allow-mode-reject",
+    "label": "Stacks postConditionMode:allow + 무 post-condition (거부 데모, 음성)",
+    "family": "stacks",
+    "applicableChainIds": [
+      "stacks:1/slip44:5757"
+    ],
+    "note": "음성(negative) preset — postConditionMode:\"allow\"(1) + post-condition 0개는 자산가드를 제거하는데 기기에 표시가 없어 wm(m04-01-09 §4-9)이 -32602 로 거부한다. **서명되면 안 되는 케이스**. 기대: bridge error -32602 \"postConditionMode\":\"allow\" requires at least one explicit post-condition.",
+    "sourceUrl": "https://github.com/hirosystems/stacks.js",
+    "transaction": {
+      "txType": "tokenTransfer",
+      "recipient": "SP3FBR2AGK5H9QBDH3EEN6DF8EK8JY7RX8QJ5SVTE",
+      "amount": "1000000",
+      "memo": "",
+      "fee": "180",
+      "nonce": "0",
+      "anchorMode": 3,
       "postConditionMode": 1,
       "network": "mainnet"
     }

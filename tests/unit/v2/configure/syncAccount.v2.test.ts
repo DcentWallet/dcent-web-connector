@@ -87,6 +87,49 @@ describe('syncAccount v2 — m09-04-12', () => {
     expect(sentInfos[0].contractAddress).toBe('0xA0b86991c6218b36c1d19D4a2e9Eb0cE3606eB48')
   })
 
+  test('T-U-SYNC-AF-01: meta.addressFormat(segwit-native) → forward (BTC variant disambiguation)', async () => {
+    const { transport } = ensureSingleton()
+    const sendSpy = jest.spyOn(transport, 'send').mockResolvedValue({ id: 's3', result: { ok: true } })
+
+    await syncAccount([{
+      chainId: 'bip122:000000000019d6689c085ae165831e93/slip44:0',
+      keyPath: "m/44'/0'/0'/0/0",
+      label: 'BTC-SEGWIT',
+      meta: { addressFormat: 'segwit-native' },
+    } as unknown as never])
+
+    const sentInfos = sendSpy.mock.calls[0][0].params.accountInfos
+    expect(sentInfos[0].meta).toEqual({ addressFormat: 'segwit-native' })
+  })
+
+  test('T-U-SYNC-AF-02: meta.addressFormat 미허용 enum → param_error (동기 throw, getAddress와 동일 검증)', () => {
+    const { transport } = ensureSingleton()
+    jest.spyOn(transport, 'send').mockResolvedValue({ id: 's4', result: { ok: true } })
+
+    expect(() => syncAccount([{
+      chainId: 'bip122:000000000019d6689c085ae165831e93/slip44:0',
+      keyPath: "m/44'/0'/0'/0/0",
+      label: 'BTC',
+      meta: { addressFormat: 'banana' },
+    } as unknown as never])).toThrow(
+      expect.objectContaining({ body: expect.objectContaining({ error: expect.objectContaining({ code: 'param_error' }) }) }),
+    )
+  })
+
+  test('T-U-SYNC-AF-03: meta 없음 / addressFormat 없음 → meta 미forward (회귀 0)', async () => {
+    const { transport } = ensureSingleton()
+    const sendSpy = jest.spyOn(transport, 'send').mockResolvedValue({ id: 's5', result: { ok: true } })
+
+    await syncAccount([
+      { chainId: 'eip155:1', keyPath: "m/44'/60'/0'/0/0", label: 'noMeta' },
+      { chainId: 'eip155:1', keyPath: "m/44'/60'/0'/0/0", label: 'emptyMeta', meta: {} } as unknown as never,
+    ])
+
+    const sentInfos = sendSpy.mock.calls[0][0].params.accountInfos
+    expect(sentInfos[0]).not.toHaveProperty('meta')
+    expect(sentInfos[1]).not.toHaveProperty('meta')
+  })
+
   test('T-U-SYNC-03: invalid chainId (공백 포함) → param_error throw', () => {
     expect(() =>
       syncAccount([{ chainId: 'eip155 1', keyPath: "m/44'/60'/0'/0/0", label: 'myETH' }]),

@@ -23,6 +23,7 @@
 import { _sanitizeChainId } from './sanitize'
 import { isAvaliableLabel } from './labelValidator'
 import { dcentException } from '../v1/dcent-exception'
+import { _sanitizeAddressFormat } from './address'
 import type { V2SyncAccountInfo } from './types'
 
 /** BIP44 key path — chain-agnostic 형식 검증.
@@ -110,6 +111,21 @@ export function _sanitizeSyncAccountItem (raw: unknown): V2SyncAccountInfo {
       throw dcentException('param_error', 'invalid contractAddress: ' + ca)
     }
     out.contractAddress = ca
+  }
+
+  // meta.addressFormat — BTC 주소 형식 disambiguation (legacy/segwit-wrapped/segwit-native/taproot).
+  //   dapp-input-sanitization: meta 전체를 pass-through하지 않고 known key(addressFormat)만 추출·검증한다.
+  //   _sanitizeAddressFormat: 부재/null → undefined, non-string/미허용 enum → param_error throw (getAddress와 동일).
+  //   connector는 값을 해석하지 않고 forward만 — chainId+addressFormat → coin_name 매핑은 sdk(accountV2)가 수행.
+  if (Object.prototype.hasOwnProperty.call(o, 'meta') &&
+      o.meta !== undefined && o.meta !== null) {
+    if (typeof o.meta !== 'object' || Array.isArray(o.meta)) {
+      throw dcentException('param_error', 'invalid meta: must be a plain object')
+    }
+    const addressFormat = _sanitizeAddressFormat((o.meta as Record<string, unknown>).addressFormat)
+    if (addressFormat !== undefined) {
+      out.meta = { addressFormat }
+    }
   }
 
   return out

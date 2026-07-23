@@ -16,14 +16,6 @@
     ]
   },
   {
-    "id": "syncAccount:btc-segwit-wrapped",
-    "label": "Bitcoin — segwit-wrapped (P2SH, 3xxx)",
-    "applicableMethodIds": ["account:syncAccount"],
-    "value": [
-      { "chainId": "bip122:000000000019d6689c085ae165831e93/slip44:0", "keyPath": "m/44'/0'/0'/0/0", "label": "BTC-SEGWIT-WRAPPED-01", "meta": { "addressFormat": "segwit-wrapped" } }
-    ]
-  },
-  {
     "id": "syncAccount:btc-segwit-native",
     "label": "Bitcoin — segwit-native (P2WPKH, bc1q)",
     "applicableMethodIds": ["account:syncAccount"],
@@ -32,22 +24,12 @@
     ]
   },
   {
-    "id": "syncAccount:btc-taproot",
-    "label": "Bitcoin — taproot (P2TR, bc1p)",
-    "applicableMethodIds": ["account:syncAccount"],
-    "value": [
-      { "chainId": "bip122:000000000019d6689c085ae165831e93/slip44:0", "keyPath": "m/44'/0'/0'/0/0", "label": "BTC-TAPROOT-01", "meta": { "addressFormat": "taproot" } }
-    ]
-  },
-  {
-    "id": "syncAccount:btc-all-formats",
-    "label": "Bitcoin — 4개 형식 동시 (legacy/wrapped/native/taproot)",
+    "id": "syncAccount:btc-both-formats",
+    "label": "Bitcoin — legacy + segwit-native 동시",
     "applicableMethodIds": ["account:syncAccount"],
     "value": [
       { "chainId": "bip122:000000000019d6689c085ae165831e93/slip44:0", "keyPath": "m/44'/0'/0'/0/0", "label": "BTC-LEGACY-01", "meta": { "addressFormat": "legacy" } },
-      { "chainId": "bip122:000000000019d6689c085ae165831e93/slip44:0", "keyPath": "m/44'/0'/0'/0/0", "label": "BTC-SEGWIT-WRAPPED-01", "meta": { "addressFormat": "segwit-wrapped" } },
-      { "chainId": "bip122:000000000019d6689c085ae165831e93/slip44:0", "keyPath": "m/44'/0'/0'/0/0", "label": "BTC-SEGWIT-NATIVE-01", "meta": { "addressFormat": "segwit-native" } },
-      { "chainId": "bip122:000000000019d6689c085ae165831e93/slip44:0", "keyPath": "m/44'/0'/0'/0/0", "label": "BTC-TAPROOT-01", "meta": { "addressFormat": "taproot" } }
+      { "chainId": "bip122:000000000019d6689c085ae165831e93/slip44:0", "keyPath": "m/44'/0'/0'/0/0", "label": "BTC-SEGWIT-NATIVE-01", "meta": { "addressFormat": "segwit-native" } }
     ]
   },
   {

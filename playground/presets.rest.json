@@ -252,7 +252,8 @@
         "timestamp": 0
       },
       "raw_data_hex": "",
-      "fee_limit": 1000000
+      "fee_limit": 1000000,
+      "fee": 1100000
     }
   },
   {
@@ -285,7 +286,8 @@
         "timestamp": 0
       },
       "raw_data_hex": "",
-      "fee_limit": 100000000
+      "fee_limit": 100000000,
+      "fee": 1100000
     }
   },
   {
@@ -318,7 +320,8 @@
         "timestamp": 0
       },
       "raw_data_hex": "",
-      "fee_limit": 100000000
+      "fee_limit": 100000000,
+      "fee": 1100000
     }
   },
   {
@@ -696,7 +699,8 @@
       "raw_data": {
         "ref_block_bytes": "b801",
         "ref_block_hash": "e4a5f6d7c8b9a0e1"
-      }
+      },
+      "fee": 1100000
     }
   },
   {

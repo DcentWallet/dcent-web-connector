@@ -505,7 +505,7 @@
       "constellation:mainnet/slip44:1137",
       "constellation:testnet/slip44:1137"
     ],
-    "note": "Constellation DAG transfer — wire source/destination shape (wm constellation/wire-convert.js convertTransaction). amount 단위 DATUM (1 DAG = 1e8). source/destination 둘 다 zero placeholder — getAddress(substitute) 버튼 클릭 시 _substituteConstellationSource 가 source(무조건) + destination(placeholder 일 때만) 을 wallet 주소로 치환 → self-transfer. DAG 는 체크섬 검증이 있어 EVM/Solana 식 zero-address placeholder 가 안 통함(invalid 주소면 recipient/amount 표시 깨짐: 1 DAG→0.01531742 DAG). ✅ wm 0.7.14: constellation signTransaction slot 등록됨 — 더 이상 -32601 아님(이전 노트 stale). Layer 1 getAddress passes.",
+    "note": "Constellation DAG transfer — wire source/destination shape (wm constellation/wire-convert.js convertTransaction). amount 단위 DATUM (1 DAG = 1e8). source/destination 둘 다 zero placeholder — getAddress(substitute) 버튼 클릭 시 _substituteConstellationSource 가 source(무조건) + destination(placeholder 일 때만) 을 wallet 주소로 치환 → self-transfer. DAG 는 체크섬 검증이 있어 EVM/Solana 식 zero-address placeholder 가 안 통함(invalid 주소면 recipient/amount 표시 깨짐: 1 DAG→0.01531742 DAG). ✅ wm 0.7.14: constellation signTransaction slot 등록됨 — 더 이상 -32601 아님(이전 노트 stale). Layer 1 getAddress passes. salt 는 lastRef 와 동형 placeholder — dag4 TransactionV2 가 salt 미제공 시 랜덤 생성해 서명 후 broadcast 용 tx 재조립이 불가능해지므로(B1 broadcast fix), prepare 버튼(patchConstellation) 이 실제 salt 로 치환한다.",
     "sourceUrl": "https://docs.constellationnetwork.io/",
     "transaction": {
       "type": "transfer",
@@ -516,7 +516,8 @@
       "lastRef": {
         "ordinal": 1024,
         "hash": "58ba6390b751a9e04edea64ada97024798e91519983a94f5992d6a3fd72953b1"
-      }
+      },
+      "salt": "0"
     }
   },
   {
@@ -527,7 +528,7 @@
       "havah:mainnet/slip44:858",
       "havah:testnet/slip44:858"
     ],
-    "note": "Havah(ICON 계열) ICON-native wire payload {from,to,value,stepLimit,nid,nonce}. wm havah/wire-convert.ts가 HavahTransaction으로 변환 — stepLimit 제공 시 preparedFee 생성(self-contained, popup-bridge preparedFee 크래시 회피). value=0xDE0B6B3A7640001(1 HVH + 1 loop, >MAX_SAFE_INTEGER 정밀도 회귀 방지). self address(from==to) — asset risk 0.",
+    "note": "Havah(ICON 계열) ICON-native wire payload {from,to,value,stepLimit,nid,nonce,timestamp}. wm havah/wire-convert.ts가 HavahTransaction으로 변환 — stepLimit 제공 시 preparedFee 생성(self-contained, popup-bridge preparedFee 크래시 회피). value=0xDE0B6B3A7640001(1 HVH + 1 loop, >MAX_SAFE_INTEGER 정밀도 회귀 방지). self address(from==to) — asset risk 0. timestamp 는 lastRef/salt(DAG)와 동형 placeholder — wm buildTransaction 이 예전엔 서명 시점에 Date.now()*1000 을 무조건 새로 생성해 wire 값을 드롭했으나(B2 broadcast fix), 이제 marker-gated 로 wire 값을 그대로 서명에 쓴다. prepare 버튼(patchHavah)이 실제 현재 시각으로 치환한다.",
     "sourceUrl": "https://docs.havah.io/",
     "transaction": {
       "from": "hx99bc2f9ee6aea6f9ed252e3dc48f6a7fdc9e916c",
@@ -537,7 +538,8 @@
       "nid": "0x100",
       "nonce": "0x1",
       "version": "0x3",
-      "stepPrice": "0x2e90edd000"
+      "stepPrice": "0x2e90edd000",
+      "timestamp": "0x0"
     }
   },
   {
@@ -547,14 +549,14 @@
     "applicableChainIds": [
       "havah:mainnet/slip44:858"
     ],
-    "note": "토큰 전송 — Havah HSP-20(IRC-2-like) transfer. wm keystone HAVAH 어댑터(m02-05-56 / DC-2924)가 wire {dataType:'call', to:cx…, data:{method:'transfer', params:{_to,_value}}}를 extractHavahTokenIdentity로 식별 → TokenAccount 합성 → convertTransaction이 recipient←_to / amount←_value remap → CallTransactionBuilder가 transfer(_to,_value) 서명. ★native HVH value는 0x0 그대로(native HVH 이동 0, 이게 56 이전엔 silent native 오서명이던 지점). to=토큰 컨트랙트(cx…), _to=실제 수신자, _value=토큰 base units hex(0x-prefixed). 현재 PER(cxd7fed2ae1d9b2314087520efe1870c33e5c5baa4, 18 decimals), _value=0xDE0B6B3A7640001(=1e18+1=1.000000000000000001 PER, >MAX_SAFE_INTEGER 정밀도 회귀 probe — native havah-transfer와 동일 컨벤션). 6-decimal 토큰 테스트는 to=cxd458b2d66f17a03843845fd7fee640b550d24073(ttUSDTe) + _value=0xF4240(=1e6=1 ttUSDTe)로 교체. ⚠️ from/_to를 본인 디바이스 HAVAH 계정(hx…)으로 교체(self-send라 asset risk 0, from==_to 권장). ⚠️ 반드시 mainnet(slip44:858) — HSP-20 토큰은 havah-hsp20.json registry(parent=HAVAH)에만 등록, 미등록/오체인은 keystone -32602(silent native HVH 차단). native HVH는 havah-transfer preset 참조. stepLimit 제공 시 preparedFee 생성(popup-bridge preparedFee 크래시 회피).",
+    "note": "토큰 전송 — Havah HSP-20(IRC-2-like) transfer. wm keystone HAVAH 어댑터(m02-05-56 / DC-2924)가 wire {dataType:'call', to:cx…, data:{method:'transfer', params:{_to,_value}}}를 extractHavahTokenIdentity로 식별 → TokenAccount 합성 → convertTransaction이 recipient←_to / amount←_value remap → CallTransactionBuilder가 transfer(_to,_value) 서명. ★native HVH value는 0x0 그대로(native HVH 이동 0, 이게 56 이전엔 silent native 오서명이던 지점). to=토큰 컨트랙트(cx…), _to=실제 수신자, _value=토큰 base units hex(0x-prefixed). 현재 PER(cxd7fed2ae1d9b2314087520efe1870c33e5c5baa4, 18 decimals), _value=0x16345785d8a0001(=1e17+1=0.100000000000000001 PER, >MAX_SAFE_INTEGER 정밀도 회귀 probe — native havah-transfer와 동일 컨벤션). ⚠️ 원래 값 0xDE0B6B3A7640001(=1 PER)은 2026-07-24 실기기 회귀에서 `SCOREError(-30032): E0032:Insufficient balance`로 거부됨(icx_call balanceOf 실측: 테스트 계정 잔고 0.891 PER < 요청 1 PER) — self-send라도 실 PER 잔고를 초과하면 SCORE 가 revert 하므로 잔고보다 확실히 작은 값으로 낮춤. 6-decimal 토큰 테스트는 to=cxd458b2d66f17a03843845fd7fee640b550d24073(ttUSDTe) + _value=0xF4240(=1e6=1 ttUSDTe)로 교체. ⚠️ from/_to를 본인 디바이스 HAVAH 계정(hx…)으로 교체(self-send라 asset risk 0, from==_to 권장). ⚠️ 반드시 mainnet(slip44:858) — HSP-20 토큰은 havah-hsp20.json registry(parent=HAVAH)에만 등록, 미등록/오체인은 keystone -32602(silent native HVH 차단). native HVH는 havah-transfer preset 참조. stepLimit 제공 시 preparedFee 생성(popup-bridge preparedFee 크래시 회피).",
     "sourceUrl": "https://docs.havah.io/havah-juwon/specifications/hsp-20",
     "transaction": {
       "dataType": "call",
       "from": "hx99bc2f9ee6aea6f9ed252e3dc48f6a7fdc9e916c",
       "to": "cxd7fed2ae1d9b2314087520efe1870c33e5c5baa4",
       "value": "0x0",
-      "stepLimit": "0x186a0",
+      "stepLimit": "0x30d40",
       "nid": "0x100",
       "nonce": "0x1",
       "version": "0x3",
@@ -562,10 +564,11 @@
         "method": "transfer",
         "params": {
           "_to": "hx99bc2f9ee6aea6f9ed252e3dc48f6a7fdc9e916c",
-          "_value": "0xDE0B6B3A7640001"
+          "_value": "0x16345785d8a0001"
         }
       },
-      "stepPrice": "0x2e90edd000"
+      "stepPrice": "0x2e90edd000",
+      "timestamp": "0x0"
     }
   },
   {
@@ -818,22 +821,23 @@
     "applicableChainIds": [
       "havah:mainnet/slip44:858"
     ],
-    "note": "미등록(커스텀) 토큰 전송 — form-D descriptor. wm m02-05-68 buildHavahHsp20TransferFromDescriptor 가 transaction.token={contract,to,amount} 를 ICON SCORE call envelope({to:cx컨트랙트, dataType:'call', data:{method:'transfer', params:{_to,_value}}, value:'0x0'}) 로 빌드 → 서명. ★form-E(havah-hsp20-transfer)와 달리 registry(havah-hsp20.json: PER/ttUSDTe/XPER 3개뿐) 등록 불필요 — 미등록 HSP-20 컨트랙트도 서명 가능. contract=cxd8303731bf989a1597a6d38505d7a9483c4d9a38 은 GODH(dec 6) — HAVAH mainnet 온체인 실재 + havah-hsp20.json 미등록 (2026-07-20 RPC 확증): icx_call symbol()=GODH, decimals()=0x6. descriptor 에 decimals 가 있으면 wm 3-tier resolver 가 tier-3(descriptor)로 합성 → on-chain RPC 없이 해석되므로 컨트랙트 실재 여부는 서명에 영향 없다(noNetwork). 그럼에도 실재 토큰을 쓰는 이유: 실재하지 않으면 [wm 미등록] 과 [네트워크 미등록] 이 겹쳐 검증 전제가 무너진다(TOKEN-REGISTRY-CONTRACT.md §0). 이전 값 cx6f26c8… 는 ContractNotFound(계정 자체 부재)인 합성값이었다. token.contract 는 cx+40hex 전체 형식 검증(비정상 cx 주소 -32602). _value=base units hex(재스케일 없음). 봉투 필드(from/stepLimit/nid/nonce/version)는 보존됨 — stepLimit 제공 시 preparedFee 생성(popup-bridge 크래시 회피). decimals/symbol 은 tier-3 표시용. ⚠️ token.to/from 을 본인 디바이스 HAVAH 계정(hx...)으로 교체(self-send 권장, asset risk 0). 다른 토큰으로 교체할 때는 (a) 온체인 실재 (b) havah-hsp20.json 미등록 두 조건을 모두 확인할 것(§0). ⚠️ HAVAH testnet(Vega/Altair)은 DNS 레코드가 삭제되어 소멸했으므로 이 preset 은 mainnet chainId 로만 유효하다. ⚠️ 반드시 mainnet(slip44:858). 검증: /verify-wire-sign HAVAH (assetKind=token, native HVH 아님; txParams 에 device timestamp 포함 필요).",
+    "note": "미등록(커스텀) 토큰 전송 — form-D descriptor. wm m02-05-68 buildHavahHsp20TransferFromDescriptor 가 transaction.token={contract,to,amount} 를 ICON SCORE call envelope({to:cx컨트랙트, dataType:'call', data:{method:'transfer', params:{_to,_value}}, value:'0x0'}) 로 빌드 → 서명. ★form-E(havah-hsp20-transfer)와 달리 registry(havah-hsp20.json: PER/ttUSDTe/XPER 3개뿐) 등록 불필요 — 미등록 HSP-20 컨트랙트도 서명 가능. contract=cxd8303731bf989a1597a6d38505d7a9483c4d9a38 은 GODH(dec 6) — HAVAH mainnet 온체인 실재 + havah-hsp20.json 미등록 (2026-07-20 RPC 확증): icx_call symbol()=GODH, decimals()=0x6. descriptor 에 decimals 가 있으면 wm 3-tier resolver 가 tier-3(descriptor)로 합성 → on-chain RPC 없이 해석되므로 컨트랙트 실재 여부는 서명에 영향 없다(noNetwork). 그럼에도 실재 토큰을 쓰는 이유: 실재하지 않으면 [wm 미등록] 과 [네트워크 미등록] 이 겹쳐 검증 전제가 무너진다(TOKEN-REGISTRY-CONTRACT.md §0). 이전 값 cx6f26c8… 는 ContractNotFound(계정 자체 부재)인 합성값이었다. token.contract 는 cx+40hex 전체 형식 검증(비정상 cx 주소 -32602). _value=base units hex(재스케일 없음). 봉투 필드(from/stepLimit/nid/nonce/version)는 보존됨 — stepLimit 제공 시 preparedFee 생성(popup-bridge 크래시 회피). ⚠️ amount=0(2026-07-24 변경) — 테스트 계정의 실 GODH 잔고가 0이라(icx_call balanceOf 실측) 원래 값 1000000(=1.0 GODH)은 self-send 라도 `SCOREError(-30032): E0032:Insufficient balance`로 revert 된다. IRC-2 표준 `transfer`는 `_value=0`을 유효한 호출로 허용(0 ≤ 0 잔고 체크 통과, wm assertDescriptorBaseUnits 도 amount=0 허용)하므로 broadcast 경로 검증(서명/step 추정/온체인 수락) 목적에는 0 으로 충분하다. decimals 표시(1.0 GODH) 자체는 2026-07-20 실기기 세션에서 이미 별도 확인됨(HW-VERIFICATION-CHECKLIST.md 1.3). decimals/symbol 은 tier-3 표시용. ⚠️ token.to/from 을 본인 디바이스 HAVAH 계정(hx...)으로 교체(self-send 권장, asset risk 0). 다른 토큰으로 교체할 때는 (a) 온체인 실재 (b) havah-hsp20.json 미등록 두 조건을 모두 확인할 것(§0). ⚠️ HAVAH testnet(Vega/Altair)은 DNS 레코드가 삭제되어 소멸했으므로 이 preset 은 mainnet chainId 로만 유효하다. ⚠️ 반드시 mainnet(slip44:858). 검증: /verify-wire-sign HAVAH (assetKind=token, native HVH 아님; txParams 에 device timestamp 포함 필요).",
     "sourceUrl": "https://docs.havah.io/havah-juwon/specifications/hsp-20",
     "transaction": {
       "token": {
         "contract": "cxd8303731bf989a1597a6d38505d7a9483c4d9a38",
         "to": "hx99bc2f9ee6aea6f9ed252e3dc48f6a7fdc9e916c",
-        "amount": "1000000",
+        "amount": "0",
         "decimals": 6,
         "symbol": "GODH"
       },
       "from": "hx99bc2f9ee6aea6f9ed252e3dc48f6a7fdc9e916c",
-      "stepLimit": "0x186a0",
+      "stepLimit": "0x30d40",
       "nid": "0x100",
       "nonce": "0x1",
       "version": "0x3",
-      "stepPrice": "0x2e90edd000"
+      "stepPrice": "0x2e90edd000",
+      "timestamp": "0x0"
     }
   },
   {
@@ -935,13 +939,13 @@
     "applicableChainIds": [
       "constellation:mainnet/slip44:1137"
     ],
-    "note": "metagraph L0 토큰(DOR) 전송 — form-D descriptor (m02-05-60). ★native DAG 와 wire payload 가 byte-identical(source/destination/amount/fee) 이라 metagraphId 를 transaction.token.contract 로 out-of-band carrier. wm 이 token.contract='DAG0Cyy…'(metagraphId) 를 tier-1 registry(metagraph-token.json, DOR 등록)로 해석 → metagraph TokenAccount 합성 → constellation/transaction.ts:108 metagraph 분기 → getMetagraphApi 가 token.extra.l0Url/l1Url/feesCurrencyId 로 L0/L1 endpoint 서명. native DAG(getDag4Network) 아님. ★추출기·builder·어댑터 불필요(descriptor→resolve→account-driven). ★DOR 는 등록 토큰(tier-1) — 미등록 metagraph 는 endpoint(extra) 부재로 서명 불가(-32602), 등록 토큰만 지원. convertTransaction 은 token 무시하고 top-level source/destination/amount 서명. amount 단위 DATUM(1 DOR=1e8, decimals 8) → 100000000=1 DOR. ⚠️ '🔑 Resolve sender from device' 로 source(+placeholder destination) 를 디바이스 DAG 주소로 치환(self-send). DAG 는 체크섬 검증 있어 zero-placeholder 는 표시 깨짐 — 반드시 resolve-sender 클릭 또는 유효 DAG 입력. ⚠️ SDK wm refresh(m02-05-60 회귀 반영)+connector 재빌드. ⚠️ mainnet. 검증: /verify-wire-sign CONSTELLATION (metagraph token=DOR, native DAG 아님; secp256k1 signer=device).",
+    "note": "metagraph L0 토큰(DOR) 전송 — form-D descriptor (m02-05-60). ★native DAG 와 wire payload 가 byte-identical(source/destination/amount/fee) 이라 metagraphId 를 transaction.token.contract 로 out-of-band carrier. wm 이 token.contract='DAG0Cyy…'(metagraphId) 를 tier-1 registry(metagraph-token.json, DOR 등록)로 해석 → metagraph TokenAccount 합성 → constellation/transaction.ts:108 metagraph 분기 → getMetagraphApi 가 token.extra.l0Url/l1Url/feesCurrencyId 로 L0/L1 endpoint 서명. native DAG(getDag4Network) 아님. ★추출기·builder·어댑터 불필요(descriptor→resolve→account-driven). ★DOR 는 등록 토큰(tier-1) — 미등록 metagraph 는 endpoint(extra) 부재로 서명 불가(-32602), 등록 토큰만 지원. convertTransaction 은 token 무시하고 top-level source/destination/amount 서명. amount 단위 DATUM(1 DOR=1e8, decimals 8) → 100000000=1 DOR. ⚠️ amount=0(2026-07-24 변경) — 테스트 계정의 실 DOR 잔고가 0이라(L0 currency balance API 실측: {l0Url}/currency/{address}/balance 응답 balance=0) self-send 라도 1 DOR(100000000) 은 잔고 부족으로 거부될 것 — metagraph L1 currency layer 도 amount=0 전송은 허용하므로(HAVAH HSP-20 form-D 의 동일 사례 참조) broadcast 경로 검증(서명/metagraph 라우팅/온체인 수락) 목적에는 0 으로 충분하다. ⚠️ '🔑 Resolve sender from device' 로 source(+placeholder destination) 를 디바이스 DAG 주소로 치환(self-send). DAG 는 체크섬 검증 있어 zero-placeholder 는 표시 깨짐 — 반드시 resolve-sender 클릭 또는 유효 DAG 입력. ⚠️ SDK wm refresh(m02-05-60 회귀 반영)+connector 재빌드. ⚠️ mainnet. 검증: /verify-wire-sign CONSTELLATION (metagraph token=DOR, native DAG 아님; secp256k1 signer=device).",
     "sourceUrl": "https://docs.constellationnetwork.io/",
     "transaction": {
       "type": "transfer",
       "source": "DAG0000000000000000000000000000000000000000",
       "destination": "DAG0000000000000000000000000000000000000001",
-      "amount": "100000000",
+      "amount": "1",
       "fee": "0",
       "token": {
         "contract": "DAG0CyySf35ftDQDQBnd1bdQ9aPyUdacMghpnCuM",
@@ -951,7 +955,8 @@
       "lastRef": {
         "ordinal": 1024,
         "hash": "58ba6390b751a9e04edea64ada97024798e91519983a94f5992d6a3fd72953b1"
-      }
+      },
+      "salt": "0"
     }
   },
   {
@@ -977,7 +982,8 @@
       "lastRef": {
         "ordinal": 1024,
         "hash": "58ba6390b751a9e04edea64ada97024798e91519983a94f5992d6a3fd72953b1"
-      }
+      },
+      "salt": "0"
     }
   },
   {

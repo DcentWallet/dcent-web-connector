@@ -1,6 +1,7 @@
 [
   {
     "id": "btx:p2wpkh-single",
+    "scenarioCode": "093",
     "label": "Bitcoin P2WPKH (single utxo → single output)",
     "applicableMethodIds": ["btx:new", "btx:addInput", "btx:addOutput", "btx:buildAndSign"],
     "chainId": "bip122:000000000019d6689c085ae165831e93/slip44:0",
@@ -19,6 +20,7 @@
   },
   {
     "id": "btx:p2pkh-single",
+    "scenarioCode": "094",
     "label": "Bitcoin Legacy P2PKH (single utxo → single output)",
     "applicableMethodIds": ["btx:new", "btx:addInput", "btx:addOutput", "btx:buildAndSign"],
     "chainId": "bip122:000000000933ea01ad0ee984209779ba/slip44:0",

@@ -1,6 +1,7 @@
 [
   {
     "id": "syncAccount:eth-single",
+    "scenarioCode": "088",
     "label": "Ethereum (single)",
     "applicableMethodIds": ["account:syncAccount"],
     "value": [
@@ -9,6 +10,7 @@
   },
   {
     "id": "syncAccount:btc-legacy",
+    "scenarioCode": "089",
     "label": "Bitcoin — legacy (P2PKH, 1xxx)",
     "applicableMethodIds": ["account:syncAccount"],
     "value": [
@@ -17,6 +19,7 @@
   },
   {
     "id": "syncAccount:btc-segwit-native",
+    "scenarioCode": "090",
     "label": "Bitcoin — segwit-native (P2WPKH, bc1q)",
     "applicableMethodIds": ["account:syncAccount"],
     "value": [
@@ -25,6 +28,7 @@
   },
   {
     "id": "syncAccount:btc-both-formats",
+    "scenarioCode": "091",
     "label": "Bitcoin — legacy + segwit-native 동시",
     "applicableMethodIds": ["account:syncAccount"],
     "value": [
@@ -34,6 +38,7 @@
   },
   {
     "id": "syncAccount:multi",
+    "scenarioCode": "092",
     "label": "Multi (ETH + BTC legacy + BTC segwit-native)",
     "applicableMethodIds": ["account:syncAccount"],
     "value": [

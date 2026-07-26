@@ -75,7 +75,7 @@
     "applicableChainIds": [
       "conflux:cfx/slip44:503"
     ],
-    "note": "2026-07-26 검증 대상 — wm signTransactionFromWire.ts 코드 추적 결과, Conflux 는 registerWireDescriptorBuilder 에 미등록(form-D 없음)이지만 raw data 필드는 conflux/transaction.ts TypeAccount 경로에서 검증/재해석 없이 그대로 RLP 인코딩되는 것으로 보임(코드 확인, 실기기 미검증). 이 preset 은 실제 Conflux mainnet CRC-20 (WCFX, cfx:acg158kvr8zanb1bs048ryb6rtrhr283ma70vz70tx) 의 transfer(address,uint256) calldata 를 data 에 직접 인코딩 — EVM/Kaia form-E graceful fallback 과 동일 가설 검증용. amount=0 이므로 브로드캐스트해도 실 토큰 이동 없음(ERC20 spec상 0-value transfer 유효). recipient 는 placeholder(0x1111...1111) — 서명 경로만 확인, 실제 device 주소로 안 바꿔도 서명 성공 여부 판단엔 무관. 기대: 서명 성공(SYSTEM HALT 없이) → Conflux 도 EVM/Kaia 처럼 미등록 토큰을 raw calldata 로 서명 가능 확인. HALT 또는 -32602 등 실패 → 가설 기각, 문서/core-concepts.html 원복 필요.",
+    "note": "【2026-07-26 실기기 검증 완료】 가설 확인됨 — Conflux 는 registerWireDescriptorBuilder 에 미등록(form-D 없음)이지만 raw data 필드는 conflux/transaction.ts TypeAccount 경로에서 검증/재해석 없이 그대로 RLP 인코딩되어 서명 성공(SYSTEM HALT 없음). EVM/Kaia form-E graceful fallback 과 동일 계열로 실증. 서명값 RLP 디코드 확인 결과 to=WCFX 컨트랙트(0x8d7df9316faa0586e175b5e6d03c6bda76e3d950)·data=calldata verbatim 정확히 포함(misdirection 없음). ⚠️단, 기기 화면에는 외부 필드만 표시됨(to=컨트랙트 주소, amount=0.0 CFX, fee) — data 안의 실제 수신자·토큰 수량은 전혀 안 보임. 서명 안전성 문제는 아니지만 display-only 갭(wm objective m04-01-15 가 다룸). docs/index.html core-concepts + chain-conflux 페이지에 이 결과 반영 완료. amount=0 이므로 브로드캐스트해도 실 토큰 이동 없음. recipient 는 placeholder(0x1111...1111).",
     "sourceUrl": "https://www.confluxscan.org/address/cfx:acg158kvr8zanb1bs048ryb6rtrhr283ma70vz70tx",
     "transaction": {
       "from": "cfx:acf2rcsh8payyxpg6xj7b0ztswwh81ute60tsw35j7",

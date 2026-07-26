@@ -68,6 +68,29 @@
     }
   },
   {
+    "id": "cfx-crc20-transfer-unregistered",
+    "scenarioCode": "095",
+    "label": "Conflux CRC-20 transfer (unregistered token, raw calldata)",
+    "family": "conflux",
+    "applicableChainIds": [
+      "conflux:cfx/slip44:503"
+    ],
+    "note": "2026-07-26 검증 대상 — wm signTransactionFromWire.ts 코드 추적 결과, Conflux 는 registerWireDescriptorBuilder 에 미등록(form-D 없음)이지만 raw data 필드는 conflux/transaction.ts TypeAccount 경로에서 검증/재해석 없이 그대로 RLP 인코딩되는 것으로 보임(코드 확인, 실기기 미검증). 이 preset 은 실제 Conflux mainnet CRC-20 (WCFX, cfx:acg158kvr8zanb1bs048ryb6rtrhr283ma70vz70tx) 의 transfer(address,uint256) calldata 를 data 에 직접 인코딩 — EVM/Kaia form-E graceful fallback 과 동일 가설 검증용. amount=0 이므로 브로드캐스트해도 실 토큰 이동 없음(ERC20 spec상 0-value transfer 유효). recipient 는 placeholder(0x1111...1111) — 서명 경로만 확인, 실제 device 주소로 안 바꿔도 서명 성공 여부 판단엔 무관. 기대: 서명 성공(SYSTEM HALT 없이) → Conflux 도 EVM/Kaia 처럼 미등록 토큰을 raw calldata 로 서명 가능 확인. HALT 또는 -32602 등 실패 → 가설 기각, 문서/core-concepts.html 원복 필요.",
+    "sourceUrl": "https://www.confluxscan.org/address/cfx:acg158kvr8zanb1bs048ryb6rtrhr283ma70vz70tx",
+    "transaction": {
+      "from": "cfx:acf2rcsh8payyxpg6xj7b0ztswwh81ute60tsw35j7",
+      "to": "cfx:acg158kvr8zanb1bs048ryb6rtrhr283ma70vz70tx",
+      "value": "0x0",
+      "gas": "0x186a0",
+      "gasPrice": "0x3b9aca00",
+      "nonce": "0x0",
+      "chainId": "0x405",
+      "epochHeight": "0x6a1b2c",
+      "storageLimit": "0x0",
+      "data": "0xa9059cbb00000000000000000000000011111111111111111111111111111111111111110000000000000000000000000000000000000000000000000000000000000000"
+    }
+  },
+  {
     "id": "atom-transfer",
     "scenarioCode": "063",
     "label": "Cosmos ATOM transfer",

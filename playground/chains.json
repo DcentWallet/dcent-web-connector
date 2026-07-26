@@ -811,7 +811,7 @@
   {
     "chainId": "tezos:NetXnHfVqm9iesp/slip44:1729",
     "family": "tezos",
-    "displayName": "Tezos Testnet",
+    "displayName": "Tezos Testnet (Shadownet)",
     "defaultKeyPath": "m/44'/1729'/0'/0'",
     "isTestnet": true
   },

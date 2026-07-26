@@ -17,7 +17,7 @@
       "bip122:1a91e3dace36e2be3bf030a65679fe82/slip44:3",
       "bip122:0007104ccda289427919efc39dc9e4d4/slip44:121"
     ],
-    "note": "Bitcoin legacy P2PKH 송금 — wm bitcoin/wire-convert.js 기대 shape (inputs[].rawTransaction(prev tx hex)/index/txType/keyPath + outputs[].txType/amount/addresses[]). amount 단위 satoshi. 값은 BTC mainnet(slip44:0, m/44'/0') 기준 — 타 bitcoin-family 체인은 keyPath coinType + 주소 수정 후 송금. ⚠️ wm 0.7.14 기준 legacy(m/44' P2PKH)만 sign 가능: segwit-native(m/84')·taproot(m/86')는 synthesizeAccount BIP44 게이트로 차단(P2TR은 wm 명시 제외 — crypto-currencies.ts:328). segwit/taproot sign은 wm 게이트 완화 후 별도 preset 추가.",
+    "note": "Bitcoin legacy P2PKH 송금 — wm bitcoin/wire-convert.js 기대 shape (inputs[].rawTransaction(prev tx hex)/index/txType/keyPath + outputs[].txType/amount/addresses[]). amount 단위 satoshi. 값은 BTC mainnet(slip44:0, m/44'/0') 기준 — 타 bitcoin-family 체인은 keyPath coinType + 주소 수정 후 송금. 【2026-07-26 정정】 이전 노트(\"wm 0.7.14 기준 legacy만 sign 가능, segwit-native는 BIP44 게이트로 차단\")는 stale — 사용자 확인: legacy(P2PKH)와 segwit-native(P2WPKH) 모두 sign 가능하며 둘 다 동일한 m/44' 경로에서 파생(addressFormat/inputs[].txType이 인코딩만 결정, m/84' BIP-84 파생 아님). segwit-wrapped(P2SH, m/49')·taproot(m/86')만 currency registry에 변형 항목이 없어 차단(P2TR은 wm 명시 제외 — crypto-currencies.ts:328).",
     "sourceUrl": "https://github.com/bitcoinjs/bitcoinjs-lib/blob/master/test/transaction_builder.spec.js",
     "transaction": {
       "inputs": [

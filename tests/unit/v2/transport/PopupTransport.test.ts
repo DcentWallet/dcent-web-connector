@@ -1092,6 +1092,38 @@ describe('PopupTransport', () => {
     })
   })
 
+  // ===== T-U-SIGNPROGRESS-CONN-11: 내부 handshake id는 progress 채널에서 필터링된다 =====
+  describe('T-U-SIGNPROGRESS-CONN-11: handshake id 필터링', () => {
+    it('아직 pending인 _handshake_* id로 온 progress는 무시된다 (내부 id 비노출)', async () => {
+      transport = new PopupTransport({ timeoutMs: 60000 })
+      const handler = jest.fn<void, [SignProgressInfo]>()
+      transport.on('signProgress', handler)
+
+      let handshakeId: string | undefined
+      mockPopup.postMessage.mockImplementation((message: { method?: unknown; id?: unknown }, msgOrigin: string) => {
+        if (message?.method === '_handshake' && typeof message.id === 'string') {
+          handshakeId = message.id
+          // handshake id가 this.pending에 이미 등록된 시점(postMessage 직전 set) — 그 id로
+          // progress를 흉내내도 handshake-prefix 가드가 pending 여부와 무관하게 먼저 막아야 한다.
+          dispatchResponse(msgOrigin, { id: message.id, type: '_signProgress', step: 1, total: 2 })
+          Promise.resolve().then(() => {
+            dispatchResponse(msgOrigin, {
+              id: message.id, result: { version: '2.0', serverName: 'bridge-ui' },
+            })
+          })
+        }
+      })
+      installReadyAutoRespondOnce(DEFAULT_ORIGIN, '2.0', 'bridge-ui')
+
+      void transport.send(makeEnvelope('req-sp-11')).catch(() => {})
+      await flushHandshake()
+
+      expect(handshakeId).toMatch(/^_handshake_/)
+      expect(handler).not.toHaveBeenCalled()
+      await transport.close()
+    })
+  })
+
   // ===== T-U-SIGNPROGRESS-CONN-03: malformed payload silent ignore =====
   describe('T-U-SIGNPROGRESS-CONN-03: malformed payload', () => {
     it.each([
@@ -1103,6 +1135,12 @@ describe('PopupTransport', () => {
       ['CONN-03f (id non-string)', { id: 42, type: '_signProgress', step: 1, total: 2 }],
       ['CONN-03g (step NaN)', { id: 'req-sp-3', type: '_signProgress', step: NaN, total: 2 }],
       ['CONN-03h (total Infinity)', { id: 'req-sp-3', type: '_signProgress', step: 1, total: Infinity }],
+      ['CONN-03i (step 0)', { id: 'req-sp-3', type: '_signProgress', step: 0, total: 2 }],
+      ['CONN-03j (step 음수)', { id: 'req-sp-3', type: '_signProgress', step: -1, total: 2 }],
+      ['CONN-03k (step 소수)', { id: 'req-sp-3', type: '_signProgress', step: 1.5, total: 2 }],
+      ['CONN-03l (total 0)', { id: 'req-sp-3', type: '_signProgress', step: 1, total: 0 }],
+      ['CONN-03m (step > total)', { id: 'req-sp-3', type: '_signProgress', step: 3, total: 2 }],
+      ['CONN-03n (top-level data가 배열)', ['req-sp-3', '_signProgress', 1, 2]],
     ])('%s → throw 없이 silent ignore + pending 보존', async (_label, badData) => {
       transport = new PopupTransport({ timeoutMs: 60000 })
       const handler = jest.fn<void, [SignProgressInfo]>()
@@ -1268,14 +1306,18 @@ describe('PopupTransport', () => {
     })
   })
 
-  // ===== T-U-SIGNPROGRESS-CONN-10: close() 대칭 정리 (m09-04-27 API-03) =====
-  describe('T-U-SIGNPROGRESS-CONN-10: close() 시 signProgressHandlers 정리', () => {
+  // ===== T-U-SIGNPROGRESS-CONN-10: close() 후 리스너 생존 (크로스 리뷰 C1 수정, m09-04-27 API-03) =====
+  // close()는 (a) resetSingleton()이 인스턴스를 통째로 버리는 경로와 (b) 팝업을 X로 닫거나
+  // handshake가 실패해 같은 인스턴스로 재오픈을 전제하는 내부 self-close 경로 둘 다에서 호출된다.
+  // (b) 경로에서 handler Set을 비우면 singleton의 재등록 루프(`_transport === null`일 때만 동작)가
+  // 돌지 않아 dApp 리스너가 그 페이지 세션 내내 침묵한다 — close()는 handler Set을 건드리지 않는다.
+  describe('T-U-SIGNPROGRESS-CONN-10: close() 후에도 리스너가 생존한다', () => {
     interface HandlerSets {
       stateHandlers: Set<unknown>
       signProgressHandlers: Set<unknown>
     }
 
-    it('T-U-SIGNPROGRESS-CONN-10a: close() 후 stateHandlers / signProgressHandlers 모두 비어있음', async () => {
+    it('T-U-SIGNPROGRESS-CONN-10a: close()는 stateHandlers / signProgressHandlers를 비우지 않는다', async () => {
       transport = new PopupTransport()
       const stateHandler = jest.fn<void, [TransportState]>()
       const progressHandler = jest.fn<void, [SignProgressInfo]>()
@@ -1291,12 +1333,12 @@ describe('PopupTransport', () => {
 
       await transport.close()
 
-      // state / signProgress 두 Set이 대칭으로 비워져야 한다
-      expect(sets.stateHandlers.size).toBe(0)
-      expect(sets.signProgressHandlers.size).toBe(0)
+      // 인스턴스가 살아있는 한(= resetSingleton 미경유) 두 Set 모두 유지되어야 한다
+      expect(sets.stateHandlers.size).toBe(1)
+      expect(sets.signProgressHandlers.size).toBe(1)
     })
 
-    it('T-U-SIGNPROGRESS-CONN-10b: close() 후 재오픈하면 이전 세션 리스너가 잔존하지 않음', async () => {
+    it('T-U-SIGNPROGRESS-CONN-10b: close() 후 재오픈해도 signProgress 리스너가 계속 발동한다', async () => {
       transport = new PopupTransport()
       const progressHandler = jest.fn<void, [SignProgressInfo]>()
       transport.on('signProgress', progressHandler)
@@ -1313,10 +1355,31 @@ describe('PopupTransport', () => {
       await flushHandshake()
 
       // 새 세션의 pending id로 유효한 progress를 보낸다.
-      // clear()가 없었다면 이전 세션 리스너가 여기서 호출된다.
+      // C1 수정 전에는 close()가 Set을 비워 여기서 리스너가 호출되지 않는 회귀가 있었다.
       dispatchResponse(DEFAULT_ORIGIN, { id: 'b', type: '_signProgress', step: 1, total: 2, role: 'payment' })
 
-      expect(progressHandler).not.toHaveBeenCalled()
+      expect(progressHandler).toHaveBeenCalledWith({ requestId: 'b', step: 1, total: 2, role: 'payment' })
+    })
+
+    it('T-U-SIGNPROGRESS-CONN-10c: close() 후 재오픈해도 state 리스너가 계속 발동한다 (대칭 회귀 가드)', async () => {
+      transport = new PopupTransport()
+      const stateHandler = jest.fn<void, [TransportState]>()
+      transport.on('state', stateHandler)
+
+      void transport.send(makeEnvelope('a')).catch(() => {})
+      await flushHandshake()
+      stateHandler.mockClear()
+
+      await transport.close()
+      // close()가 setState('disconnected')를 호출하므로 close 자체로 1회 호출된다
+      expect(stateHandler).toHaveBeenCalledWith('disconnected')
+      stateHandler.mockClear()
+
+      // 재오픈 시 connected로 다시 전환되는 것을 재등록 없이 그대로 관찰할 수 있어야 한다
+      void transport.send(makeEnvelope('b')).catch(() => {})
+      await flushHandshake()
+
+      expect(stateHandler).toHaveBeenCalledWith('connected')
     })
   })
 })

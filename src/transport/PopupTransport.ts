@@ -3,6 +3,7 @@ import {
   MessageEnvelope,
   ResponseEnvelope,
   TransportState,
+  SignProgressInfo,
 } from './MessageTransport'
 import { ProviderError } from '../error/ProviderError'
 import { ErrorCode } from '../error/ErrorCode'
@@ -101,6 +102,11 @@ export class PopupTransport implements MessageTransport {
    */
   private pendingTransport: 'hid' | 'ble' | undefined = undefined
   private stateHandlers: Set<(state: TransportState) => void> = new Set()
+  /**
+   * (m09-04-27) `_signProgress` 중간 신호 구독자. stateHandlers와 동일한 Set 패턴.
+   * state와 달리 transport 로컬 상태가 아니라 bridge가 in-flight 요청에 대해 push하는 이벤트다.
+   */
+  private signProgressHandlers: Set<(info: SignProgressInfo) => void> = new Set()
   private messageListener: ((event: MessageEvent) => void) | null = null
   private closePollingInterval: ReturnType<typeof setInterval> | null = null
   private currentState: TransportState = 'disconnected'
@@ -211,14 +217,14 @@ export class PopupTransport implements MessageTransport {
     })
   }
 
-  on (event: 'state', handler: (state: TransportState) => void): void {
-    if (event !== 'state') return
-    this.stateHandlers.add(handler)
+  on (event: 'state' | 'signProgress', handler: any): void {
+    if (event === 'state') { this.stateHandlers.add(handler); return }
+    if (event === 'signProgress') { this.signProgressHandlers.add(handler); return }
   }
 
-  off (event: 'state', handler: (state: TransportState) => void): void {
-    if (event !== 'state') return
-    this.stateHandlers.delete(handler)
+  off (event: 'state' | 'signProgress', handler: any): void {
+    if (event === 'state') { this.stateHandlers.delete(handler); return }
+    if (event === 'signProgress') { this.signProgressHandlers.delete(handler); return }
   }
 
   /**
@@ -348,6 +354,31 @@ export class PopupTransport implements MessageTransport {
           r()
         }
         return
+      }
+
+      // (m09-04-27) `_signProgress` 중간 신호 분기 — 반드시 id-매칭 응답 분기보다 **먼저** 걸려야
+      // 진행률 신호가 최종 응답으로 오해석되지 않는다(RECV-05 회귀 가드).
+      // NOTE: this.pending에는 `_handshake_*` 내부 요청 id도 함께 들어있다. 본 분기는 §4.4 설계대로
+      // 그 id를 별도로 필터링하지 않는다(bridge는 handshake id로 progress를 push하지 않는다는 전제).
+      if ((data as { type?: unknown }).type === '_signProgress') {
+        const id = (data as { id?: unknown }).id
+        if (typeof id !== 'string') return
+        // boundary-validation: 이미 resolve/timeout된 요청의 stale progress는 무시
+        if (!this.pending.has(id)) return
+        const step = (data as { step?: unknown }).step
+        const total = (data as { total?: unknown }).total
+        if (typeof step !== 'number' || typeof total !== 'number') return
+        const roleRaw = (data as { role?: unknown }).role
+        const role = typeof roleRaw === 'string' ? roleRaw : undefined
+        const info: SignProgressInfo = { requestId: id, step, total, role }
+        for (const h of this.signProgressHandlers) {
+          try {
+            h(info)
+          } catch {
+            // 리스너 에러가 메시지 루프를 죽이지 않도록 격리 (setState의 handler notify와 동일 원칙)
+          }
+        }
+        return // 최종 응답이 아니므로 pending 삭제/resolve 하지 않는다
       }
 
       // boundary-validation: ResponseEnvelope shape 검증

@@ -11,17 +11,22 @@
  * setTimeOutMs / setConnectionListener 동작은 singleton 테스트에서
  * _setPendingTimeout / _registerStateListener를 통해 이미 검증됨 — 여기서는
  * lifecycle wrapper가 그것들을 호출하는지를 본다.
+ *
+ * m09-04-27 추가: setSignProgressListener — singleton 캐시 경유 실디스패치(API-01/02) + export 표면(API-04)
  */
 
 import {
   setTimeOutMs,
   setConnectionListener,
+  setSignProgressListener,
   setTransport,
   popupWindowClose,
 } from '../../../src/lifecycle'
 import { ensureSingleton, _resetForTesting } from '../../../src/singleton'
 import { ProviderError } from '../../../src/error/ProviderError'
 import { ErrorCode } from '../../../src/error/ErrorCode'
+import dcent, { setSignProgressListener as namedSetSignProgressListener } from '../../../src/index'
+import type { SignProgressListener, SignProgressInfo } from '../../../src/index'
 
 beforeEach(() => {
   _resetForTesting()
@@ -140,5 +145,86 @@ describe('lifecycle — setConnectionListener', () => {
       stateHandlers: Set<(state: unknown) => void>
     }).stateHandlers
     expect(stateHandlers.has(listener)).toBe(true)
+  })
+})
+
+describe('lifecycle — setSignProgressListener (m09-04-27)', () => {
+  interface TransportInternals {
+    ensureMessageListener: () => void
+    pending: Map<string, unknown>
+    // origin은 하드코딩하지 않고 인스턴스에서 읽는다(popUpUrl 기본값 변경에 영향받지 않도록).
+    origin: string
+  }
+
+  /**
+   * 실제 bridge가 push하는 것과 동일한 `_signProgress` window message를 발생시킨다.
+   * PopupTransport.messageListener는 popup이 열릴 때 설치되므로, 여기서는
+   * private ensureMessageListener()를 직접 호출해 리스너만 설치한다(popup 불필요).
+   */
+  function dispatchSignProgress (
+    transport: unknown,
+    id: string,
+    step: number,
+    total: number,
+    role?: string,
+  ): void {
+    const t = transport as unknown as TransportInternals
+    t.ensureMessageListener()
+    // `_signProgress` 분기는 pending.has(id)만 검사하고 값은 읽지 않는다 → dummy로 충분.
+    t.pending.set(id, {} as never)
+    window.dispatchEvent(
+      new MessageEvent('message', {
+        origin: t.origin,   // messageListener의 origin 검증을 통과시키기 위해 인스턴스 값 사용
+        data: { id, type: '_signProgress', step, total, role } as never,
+      }),
+    )
+    // 필수: close()가 pending을 순회하며 p.reject/p.timer를 건드리므로 dummy를 반드시 제거한다.
+    // 남겨두면 _resetForTesting()의 close()가 throw하고 message listener가 누수되어
+    // 이후 테스트가 오염된다.
+    t.pending.delete(id)
+  }
+
+  test('T-U-SIGNPROGRESS-CONN-06 (lifecycle wrapper): transport 생성 전 등록 → ensureSingleton 이후 정상 발동', () => {
+    const listener = jest.fn<void, [SignProgressInfo]>()
+    // singleton 미생성 상태에서 등록
+    setSignProgressListener(listener)
+
+    const { transport } = ensureSingleton()
+    dispatchSignProgress(transport, 'req-1', 1, 2, 'payment')
+
+    expect(listener).toHaveBeenCalledTimes(1)
+    expect(listener).toHaveBeenCalledWith({ requestId: 'req-1', step: 1, total: 2, role: 'payment' })
+  })
+
+  test('T-U-SIGNPROGRESS-CONN-07-LC: 리스너 2개 등록 시 둘 다 호출 (API-02, singleton 캐시 경유)', () => {
+    const first = jest.fn<void, [SignProgressInfo]>()
+    const second = jest.fn<void, [SignProgressInfo]>()
+    // 둘 다 transport 생성 전에 등록 → _signProgressListeners 캐시에 쌓였다가 일괄 재등록
+    setSignProgressListener(first)
+    setSignProgressListener(second)
+
+    const { transport } = ensureSingleton()
+    dispatchSignProgress(transport, 'req-2', 2, 3, 'stake')
+
+    expect(first).toHaveBeenCalledTimes(1)
+    expect(second).toHaveBeenCalledTimes(1)
+    expect(first).toHaveBeenCalledWith({ requestId: 'req-2', step: 2, total: 3, role: 'stake' })
+    expect(second).toHaveBeenCalledWith({ requestId: 'req-2', step: 2, total: 3, role: 'stake' })
+  })
+
+  test('T-U-SIGNPROGRESS-CONN-EXPORT-01: index.ts export 표면 (API-04)', () => {
+    expect(typeof dcent.setSignProgressListener).toBe('function')
+    expect(typeof namedSetSignProgressListener).toBe('function')
+    expect(dcent.setSignProgressListener).toBe(namedSetSignProgressListener)
+
+    // 컴파일 타임 단언 — SignProgressListener / SignProgressInfo 타입 export가 빠지면
+    // `npm run tsc`가 실패한다 (런타임 테스트로는 타입 export를 검증할 수 없다).
+    const typed: SignProgressListener = (info: SignProgressInfo) => {
+      void info.requestId
+      void info.step
+      void info.total
+      void info.role
+    }
+    expect(typeof typed).toBe('function')
   })
 })

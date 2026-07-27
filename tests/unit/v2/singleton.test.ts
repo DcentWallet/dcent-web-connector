@@ -15,6 +15,7 @@ import {
   ensureSingleton,
   resetSingleton,
   _registerStateListener,
+  _registerSignProgressListener,
   _setPendingTimeout,
   _resetForTesting,
 } from '../../../src/singleton'
@@ -124,5 +125,54 @@ describe('singleton — listener / pendingTimeout 보존', () => {
 
     expect(setSpy).toHaveBeenCalledWith(54321)
     expect(setSpy).toHaveBeenCalledTimes(1)
+  })
+})
+
+describe('singleton — signProgress listener 캐싱/재등록 (m09-04-27)', () => {
+  function progressHandlersOf (transport: unknown): Set<unknown> {
+    return (transport as { signProgressHandlers: Set<unknown> }).signProgressHandlers
+  }
+
+  test('T-U-SIGNPROGRESS-CONN-06: transport 생성 전 등록 → 다음 ensureSingleton에서 자동 부착', () => {
+    const listener = jest.fn()
+    // transport 미생성 상태에서 등록 (ensureSingleton을 아직 호출하지 않았다)
+    _registerSignProgressListener(listener)
+
+    const { transport } = ensureSingleton()
+    expect(progressHandlersOf(transport).has(listener)).toBe(true)
+  })
+
+  test('T-U-SIGNPROGRESS-CONN-06b: transport 존재 시 즉시 on("signProgress", listener)', () => {
+    const { transport } = ensureSingleton()
+    const onSpy = jest.spyOn(transport, 'on')
+
+    const listener = jest.fn()
+    _registerSignProgressListener(listener)
+
+    expect(onSpy).toHaveBeenCalledWith('signProgress', listener)
+    expect(onSpy).toHaveBeenCalledTimes(1)
+  })
+
+  test('T-U-SIGNPROGRESS-CONN-06c: resetSingleton 후 보존 — 다음 ensureSingleton 시 자동 재등록', () => {
+    const first = ensureSingleton()
+    const listener = jest.fn()
+    _registerSignProgressListener(listener)
+
+    jest.spyOn(first.transport, 'close').mockResolvedValue(undefined)
+    resetSingleton()
+
+    const second = ensureSingleton()
+    expect(second.transport).not.toBe(first.transport)
+    expect(progressHandlersOf(second.transport).has(listener)).toBe(true)
+  })
+
+  test('T-02-02: _resetForTesting()이 _signProgressListeners 캐시를 비운다', () => {
+    const listener = jest.fn()
+    _registerSignProgressListener(listener)
+
+    _resetForTesting()
+
+    const { transport } = ensureSingleton()
+    expect(progressHandlersOf(transport).size).toBe(0)
   })
 })

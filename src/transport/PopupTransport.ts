@@ -287,8 +287,10 @@ export class PopupTransport implements MessageTransport {
     // 5. state → disconnected
     this.setState('disconnected')
 
-    // 6. handlers 정리
+    // 6. handlers 정리 — state / signProgress 두 Set을 **대칭**으로 비운다 (m09-04-27 API-03).
+    //    popup 재오픈 시 stale 리스너가 잔존하면 이전 세션의 dApp 콜백이 계속 발동한다.
     this.stateHandlers.clear()
+    this.signProgressHandlers.clear()
 
     // 7. handshake state 리셋 — 재오픈 시 새 handshake (m02-02)
     this.handshakePromise = null

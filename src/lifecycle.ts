@@ -17,16 +17,21 @@
  */
 
 import {
+  _registerSignProgressListener,
   _registerStateListener,
   _setPendingTimeout,
   _setPendingTransport,
   resetSingleton,
+  type SignProgressListener,
   type StateListener,
 } from './singleton'
 import { _sanitizeTransportOption } from './sign/_sanitizeTransportOption'
 
 /** v1 호환 connection state listener 시그니처. singleton.ts의 StateListener와 동일. */
 export type ConnectionListener = StateListener
+
+/** (m09-04-27) 다중 서명 진행률 listener 시그니처. singleton.ts의 SignProgressListener와 동일. */
+export type { SignProgressListener } from './singleton'
 
 /**
  * v1 `dcent.setTimeOutMs(N)` 호환.
@@ -49,6 +54,23 @@ export function setTimeOutMs (timeOutMs: number): void {
  */
 export function setConnectionListener (listener: ConnectionListener): void {
   _registerStateListener(listener)
+}
+
+/**
+ * (m09-04-27) `dcent.setSignProgressListener(listener)` — 다중 witness 서명 진행률 수신.
+ *
+ * 하나의 서명 요청이 기기 서명을 2회 이상 요구할 때(예: Cardano 다중 witness) bridge가 push하는
+ * 중간 신호를 받는다. 최종 응답과는 완전히 별도 채널이므로 `await dcent.sign(...)`의 resolve
+ * 동작에는 영향이 없다.
+ *
+ * listener는 cached. popupWindowClose 후에도 보존되며 다음 ensureSingleton 시 자동 재등록된다
+ * (setConnectionListener와 동일 lifecycle). transport가 이미 있으면 즉시
+ * transport.on('signProgress', listener) 호출.
+ *
+ * 동일 listener를 여러 번 호출하면 그만큼 중복 등록된다(caller 책임) — setConnectionListener와 동일.
+ */
+export function setSignProgressListener (listener: SignProgressListener): void {
+  _registerSignProgressListener(listener)
 }
 
 /**

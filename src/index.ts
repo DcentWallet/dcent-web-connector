@@ -62,6 +62,8 @@ export type {
   ResponseEnvelope,
   MessageTransport,
   TransportState,
+  // m09-04-27: 다중 서명 진행률 payload 타입
+  SignProgressInfo,
 } from './transport/MessageTransport'
 export { PopupTransport } from './transport/PopupTransport'
 
@@ -72,8 +74,8 @@ export { ErrorCode } from './error/ErrorCode'
 export { ProviderError } from './error/ProviderError'
 
 // === 새 named exports (m08-01-01) ===
-export { setTimeOutMs, setConnectionListener, setTransport, popupWindowClose } from './lifecycle'
-export type { ConnectionListener } from './lifecycle'
+export { setTimeOutMs, setConnectionListener, setSignProgressListener, setTransport, popupWindowClose } from './lifecycle'
+export type { ConnectionListener, SignProgressListener } from './lifecycle'
 
 export {
   coinType,
@@ -172,6 +174,8 @@ const dcent = {
   // lifecycle
   setTimeOutMs: lifecycle.setTimeOutMs,
   setConnectionListener: lifecycle.setConnectionListener,
+  // m09-04-27: 다중 witness 서명 진행률 리스너
+  setSignProgressListener: lifecycle.setSignProgressListener,
   setTransport: lifecycle.setTransport,
   popupWindowClose: lifecycle.popupWindowClose,
   // enums

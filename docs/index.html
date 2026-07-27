@@ -3015,7 +3015,7 @@ const res = await dcent.sign({ chain: 'cip34:1-764824073', payload })</pre></div
 <h2>Notes</h2>
 <ul>
   <li>The listener is cached and <strong>re-registered automatically</strong> after the transport is reset (<code>popupWindowClose</code> + reconnect) — same lifecycle as <a href="#/set-connection-listener"><code>setConnectionListener</code></a>.</li>
-  <li>Registering several listeners subscribes them all; every listener receives every signal. Registering the same function twice subscribes it twice.</li>
+  <li>Registering several listeners subscribes them all; every listener receives every signal. Registering the exact same function reference twice is a no-op — it stays subscribed once.</li>
   <li>Progress signals are a <strong>separate channel</strong> from the request/response flow. They never resolve or reject your pending call.</li>
   <li>Bridge popups that do not emit progress simply never call the listener — signing keeps working unchanged.</li>
 </ul>
@@ -3338,7 +3338,7 @@ const res = await dcent.sign({ chain: 'cip34:1-764824073', payload })</pre></div
 <h2>참고</h2>
 <ul>
   <li>listener는 cache되어 트랜스포트 reset 후(<code>popupWindowClose</code> + 재연결) <strong>자동 재등록</strong>됩니다 — <a href="#/set-connection-listener"><code>setConnectionListener</code></a>와 동일한 lifecycle입니다.</li>
-  <li>listener를 여러 개 등록하면 <strong>전부</strong> 호출됩니다. 같은 함수를 두 번 등록하면 두 번 구독됩니다.</li>
+  <li>listener를 여러 개 등록하면 <strong>전부</strong> 호출됩니다. 동일한 함수 참조를 두 번 등록해도 중복 구독되지 않고 한 번만 유지됩니다.</li>
   <li>진행 신호는 요청/응답 흐름과 <strong>별도 채널</strong>입니다. 대기 중인 호출을 resolve하거나 reject하지 않습니다.</li>
   <li>진행 신호를 보내지 않는 브리지 팝업에서는 listener가 호출되지 않을 뿐, 서명은 그대로 동작합니다.</li>
 </ul>

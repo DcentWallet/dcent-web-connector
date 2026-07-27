@@ -37,12 +37,16 @@ export type TransportState = 'connected' | 'disconnected'
  * (m09-04-27) bridge가 진행 중인 요청에 대해 push하는 서명 진행률 신호.
  * `role`은 opaque — connector는 값의 의미를 해석/분기하지 않는다
  * (connector-chain-addition-isolation 룰).
+ *
+ * 모든 필드 readonly — 런타임에서 `Object.freeze`로 실제 방출되는 인스턴스도 불변이다
+ * (mutation-isolation 룰, PopupTransport.ts 참조). 타입 레벨에서 미리 신호해 strict-mode
+ * dApp의 in-place 수정 시도를 컴파일 타임에 잡는다.
  */
 export interface SignProgressInfo {
-  requestId: string
-  step: number
-  total: number
-  role?: string // opaque — connector는 값의 의미를 해석하지 않는다
+  readonly requestId: string
+  readonly step: number
+  readonly total: number
+  readonly role?: string // opaque — connector는 값의 의미를 해석하지 않는다
 }
 
 /**

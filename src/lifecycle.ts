@@ -67,7 +67,9 @@ export function setConnectionListener (listener: ConnectionListener): void {
  * (setConnectionListener와 동일 lifecycle). transport가 이미 있으면 즉시
  * transport.on('signProgress', listener) 호출.
  *
- * 동일 listener를 여러 번 호출하면 그만큼 중복 등록된다(caller 책임) — setConnectionListener와 동일.
+ * 동일 함수 참조로 여러 번 호출해도 transport의 구독 Set이 dedupe하므로 콜백은 1회만
+ * 발동한다(setConnectionListener와 동일). 서로 다른 함수(예: 매 렌더마다 새 클로저)를
+ * 등록하면 각각 별도로 유지되므로 caller가 필요 시 직접 `off`로 해제해야 한다.
  */
 export function setSignProgressListener (listener: SignProgressListener): void {
   _registerSignProgressListener(listener)

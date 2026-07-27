@@ -526,6 +526,7 @@ window.NAV = [
     {parent:"Connection API", children:[
       {id:"set-transport", t:"setTransport"},
       {id:"set-connection-listener", t:"setConnectionListener"},
+      {id:"set-sign-progress-listener", t:"setSignProgressListener"},
       {id:"set-timeout", t:"setTimeOutMs"},
       {id:"popup-close", t:"popupWindowClose"},
     ]},
@@ -2884,6 +2885,7 @@ search:'core api overview connection device account sign methods',html:`
 <table class="params"><thead><tr><th>Method</th><th>Purpose</th></tr></thead><tbody>
 <tr><td><a href="#/set-transport"><code>setTransport</code></a></td><td>Choose WebHID or Bluetooth. <span class="badge b-tech">v2 new</span></td></tr>
 <tr><td><a href="#/set-connection-listener"><code>setConnectionListener</code></a></td><td><code>'connected'</code> / <code>'disconnected'</code> events.</td></tr>
+<tr><td><a href="#/set-sign-progress-listener"><code>setSignProgressListener</code></a></td><td>Multi-signature progress (<code>step</code> / <code>total</code>). <span class="badge b-tech">v2 new</span></td></tr>
 <tr><td><a href="#/set-timeout"><code>setTimeOutMs</code></a></td><td>Request timeout.</td></tr>
 <tr><td><a href="#/popup-close"><code>popupWindowClose</code></a></td><td>Close popup, release transport.</td></tr>
 </tbody></table>
@@ -2982,7 +2984,41 @@ search:'setConnectionListener connection state callback connected disconnected l
   else showDisconnected()
 })</pre></div>
 <div class="note info"><span class="ni">i</span><div>The listener is cached and <strong>re-registered automatically</strong> after the transport is reset (e.g. after <code>popupWindowClose</code> + reconnect). Registering the same listener multiple times subscribes it multiple times — register once.</div></div>
-<div class="related"><a href="#/set-transport">→ setTransport</a><a href="#/popup-close">→ popupWindowClose</a><a href="#/error-codes">→ Error Codes</a></div>`});
+<div class="related"><a href="#/set-sign-progress-listener">→ setSignProgressListener</a><a href="#/set-transport">→ setTransport</a><a href="#/popup-close">→ popupWindowClose</a><a href="#/error-codes">→ Error Codes</a></div>`});
+
+DOC.register('set-sign-progress-listener',{title:'setSignProgressListener',breadcrumb:'<span>Core API</span> / Connection API / setSignProgressListener',
+search:'setSignProgressListener sign progress step total role multi witness cardano signing progress callback listener SignProgressInfo',html:`
+<h1 class="pt">setSignProgressListener</h1>
+<p class="lede">Registers a callback that fires while a <strong>single signing request needs more than one device signature</strong> — for example Cardano multi-witness signing. Use it to show "1 of 2" progress instead of a frozen spinner. <span class="badge b-tech">v2 new</span></p>
+<h2>Signature</h2>
+<div class="code"><div class="cb-head"><span>ts</span><button class="copy">Copy</button></div>
+<pre>dcent.setSignProgressListener(listener: (info: SignProgressInfo) =&gt; void): void</pre></div>
+<h2>Parameters</h2>
+<table class="params"><thead><tr><th>Field</th><th>Type</th><th>Description</th></tr></thead><tbody>
+<tr><td><code>listener</code></td><td class="type">(info: SignProgressInfo) ⇒ void</td><td>Called once per intermediate progress signal. It is never called for the final result — <code>await dcent.sign(...)</code> resolves exactly as before.</td></tr>
+</tbody></table>
+<h2>SignProgressInfo</h2>
+<table class="params"><thead><tr><th>Field</th><th>Type</th><th>Description</th></tr></thead><tbody>
+<tr><td><code>requestId</code></td><td class="type">string</td><td>Id of the in-flight request the progress belongs to.</td></tr>
+<tr><td><code>step</code></td><td class="type">number</td><td>1-based index of the signature currently being produced.</td></tr>
+<tr><td><code>total</code></td><td class="type">number</td><td>Total number of signatures this request requires.</td></tr>
+<tr><td><code>role</code></td><td class="type">string | undefined</td><td>Opaque hint about the key being used (e.g. <code>'payment'</code>, <code>'stake'</code>). The connector never interprets it — treat unknown values as display-only.</td></tr>
+</tbody></table>
+<h2>Example</h2>
+<div class="code"><div class="cb-head"><span>js</span><button class="copy">Copy</button></div>
+<pre>dcent.setSignProgressListener((info) =&gt; {
+  showProgress('Signing ' + info.step + ' / ' + info.total)
+})
+
+const res = await dcent.sign({ chain: 'cip34:1-764824073', payload })</pre></div>
+<h2>Notes</h2>
+<ul>
+  <li>The listener is cached and <strong>re-registered automatically</strong> after the transport is reset (<code>popupWindowClose</code> + reconnect) — same lifecycle as <a href="#/set-connection-listener"><code>setConnectionListener</code></a>.</li>
+  <li>Registering several listeners subscribes them all; every listener receives every signal. Registering the same function twice subscribes it twice.</li>
+  <li>Progress signals are a <strong>separate channel</strong> from the request/response flow. They never resolve or reject your pending call.</li>
+  <li>Bridge popups that do not emit progress simply never call the listener — signing keeps working unchanged.</li>
+</ul>
+<div class="related"><a href="#/set-connection-listener">→ setConnectionListener</a><a href="#/chain-cardano">→ Cardano</a><a href="#/popup-close">→ popupWindowClose</a></div>`});
 
 DOC.register('set-timeout',{title:'setTimeOutMs',breadcrumb:'<span>Core API</span> / Connection API / setTimeOutMs',
 search:'setTimeOutMs timeout request milliseconds time_out',html:`

@@ -367,7 +367,15 @@ export class PopupTransport implements MessageTransport {
         if (!this.pending.has(id)) return
         const step = (data as { step?: unknown }).step
         const total = (data as { total?: unknown }).total
-        if (typeof step !== 'number' || typeof total !== 'number') return
+        // boundary-validation: typeof만으로는 NaN/Infinity를 통과시킨다 — readyTimeoutMs/
+        // handshakeTimeoutMs/setTimeoutMs와 동일하게 Number.isFinite로 형제 패턴 일관성 유지.
+        if (
+          typeof step !== 'number' ||
+          !Number.isFinite(step) ||
+          typeof total !== 'number' ||
+          !Number.isFinite(total)
+        )
+          return
         const roleRaw = (data as { role?: unknown }).role
         const role = typeof roleRaw === 'string' ? roleRaw : undefined
         const info: SignProgressInfo = { requestId: id, step, total, role }

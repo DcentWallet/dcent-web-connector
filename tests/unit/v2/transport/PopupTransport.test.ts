@@ -1101,6 +1101,8 @@ describe('PopupTransport', () => {
       ['CONN-03d (total non-number)', { id: 'req-sp-3', type: '_signProgress', step: 1, total: null }],
       ['CONN-03e (id 누락)', { type: '_signProgress', step: 1, total: 2 }],
       ['CONN-03f (id non-string)', { id: 42, type: '_signProgress', step: 1, total: 2 }],
+      ['CONN-03g (step NaN)', { id: 'req-sp-3', type: '_signProgress', step: NaN, total: 2 }],
+      ['CONN-03h (total Infinity)', { id: 'req-sp-3', type: '_signProgress', step: 1, total: Infinity }],
     ])('%s → throw 없이 silent ignore + pending 보존', async (_label, badData) => {
       transport = new PopupTransport({ timeoutMs: 60000 })
       const handler = jest.fn<void, [SignProgressInfo]>()

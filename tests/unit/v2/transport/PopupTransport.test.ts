@@ -5,7 +5,7 @@
  * m02-01 21건 (T-U-01 ~ T-U-15, T-U-08 4 subcase + T-U-09a + T-U-11 2 subcase)
  *  + m02-02 14건 (T-U-HS-01 ~ T-U-HS-10, T-U-HS-04 5 subcase 포함)
  *  = 35건
- *  + m09-04-27 8건(T-U-SIGNPROGRESS-CONN-01~05, 07, 08, 09)
+ *  + m09-04-27 10건(T-U-SIGNPROGRESS-CONN-01~05, 07~10)
  */
 import { PopupTransport } from '../../../../src/transport/PopupTransport'
 import { ProviderError } from '../../../../src/error/ProviderError'
@@ -1265,6 +1265,57 @@ describe('PopupTransport', () => {
       const res = (await promise) as ResponseEnvelope<{ ok: true }>
       expect(res.result).toEqual({ ok: true })
       await transport.close()
+    })
+  })
+
+  // ===== T-U-SIGNPROGRESS-CONN-10: close() 대칭 정리 (m09-04-27 API-03) =====
+  describe('T-U-SIGNPROGRESS-CONN-10: close() 시 signProgressHandlers 정리', () => {
+    interface HandlerSets {
+      stateHandlers: Set<unknown>
+      signProgressHandlers: Set<unknown>
+    }
+
+    it('T-U-SIGNPROGRESS-CONN-10a: close() 후 stateHandlers / signProgressHandlers 모두 비어있음', async () => {
+      transport = new PopupTransport()
+      const stateHandler = jest.fn<void, [TransportState]>()
+      const progressHandler = jest.fn<void, [SignProgressInfo]>()
+      transport.on('state', stateHandler)
+      transport.on('signProgress', progressHandler)
+
+      void transport.send(makeEnvelope('a')).catch(() => {})
+      await flushHandshake()
+
+      const sets = transport as unknown as HandlerSets
+      expect(sets.signProgressHandlers.size).toBe(1)
+
+      await transport.close()
+
+      // state / signProgress 두 Set이 대칭으로 비워져야 한다
+      expect(sets.stateHandlers.size).toBe(0)
+      expect(sets.signProgressHandlers.size).toBe(0)
+    })
+
+    it('T-U-SIGNPROGRESS-CONN-10b: close() 후 재오픈하면 이전 세션 리스너가 잔존하지 않음', async () => {
+      transport = new PopupTransport()
+      const progressHandler = jest.fn<void, [SignProgressInfo]>()
+      transport.on('signProgress', progressHandler)
+
+      void transport.send(makeEnvelope('a')).catch(() => {})
+      await flushHandshake()
+
+      await transport.close()
+      progressHandler.mockClear()
+
+      // 재오픈 — close()가 handshakePromise / readyPromise / popupWindow를 리셋해두므로
+      // 같은 인스턴스로 새 세션을 열 수 있다. 이때 messageListener가 다시 설치된다.
+      void transport.send(makeEnvelope('b')).catch(() => {})
+      await flushHandshake()
+
+      // 새 세션의 pending id로 유효한 progress를 보낸다.
+      // clear()가 없었다면 이전 세션 리스너가 여기서 호출된다.
+      dispatchResponse(DEFAULT_ORIGIN, { id: 'b', type: '_signProgress', step: 1, total: 2, role: 'payment' })
+
+      expect(progressHandler).not.toHaveBeenCalled()
     })
   })
 })

@@ -5,11 +5,12 @@
  * m02-01 21건 (T-U-01 ~ T-U-15, T-U-08 4 subcase + T-U-09a + T-U-11 2 subcase)
  *  + m02-02 14건 (T-U-HS-01 ~ T-U-HS-10, T-U-HS-04 5 subcase 포함)
  *  = 35건
+ *  + m09-04-27 8건(T-U-SIGNPROGRESS-CONN-01~05, 07, 08, 09)
  */
 import { PopupTransport } from '../../../../src/transport/PopupTransport'
 import { ProviderError } from '../../../../src/error/ProviderError'
 import { ErrorCode } from '../../../../src/error/ErrorCode'
-import { MessageEnvelope, ResponseEnvelope, TransportState } from '../../../../src/transport/MessageTransport'
+import { MessageEnvelope, ResponseEnvelope, TransportState, SignProgressInfo } from '../../../../src/transport/MessageTransport'
 
 interface MockPopup {
   closed: boolean
@@ -1042,6 +1043,226 @@ describe('PopupTransport', () => {
       expect(t.readyTimer).toBeNull()
       expect(t.readyPromise).toBeNull()
       expect(t.resolveReady).toBeNull()
+    })
+  })
+
+  // ===== T-U-SIGNPROGRESS-CONN-01: 정상 progress 수신 =====
+  describe('T-U-SIGNPROGRESS-CONN-01: pending id의 유효 _signProgress', () => {
+    it('handler가 정확한 SignProgressInfo로 1회 호출', async () => {
+      transport = new PopupTransport({ timeoutMs: 60000 })
+      const handler = jest.fn<void, [SignProgressInfo]>()
+      transport.on('signProgress', handler)
+
+      const promise = transport.send(makeEnvelope('req-sp-1'))
+      await flushHandshake()
+
+      dispatchResponse(DEFAULT_ORIGIN, {
+        id: 'req-sp-1', type: '_signProgress', step: 1, total: 2, role: 'payment',
+      })
+
+      expect(handler).toHaveBeenCalledTimes(1)
+      expect(handler).toHaveBeenCalledWith({
+        requestId: 'req-sp-1', step: 1, total: 2, role: 'payment',
+      })
+
+      dispatchResponse(DEFAULT_ORIGIN, { id: 'req-sp-1', result: { ok: true } })
+      await promise
+      await transport.close()
+    })
+  })
+
+  // ===== T-U-SIGNPROGRESS-CONN-02: stale/미매칭 id =====
+  describe('T-U-SIGNPROGRESS-CONN-02: pending에 없는 id', () => {
+    it('handler 미호출 + 원 요청은 그대로 timeout', async () => {
+      transport = new PopupTransport({ timeoutMs: 60000 })
+      const handler = jest.fn<void, [SignProgressInfo]>()
+      transport.on('signProgress', handler)
+
+      const promise = transport.send(makeEnvelope('req-sp-2'))
+      await flushHandshake()
+
+      dispatchResponse(DEFAULT_ORIGIN, {
+        id: 'not-a-pending-id', type: '_signProgress', step: 1, total: 2,
+      })
+      expect(handler).not.toHaveBeenCalled()
+
+      jest.advanceTimersByTime(60000)
+      await expect(promise).rejects.toMatchObject({ code: ErrorCode.TIMEOUT })
+      await transport.close()
+    })
+  })
+
+  // ===== T-U-SIGNPROGRESS-CONN-03: malformed payload silent ignore =====
+  describe('T-U-SIGNPROGRESS-CONN-03: malformed payload', () => {
+    it.each([
+      ['CONN-03a (step 누락)', { id: 'req-sp-3', type: '_signProgress', total: 2 }],
+      ['CONN-03b (total 누락)', { id: 'req-sp-3', type: '_signProgress', step: 1 }],
+      ['CONN-03c (step non-number)', { id: 'req-sp-3', type: '_signProgress', step: '1', total: 2 }],
+      ['CONN-03d (total non-number)', { id: 'req-sp-3', type: '_signProgress', step: 1, total: null }],
+      ['CONN-03e (id 누락)', { type: '_signProgress', step: 1, total: 2 }],
+      ['CONN-03f (id non-string)', { id: 42, type: '_signProgress', step: 1, total: 2 }],
+    ])('%s → throw 없이 silent ignore + pending 보존', async (_label, badData) => {
+      transport = new PopupTransport({ timeoutMs: 60000 })
+      const handler = jest.fn<void, [SignProgressInfo]>()
+      transport.on('signProgress', handler)
+
+      const promise = transport.send(makeEnvelope('req-sp-3'))
+      await flushHandshake()
+
+      expect(() => dispatchResponse(DEFAULT_ORIGIN, badData)).not.toThrow()
+      expect(handler).not.toHaveBeenCalled()
+
+      // pending이 보존되었는지 — 진짜 최종 응답이 여전히 resolve된다
+      dispatchResponse(DEFAULT_ORIGIN, { id: 'req-sp-3', result: { ok: true } })
+      const res = (await promise) as ResponseEnvelope<{ ok: true }>
+      expect(res.result).toEqual({ ok: true })
+      await transport.close()
+    })
+  })
+
+  // ===== T-U-SIGNPROGRESS-CONN-04: pending 미삭제 회귀 가드 =====
+  describe('T-U-SIGNPROGRESS-CONN-04: progress 후 최종 응답 정상 resolve', () => {
+    it('progress 2회 수신해도 pending 유지 → 최종 응답 resolve', async () => {
+      transport = new PopupTransport({ timeoutMs: 60000 })
+      const handler = jest.fn<void, [SignProgressInfo]>()
+      transport.on('signProgress', handler)
+
+      const promise = transport.send(makeEnvelope('req-sp-4'))
+      await flushHandshake()
+
+      dispatchResponse(DEFAULT_ORIGIN, { id: 'req-sp-4', type: '_signProgress', step: 1, total: 3 })
+      dispatchResponse(DEFAULT_ORIGIN, { id: 'req-sp-4', type: '_signProgress', step: 2, total: 3 })
+
+      expect(handler).toHaveBeenCalledTimes(2)
+      expect(handler).toHaveBeenNthCalledWith(1, { requestId: 'req-sp-4', step: 1, total: 3, role: undefined })
+
+      dispatchResponse(DEFAULT_ORIGIN, { id: 'req-sp-4', result: { done: true } })
+      const res = (await promise) as ResponseEnvelope<{ done: true }>
+      expect(res.result).toEqual({ done: true })
+      await transport.close()
+    })
+  })
+
+  // ===== T-U-SIGNPROGRESS-CONN-05: 기존 경로 회귀 0 =====
+  describe('T-U-SIGNPROGRESS-CONN-05: _ready / 일반 응답 경로 회귀 0', () => {
+    it('signProgress 리스너가 등록되어 있어도 _ready 게이트 + 일반 응답 매칭이 그대로 동작', async () => {
+      transport = new PopupTransport({ timeoutMs: 60000 })
+      const handler = jest.fn<void, [SignProgressInfo]>()
+      transport.on('signProgress', handler)
+
+      const env = makeEnvelope('req-sp-5')
+      const promise = transport.send<{ x: number }, { ok: true }>(env)
+      await flushHandshake()
+
+      // _ready 게이트가 열렸어야 실제 send postMessage가 나간다
+      expect(mockPopup.postMessage).toHaveBeenCalledWith(env, DEFAULT_ORIGIN)
+
+      // 일반 응답(type 필드 없음)은 새 분기에 가로채이지 않고 정상 resolve
+      dispatchResponse(DEFAULT_ORIGIN, { id: 'req-sp-5', result: { ok: true } })
+      const res = (await promise) as ResponseEnvelope<{ ok: true }>
+      expect(res.result).toEqual({ ok: true })
+      expect(handler).not.toHaveBeenCalled()
+      await transport.close()
+    })
+  })
+
+  // ===== T-U-SIGNPROGRESS-CONN-07: 다중 리스너 + off + 에러 격리 =====
+  describe('T-U-SIGNPROGRESS-CONN-07: 다중 리스너 / off / 에러 격리', () => {
+    it('CONN-07a: 2개 등록 시 둘 다 호출, off한 리스너는 이후 미호출', async () => {
+      transport = new PopupTransport({ timeoutMs: 60000 })
+      const h1 = jest.fn<void, [SignProgressInfo]>()
+      const h2 = jest.fn<void, [SignProgressInfo]>()
+      transport.on('signProgress', h1)
+      transport.on('signProgress', h2)
+
+      const promise = transport.send(makeEnvelope('req-sp-7'))
+      await flushHandshake()
+
+      dispatchResponse(DEFAULT_ORIGIN, { id: 'req-sp-7', type: '_signProgress', step: 1, total: 2 })
+      expect(h1).toHaveBeenCalledTimes(1)
+      expect(h2).toHaveBeenCalledTimes(1)
+
+      transport.off('signProgress', h1)
+      dispatchResponse(DEFAULT_ORIGIN, { id: 'req-sp-7', type: '_signProgress', step: 2, total: 2 })
+      expect(h1).toHaveBeenCalledTimes(1) // off 이후 미호출
+      expect(h2).toHaveBeenCalledTimes(2)
+
+      dispatchResponse(DEFAULT_ORIGIN, { id: 'req-sp-7', result: { ok: true } })
+      await promise
+      await transport.close()
+    })
+
+    it('CONN-07b: 한 리스너가 throw해도 나머지 리스너 호출 + 메시지 루프 생존', async () => {
+      transport = new PopupTransport({ timeoutMs: 60000 })
+      const bad = jest.fn<void, [SignProgressInfo]>(() => { throw new Error('listener boom') })
+      const good = jest.fn<void, [SignProgressInfo]>()
+      transport.on('signProgress', bad)
+      transport.on('signProgress', good)
+
+      const promise = transport.send(makeEnvelope('req-sp-7b'))
+      await flushHandshake()
+
+      expect(() => dispatchResponse(DEFAULT_ORIGIN, {
+        id: 'req-sp-7b', type: '_signProgress', step: 1, total: 2,
+      })).not.toThrow()
+      expect(bad).toHaveBeenCalledTimes(1)
+      expect(good).toHaveBeenCalledTimes(1)
+
+      // 루프 생존 — 이후 최종 응답도 정상 처리
+      dispatchResponse(DEFAULT_ORIGIN, { id: 'req-sp-7b', result: { ok: true } })
+      await promise
+      await transport.close()
+    })
+  })
+
+  // ===== T-U-SIGNPROGRESS-CONN-08: role opaque passthrough =====
+  describe('T-U-SIGNPROGRESS-CONN-08: role opaque', () => {
+    it('알려지지 않은 role 문자열도 그대로 전달, non-string role은 undefined로 정규화', async () => {
+      transport = new PopupTransport({ timeoutMs: 60000 })
+      const handler = jest.fn<void, [SignProgressInfo]>()
+      transport.on('signProgress', handler)
+
+      const promise = transport.send(makeEnvelope('req-sp-8'))
+      await flushHandshake()
+
+      dispatchResponse(DEFAULT_ORIGIN, {
+        id: 'req-sp-8', type: '_signProgress', step: 1, total: 2, role: 'unknown-future-key',
+      })
+      expect(handler).toHaveBeenNthCalledWith(1, {
+        requestId: 'req-sp-8', step: 1, total: 2, role: 'unknown-future-key',
+      })
+
+      dispatchResponse(DEFAULT_ORIGIN, {
+        id: 'req-sp-8', type: '_signProgress', step: 2, total: 2, role: 42,
+      })
+      expect(handler).toHaveBeenNthCalledWith(2, {
+        requestId: 'req-sp-8', step: 2, total: 2, role: undefined,
+      })
+
+      dispatchResponse(DEFAULT_ORIGIN, { id: 'req-sp-8', result: { ok: true } })
+      await promise
+      await transport.close()
+    })
+  })
+
+  // ===== T-U-SIGNPROGRESS-CONN-09: 리스너 미등록 no-op =====
+  describe('T-U-SIGNPROGRESS-CONN-09: 리스너 미등록 상태', () => {
+    it('_signProgress 수신해도 throw 없음 + side-effect 없음', async () => {
+      transport = new PopupTransport({ timeoutMs: 60000 })
+      // on('signProgress', ...) 호출하지 않음 — signProgressHandlers는 빈 Set
+
+      const promise = transport.send(makeEnvelope('req-sp-9'))
+      await flushHandshake()
+
+      expect(() => dispatchResponse(DEFAULT_ORIGIN, {
+        id: 'req-sp-9', type: '_signProgress', step: 1, total: 2, role: 'payment',
+      })).not.toThrow()
+
+      // side-effect 0 — pending 그대로라 최종 응답이 정상 resolve
+      dispatchResponse(DEFAULT_ORIGIN, { id: 'req-sp-9', result: { ok: true } })
+      const res = (await promise) as ResponseEnvelope<{ ok: true }>
+      expect(res.result).toEqual({ ok: true })
+      await transport.close()
     })
   })
 })

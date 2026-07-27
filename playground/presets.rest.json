@@ -710,8 +710,7 @@
       "era": "0x00",
       "nonce": 0,
       "tip": 0,
-      "fee": "0",
-      "transactionVersion": 0
+      "fee": "0"
     }
   },
   {
@@ -733,8 +732,7 @@
       "era": "0x00",
       "nonce": 0,
       "tip": 0,
-      "fee": "0",
-      "transactionVersion": 0
+      "fee": "0"
     }
   },
   {
@@ -756,8 +754,7 @@
       "era": "0x00",
       "nonce": 0,
       "tip": 0,
-      "fee": "0",
-      "transactionVersion": 0
+      "fee": "0"
     }
   },
   {
@@ -779,8 +776,7 @@
       "era": "0x00",
       "nonce": 0,
       "tip": 0,
-      "fee": "0",
-      "transactionVersion": 0
+      "fee": "0"
     }
   },
   {

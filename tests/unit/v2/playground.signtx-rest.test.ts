@@ -336,6 +336,8 @@ it('T-U-REST-POLKADOT-01: polkadot 형제망 preset method/args/SS58/단일-체�
     // dead chain-specific 필드 생략 (sidechain에 mainnet identity auto-fill 방지)
     expect(tx).not.toHaveProperty('genesisHash')
     expect(tx).not.toHaveProperty('specVersion')
+    // (크로스 리뷰: 같은 카테고리의 network-identity 필드인데 열거 누락으로 남아있던 field)
+    expect(tx).not.toHaveProperty('transactionVersion')
   })
 })
 

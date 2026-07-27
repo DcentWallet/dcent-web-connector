@@ -1285,6 +1285,7 @@ describe('PopupTransport', () => {
       void transport.send(makeEnvelope('a')).catch(() => {})
       await flushHandshake()
 
+      // eslint-disable-next-line uap/no-as-unknown-as -- private Set 필드(stateHandlers/signProgressHandlers) 직접 접근 목적, mock factory 아님(실 인스턴스 캐스팅)
       const sets = transport as unknown as HandlerSets
       expect(sets.signProgressHandlers.size).toBe(1)
 

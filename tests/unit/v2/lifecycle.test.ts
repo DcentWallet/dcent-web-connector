@@ -168,6 +168,7 @@ describe('lifecycle — setSignProgressListener (m09-04-27)', () => {
     total: number,
     role?: string,
   ): void {
+    // eslint-disable-next-line uap/no-as-unknown-as -- private 메서드/필드(ensureMessageListener/pending/origin) 직접 접근 목적, mock factory 아님(실 인스턴스 캐스팅)
     const t = transport as unknown as TransportInternals
     t.ensureMessageListener()
     // `_signProgress` 분기는 pending.has(id)만 검사하고 값은 읽지 않는다 → dummy로 충분.

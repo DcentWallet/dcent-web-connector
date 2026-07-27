@@ -23,7 +23,7 @@
     "label": "Bitcoin — segwit-native (P2WPKH, bc1q)",
     "applicableMethodIds": ["account:syncAccount"],
     "value": [
-      { "chainId": "bip122:000000000019d6689c085ae165831e93/slip44:0", "keyPath": "m/44'/0'/0'/0/0", "label": "BTC-SEGWIT-NATIVE-01", "meta": { "addressFormat": "segwit-native" } }
+      { "chainId": "bip122:000000000019d6689c085ae165831e93/slip44:0", "keyPath": "m/44'/0'/0'/0/0", "label": "BTC-SEGWIT-01", "meta": { "addressFormat": "segwit-native" } }
     ]
   },
   {
@@ -33,7 +33,7 @@
     "applicableMethodIds": ["account:syncAccount"],
     "value": [
       { "chainId": "bip122:000000000019d6689c085ae165831e93/slip44:0", "keyPath": "m/44'/0'/0'/0/0", "label": "BTC-LEGACY-01", "meta": { "addressFormat": "legacy" } },
-      { "chainId": "bip122:000000000019d6689c085ae165831e93/slip44:0", "keyPath": "m/44'/0'/0'/0/0", "label": "BTC-SEGWIT-NATIVE-01", "meta": { "addressFormat": "segwit-native" } }
+      { "chainId": "bip122:000000000019d6689c085ae165831e93/slip44:0", "keyPath": "m/44'/0'/0'/0/0", "label": "BTC-SEGWIT-01", "meta": { "addressFormat": "segwit-native" } }
     ]
   },
   {
@@ -44,7 +44,7 @@
     "value": [
       { "chainId": "eip155:1/slip44:60", "keyPath": "m/44'/60'/0'/0/0", "label": "ETH-1" },
       { "chainId": "bip122:000000000019d6689c085ae165831e93/slip44:0", "keyPath": "m/44'/0'/0'/0/0", "label": "BTC-LEGACY-01", "meta": { "addressFormat": "legacy" } },
-      { "chainId": "bip122:000000000019d6689c085ae165831e93/slip44:0", "keyPath": "m/44'/0'/0'/0/0", "label": "BTC-SEGWIT-NATIVE-01", "meta": { "addressFormat": "segwit-native" } }
+      { "chainId": "bip122:000000000019d6689c085ae165831e93/slip44:0", "keyPath": "m/44'/0'/0'/0/0", "label": "BTC-SEGWIT-01", "meta": { "addressFormat": "segwit-native" } }
     ]
   }
 ]

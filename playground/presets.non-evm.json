@@ -41,6 +41,40 @@
     }
   },
   {
+    "id": "btc-segwit-transfer",
+    "scenarioCode": "098",
+    "label": "Bitcoin segwit-native (P2WPKH) transfer",
+    "family": "bitcoin",
+    "applicableChainIds": [
+      "bip122:000000000019d6689c085ae165831e93/slip44:0",
+      "bip122:000000000933ea01ad0ee984209779ba/slip44:0",
+      "bip122:7497ea1b465eb39f1c8f507bc877078f/slip44:20",
+      "bip122:fabe7dc4cf82e888f7afd9a1c7e05d10/slip44:1"
+    ],
+    "note": "Bitcoin segwit-native(P2WPKH, bech32) 송금 — legacy(btc-transfer)와 동일 wire shape, inputs[]/outputs[].txType만 'p2wpkh'로 교체. wm의 signTransactionFromWire는 wire 계약에 별도 addressFormat 파라미터가 없어 inputs[].txType이 유일한 변종 신호다 — 'p2wpkh' → AddressFormat 'segwit-native'로 매핑되어 resolveCurrencyByChainIdAndFormat이 BTC-SEGWIT/DGB-SEGWIT 계열 currency로 dispatch한다(wm src/common/framework/families/bitcoin/wire-address-format.ts:22-35 TXTYPE_TO_ADDRESS_FORMAT). ★applicableChainIds를 legacy(11개 bitcoin-family 체인) 대신 segwit-native currency가 실제 registry에 등록된 4개 체인으로 한정: BTC mainnet/BTC testnet(signet)/DigiByte mainnet/DigiByte testnet — 나머지 bitcoin-family(Litecoin/Dogecoin/Dash/Zcash/Ravencoin/BitcoinGold/BitcoinCash)는 wm registry에 segwit variant currency 자체가 없어(legacy만 존재) segwit preset 대상에서 제외(wm src/common/assets/coins/families/bitcoin-family.ts: BTC-SEGWIT L299-330/BTC-SW-TESTNET L387-417/DGB-SEGWIT L1390-1425/DGB-SW-TESTNET L1461-1491, segwitFor 필드로 base currency와 연결). segwit-native 변형도 legacy와 동일 m/44' 경로에서 파생(m/84' BIP-84 파생 아님, btc-transfer preset note와 동일 근거) — keyPath는 legacy와 같은 coinType 패턴(BTC=0/1, DGB=20)을 그대로 사용. bech32 주소는 BIP-173 참조 벡터(BTC mainnet/testnet) 및 wm 자체 fixture(DGB mainnet, wm src/common/framework/families/bitcoin/btc-address-validation.test.ts:75)에서 가져왔고, DGB testnet(hrp='dgbt', wm src/apps/wallet-cli/e2e/multi-address.test.ts:304-309 hrp 회귀 가드 참조)은 DGB mainnet 주소의 witness program을 hrp만 'dgbt'로 재인코딩해 체크섬을 재계산한 합성 값. amount 단위 satoshi. 값은 BTC mainnet(slip44:0, m/44'/0') 기준 — 타 체인은 keyPath coinType + 주소 교체 후 송금(BTC testnet/BTC-SW-TESTNET coinType 1, DigiByte coinType 20).",
+    "sourceUrl": "https://github.com/bitcoin/bips/blob/master/bip-0173.mediawiki",
+    "transaction": {
+      "inputs": [
+        {
+          "rawTransaction": "0100000001abcdef0123456789abcdef0123456789abcdef0123456789abcdef0123456789000000006a47304402200000000000000000000000000000000000000000000000000000000000000000022000000000000000000000000000000000000000000000000000000000000000000121020000000000000000000000000000000000000000000000000000000000000000ffffffff0140420f00000000001976a914000000000000000000000000000000000000000088ac00000000",
+          "index": 0,
+          "txType": "p2wpkh",
+          "keyPath": "m/44'/0'/0'/0/0",
+          "sequence": 4294967295
+        }
+      ],
+      "outputs": [
+        {
+          "txType": "p2wpkh",
+          "amount": 990000,
+          "addresses": [
+            "bc1qw508d6qejxtdg4y5r3zarvary0c5xw7kv8f3t4"
+          ]
+        }
+      ]
+    }
+  },
+  {
     "id": "sol-transfer",
     "scenarioCode": "009",
     "label": "Solana SOL transfer (plain JSON, data: object)",
@@ -976,12 +1010,12 @@
     "applicableChainIds": [
       "constellation:mainnet/slip44:1137"
     ],
-    "note": "metagraph L0 토큰(DOR) 전송 — form-D descriptor (m02-05-60). ★native DAG 와 wire payload 가 byte-identical(source/destination/amount/fee) 이라 metagraphId 를 transaction.token.contract 로 out-of-band carrier. wm 이 token.contract='DAG0Cyy…'(metagraphId) 를 tier-1 registry(metagraph-token.json, DOR 등록)로 해석 → metagraph TokenAccount 합성 → constellation/transaction.ts:108 metagraph 분기 → getMetagraphApi 가 token.extra.l0Url/l1Url/feesCurrencyId 로 L0/L1 endpoint 서명. native DAG(getDag4Network) 아님. ★추출기·builder·어댑터 불필요(descriptor→resolve→account-driven). ★DOR 는 등록 토큰(tier-1) — 미등록 metagraph 는 endpoint(extra) 부재로 서명 불가(-32602), 등록 토큰만 지원. convertTransaction 은 token 무시하고 top-level source/destination/amount 서명. amount 단위 DATUM(1 DOR=1e8, decimals 8) → 100000000=1 DOR. ⚠️ amount=1(2026-07-24 변경, DATUM 최소단위) — 테스트 계정의 실 DOR 잔고가 0이라(L0 currency balance API 실측: {l0Url}/currency/{address}/balance 응답 balance=0) self-send 라도 1 DOR(100000000) 은 잔고 부족으로 거부될 것. Constellation 은 HAVAH HSP-20 과 달리 amount=0 전송을 허용하지 않으므로(amount>0 강제) 0 대신 최소단위 1 DATUM(=0.00000001 DOR) 로 낮춰 broadcast 경로 검증(서명/metagraph 라우팅) 목적을 충족한다. 실 잔고 0 이라 온체인 최종 수락은 외부 제약으로 여전히 보류. ⚠️ '🔑 Resolve sender from device' 로 source(+placeholder destination) 를 디바이스 DAG 주소로 치환(self-send). DAG 는 체크섬 검증 있어 zero-placeholder 는 표시 깨짐 — 반드시 resolve-sender 클릭 또는 유효 DAG 입력. ⚠️ SDK wm refresh(m02-05-60 회귀 반영)+connector 재빌드. ⚠️ mainnet. 검증: /verify-wire-sign CONSTELLATION (metagraph token=DOR, native DAG 아님; secp256k1 signer=device).",
+    "note": "metagraph L0 토큰(DOR) 전송 — form-D descriptor (m02-05-60). ★native DAG 와 wire payload 가 byte-identical(source/destination/amount/fee) 이라 metagraphId 를 transaction.token.contract 로 out-of-band carrier. wm 이 token.contract='DAG0Cyy…'(metagraphId) 를 tier-1 registry(metagraph-token.json, DOR 등록)로 해석 → metagraph TokenAccount 합성 → constellation/transaction.ts:108 metagraph 분기 → getMetagraphApi 가 token.extra.l0Url/l1Url/feesCurrencyId 로 L0/L1 endpoint 서명. native DAG(getDag4Network) 아님. ★추출기·builder·어댑터 불필요(descriptor→resolve→account-driven). ★DOR 는 등록 토큰(tier-1) — 미등록 metagraph 는 endpoint(extra) 부재로 서명 불가(-32602), 등록 토큰만 지원. convertTransaction 은 token 무시하고 top-level source/destination/amount 서명. amount 단위 DATUM(1 DOR=1e8, decimals 8) → 100000000=1 DOR. ⚠️ amount=1(2026-07-24 변경, DATUM 최소단위) — 테스트 계정의 실 DOR 잔고가 0이라(L0 currency balance API 실측: {l0Url}/currency/{address}/balance 응답 balance=0) self-send 라도 1 DOR(100000000) 은 잔고 부족으로 거부될 것. Constellation 은 HAVAH HSP-20 과 달리 amount=0 전송을 허용하지 않으므로(amount>0 강제) 0 대신 최소단위 1 DATUM(=0.00000001 DOR) 로 낮춰 broadcast 경로 검증(서명/metagraph 라우팅) 목적을 충족한다. 실 잔고 0 이라 온체인 최종 수락은 외부 제약으로 여전히 보류. 【2026-07-28 정정】 이전엔 source/destination이 43자 zero-placeholder('DAG000...0000'/'DAG000...0001')였는데, DAG는 체크섬 검증이 있어 이 값 그대로 기기에 전달되면(자동화 e2e 하네스는 '🔑 Resolve sender from device' UI 버튼을 안 눌러 치환이 안 됨) 화면이 '043DAG0000...'처럼 깨져 렌더됐다(실측 — 정상 DAG 주소는 40자인데 placeholder가 43자였던 게 근본 원인). source/destination을 43자 대신 정상 길이(40자)의 zero-style placeholder로 교체(실계정 주소 아님 — 다른 preset들과 동일한 convention 유지, 자릿수만 수정). 체크섬은 여전히 zero라 실측 검증 필요(길이만 고쳤을 때 화면이 정상 렌더되는지는 별도 확인). 실계정으로 테스트하고 싶으면 '🔑 Resolve sender from device'로 치환 가능. ⚠️ SDK wm refresh(m02-05-60 회귀 반영)+connector 재빌드. ⚠️ mainnet. 검증: /verify-wire-sign CONSTELLATION (metagraph token=DOR, native DAG 아님; secp256k1 signer=device).",
     "sourceUrl": "https://docs.constellationnetwork.io/",
     "transaction": {
       "type": "transfer",
-      "source": "DAG0000000000000000000000000000000000000000",
-      "destination": "DAG0000000000000000000000000000000000000001",
+      "source": "DAG0000000000000000000000000000000000000",
+      "destination": "DAG0000000000000000000000000000000000001",
       "amount": "1",
       "fee": "0",
       "token": {

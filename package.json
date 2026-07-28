@@ -33,7 +33,8 @@
     "lint:md": "markdownlint-cli2 \"docs/v2-payload-contract.md\"",
     "check:payload-contract": "node scripts/check-payload-contract-coverage.mjs",
     "check:payload-shape": "node scripts/check-payload-contract-shape.mjs",
-    "check:docs": "yarn lint:md && yarn check:payload-contract && yarn check:payload-shape",
+    "check:index-refs": "node scripts/check-index-html-preset-refs.mjs",
+    "check:docs": "yarn lint:md && yarn check:payload-contract && yarn check:payload-shape && yarn check:index-refs",
     "tsc": "tsc --noEmit"
   },
   "jest": {

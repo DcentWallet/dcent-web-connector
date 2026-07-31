@@ -14,10 +14,9 @@
       "bip122:00000ffd590b1485b3caadc19b22e637/slip44:5",
       "bip122:7497ea1b465eb39f1c8f507bc877078f/slip44:20",
       "bip122:0000006b444bc2f2ffe627be9d9e7e7a/slip44:175",
-      "bip122:1a91e3dace36e2be3bf030a65679fe82/slip44:3",
       "bip122:0007104ccda289427919efc39dc9e4d4/slip44:121"
     ],
-    "note": "Bitcoin legacy P2PKH 송금 — wm bitcoin/wire-convert.js 기대 shape (inputs[].rawTransaction(prev tx hex)/index/txType/keyPath + outputs[].txType/amount/addresses[]). amount 단위 satoshi. 값은 BTC mainnet(slip44:0, m/44'/0') 기준 — 타 bitcoin-family 체인은 keyPath coinType + 주소 수정 후 송금. 【2026-07-26 정정】 이전 노트(\"wm 0.7.14 기준 legacy만 sign 가능, segwit-native는 BIP44 게이트로 차단\")는 stale — 사용자 확인: legacy(P2PKH)와 segwit-native(P2WPKH) 모두 sign 가능하며 둘 다 동일한 m/44' 경로에서 파생(addressFormat/inputs[].txType이 인코딩만 결정, m/84' BIP-84 파생 아님). segwit-wrapped(P2SH, m/49')·taproot(m/86')만 currency registry에 변형 항목이 없어 차단(P2TR은 wm 명시 제외 — crypto-currencies.ts:328).",
+    "note": "Bitcoin legacy P2PKH 송금 — wm bitcoin/wire-convert.js 기대 shape (inputs[].rawTransaction(prev tx hex)/index/txType/keyPath + outputs[].txType/amount/addresses[]). amount 단위 satoshi. 값은 BTC mainnet(slip44:0, m/44'/0') 기준 — 타 bitcoin-family 체인은 keyPath coinType + 주소 수정 후 송금. 【2026-07-26 정정】 이전 노트(\"wm 0.7.14 기준 legacy만 sign 가능, segwit-native는 BIP44 게이트로 차단\")는 stale — 사용자 확인: legacy(P2PKH)와 segwit-native(P2WPKH) 모두 sign 가능하며 둘 다 동일한 m/44' 경로에서 파생(addressFormat/inputs[].txType이 인코딩만 결정, m/84' BIP-84 파생 아님). segwit-wrapped(P2SH, m/49')·taproot(m/86')만 currency registry에 변형 항목이 없어 차단(P2TR은 wm 명시 제외 — crypto-currencies.ts:328). ★2026-07-31 Dogecoin(slip44:3) 분리 — DOGE 는 feeRate 가 자릿수 다르게 커서 wm dust 하한이 96,000,000 sat(=0.96 DOGE, feeRate.low 500000 × 192 bytes)이다. 이 preset 의 공유 amount 990000 sat 은 BTC 기준(0.0099 BTC)으로는 적절하지만 DOGE 로 해석하면 0.0099 DOGE 라 dust 미달로 prepare 자체가 차단된다. 공유 amount 를 올리면 나머지 10개 체인의 표시 금액이 전부 바뀌므로, DOGE 만 전용 preset(doge-transfer)으로 분리했다.",
     "sourceUrl": "https://github.com/bitcoinjs/bitcoinjs-lib/blob/master/test/transaction_builder.spec.js",
     "transaction": {
       "inputs": [
@@ -35,6 +34,37 @@
           "amount": 990000,
           "addresses": [
             "1A1zP1eP5QGefi2DMPTfTL5SLmv7DivfNa"
+          ]
+        }
+      ]
+    }
+  },
+  {
+    "id": "doge-transfer",
+    "scenarioCode": "099",
+    "label": "Dogecoin legacy (P2PKH) transfer",
+    "family": "bitcoin",
+    "applicableChainIds": [
+      "bip122:1a91e3dace36e2be3bf030a65679fe82/slip44:3"
+    ],
+    "note": "Dogecoin 전용 legacy(P2PKH) 송금 — wire shape 는 btc-transfer 와 동일하고 amount 만 DOGE 규칙에 맞춘다. ★분리 사유: DOGE 의 wm dust 하한이 96,000,000 sat(=0.96 DOGE, feeRate.low 500000 × 192 bytes)이라 btc-transfer 의 공유 amount 990000 sat(BTC 기준 0.0099 BTC)으로는 prepare 가 'amount 990000 < 최소 전송 금액 96000000 sat' 로 차단된다(2026-07-31 시뮬레이터 E2E 실측). 공유 amount 를 올리면 btc-transfer 의 나머지 10개 체인 표시 금액이 전부 바뀌고 preset-seed 단언(T-SEED-BTC)·XEC 금액 기준까지 연쇄로 흔들리므로, DOGE 만 떼어냈다. amount 100,000,000 sat = 1 DOGE 로 dust 하한(0.96)을 여유 있게 넘긴다. keyPath 는 DOGE coinType 3(m/44'/3'). outputs[].addresses 는 하네스가 self-send 로 덮어쓰므로(flow.ts preparePreview: toAddress = 연결된 from) 실제 송금처가 아니라 형식 예시다.",
+    "sourceUrl": "https://github.com/bitcoinjs/bitcoinjs-lib/blob/master/test/transaction_builder.spec.js",
+    "transaction": {
+      "inputs": [
+        {
+          "rawTransaction": "0100000001abcdef0123456789abcdef0123456789abcdef0123456789abcdef0123456789000000006a47304402200000000000000000000000000000000000000000000000000000000000000000022000000000000000000000000000000000000000000000000000000000000000000121020000000000000000000000000000000000000000000000000000000000000000ffffffff0140420f00000000001976a914000000000000000000000000000000000000000088ac00000000",
+          "index": 0,
+          "txType": "p2pkh",
+          "keyPath": "m/44'/3'/0'/0/0",
+          "sequence": 4294967295
+        }
+      ],
+      "outputs": [
+        {
+          "txType": "p2pkh",
+          "amount": 100000000,
+          "addresses": [
+            "DH5yaieqoZN36fDVciNyRueRGvGLR3mr7L"
           ]
         }
       ]

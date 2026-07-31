@@ -77,7 +77,7 @@
     "applicableChainIds": [
       "bip122:0007104ccda289427919efc39dc9e4d4/slip44:121"
     ],
-    "note": "Horizen 전용 legacy(P2PKH) 송금 — wire shape 는 btc-transfer 와 같고 **transaction.option 이 추가**된다. ★분리 사유: HORIZEN 은 출력 스크립트가 BIP-115(CHECKBLOCKATHEIGHT — replay 방지)라 디바이스가 scriptPubKey 뒤에 <block hash 32B><height> 를 덧붙여 조립하는데, 그 값을 서명 요청의 option(sign_param.param_data)으로 받아야 한다. 미전달 시 디바이스가 'bip115 opt size too small: 0' 으로 거부한다(2026-07-31 시뮬레이터 E2E 실측). wm 은 이 값을 스스로 못 채운다 — 산출에 getBlockHeight + getBlockHash 네트워크 조회가 필요한데(wm getHORIZENOption) wire 경로는 no-network 순수 서명기 계약이기 때문. 그래서 dApp 이 실어 보내는 것이 유일한 경로다. ★option 형식: hex 문자열 `<blockHash 32B(표시형의 바이트 역순)><height(LE)>` — 길이 prefix 는 넣지 않는다(디바이스가 param_data 크기에서 스스로 붙인다). 여기 값은 **형식 예시(합성)** 다 — 디바이스는 형식(크기 ≥ 32B)만 보므로 서명은 통과하지만, **실제 broadcast 하려면 실 체인의 블록을 참조해야 한다**(wm 기준: tip − 200 높이의 블록 해시 — HORIZEN.bitcoinInfo.optionParams.data.BlockHeight = 200). 실 송금 시에는 wm getHORIZENOption 이 만드는 값을 그대로 넣는다. keyPath 는 ZEN coinType 121(m/44'/121'). outputs[].addresses 는 하네스가 self-send 로 덮어쓰므로(flow.ts preparePreview: toAddress = 연결된 from) 실제 송금처가 아니라 형식 예시다(znTU… = 2-byte version 0x2089 P2PKH, base58check 검증 통과).",
+    "note": "Horizen 전용 legacy(P2PKH) 송금 — wire shape 는 btc-transfer 와 같고 **transaction.option 이 추가**된다. ★분리 사유: HORIZEN 은 출력 스크립트가 BIP-115(CHECKBLOCKATHEIGHT — replay 방지)라 디바이스가 scriptPubKey 뒤에 <block hash 32B><height> 를 덧붙여 조립하는데, 그 값을 서명 요청의 option(sign_param.param_data)으로 받아야 한다. 미전달 시 디바이스가 'bip115 opt size too small: 0' 으로 거부한다(2026-07-31 시뮬레이터 E2E 실측). wm 은 이 값을 스스로 못 채운다 — 산출에 getBlockHeight + getBlockHash 네트워크 조회가 필요한데(wm getHORIZENOption) wire 경로는 no-network 순수 서명기 계약이기 때문. 그래서 dApp 이 실어 보내는 것이 유일한 경로다. ★option 형식: `{blockHash, height}` 의미값 object — blockHash 는 익스플로러에 보이는 표시형 64 hex 그대로 주면 되고, 바이트 역순 변환과 height little-endian 인코딩은 wm 이 한다(직접 조립한 hex 문자열도 받지만, 순서를 틀려도 디바이스는 크기 ≥32B 만 보고 그대로 서명하므로 object 쪽이 안전하다). 여기 값은 **형식 예시(합성)** 다 — 디바이스는 형식만 보므로 서명은 통과하지만, **실제 broadcast 하려면 실 체인의 블록을 참조해야 한다**(wm 기준: tip − 200 높이의 블록 — HORIZEN.bitcoinInfo.optionParams.data.BlockHeight = 200). keyPath 는 ZEN coinType 121(m/44'/121'). outputs[].addresses 는 하네스가 self-send 로 덮어쓰므로(flow.ts preparePreview: toAddress = 연결된 from) 실제 송금처가 아니라 형식 예시다(znTU… = 2-byte version 0x2089 P2PKH, base58check 검증 통과).",
     "sourceUrl": "https://github.com/HorizenOfficial/zen/blob/master/doc/bip-0115.md",
     "transaction": {
       "inputs": [
@@ -98,7 +98,10 @@
           ]
         }
       ],
-      "option": "4d5c6b7a8f9e0d1c2b3a4f5e6d7c8b9a0f1e2d3c5b4a9fbdc8a0e6210000000018fd1c"
+      "option": {
+        "blockHash": "0000000021e6a0c8bd9f4a5b3c2d1e0f9a8b7c6d5e4f3a2b1c0d9e8f7a6b5c4d",
+        "height": 1899800
+      }
     }
   },
   {

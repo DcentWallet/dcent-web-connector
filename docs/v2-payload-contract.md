@@ -104,7 +104,7 @@ Bitcoin은 `dcent.sign({ method: 'signTransaction', chainId, payload })`로 서�
 
 **Horizen(ZEN) — `option` 필수:** Horizen은 출력 스크립트가 BIP-115(`CHECKBLOCKATHEIGHT`, replay 방지)라 디바이스가 scriptPubKey 뒤에 `<block hash><height>`를 덧붙여 조립한다. 그 값은 `transaction.option`으로 **dApp이 직접 전달**해야 한다 — 값 산출에 블록 조회가 필요한데 서명 경로는 네트워크를 쓰지 않기 때문이다. 누락하면 디바이스가 `bip115 opt size too small: 0`으로 거부한다.
 
-`option`은 **hex 문자열**이다(짝수 길이, `0x` prefix 불가 — 위반 시 `-32602`). 형식은 `<block hash 32바이트, 표시형의 바이트 역순><height, little-endian>`이며 길이 prefix는 넣지 않는다(디바이스가 스스로 붙인다). 참조 블록은 체인에 실재해야 하고, D'CENT 앱은 `현재 높이 − 200`의 블록을 쓴다.
+**권장 형태 — 값만 넘기고 조립은 지갑에 맡긴다.** `blockHash`는 익스플로러에 보이는 그대로(64 hex), `height`는 그 블록의 높이다. 바이트 역순 변환과 little-endian 인코딩은 지갑이 한다.
 
 ```js
 // Source: playground/presets.non-evm.json → zen-transfer
@@ -112,10 +112,15 @@ Bitcoin은 `dcent.sign({ method: 'signTransaction', chainId, payload })`로 서�
   transaction: {
     inputs: [{ rawTransaction: '<prev tx hex>', index: 0, txType: 'p2pkh', keyPath: "m/44'/121'/0'/0/0" }],
     outputs: [{ txType: 'p2pkh', amount: 990000, addresses: ['<zn... recipient>'] }],
-    option: '<blockHash32B_reversed><heightLE>'   // BIP-115 — Horizen 전용, 필수
+    // BIP-115 — Horizen 전용, 필수
+    option: { blockHash: '0000000021e6a0c8...7a6b5c4d', height: 1899800 }
   }
 }
 ```
+
+참조 블록은 **체인에 실재해야** 하며, D'CENT 앱은 `현재 높이 − 200`의 블록을 쓴다.
+
+이미 인코딩된 바이트열이 있으면 **hex 문자열**로 넘겨도 된다 — `<block hash 32바이트(표시형의 바이트 역순)><height(little-endian)>`, 짝수 길이, `0x` prefix 불가, 길이 prefix 없음(디바이스가 스스로 붙인다). 다만 **바이트 순서를 틀려도 디바이스는 크기(≥32바이트)만 보고 그대로 서명**하므로, 존재하지 않는 블록을 참조하는 트랜잭션이 만들어져 broadcast 단계에서야 실패한다. 위 object 형태를 쓰는 편이 안전하다. 두 형태 밖의 값이나 형식 위반은 `-32602`다.
 
 같은 `option` 필드를 ZCASH도 쓰지만(consensus branch ID), ZCASH 값은 정적이라 지갑이 자동으로 채운다 — dApp이 신경 쓸 필요 없다.
 

@@ -102,6 +102,23 @@ Bitcoin은 `dcent.sign({ method: 'signTransaction', chainId, payload })`로 서�
 
 **Source:** `playground/presets.bitcoin-tx.json`
 
+**Horizen(ZEN) — `option` 필수:** Horizen은 출력 스크립트가 BIP-115(`CHECKBLOCKATHEIGHT`, replay 방지)라 디바이스가 scriptPubKey 뒤에 `<block hash><height>`를 덧붙여 조립한다. 그 값은 `transaction.option`으로 **dApp이 직접 전달**해야 한다 — 값 산출에 블록 조회가 필요한데 서명 경로는 네트워크를 쓰지 않기 때문이다. 누락하면 디바이스가 `bip115 opt size too small: 0`으로 거부한다.
+
+`option`은 **hex 문자열**이다(짝수 길이, `0x` prefix 불가 — 위반 시 `-32602`). 형식은 `<block hash 32바이트, 표시형의 바이트 역순><height, little-endian>`이며 길이 prefix는 넣지 않는다(디바이스가 스스로 붙인다). 참조 블록은 체인에 실재해야 하고, D'CENT 앱은 `현재 높이 − 200`의 블록을 쓴다.
+
+```js
+// Source: playground/presets.non-evm.json → zen-transfer
+{
+  transaction: {
+    inputs: [{ rawTransaction: '<prev tx hex>', index: 0, txType: 'p2pkh', keyPath: "m/44'/121'/0'/0/0" }],
+    outputs: [{ txType: 'p2pkh', amount: 990000, addresses: ['<zn... recipient>'] }],
+    option: '<blockHash32B_reversed><heightLE>'   // BIP-115 — Horizen 전용, 필수
+  }
+}
+```
+
+같은 `option` 필드를 ZCASH도 쓰지만(consensus branch ID), ZCASH 값은 정적이라 지갑이 자동으로 채운다 — dApp이 신경 쓸 필요 없다.
+
 ---
 
 ### Cardano

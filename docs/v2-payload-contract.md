@@ -403,9 +403,25 @@ Bitcoin은 `dcent.sign({ method: 'signTransaction', chainId, payload })`로 서�
 
 ### Polkadot
 
-**지원:** `signTransaction` ✅ (`extra.scaleHex`) | `signMessage` ✅ (parachain만)
+**지원:** `signTransaction` ✅ (decoded `method`+`args`, 또는 `extra.scaleHex` blob) | `signMessage` ✅ (parachain만)
 
 **chainId 예시:** `polkadot:91b171bb158e2d3848fa23a9f1c25182/slip44:354`
+
+**두 형태 중 하나를 쓰고, 섞지 않는다.**
+
+- **decoded** — `method` + `args`. 기기가 호출을 디코드해 화면에 보여준다.
+- **blob** — `extra.scaleHex`(SCALE 인코딩된 call). blind-sign 이고, `method`/`args` 를 함께 두지 않는다.
+
+같은 값을 두 곳에 적으면 drift 가 난다 — 실측(2026-07-22)에서 blob 의 수취인만 바꾸고 `args[0]` 을 그대로 둬, **표시용 필드와 서명 바이트가 서로 다른 수취인**을 가리켰다.
+
+**서명 payload 필드는 어느 형태든 전부 보낸다.** blob 은 **call 만** 담으므로 아래 값들은 blob 밖에 있다. 하나라도 빠지면 지갑이 자체 재도출하게 되고, "앱이 선언한 것"과 "서명된 것"이 갈린다(실측: preset `era` Immortal → 서명은 Mortal).
+
+| 필드 | 의미 |
+|---|---|
+| `era` · `nonce` · `tip` | 서명 확장(extrinsic extra) |
+| `specVersion` · `transactionVersion` | 런타임 버전 — 체인에서 조회한 **실값** |
+| `blockHash` · `genesisHash` | 체인에서 조회한 **실값**(mortal era 는 checkpoint 블록) |
+| `fee` | 기기 표시용. 앱이 산정해 전달 |
 
 **signTransaction payload:**
 
@@ -413,21 +429,24 @@ Bitcoin은 `dcent.sign({ method: 'signTransaction', chainId, payload })`로 서�
 // Source: playground/presets.rest.json → dot-transfer
 {
   transaction: {
-    method: 'balances.transfer',
+    method: 'balances.transferAllowDeath',
     args: [
-      '1EzRDbELEVqAWLKkTTfNP2Mq6ZpKbFAhNfAJtUHBJjGBN1',  // recipient
-      '1000000000'   // Planck (1 DOT = 10^10)
+      '14dyYY72MDtfxAAjFnqwCR3YihV5UrqzMjEAf1ABXJ4vzLZj',  // recipient
+      '1000000000000'   // Planck (1 DOT = 10^10)
     ],
     era: '0x00',
-    nonce: 1,
+    nonce: 0,
     tip: 0,
-    specVersion: 1000000,
-    transactionVersion: 26,
-    blockHash: '0x...',
-    genesisHash: '0x91b171bb158e2d3848fa23a9f1c25182fb8e20313b2c1eb49219da7a70ce90c3'
+    fee: '0',
+    specVersion: 0,
+    transactionVersion: 0,
+    blockHash: '0x0000000000000000000000000000000000000000000000000000000000000000',
+    genesisHash: '0x0000000000000000000000000000000000000000000000000000000000000000'
   }
 }
 ```
+
+> ⚠️ 위 `specVersion` / `transactionVersion` / `blockHash` / `genesisHash` 의 `0` · all-zero 는 **playground preset 의 placeholder** 다. playground 하네스가 서명 직전에 체인 조회값으로 치환한다. **실제 dApp 은 이 자리에 체인에서 조회한 실값을 넣어야 한다** — placeholder 를 그대로 보내면 노드가 거부한다. preset 에 실값을 박아두지 않는 이유는, 시간이 지나면 stale 값으로 서명하게 되기 때문이다.
 
 ---
 
@@ -532,28 +551,63 @@ Bitcoin은 `dcent.sign({ method: 'signTransaction', chainId, payload })`로 서�
 
 ### Stellar
 
-**지원:** `signTransaction` ✅ (`{xdr}` envelope) | `signMessage` ✅
-
-> 실측 — `stellar-xdr-passthrough-blind-sign`(완성 XDR)은 서명된다. structured payment / Soroban 은 계정 sequence·시뮬레이션이 필요해 `-32602`.
+**지원:** `signTransaction` ✅ (structured op / issued-asset descriptor / `{xdr}` envelope) | `signMessage` ✅ | `signAuthEntry` ✅ (Soroban auth entry)
 
 **chainId 예시:** `stellar:pubnet/slip44:148`
 
-**signTransaction payload:**
+**세 형태 중 하나를 쓰고, 섞지 않는다.**
+
+| 형태 | 쓰는 곳 | 식별 필드 |
+|---|---|---|
+| **structured op** | native XLM `payment`, Soroban `invokeHostFunction` | `type` (문자열) |
+| **form-D (issued asset)** | trustline 토큰(USDC 등) 전송 | `token` (객체) — `type` 을 적지 않는다 |
+| **`{xdr}` envelope** | 완성된 XDR 을 그대로 blind-sign | `xdr` (문자열) |
+
+form-D 는 `type` 을 **앱이 적지 않는다** — 지갑이 descriptor 를 `{type:'payment', asset:{code,issuer}, destination, amount}` 봉투로 합성한다. 여기에 `type` 을 함께 적으면 같은 값을 두 곳에서 표현하게 된다.
+
+**서명 payload 를 이루는 값은 앱이 전부 제공한다** — structured / form-D 모두 `fee` · `sequenceNumber` · `timeBounds` 가 필요하다. `{xdr}` 은 그 값들이 XDR 안에 인코딩돼 있으므로 `fee` 만 유지한다(blind-sign 이라 기기에 전달되는 유일한 표시 정보).
+
+**signTransaction payload — structured op (native XLM):**
 
 ```js
 // Source: playground/presets.non-evm.json → xlm-payment
 {
   transaction: {
     type: 'payment',
-    destination: 'GAAZI4TCR3TY5OJHCTJC2A4QSY6CJWJH5IAJTGKIN2ER7LBNVKOCCWN',
-    amount: '10.0000000',    // XLM (7 decimal places)
+    destination: 'GDQP2KPQGKIHYJGXNUIYOMHARUARCA7DJT5FO2FFOOKY3B2WSQHG4W37',
     asset: { code: 'XLM', issuer: null },   // native
-    memo: '',
-    fee: '100',
-    sequenceNumber: '1'
+    amount: '10',
+    memo: { type: 'none' },
+    fee: 100,
+    sequenceNumber: '0',                    // placeholder — 아래 주의 참조
+    timeBounds: { minTime: '0', maxTime: '0' }
   }
 }
 ```
+
+**signTransaction payload — form-D (issued asset, 예: USDC):**
+
+```js
+// Source: playground/presets.non-evm.json → xlm-usdc-payment
+{
+  transaction: {
+    token: {
+      contract: 'USDC-GA5ZSEJYB37JRC5AVCIA5MOP4RHTM335X2KGX3IHOJAPP5RE34K4KZVN',  // `code-issuer`
+      to: 'GC6OISCEYJSHTO6QBZYVT52B4ZW63BCVTNCFYLUJQK5FUKLJP6L2XNAJ',
+      amount: '10000000',   // 토큰 최소단위 (USDC 7 decimals → 1 USDC)
+      decimals: 7,
+      symbol: 'USDC'
+    },
+    fee: 100,
+    sequenceNumber: '0',
+    timeBounds: { minTime: '0', maxTime: '0' }
+  }
+}
+```
+
+> ⚠️ 위 `sequenceNumber: '0'` 과 `timeBounds` 의 `'0'` 은 **playground preset 의 placeholder** 다(fresh state 라 실값을 박아두면 stale 로 서명된다). playground 하네스가 서명 직전에 치환한다 — **실제 dApp 은 계정의 현재 sequence 와 의도한 timeBounds 를 넣어야 한다.**
+>
+> issued asset 전송은 **수신처에 해당 토큰의 trustline 이 선행**돼야 한다(없으면 `op_no_trust`).
 
 ---
 

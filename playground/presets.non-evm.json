@@ -8,14 +8,13 @@
       "bip122:000000000019d6689c085ae165831e93/slip44:0",
       "bip122:000000000019d6689c085ae165831e93/slip44:145",
       "bip122:000000000000000000651ef99cb9fcbe/slip44:145",
-      "bip122:00040fe8ec8471911baa1db1266ea15d/slip44:133",
       "bip122:12a765e31ffd4059bada1e25190f6e98/slip44:2",
       "bip122:00000000e9fba3b4a12d04c0a48d70d5/slip44:156",
       "bip122:00000ffd590b1485b3caadc19b22e637/slip44:5",
       "bip122:7497ea1b465eb39f1c8f507bc877078f/slip44:20",
       "bip122:0000006b444bc2f2ffe627be9d9e7e7a/slip44:175"
     ],
-    "note": "Bitcoin legacy P2PKH 송금 — wm bitcoin/wire-convert.js 기대 shape (inputs[].rawTransaction(prev tx hex)/index/txType/keyPath + outputs[].txType/amount/addresses[]). amount 단위 satoshi. 값은 BTC mainnet(slip44:0, m/44'/0') 기준 — 타 bitcoin-family 체인은 keyPath coinType + 주소 수정 후 송금. 【2026-07-26 정정】 이전 노트(\"wm 0.7.14 기준 legacy만 sign 가능, segwit-native는 BIP44 게이트로 차단\")는 stale — 사용자 확인: legacy(P2PKH)와 segwit-native(P2WPKH) 모두 sign 가능하며 둘 다 동일한 m/44' 경로에서 파생(addressFormat/inputs[].txType이 인코딩만 결정, m/84' BIP-84 파생 아님). segwit-wrapped(P2SH, m/49')·taproot(m/86')만 currency registry에 변형 항목이 없어 차단(P2TR은 wm 명시 제외 — crypto-currencies.ts:328). ★2026-07-31 Horizen(slip44:121) 분리 — HORIZEN 은 출력 스크립트가 BIP-115(CHECKBLOCKATHEIGHT)라 서명 요청에 `option`(block hash + height)이 반드시 실려야 한다. 이 preset 에는 option 이 없어 디바이스가 'bip115 opt size too small: 0' 으로 거부한다 → 전용 preset(zen-transfer)으로 분리. ★2026-07-31 Dogecoin(slip44:3) 분리 — DOGE 는 feeRate 가 자릿수 다르게 커서 wm dust 하한이 96,000,000 sat(=0.96 DOGE, feeRate.low 500000 × 192 bytes)이다. 이 preset 의 공유 amount 990000 sat 은 BTC 기준(0.0099 BTC)으로는 적절하지만 DOGE 로 해석하면 0.0099 DOGE 라 dust 미달로 prepare 자체가 차단된다. 공유 amount 를 올리면 나머지 10개 체인의 표시 금액이 전부 바뀌므로, DOGE 만 전용 preset(doge-transfer)으로 분리했다.",
+    "note": "Bitcoin legacy P2PKH 송금 — wm bitcoin/wire-convert.js 기대 shape (inputs[].rawTransaction(prev tx hex)/index/txType/keyPath + outputs[].txType/amount/addresses[]). amount 단위 satoshi. 값은 BTC mainnet(slip44:0, m/44'/0') 기준 — 타 bitcoin-family 체인은 keyPath coinType + 주소 수정 후 송금. 【2026-07-26 정정】 이전 노트(\"wm 0.7.14 기준 legacy만 sign 가능, segwit-native는 BIP44 게이트로 차단\")는 stale — 사용자 확인: legacy(P2PKH)와 segwit-native(P2WPKH) 모두 sign 가능하며 둘 다 동일한 m/44' 경로에서 파생(addressFormat/inputs[].txType이 인코딩만 결정, m/84' BIP-84 파생 아님). segwit-wrapped(P2SH, m/49')·taproot(m/86')만 currency registry에 변형 항목이 없어 차단(P2TR은 wm 명시 제외 — crypto-currencies.ts:328). ★2026-07-31 Horizen(slip44:121) 분리 — HORIZEN 은 출력 스크립트가 BIP-115(CHECKBLOCKATHEIGHT)라 서명 요청에 `option`(block hash + height)이 반드시 실려야 한다. 이 preset 에는 option 이 없어 디바이스가 'bip115 opt size too small: 0' 으로 거부한다 → 전용 preset(zen-transfer)으로 분리. ★2026-07-31 Dogecoin(slip44:3) 분리 — DOGE 는 feeRate 가 자릿수 다르게 커서 wm dust 하한이 96,000,000 sat(=0.96 DOGE, feeRate.low 500000 × 192 bytes)이다. 이 preset 의 공유 amount 990000 sat 은 BTC 기준(0.0099 BTC)으로는 적절하지만 DOGE 로 해석하면 0.0099 DOGE 라 dust 미달로 prepare 자체가 차단된다. 공유 amount 를 올리면 나머지 10개 체인의 표시 금액이 전부 바뀌므로, DOGE 만 전용 preset(doge-transfer)으로 분리했다. ★2026-08-03 Zcash(slip44:133) 분리 — ZCASH 는 서명 option(consensus branch ID)이 필수인데 그 값이 블록 높이에 의존한다. 공유 preset 에 한 값을 박을 수 없어 전용 preset(zec-transfer)으로 분리했다.",
     "sourceUrl": "https://github.com/bitcoinjs/bitcoinjs-lib/blob/master/test/transaction_builder.spec.js",
     "transaction": {
       "inputs": [
@@ -102,6 +101,38 @@
         "blockHash": "0000000021e6a0c8bd9f4a5b3c2d1e0f9a8b7c6d5e4f3a2b1c0d9e8f7a6b5c4d",
         "height": 1899800
       }
+    }
+  },
+  {
+    "id": "zec-transfer",
+    "scenarioCode": "101",
+    "label": "Zcash (ZEC) transparent transfer",
+    "family": "bitcoin",
+    "applicableChainIds": [
+      "bip122:00040fe8ec8471911baa1db1266ea15d/slip44:133"
+    ],
+    "note": "Zcash 전용 transparent(P2PKH) 송금 — wire shape 는 btc-transfer 와 같고 **transaction.option 이 추가**된다. ★분리 사유: ZCASH 는 ZIP-243 sighash 에 consensus branch ID 가 들어가는데 그 값이 네트워크 업그레이드 활성 높이마다 바뀐다. 서명기는 높이를 모르므로 채워줄 수 없고(2026-08-03 이전에는 config 상수로 추측해 채웠는데, NU6.3 활성 이후 낡은 NU6.2 branch 로 서명하고 있었다 — 실측), 미전달 시 -32602 로 막힌다. 공유 preset 에는 체인별로 다른 이 값을 박을 수 없어 분리했다. ★option 형식: '<GroupId8><branchId8>' 16 hex. 앞 8자는 currency 의 GroupId(892F2085), 뒤 8자는 알려진 consensus branch ID 여야 한다 — 디바이스가 앞 절반을 최종 트랜잭션의 nVersionGroupId 로, 뒤 절반을 sighash 개인화로 쓴다. ★여기 값은 **형식 예시**다(2026-07-28 활성한 NU6.3 = 37A5165B). 다음 네트워크 업그레이드가 오면 낡는다 — 하네스는 prepare 단계에서 wm getZCASHOption 으로 **실값을 조회해 덮어쓰며**, 이 값은 게이트웨이가 응답하지 않을 때만 쓰이는 폴백이다. 실 송금 시에도 반드시 getZCASHOption 결과를 쓴다.",
+    "sourceUrl": "https://zips.z.cash/zip-0243",
+    "transaction": {
+      "inputs": [
+        {
+          "rawTransaction": "0100000001abcdef0123456789abcdef0123456789abcdef0123456789abcdef0123456789000000006a47304402200000000000000000000000000000000000000000000000000000000000000000022000000000000000000000000000000000000000000000000000000000000000000121020000000000000000000000000000000000000000000000000000000000000000ffffffff0140420f00000000001976a914000000000000000000000000000000000000000088ac00000000",
+          "index": 0,
+          "txType": "p2pkh",
+          "keyPath": "m/44'/133'/0'/0/0",
+          "sequence": 4294967295
+        }
+      ],
+      "outputs": [
+        {
+          "txType": "p2pkh",
+          "amount": 990000,
+          "addresses": [
+            "t1WXnGgTYbCXq4MZmBSBWMDTuSSaEfJSj2B"
+          ]
+        }
+      ],
+      "option": "892F208537A5165B"
     }
   },
   {

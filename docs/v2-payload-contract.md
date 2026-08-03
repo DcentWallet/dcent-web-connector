@@ -124,7 +124,7 @@ Bitcoin은 `dcent.sign({ method: 'signTransaction', chainId, payload })`로 서�
 
 **ZCASH도 `option`이 필수다** (2026-08-03 변경 — 이전에는 지갑이 자동으로 채웠다). ZCASH의 option은 consensus branch ID인데, 이 값은 네트워크 업그레이드 활성 높이마다 바뀐다. 서명기는 현재 블록 높이를 모르므로 **어떤 고정값을 써도 활성화 경계를 넘는 순간 틀린다** — 실제로 종전 자동 조립은 NU6.3 활성 이후 낡은 NU6.2 branch로 서명하고 있었다. 서명은 정상으로 보이고 broadcast에서만 거부되므로 원인이 드러나지 않는다.
 
-`option`은 **prepare 단계에서 만드는 값**이다. 지갑 라이브러리의 `getZCASHOption(currency)`가 현재 높이를 조회해 만들어주므로, 그 결과를 그대로 넘기면 된다. 형식은 **정확히 16 hex**(`GroupId8 + branchId8`)이고, 알려진 branch ID가 아니면 `-32602`다.
+`option`은 **prepare 단계에서 만드는 값**이다. 지갑 라이브러리의 `getZCASHOption(currency)`가 현재 높이를 조회해 만들어주므로, 그 결과를 그대로 넘기면 된다. 형식은 **정확히 16 hex**(`GroupId8 + branchId8`)다. 앞 8자는 해당 체인의 `GroupId`와 일치해야 하고 뒤 8자는 알려진 consensus branch ID여야 한다(둘 중 하나라도 어긋나면 `-32602`) — 디바이스가 앞 절반을 서명 대상과 최종 트랜잭션의 `nVersionGroupId`로, 뒤 절반을 sighash 개인화로 쓰기 때문이다.
 
 ---
 

@@ -122,7 +122,9 @@ Bitcoin은 `dcent.sign({ method: 'signTransaction', chainId, payload })`로 서�
 
 이미 인코딩된 바이트열이 있으면 **hex 문자열**로 넘겨도 된다 — `<block hash 32바이트(표시형의 바이트 역순)><height(little-endian)>`, 짝수 길이, `0x` prefix 불가, 길이 prefix 없음(디바이스가 스스로 붙인다). 다만 **바이트 순서를 틀려도 디바이스는 크기(≥32바이트)만 보고 그대로 서명**하므로, 존재하지 않는 블록을 참조하는 트랜잭션이 만들어져 broadcast 단계에서야 실패한다. 위 object 형태를 쓰는 편이 안전하다. 두 형태 밖의 값이나 형식 위반은 `-32602`다.
 
-같은 `option` 필드를 ZCASH도 쓰지만(consensus branch ID), ZCASH 값은 정적이라 지갑이 자동으로 채운다 — dApp이 신경 쓸 필요 없다. 굳이 직접 넘긴다면 **정확히 16 hex**(`GroupId8 + ConsensusId8`)여야 한다 — 서명기가 8~16번째 문자를 branch ID로 읽고 그 밖의 길이면 Sapling으로 조용히 폴백해 노드가 거부하는 서명이 만들어지기 때문이다(위반 시 `-32602`).
+**ZCASH도 `option`이 필수다** (2026-08-03 변경 — 이전에는 지갑이 자동으로 채웠다). ZCASH의 option은 consensus branch ID인데, 이 값은 네트워크 업그레이드 활성 높이마다 바뀐다. 서명기는 현재 블록 높이를 모르므로 **어떤 고정값을 써도 활성화 경계를 넘는 순간 틀린다** — 실제로 종전 자동 조립은 NU6.3 활성 이후 낡은 NU6.2 branch로 서명하고 있었다. 서명은 정상으로 보이고 broadcast에서만 거부되므로 원인이 드러나지 않는다.
+
+`option`은 **prepare 단계에서 만드는 값**이다. 지갑 라이브러리의 `getZCASHOption(currency)`가 현재 높이를 조회해 만들어주므로, 그 결과를 그대로 넘기면 된다. 형식은 **정확히 16 hex**(`GroupId8 + branchId8`)이고, 알려진 branch ID가 아니면 `-32602`다.
 
 ---
 

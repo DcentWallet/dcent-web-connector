@@ -662,13 +662,6 @@
     "defaultKeyPath": "m/44'/20'/0'/0/0"
   },
   {
-    "chainId": "bip122:fabe7dc4cf82e888f7afd9a1c7e05d10/slip44:1",
-    "family": "bitcoin",
-    "displayName": "DigiByte Testnet",
-    "defaultKeyPath": "m/44'/20'/0'/0/0",
-    "isTestnet": true
-  },
-  {
     "chainId": "bip122:0000006b444bc2f2ffe627be9d9e7e7a/slip44:175",
     "family": "bitcoin",
     "displayName": "Ravencoin",

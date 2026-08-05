@@ -8,16 +8,13 @@
       "bip122:000000000019d6689c085ae165831e93/slip44:0",
       "bip122:000000000019d6689c085ae165831e93/slip44:145",
       "bip122:000000000000000000651ef99cb9fcbe/slip44:145",
-      "bip122:00040fe8ec8471911baa1db1266ea15d/slip44:133",
       "bip122:12a765e31ffd4059bada1e25190f6e98/slip44:2",
       "bip122:00000000e9fba3b4a12d04c0a48d70d5/slip44:156",
       "bip122:00000ffd590b1485b3caadc19b22e637/slip44:5",
       "bip122:7497ea1b465eb39f1c8f507bc877078f/slip44:20",
-      "bip122:0000006b444bc2f2ffe627be9d9e7e7a/slip44:175",
-      "bip122:1a91e3dace36e2be3bf030a65679fe82/slip44:3",
-      "bip122:0007104ccda289427919efc39dc9e4d4/slip44:121"
+      "bip122:0000006b444bc2f2ffe627be9d9e7e7a/slip44:175"
     ],
-    "note": "Bitcoin legacy P2PKH 송금 — wm bitcoin/wire-convert.js 기대 shape (inputs[].rawTransaction(prev tx hex)/index/txType/keyPath + outputs[].txType/amount/addresses[]). amount 단위 satoshi. 값은 BTC mainnet(slip44:0, m/44'/0') 기준 — 타 bitcoin-family 체인은 keyPath coinType + 주소 수정 후 송금. 【2026-07-26 정정】 이전 노트(\"wm 0.7.14 기준 legacy만 sign 가능, segwit-native는 BIP44 게이트로 차단\")는 stale — 사용자 확인: legacy(P2PKH)와 segwit-native(P2WPKH) 모두 sign 가능하며 둘 다 동일한 m/44' 경로에서 파생(addressFormat/inputs[].txType이 인코딩만 결정, m/84' BIP-84 파생 아님). segwit-wrapped(P2SH, m/49')·taproot(m/86')만 currency registry에 변형 항목이 없어 차단(P2TR은 wm 명시 제외 — crypto-currencies.ts:328).",
+    "note": "Bitcoin legacy P2PKH 송금 — wm bitcoin/wire-convert.js 기대 shape (inputs[].rawTransaction(prev tx hex)/index/txType/keyPath + outputs[].txType/amount/addresses[]). amount 단위 satoshi. 값은 BTC mainnet(slip44:0, m/44'/0') 기준 — 타 bitcoin-family 체인은 keyPath coinType + 주소 수정 후 송금. 【2026-07-26 정정】 이전 노트(\"wm 0.7.14 기준 legacy만 sign 가능, segwit-native는 BIP44 게이트로 차단\")는 stale — 사용자 확인: legacy(P2PKH)와 segwit-native(P2WPKH) 모두 sign 가능하며 둘 다 동일한 m/44' 경로에서 파생(addressFormat/inputs[].txType이 인코딩만 결정, m/84' BIP-84 파생 아님). segwit-wrapped(P2SH, m/49')·taproot(m/86')만 currency registry에 변형 항목이 없어 차단(P2TR은 wm 명시 제외 — crypto-currencies.ts:328). ★2026-07-31 Horizen(slip44:121) 분리 — HORIZEN 은 출력 스크립트가 BIP-115(CHECKBLOCKATHEIGHT)라 서명 요청에 `option`(block hash + height)이 반드시 실려야 한다. 이 preset 에는 option 이 없어 디바이스가 'bip115 opt size too small: 0' 으로 거부한다 → 전용 preset(zen-transfer)으로 분리. ★2026-07-31 Dogecoin(slip44:3) 분리 — DOGE 는 feeRate 가 자릿수 다르게 커서 wm dust 하한이 96,000,000 sat(=0.96 DOGE, feeRate.low 500000 × 192 bytes)이다. 이 preset 의 공유 amount 990000 sat 은 BTC 기준(0.0099 BTC)으로는 적절하지만 DOGE 로 해석하면 0.0099 DOGE 라 dust 미달로 prepare 자체가 차단된다. 공유 amount 를 올리면 나머지 10개 체인의 표시 금액이 전부 바뀌므로, DOGE 만 전용 preset(doge-transfer)으로 분리했다. ★2026-08-03 Zcash(slip44:133) 분리 — ZCASH 는 서명 option(consensus branch ID)이 필수인데 그 값이 블록 높이에 의존한다. 공유 preset 에 한 값을 박을 수 없어 전용 preset(zec-transfer)으로 분리했다.",
     "sourceUrl": "https://github.com/bitcoinjs/bitcoinjs-lib/blob/master/test/transaction_builder.spec.js",
     "transaction": {
       "inputs": [
@@ -35,6 +32,137 @@
           "amount": 990000,
           "addresses": [
             "1A1zP1eP5QGefi2DMPTfTL5SLmv7DivfNa"
+          ]
+        }
+      ]
+    }
+  },
+  {
+    "id": "doge-transfer",
+    "scenarioCode": "099",
+    "label": "Dogecoin legacy (P2PKH) transfer",
+    "family": "bitcoin",
+    "applicableChainIds": [
+      "bip122:1a91e3dace36e2be3bf030a65679fe82/slip44:3"
+    ],
+    "note": "Dogecoin 전용 legacy(P2PKH) 송금 — wire shape 는 btc-transfer 와 동일하고 amount 만 DOGE 규칙에 맞춘다. ★분리 사유: DOGE 의 wm dust 하한이 96,000,000 sat(=0.96 DOGE, feeRate.low 500000 × 192 bytes)이라 btc-transfer 의 공유 amount 990000 sat(BTC 기준 0.0099 BTC)으로는 prepare 가 'amount 990000 < 최소 전송 금액 96000000 sat' 로 차단된다(2026-07-31 시뮬레이터 E2E 실측). 공유 amount 를 올리면 btc-transfer 의 나머지 10개 체인 표시 금액이 전부 바뀌고 preset-seed 단언(T-SEED-BTC)·XEC 금액 기준까지 연쇄로 흔들리므로, DOGE 만 떼어냈다. amount 100,000,000 sat = 1 DOGE 로 dust 하한(0.96)을 여유 있게 넘긴다. keyPath 는 DOGE coinType 3(m/44'/3'). outputs[].addresses 는 하네스가 self-send 로 덮어쓰므로(flow.ts preparePreview: toAddress = 연결된 from) 실제 송금처가 아니라 형식 예시다.",
+    "sourceUrl": "https://github.com/bitcoinjs/bitcoinjs-lib/blob/master/test/transaction_builder.spec.js",
+    "transaction": {
+      "inputs": [
+        {
+          "rawTransaction": "0100000001abcdef0123456789abcdef0123456789abcdef0123456789abcdef0123456789000000006a47304402200000000000000000000000000000000000000000000000000000000000000000022000000000000000000000000000000000000000000000000000000000000000000121020000000000000000000000000000000000000000000000000000000000000000ffffffff0140420f00000000001976a914000000000000000000000000000000000000000088ac00000000",
+          "index": 0,
+          "txType": "p2pkh",
+          "keyPath": "m/44'/3'/0'/0/0",
+          "sequence": 4294967295
+        }
+      ],
+      "outputs": [
+        {
+          "txType": "p2pkh",
+          "amount": 100000000,
+          "addresses": [
+            "DH5yaieqoZN36fDVciNyRueRGvGLR3mr7L"
+          ]
+        }
+      ]
+    }
+  },
+  {
+    "id": "zen-transfer",
+    "scenarioCode": "100",
+    "label": "Horizen (ZEN) BIP-115 transfer",
+    "family": "bitcoin",
+    "applicableChainIds": [
+      "bip122:0007104ccda289427919efc39dc9e4d4/slip44:121"
+    ],
+    "note": "Horizen 전용 legacy(P2PKH) 송금 — wire shape 는 btc-transfer 와 같고 **transaction.option 이 추가**된다. ★분리 사유: HORIZEN 은 출력 스크립트가 BIP-115(CHECKBLOCKATHEIGHT — replay 방지)라 디바이스가 scriptPubKey 뒤에 <block hash 32B><height> 를 덧붙여 조립하는데, 그 값을 서명 요청의 option(sign_param.param_data)으로 받아야 한다. 미전달 시 디바이스가 'bip115 opt size too small: 0' 으로 거부한다(2026-07-31 시뮬레이터 E2E 실측). wm 은 이 값을 스스로 못 채운다 — 산출에 getBlockHeight + getBlockHash 네트워크 조회가 필요한데(wm getHORIZENOption) wire 경로는 no-network 순수 서명기 계약이기 때문. 그래서 dApp 이 실어 보내는 것이 유일한 경로다. ★option 형식: `{blockHash, height}` 의미값 object — blockHash 는 익스플로러에 보이는 표시형 64 hex 그대로 주면 되고, 바이트 역순 변환과 height little-endian 인코딩은 wm 이 한다(직접 조립한 hex 문자열도 받지만, 순서를 틀려도 디바이스는 크기 ≥32B 만 보고 그대로 서명하므로 object 쪽이 안전하다). 여기 값은 **형식 예시(합성)** 다 — 디바이스는 형식만 보므로 서명은 통과하지만, **실제 broadcast 하려면 실 체인의 블록을 참조해야 한다**(wm 기준: tip − 200 높이의 블록 — HORIZEN.bitcoinInfo.optionParams.data.BlockHeight = 200). keyPath 는 ZEN coinType 121(m/44'/121'). outputs[].addresses 는 하네스가 self-send 로 덮어쓰므로(flow.ts preparePreview: toAddress = 연결된 from) 실제 송금처가 아니라 형식 예시다(znTU… = 2-byte version 0x2089 P2PKH, base58check 검증 통과).",
+    "sourceUrl": "https://github.com/HorizenOfficial/zen/blob/master/doc/bip-0115.md",
+    "transaction": {
+      "inputs": [
+        {
+          "rawTransaction": "0100000001abcdef0123456789abcdef0123456789abcdef0123456789abcdef0123456789000000006a47304402200000000000000000000000000000000000000000000000000000000000000000022000000000000000000000000000000000000000000000000000000000000000000121020000000000000000000000000000000000000000000000000000000000000000ffffffff0140420f00000000001976a914000000000000000000000000000000000000000088ac00000000",
+          "index": 0,
+          "txType": "p2pkh",
+          "keyPath": "m/44'/121'/0'/0/0",
+          "sequence": 4294967295
+        }
+      ],
+      "outputs": [
+        {
+          "txType": "p2pkh",
+          "amount": 990000,
+          "addresses": [
+            "znTUHMULZiX3k2WfRr1KCZQusmpywCXzcYo"
+          ]
+        }
+      ],
+      "option": {
+        "blockHash": "0000000021e6a0c8bd9f4a5b3c2d1e0f9a8b7c6d5e4f3a2b1c0d9e8f7a6b5c4d",
+        "height": 1899800
+      }
+    }
+  },
+  {
+    "id": "zec-transfer",
+    "scenarioCode": "101",
+    "label": "Zcash (ZEC) transparent transfer",
+    "family": "bitcoin",
+    "applicableChainIds": [
+      "bip122:00040fe8ec8471911baa1db1266ea15d/slip44:133"
+    ],
+    "note": "Zcash 전용 transparent(P2PKH) 송금 — wire shape 는 btc-transfer 와 같고 **transaction.option 이 추가**된다. ★분리 사유: ZCASH 는 ZIP-243 sighash 에 consensus branch ID 가 들어가는데 그 값이 네트워크 업그레이드 활성 높이마다 바뀐다. 서명기는 높이를 모르므로 채워줄 수 없고(2026-08-03 이전에는 config 상수로 추측해 채웠는데, NU6.3 활성 이후 낡은 NU6.2 branch 로 서명하고 있었다 — 실측), 미전달 시 -32602 로 막힌다. 공유 preset 에는 체인별로 다른 이 값을 박을 수 없어 분리했다. ★option 형식: '<GroupId8><branchId8>' 16 hex. 앞 8자는 currency 의 GroupId(892F2085), 뒤 8자는 알려진 consensus branch ID 여야 한다 — 디바이스가 앞 절반을 최종 트랜잭션의 nVersionGroupId 로, 뒤 절반을 sighash 개인화로 쓴다. ★여기 값은 **형식 예시**다(2026-07-28 활성한 NU6.3 = 37A5165B). 다음 네트워크 업그레이드가 오면 낡는다 — 하네스는 prepare 단계에서 wm getZCASHOption 으로 **실값을 조회해 덮어쓰며**, 이 값은 게이트웨이가 응답하지 않을 때만 쓰이는 폴백이다. 실 송금 시에도 반드시 getZCASHOption 결과를 쓴다.",
+    "sourceUrl": "https://zips.z.cash/zip-0243",
+    "transaction": {
+      "inputs": [
+        {
+          "rawTransaction": "0100000001abcdef0123456789abcdef0123456789abcdef0123456789abcdef0123456789000000006a47304402200000000000000000000000000000000000000000000000000000000000000000022000000000000000000000000000000000000000000000000000000000000000000121020000000000000000000000000000000000000000000000000000000000000000ffffffff0140420f00000000001976a914000000000000000000000000000000000000000088ac00000000",
+          "index": 0,
+          "txType": "p2pkh",
+          "keyPath": "m/44'/133'/0'/0/0",
+          "sequence": 4294967295
+        }
+      ],
+      "outputs": [
+        {
+          "txType": "p2pkh",
+          "amount": 990000,
+          "addresses": [
+            "t1WXnGgTYbCXq4MZmBSBWMDTuSSaEfJSj2B"
+          ]
+        }
+      ],
+      "option": "892F208537A5165B"
+    }
+  },
+  {
+    "id": "btc-segwit-transfer",
+    "scenarioCode": "098",
+    "label": "Bitcoin segwit-native (P2WPKH) transfer",
+    "family": "bitcoin",
+    "applicableChainIds": [
+      "bip122:000000000019d6689c085ae165831e93/slip44:0",
+      "bip122:000000000933ea01ad0ee984209779ba/slip44:0",
+      "bip122:7497ea1b465eb39f1c8f507bc877078f/slip44:20"
+    ],
+    "note": "Bitcoin segwit-native(P2WPKH, bech32) 송금 — legacy(btc-transfer)와 동일 wire shape, inputs[]/outputs[].txType만 'p2wpkh'로 교체. wm의 signTransactionFromWire는 wire 계약에 별도 addressFormat 파라미터가 없어 inputs[].txType이 유일한 변종 신호다 — 'p2wpkh' → AddressFormat 'segwit-native'로 매핑되어 resolveCurrencyByChainIdAndFormat이 BTC-SEGWIT/DGB-SEGWIT 계열 currency로 dispatch한다(wm src/common/framework/families/bitcoin/wire-address-format.ts:22-35 TXTYPE_TO_ADDRESS_FORMAT). ★applicableChainIds를 legacy(11개 bitcoin-family 체인) 대신 segwit-native currency가 실제 registry에 등록되고 **기기가 실제로 서명 가능한** 3개 체인으로 한정: BTC mainnet/BTC testnet(signet)/DigiByte mainnet (DigiByte testnet은 wm registry에는 DGB-SW-TESTNET으로 존재하나 기기 미지원 — 확인화면·승인·서명까지 진행된 뒤 펌웨어가 witness 직렬화 길이 불일치로 'Tx Generate Fail'을 반환한다. 2026-07-31 제외, 근거는 objectives/.draft/b09-05-dgb-sw-testnet-tx-generate-fail.md) — 나머지 bitcoin-family(Litecoin/Dogecoin/Dash/Zcash/Ravencoin/BitcoinGold/BitcoinCash)는 wm registry에 segwit variant currency 자체가 없어(legacy만 존재) segwit preset 대상에서 제외(wm src/common/assets/coins/families/bitcoin-family.ts: BTC-SEGWIT L299-330/BTC-SW-TESTNET L387-417/DGB-SEGWIT L1390-1425/DGB-SW-TESTNET L1461-1491, segwitFor 필드로 base currency와 연결). segwit-native 변형도 legacy와 동일 m/44' 경로에서 파생(m/84' BIP-84 파생 아님, btc-transfer preset note와 동일 근거) — keyPath는 legacy와 같은 coinType 패턴(BTC=0/1, DGB=20)을 그대로 사용. bech32 주소는 BIP-173 참조 벡터(BTC mainnet/testnet) 및 wm 자체 fixture(DGB mainnet, wm src/common/framework/families/bitcoin/btc-address-validation.test.ts:75)에서 가져왔다. amount 단위 satoshi. 값은 BTC mainnet(slip44:0, m/44'/0') 기준 — 타 체인은 keyPath coinType + 주소 교체 후 송금(BTC testnet/BTC-SW-TESTNET coinType 1, DigiByte coinType 20).",
+    "sourceUrl": "https://github.com/bitcoin/bips/blob/master/bip-0173.mediawiki",
+    "transaction": {
+      "inputs": [
+        {
+          "rawTransaction": "0100000001abcdef0123456789abcdef0123456789abcdef0123456789abcdef0123456789000000006a47304402200000000000000000000000000000000000000000000000000000000000000000022000000000000000000000000000000000000000000000000000000000000000000121020000000000000000000000000000000000000000000000000000000000000000ffffffff0140420f00000000001976a914000000000000000000000000000000000000000088ac00000000",
+          "index": 0,
+          "txType": "p2wpkh",
+          "keyPath": "m/44'/0'/0'/0/0",
+          "sequence": 4294967295
+        }
+      ],
+      "outputs": [
+        {
+          "txType": "p2wpkh",
+          "amount": 990000,
+          "addresses": [
+            "bc1qw508d6qejxtdg4y5r3zarvary0c5xw7kv8f3t4"
           ]
         }
       ]
@@ -304,7 +432,7 @@
     "applicableChainIds": [
       "stellar:pubnet/slip44:148"
     ],
-    "note": "Stellar Operation.payment for native XLM. Edit destination/amount before send. ✅ wm 0.7.14: stellar signTransaction/signMessage/signAuthEntry(Soroban auth entry) slot 모두 등록됨(stellar/index.js) — 더 이상 -32601 아님(이전 노트 stale). 토큰(credit-asset)/Soroban 컨트랙트도 wm 수용. 【2026-07-22 확정】 Stellar 서명 payload 를 이루는 값은 **앱이 전부 제공**한다 — `fee`·`sequenceNumber`·`timeBounds`(+op 파라미터). `sequenceNumber`/`timeBounds` 는 fresh state 라 placeholder 이며 prepare 가 실값으로 치환한다. `timeBounds` 는 서명 payload 에 포함되는데 현재 wm 이 `setTimeout(60*5)` 로 **하드코딩**한다(`stellar/transaction.ts:197`) — 앱 값을 쓰게 하는 것이 자매 objective `m04-01-29` 의 범위다. ⚠️ 현재 이 preset 은 wm noNetwork 게이트(5.3)가 `{xdr}` 봉투만 허용해 **서명 단계에서 -32602 로 거부**된다(실측 2026-07-22). 게이트가 막는 근본 원인은 `sign:207` 의 무조건 `getAccountInfo(sender)` 이며, 앱이 준 값만으로 유효한 트랜잭션이 만들어진다는 것은 온체인으로 확인됐다 (testnet ledger 3741524, hash 0e775a36…).",
+    "note": "Stellar Operation.payment for native XLM. Edit destination/amount before send. ✅ wm 0.7.14: stellar signTransaction/signMessage/signAuthEntry(Soroban auth entry) slot 모두 등록됨(stellar/index.js) — 더 이상 -32601 아님(이전 노트 stale). 토큰(credit-asset)/Soroban 컨트랙트도 wm 수용. 【2026-07-22 확정】 Stellar 서명 payload 를 이루는 값은 **앱이 전부 제공**한다 — `fee`·`sequenceNumber`·`timeBounds`(+op 파라미터). `sequenceNumber`/`timeBounds` 는 fresh state 라 placeholder 이며 prepare 가 실값으로 치환한다. `timeBounds` 는 서명 payload 에 포함되며, wm 이 앱 값을 그대로 반영한다(m04-01-29 — marker 경로가 `readWireTimeBounds` 로 읽는다. 종전의 `setTimeout(60*5)` 하드코딩은 해소됨)다. ⚠️ 현재 이 preset 은 wm noNetwork 게이트(5.3)가 `{xdr}` 봉투만 허용해 **서명 단계에서 -32602 로 거부**된다(실측 2026-07-22). 게이트가 막는 근본 원인은 `sign:207` 의 무조건 `getAccountInfo(sender)` 이며, 앱이 준 값만으로 유효한 트랜잭션이 만들어진다는 것은 온체인으로 확인됐다 (testnet ledger 3741524, hash 0e775a36…).",
     "sourceUrl": "https://stellar.github.io/js-stellar-sdk/Operation.payment.html",
     "transaction": {
       "type": "payment",
@@ -333,7 +461,7 @@
     "applicableChainIds": [
       "stellar:pubnet/slip44:148"
     ],
-    "note": "Stellar issued-asset(trustline token) payment. wm 0.7.20 keystone STELLAR 어댑터(m02-05-53 / DC-2887)가 wire의 asset:{code,issuer}를 extractStellarTokenIdentity → TokenAccount 합성 → signTransaction이 new Asset(code,issuer) 서명(native Asset.native() 아님). chainId는 native stellar(slip44:148)와 동일 — asset은 payload에서 식별됨. amount 단위 = 토큰 최소단위(USDC 7 decimals → 10000000 = 1 USDC). issuer = Circle USDC mainnet(GA5ZSEJYB37JRC5AVCIA5MOP4RHTM335X2KGX3IHOJAPP5RE34K4KZVN). ⚠ 수신처에 USDC trustline 선행 필요(없으면 op_no_trust). registry 미등록 토큰은 keystone -32602(silent native XLM 차단). native XLM은 xlm-payment preset 참조. 【2026-07-22 확정】 Stellar 서명 payload 를 이루는 값은 **앱이 전부 제공**한다 — `fee`·`sequenceNumber`·`timeBounds`(+op 파라미터). `sequenceNumber`/`timeBounds` 는 fresh state 라 placeholder 이며 prepare 가 실값으로 치환한다. `timeBounds` 는 서명 payload 에 포함되는데 현재 wm 이 `setTimeout(60*5)` 로 **하드코딩**한다(`stellar/transaction.ts:197`) — 앱 값을 쓰게 하는 것이 자매 objective `m04-01-29` 의 범위다. ⚠️ 현재 이 preset 은 wm noNetwork 게이트(5.3)가 `{xdr}` 봉투만 허용해 **서명 단계에서 -32602 로 거부**된다(실측 2026-07-22). 게이트가 막는 근본 원인은 `sign:207` 의 무조건 `getAccountInfo(sender)` 이며, 앱이 준 값만으로 유효한 트랜잭션이 만들어진다는 것은 온체인으로 확인됐다 (testnet ledger 3741524, hash 0e775a36…). [2026-07-23] form-D descriptor 로 전환 — decimals:7 제공해 registry/RPC 없이(noNetwork·testnet 포함) 서명. wm buildStellarIssuedAssetPaymentFromDescriptor(m02-05-70), form-E 와 byte-identical.",
+    "note": "Stellar issued-asset(trustline token) payment. wm 0.7.20 keystone STELLAR 어댑터(m02-05-53 / DC-2887)가 wire의 asset:{code,issuer}를 extractStellarTokenIdentity → TokenAccount 합성 → signTransaction이 new Asset(code,issuer) 서명(native Asset.native() 아님). chainId는 native stellar(slip44:148)와 동일 — asset은 payload에서 식별됨. amount 단위 = 토큰 최소단위(USDC 7 decimals → 10000000 = 1 USDC). issuer = Circle USDC mainnet(GA5ZSEJYB37JRC5AVCIA5MOP4RHTM335X2KGX3IHOJAPP5RE34K4KZVN). ⚠ 수신처에 USDC trustline 선행 필요(없으면 op_no_trust). registry 미등록 토큰은 keystone -32602(silent native XLM 차단). native XLM은 xlm-payment preset 참조. 【2026-07-22 확정】 Stellar 서명 payload 를 이루는 값은 **앱이 전부 제공**한다 — `fee`·`sequenceNumber`·`timeBounds`(+op 파라미터). `sequenceNumber`/`timeBounds` 는 fresh state 라 placeholder 이며 prepare 가 실값으로 치환한다. `timeBounds` 는 서명 payload 에 포함되며, wm 이 앱 값을 그대로 반영한다(m04-01-29 — marker 경로가 `readWireTimeBounds` 로 읽는다. 종전의 `setTimeout(60*5)` 하드코딩은 해소됨)다. ⚠️ 현재 이 preset 은 wm noNetwork 게이트(5.3)가 `{xdr}` 봉투만 허용해 **서명 단계에서 -32602 로 거부**된다(실측 2026-07-22). 게이트가 막는 근본 원인은 `sign:207` 의 무조건 `getAccountInfo(sender)` 이며, 앱이 준 값만으로 유효한 트랜잭션이 만들어진다는 것은 온체인으로 확인됐다 (testnet ledger 3741524, hash 0e775a36…). [2026-07-23] form-D descriptor 로 전환 — decimals:7 제공해 registry/RPC 없이(noNetwork·testnet 포함) 서명. wm buildStellarIssuedAssetPaymentFromDescriptor(m02-05-70), form-E 와 byte-identical.",
     "sourceUrl": "https://developers.stellar.org/docs/learn/fundamentals/stellar-data-structures/assets",
     "transaction": {
       "token": {
@@ -880,7 +1008,7 @@
     "applicableChainIds": [
       "stellar:pubnet/slip44:148"
     ],
-    "note": "Soroban 컨트랙트 호출(invokeHostFunction) — dApp signTransaction wire 경로 plumbing 검증용. wm stellar convertTransaction 이 {type:'invokeHostFunction', contractAddress, functionName, args} 를 extra.stellarOpParams 로 carry → signTransaction 이 getAccountInfo(실제 seq) 후 buildInvokeHostFunctionOperation 로 Soroban op 봉투 빌드 → 서명. ★canonical hello-world 예제(hello(to:symbol)) — args 는 scv_symbol 1개. ⚠️ wire 빌더(buildScValFromSummary)는 현재 scv_symbol/scv_address/scv_bytes 3종만 지원 — i128/u64/vec 등은 'unsupported SCVal type' throw. 실제 토큰 transfer/swap(amount:i128)은 이 경로로 아직 미검증(별도 wm 확장 필요). ★contractAddress 는 결정적 placeholder C-strkey(미배포, = StrKey.encodeContract(0x01×32), CRC16 체크섬 유효). ⚠️ buildInvokeHostFunctionOperation 은 args 처리 전에 Address.fromString(contractAddress) 로 먼저 파싱하므로 반드시 체크섬 유효한 C-strkey(또는 G)여야 한다 — 체크섬 깨진 문자열(길이·prefix 만 맞는 가짜)은 'Unsupported address type' throw(2026-07-07 실측: 이전 CV2X… placeholder 가 이 사유로 실패). Stellar 서명은 로컬 envelope 빌드+해시 서명, on-chain fetch 없음, broadcast 안 함(§9 byte-proof) 이라 미배포 컨트랙트라도 strkey 만 유효하면 서명 검증 가능. 실제 dApp 은 배포된 컨트랙트 C-address 를 넣는다. keyPath 는 chains.json 에서 자동(m/44'/148'/0'). ⚠️ mainnet(slip44:148) 이지만 broadcast 안 하므로 asset risk 0. 검증: /verify-wire-sign STELLAR (invokeHostFunction op, ed25519=device 계정 키). 【2026-07-22 확정】 Stellar 서명 payload 를 이루는 값은 **앱이 전부 제공**한다 — `fee`·`sequenceNumber`·`timeBounds`(+op 파라미터). `sequenceNumber`/`timeBounds` 는 fresh state 라 placeholder 이며 prepare 가 실값으로 치환한다. `timeBounds` 는 서명 payload 에 포함되는데 현재 wm 이 `setTimeout(60*5)` 로 **하드코딩**한다(`stellar/transaction.ts:197`) — 앱 값을 쓰게 하는 것이 자매 objective `m04-01-29` 의 범위다. ⚠️ 현재 이 preset 은 wm noNetwork 게이트(5.3)가 `{xdr}` 봉투만 허용해 **서명 단계에서 -32602 로 거부**된다(실측 2026-07-22). 게이트가 막는 근본 원인은 `sign:207` 의 무조건 `getAccountInfo(sender)` 이며, 앱이 준 값만으로 유효한 트랜잭션이 만들어진다는 것은 온체인으로 확인됐다 (testnet ledger 3741524, hash 0e775a36…).",
+    "note": "Soroban 컨트랙트 호출(invokeHostFunction) — dApp signTransaction wire 경로 plumbing 검증용. wm stellar convertTransaction 이 {type:'invokeHostFunction', contractAddress, functionName, args} 를 extra.stellarOpParams 로 carry → signTransaction 이 getAccountInfo(실제 seq) 후 buildInvokeHostFunctionOperation 로 Soroban op 봉투 빌드 → 서명. ★canonical hello-world 예제(hello(to:symbol)) — args 는 scv_symbol 1개. ⚠️ wire 빌더(buildScValFromSummary)는 현재 scv_symbol/scv_address/scv_bytes 3종만 지원 — i128/u64/vec 등은 'unsupported SCVal type' throw. 실제 토큰 transfer/swap(amount:i128)은 이 경로로 아직 미검증(별도 wm 확장 필요). ★contractAddress 는 결정적 placeholder C-strkey(미배포, = StrKey.encodeContract(0x01×32), CRC16 체크섬 유효). ⚠️ buildInvokeHostFunctionOperation 은 args 처리 전에 Address.fromString(contractAddress) 로 먼저 파싱하므로 반드시 체크섬 유효한 C-strkey(또는 G)여야 한다 — 체크섬 깨진 문자열(길이·prefix 만 맞는 가짜)은 'Unsupported address type' throw(2026-07-07 실측: 이전 CV2X… placeholder 가 이 사유로 실패). Stellar 서명은 로컬 envelope 빌드+해시 서명, on-chain fetch 없음, broadcast 안 함(§9 byte-proof) 이라 미배포 컨트랙트라도 strkey 만 유효하면 서명 검증 가능. 실제 dApp 은 배포된 컨트랙트 C-address 를 넣는다. keyPath 는 chains.json 에서 자동(m/44'/148'/0'). ⚠️ mainnet(slip44:148) 이지만 broadcast 안 하므로 asset risk 0. 검증: /verify-wire-sign STELLAR (invokeHostFunction op, ed25519=device 계정 키). 【2026-07-22 확정】 Stellar 서명 payload 를 이루는 값은 **앱이 전부 제공**한다 — `fee`·`sequenceNumber`·`timeBounds`(+op 파라미터). `sequenceNumber`/`timeBounds` 는 fresh state 라 placeholder 이며 prepare 가 실값으로 치환한다. `timeBounds` 는 서명 payload 에 포함되며, wm 이 앱 값을 그대로 반영한다(m04-01-29 — marker 경로가 `readWireTimeBounds` 로 읽는다. 종전의 `setTimeout(60*5)` 하드코딩은 해소됨)다. ⚠️ 현재 이 preset 은 wm noNetwork 게이트(5.3)가 `{xdr}` 봉투만 허용해 **서명 단계에서 -32602 로 거부**된다(실측 2026-07-22). 게이트가 막는 근본 원인은 `sign:207` 의 무조건 `getAccountInfo(sender)` 이며, 앱이 준 값만으로 유효한 트랜잭션이 만들어진다는 것은 온체인으로 확인됐다 (testnet ledger 3741524, hash 0e775a36…).",
     "sourceUrl": "https://developers.stellar.org/docs/build/smart-contracts/getting-started/hello-world",
     "transaction": {
       "type": "invokeHostFunction",
@@ -908,7 +1036,7 @@
     "applicableChainIds": [
       "stellar:pubnet/slip44:148"
     ],
-    "note": "Soroban 컨트랙트 호출(invokeHostFunction) — scv_address arg 경로 검증용. set_admin(new_admin:address) 은 흔한 admin 패턴 — args 는 scv_address 1개(Address.fromString 은 G-account/C-contract 둘 다 수용). 나머지 동작은 stellar-soroban-invoke-hello 노트와 동일(convertTransaction → stellarOpParams carry → buildInvokeHostFunctionOperation, 로컬 서명, broadcast 없음). ⚠️ wire 빌더는 scv_symbol/scv_address/scv_bytes 3종만 지원. ★args.value 를 본인 디바이스 Stellar 계정(G...) 으로 교체해 self 대상으로 두면 의미 명확. contractAddress placeholder(미배포, = StrKey.encodeContract(0x01×32), CRC16 체크섬 유효) — buildInvokeHostFunctionOperation 이 args 전에 Address.fromString(contractAddress) 로 먼저 파싱하므로 체크섬 유효한 C-strkey 필수(가짜 문자열은 'Unsupported address type' throw). §9 byte-proof 라 서명 검증엔 무방. ⚠️ mainnet(slip44:148), broadcast 안 함. 검증: /verify-wire-sign STELLAR (invokeHostFunction, ed25519=device). 【2026-07-22 확정】 Stellar 서명 payload 를 이루는 값은 **앱이 전부 제공**한다 — `fee`·`sequenceNumber`·`timeBounds`(+op 파라미터). `sequenceNumber`/`timeBounds` 는 fresh state 라 placeholder 이며 prepare 가 실값으로 치환한다. `timeBounds` 는 서명 payload 에 포함되는데 현재 wm 이 `setTimeout(60*5)` 로 **하드코딩**한다(`stellar/transaction.ts:197`) — 앱 값을 쓰게 하는 것이 자매 objective `m04-01-29` 의 범위다. ⚠️ 현재 이 preset 은 wm noNetwork 게이트(5.3)가 `{xdr}` 봉투만 허용해 **서명 단계에서 -32602 로 거부**된다(실측 2026-07-22). 게이트가 막는 근본 원인은 `sign:207` 의 무조건 `getAccountInfo(sender)` 이며, 앱이 준 값만으로 유효한 트랜잭션이 만들어진다는 것은 온체인으로 확인됐다 (testnet ledger 3741524, hash 0e775a36…).",
+    "note": "Soroban 컨트랙트 호출(invokeHostFunction) — scv_address arg 경로 검증용. set_admin(new_admin:address) 은 흔한 admin 패턴 — args 는 scv_address 1개(Address.fromString 은 G-account/C-contract 둘 다 수용). 나머지 동작은 stellar-soroban-invoke-hello 노트와 동일(convertTransaction → stellarOpParams carry → buildInvokeHostFunctionOperation, 로컬 서명, broadcast 없음). ⚠️ wire 빌더는 scv_symbol/scv_address/scv_bytes 3종만 지원. ★args.value 를 본인 디바이스 Stellar 계정(G...) 으로 교체해 self 대상으로 두면 의미 명확. contractAddress placeholder(미배포, = StrKey.encodeContract(0x01×32), CRC16 체크섬 유효) — buildInvokeHostFunctionOperation 이 args 전에 Address.fromString(contractAddress) 로 먼저 파싱하므로 체크섬 유효한 C-strkey 필수(가짜 문자열은 'Unsupported address type' throw). §9 byte-proof 라 서명 검증엔 무방. ⚠️ mainnet(slip44:148), broadcast 안 함. 검증: /verify-wire-sign STELLAR (invokeHostFunction, ed25519=device). 【2026-07-22 확정】 Stellar 서명 payload 를 이루는 값은 **앱이 전부 제공**한다 — `fee`·`sequenceNumber`·`timeBounds`(+op 파라미터). `sequenceNumber`/`timeBounds` 는 fresh state 라 placeholder 이며 prepare 가 실값으로 치환한다. `timeBounds` 는 서명 payload 에 포함되며, wm 이 앱 값을 그대로 반영한다(m04-01-29 — marker 경로가 `readWireTimeBounds` 로 읽는다. 종전의 `setTimeout(60*5)` 하드코딩은 해소됨)다. ⚠️ 현재 이 preset 은 wm noNetwork 게이트(5.3)가 `{xdr}` 봉투만 허용해 **서명 단계에서 -32602 로 거부**된다(실측 2026-07-22). 게이트가 막는 근본 원인은 `sign:207` 의 무조건 `getAccountInfo(sender)` 이며, 앱이 준 값만으로 유효한 트랜잭션이 만들어진다는 것은 온체인으로 확인됐다 (testnet ledger 3741524, hash 0e775a36…).",
     "sourceUrl": "https://developers.stellar.org/docs/build/smart-contracts/example-contracts/deployer",
     "transaction": {
       "type": "invokeHostFunction",
@@ -976,12 +1104,12 @@
     "applicableChainIds": [
       "constellation:mainnet/slip44:1137"
     ],
-    "note": "metagraph L0 토큰(DOR) 전송 — form-D descriptor (m02-05-60). ★native DAG 와 wire payload 가 byte-identical(source/destination/amount/fee) 이라 metagraphId 를 transaction.token.contract 로 out-of-band carrier. wm 이 token.contract='DAG0Cyy…'(metagraphId) 를 tier-1 registry(metagraph-token.json, DOR 등록)로 해석 → metagraph TokenAccount 합성 → constellation/transaction.ts:108 metagraph 분기 → getMetagraphApi 가 token.extra.l0Url/l1Url/feesCurrencyId 로 L0/L1 endpoint 서명. native DAG(getDag4Network) 아님. ★추출기·builder·어댑터 불필요(descriptor→resolve→account-driven). ★DOR 는 등록 토큰(tier-1) — 미등록 metagraph 는 endpoint(extra) 부재로 서명 불가(-32602), 등록 토큰만 지원. convertTransaction 은 token 무시하고 top-level source/destination/amount 서명. amount 단위 DATUM(1 DOR=1e8, decimals 8) → 100000000=1 DOR. ⚠️ amount=1(2026-07-24 변경, DATUM 최소단위) — 테스트 계정의 실 DOR 잔고가 0이라(L0 currency balance API 실측: {l0Url}/currency/{address}/balance 응답 balance=0) self-send 라도 1 DOR(100000000) 은 잔고 부족으로 거부될 것. Constellation 은 HAVAH HSP-20 과 달리 amount=0 전송을 허용하지 않으므로(amount>0 강제) 0 대신 최소단위 1 DATUM(=0.00000001 DOR) 로 낮춰 broadcast 경로 검증(서명/metagraph 라우팅) 목적을 충족한다. 실 잔고 0 이라 온체인 최종 수락은 외부 제약으로 여전히 보류. ⚠️ '🔑 Resolve sender from device' 로 source(+placeholder destination) 를 디바이스 DAG 주소로 치환(self-send). DAG 는 체크섬 검증 있어 zero-placeholder 는 표시 깨짐 — 반드시 resolve-sender 클릭 또는 유효 DAG 입력. ⚠️ SDK wm refresh(m02-05-60 회귀 반영)+connector 재빌드. ⚠️ mainnet. 검증: /verify-wire-sign CONSTELLATION (metagraph token=DOR, native DAG 아님; secp256k1 signer=device).",
+    "note": "metagraph L0 토큰(DOR) 전송 — form-D descriptor (m02-05-60). ★native DAG 와 wire payload 가 byte-identical(source/destination/amount/fee) 이라 metagraphId 를 transaction.token.contract 로 out-of-band carrier. wm 이 token.contract='DAG0Cyy…'(metagraphId) 를 tier-1 registry(metagraph-token.json, DOR 등록)로 해석 → metagraph TokenAccount 합성 → constellation/transaction.ts:108 metagraph 분기 → getMetagraphApi 가 token.extra.l0Url/l1Url/feesCurrencyId 로 L0/L1 endpoint 서명. native DAG(getDag4Network) 아님. ★추출기·builder·어댑터 불필요(descriptor→resolve→account-driven). ★DOR 는 등록 토큰(tier-1) — 미등록 metagraph 는 endpoint(extra) 부재로 서명 불가(-32602), 등록 토큰만 지원. convertTransaction 은 token 무시하고 top-level source/destination/amount 서명. amount 단위 DATUM(1 DOR=1e8, decimals 8) → 100000000=1 DOR. ⚠️ amount=1(2026-07-24 변경, DATUM 최소단위) — 테스트 계정의 실 DOR 잔고가 0이라(L0 currency balance API 실측: {l0Url}/currency/{address}/balance 응답 balance=0) self-send 라도 1 DOR(100000000) 은 잔고 부족으로 거부될 것. Constellation 은 HAVAH HSP-20 과 달리 amount=0 전송을 허용하지 않으므로(amount>0 강제) 0 대신 최소단위 1 DATUM(=0.00000001 DOR) 로 낮춰 broadcast 경로 검증(서명/metagraph 라우팅) 목적을 충족한다. 실 잔고 0 이라 온체인 최종 수락은 외부 제약으로 여전히 보류. 【2026-07-28 정정】 이전엔 source/destination이 43자 zero-placeholder('DAG000...0000'/'DAG000...0001')였는데, DAG는 체크섬 검증이 있어 이 값 그대로 기기에 전달되면(자동화 e2e 하네스는 '🔑 Resolve sender from device' UI 버튼을 안 눌러 치환이 안 됨) 화면이 '043DAG0000...'처럼 깨져 렌더됐다(실측 — 정상 DAG 주소는 40자인데 placeholder가 43자였던 게 근본 원인). source/destination을 43자 대신 정상 길이(40자)의 zero-style placeholder로 교체(실계정 주소 아님 — 다른 preset들과 동일한 convention 유지, 자릿수만 수정). 체크섬은 여전히 zero라 실측 검증 필요(길이만 고쳤을 때 화면이 정상 렌더되는지는 별도 확인). 실계정으로 테스트하고 싶으면 '🔑 Resolve sender from device'로 치환 가능. ⚠️ SDK wm refresh(m02-05-60 회귀 반영)+connector 재빌드. ⚠️ mainnet. 검증: /verify-wire-sign CONSTELLATION (metagraph token=DOR, native DAG 아님; secp256k1 signer=device).",
     "sourceUrl": "https://docs.constellationnetwork.io/",
     "transaction": {
       "type": "transfer",
-      "source": "DAG0000000000000000000000000000000000000000",
-      "destination": "DAG0000000000000000000000000000000000000001",
+      "source": "DAG0000000000000000000000000000000000000",
+      "destination": "DAG0000000000000000000000000000000000001",
       "amount": "1",
       "fee": "0",
       "token": {

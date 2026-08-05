@@ -34,6 +34,22 @@ export interface ResponseEnvelope<T = unknown> {
 export type TransportState = 'connected' | 'disconnected'
 
 /**
+ * (m09-04-27) bridge가 진행 중인 요청에 대해 push하는 서명 진행률 신호.
+ * `role`은 opaque — connector는 값의 의미를 해석/분기하지 않는다
+ * (connector-chain-addition-isolation 룰).
+ *
+ * 모든 필드 readonly — 런타임에서 `Object.freeze`로 실제 방출되는 인스턴스도 불변이다
+ * (mutation-isolation 룰, PopupTransport.ts 참조). 타입 레벨에서 미리 신호해 strict-mode
+ * dApp의 in-place 수정 시도를 컴파일 타임에 잡는다.
+ */
+export interface SignProgressInfo {
+  readonly requestId: string
+  readonly step: number
+  readonly total: number
+  readonly role?: string // opaque — connector는 값의 의미를 해석하지 않는다
+}
+
+/**
  * 메시지 트랜스포트 인터페이스
  * 모든 구현체는 이 인터페이스를 준수한다.
  */
@@ -48,9 +64,13 @@ export interface MessageTransport {
 
   /** 트랜스포트 상태 변경 이벤트 구독 */
   on(event: 'state', handler: (state: TransportState) => void): void
+  /** (m09-04-27) 서명 진행률 이벤트 구독 */
+  on(event: 'signProgress', handler: (info: SignProgressInfo) => void): void
 
   /** 트랜스포트 상태 변경 이벤트 구독 해제 */
   off(event: 'state', handler: (state: TransportState) => void): void
+  /** (m09-04-27) 서명 진행률 이벤트 구독 해제 */
+  off(event: 'signProgress', handler: (info: SignProgressInfo) => void): void
 
   /** 트랜스포트 종료 (popup 닫기 등) */
   close(): Promise<void>

@@ -75,7 +75,7 @@
     "applicableChainIds": [
       "conflux:cfx/slip44:503"
     ],
-    "note": "【2026-07-26 실기기 검증 완료】 가설 확인됨 — Conflux 는 registerWireDescriptorBuilder 에 미등록(form-D 없음)이지만 raw data 필드는 conflux/transaction.ts TypeAccount 경로에서 검증/재해석 없이 그대로 RLP 인코딩되어 서명 성공(SYSTEM HALT 없음). EVM/Kaia form-E graceful fallback 과 동일 계열로 실증. 서명값 RLP 디코드 확인 결과 to=WCFX 컨트랙트(0x8d7df9316faa0586e175b5e6d03c6bda76e3d950)·data=calldata verbatim 정확히 포함(misdirection 없음). ⚠️단, 기기 화면에는 외부 필드만 표시됨(to=컨트랙트 주소, amount=0.0 CFX, fee) — data 안의 실제 수신자·토큰 수량은 전혀 안 보임. 서명 안전성 문제는 아니지만 display-only 갭(wm objective m04-01-15 가 다룸). docs/index.html core-concepts + chain-conflux 페이지에 이 결과 반영 완료. amount=0 이므로 브로드캐스트해도 실 토큰 이동 없음. recipient 는 placeholder(0x1111...1111).",
+    "note": "【INTENDED_REJECT — m04-01-15(DC-3467) 어댑터 머지 후 동작 변경】 미등록 CRC-20 form-E(raw calldata, descriptor 없음). m04-01-15 CONFLUX wire 어댑터가 form-E 를 intercept 하여 wireTokenResolver 3-tier 해석을 강제한다: tier-1(registry) miss — WCFX(0x8d7df9316faa0586e175b5e6d03c6bda76e3d950)는 cfx-crc20.json 미등록, tier-2(RPC metadata hook) 불가 — CONFLUX 어댑터는 tokenMetadataHook 미보유(VECHAIN/NEAR 만 보유)라 online 이어도 조회 불가, tier-3(descriptor) 부재 → -32602 fail-closed('cannot resolve token', silent native 오서명 차단). ★어댑터 머지 전(2026-07-26 실기기 검증)엔 opaque pass-through 로 signed 되었으나 기기에 실수신자·토큰 수량이 안 보이는 display-only 갭이 있었고, 이제 그 갭을 fail-closed 로 닫았다. 표시가 되려면 form-D descriptor 를 제공해야 한다 → 자매 preset cfx-crc20-transfer-unregistered-formd(097) 참조(descriptor decimals 로 tier-3 합성 → signed). 등록 토큰 form-E 서명은 cfx-crc20-transfer(096, FansCoin). recipient 는 placeholder(0x1111...1111) — 이 preset 은 서명되지 않으므로 값은 무의미.",
     "sourceUrl": "https://www.confluxscan.org/address/cfx:acg158kvr8zanb1bs048ryb6rtrhr283ma70vz70tx",
     "transaction": {
       "from": "cfx:acf2rcsh8payyxpg6xj7b0ztswwh81ute60tsw35j7",
@@ -88,6 +88,56 @@
       "epochHeight": "0x6a1b2c",
       "storageLimit": "0x0",
       "data": "0xa9059cbb00000000000000000000000011111111111111111111111111111111111111110000000000000000000000000000000000000000000000000000000000000000"
+    }
+  },
+  {
+    "id": "cfx-crc20-transfer",
+    "scenarioCode": "096",
+    "label": "Conflux CRC-20 transfer (registered token, form-E raw calldata)",
+    "family": "conflux",
+    "applicableChainIds": [
+      "conflux:cfx/slip44:503"
+    ],
+    "note": "등록 CRC-20 토큰 전송 — form-E raw calldata. to=FansCoin 컨트랙트(cfx:achc8nxj7r451c223m18w2dwjnmhkd6rxawrvkvsy2, cfx-crc20.json 등록: symbol FC, decimals 18), value=0x0, data=transfer(address,uint256) calldata. m04-01-15(DC-3467) CONFLUX wire 어댑터가 form-E 를 intercept → extractConfluxTokenIdentity 로 {contract, recipient, amount} 추출 → tier-1(registry) hit → TokenAccount 합성 → convertConfluxTransaction remap 으로 recipient/amount 를 calldata 디코드값(실수신자/실수량)으로 재기입. ★어댑터 전 opaque pass-through(095) 와 달리 기기에 FC 심볼·수량·실수신자가 표시된다(display-only 갭 해소). data 의 recipient(selector 다음 32B word 하위 20B = 0x1cad0b19bb29d4674531d6f115237e16afce377c)·amount(1e18 = 1 FC)는 표시 데모용 예시이며, 실기기 self-send 검증 시 recipient 를 본인 CONFLUX 주소(convertConfluxAddressToHex)로 교체한다(asset risk 0). 미등록 form-E 는 cfx-crc20-transfer-unregistered(095, INTENDED_REJECT), 미등록 form-D 는 cfx-crc20-transfer-unregistered-formd(097) 참조.",
+    "sourceUrl": "https://www.confluxscan.org/address/cfx:achc8nxj7r451c223m18w2dwjnmhkd6rxawrvkvsy2",
+    "transaction": {
+      "from": "cfx:acf2rcsh8payyxpg6xj7b0ztswwh81ute60tsw35j7",
+      "to": "cfx:achc8nxj7r451c223m18w2dwjnmhkd6rxawrvkvsy2",
+      "value": "0x0",
+      "gas": "0x186a0",
+      "gasPrice": "0x3b9aca00",
+      "nonce": "0x0",
+      "chainId": "0x405",
+      "epochHeight": "0x6a1b2c",
+      "storageLimit": "0x0",
+      "data": "0xa9059cbb0000000000000000000000001cad0b19bb29d4674531d6f115237e16afce377c0000000000000000000000000000000000000000000000000de0b6b3a7640000"
+    }
+  },
+  {
+    "id": "cfx-crc20-transfer-unregistered-formd",
+    "scenarioCode": "097",
+    "label": "Conflux CRC-20 transfer — form-D descriptor (unregistered token)",
+    "family": "conflux",
+    "applicableChainIds": [
+      "conflux:cfx/slip44:503"
+    ],
+    "note": "미등록(커스텀) CRC-20 전송 — form-D descriptor. wm m04-01-15(DC-3467) buildCrc20TransferFromDescriptor 가 transaction.token={contract,to,amount} 를 CRC-20 transfer calldata(a9059cbb + pad32(to) + pad32(amount)) 로 인코딩해 form-E CONFLUX EVM tx({to:contract, value:0x0, data})를 합성한다(봉투 필드 chainId/epochHeight/gas/gasPrice/storageLimit/nonce 는 top-level 에서 spread 보존). ★form-E(cfx-crc20-transfer)와 달리 cfx-crc20.json 미등록이라도 서명·표시된다 — descriptor 의 decimals 가 wm 3-tier resolver 의 tier-3 로 쓰이기 때문(CONFLUX 는 tokenMetadataHook 미보유라 tier-2 RPC 경로가 없어 descriptor 가 유일한 미등록 표시 수단). contract=WCFX(cfx:acg158kvr8zanb1bs048ryb6rtrhr283ma70vz70tx = 0x8d7df9316faa0586e175b5e6d03c6bda76e3d950)는 Conflux mainnet 실재 Wrapped CFX + cfx-crc20.json 미등록 — 실재 토큰을 쓰는 이유는 'wm 미등록' 과 '네트워크 미등록' 이 겹쳐 검증 전제가 무너지지 않도록(TOKEN-REGISTRY-CONTRACT §0, VeChain/TRON descriptor preset 과 동일 원칙). ⚠️ symbol/decimals(WCFX/18)는 앱이 assert 하는 표시값(descriptor 가 tier-3 SoT). ⚠️ token.to(0x1cad0b19bb29d4674531d6f115237e16afce377c)는 예시 수신자 — CONFLUX 하네스는 self-send 패치를 하지 않으므로(Pattern B passthrough) 실기기 self-send 검증 시 본인 주소로 교체한다. amount=1e18(1 WCFX, base units). 검증: /verify-wire-sign 계열 — assetKind=token, native CFX 아님.",
+    "sourceUrl": "https://www.confluxscan.org/address/cfx:acg158kvr8zanb1bs048ryb6rtrhr283ma70vz70tx",
+    "transaction": {
+      "from": "cfx:acf2rcsh8payyxpg6xj7b0ztswwh81ute60tsw35j7",
+      "gas": "0x186a0",
+      "gasPrice": "0x3b9aca00",
+      "nonce": "0x0",
+      "chainId": "0x405",
+      "epochHeight": "0x6a1b2c",
+      "storageLimit": "0x0",
+      "token": {
+        "contract": "cfx:acg158kvr8zanb1bs048ryb6rtrhr283ma70vz70tx",
+        "to": "0x1cad0b19bb29d4674531d6f115237e16afce377c",
+        "amount": "1000000000000000000",
+        "decimals": 18,
+        "symbol": "WCFX"
+      }
     }
   },
   {

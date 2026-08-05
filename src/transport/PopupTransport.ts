@@ -3,6 +3,7 @@ import {
   MessageEnvelope,
   ResponseEnvelope,
   TransportState,
+  SignProgressInfo,
 } from './MessageTransport'
 import { ProviderError } from '../error/ProviderError'
 import { ErrorCode } from '../error/ErrorCode'
@@ -101,6 +102,11 @@ export class PopupTransport implements MessageTransport {
    */
   private pendingTransport: 'hid' | 'ble' | undefined = undefined
   private stateHandlers: Set<(state: TransportState) => void> = new Set()
+  /**
+   * (m09-04-27) `_signProgress` 중간 신호 구독자. stateHandlers와 동일한 Set 패턴.
+   * state와 달리 transport 로컬 상태가 아니라 bridge가 in-flight 요청에 대해 push하는 이벤트다.
+   */
+  private signProgressHandlers: Set<(info: SignProgressInfo) => void> = new Set()
   private messageListener: ((event: MessageEvent) => void) | null = null
   private closePollingInterval: ReturnType<typeof setInterval> | null = null
   private currentState: TransportState = 'disconnected'
@@ -211,14 +217,24 @@ export class PopupTransport implements MessageTransport {
     })
   }
 
-  on (event: 'state', handler: (state: TransportState) => void): void {
-    if (event !== 'state') return
-    this.stateHandlers.add(handler)
+  on (event: 'state', handler: (state: TransportState) => void): void
+  on (event: 'signProgress', handler: (info: SignProgressInfo) => void): void
+  on (
+    event: 'state' | 'signProgress',
+    handler: ((state: TransportState) => void) | ((info: SignProgressInfo) => void),
+  ): void {
+    if (event === 'state') { this.stateHandlers.add(handler as (state: TransportState) => void); return }
+    if (event === 'signProgress') { this.signProgressHandlers.add(handler as (info: SignProgressInfo) => void); return }
   }
 
-  off (event: 'state', handler: (state: TransportState) => void): void {
-    if (event !== 'state') return
-    this.stateHandlers.delete(handler)
+  off (event: 'state', handler: (state: TransportState) => void): void
+  off (event: 'signProgress', handler: (info: SignProgressInfo) => void): void
+  off (
+    event: 'state' | 'signProgress',
+    handler: ((state: TransportState) => void) | ((info: SignProgressInfo) => void),
+  ): void {
+    if (event === 'state') { this.stateHandlers.delete(handler as (state: TransportState) => void); return }
+    if (event === 'signProgress') { this.signProgressHandlers.delete(handler as (info: SignProgressInfo) => void); return }
   }
 
   /**
@@ -281,8 +297,13 @@ export class PopupTransport implements MessageTransport {
     // 5. state → disconnected
     this.setState('disconnected')
 
-    // 6. handlers 정리
-    this.stateHandlers.clear()
+    // 6. (크로스 리뷰 C1로 제거됨, m09-04-27) state/signProgressHandlers는 **여기서 비우지 않는다**.
+    //    close()는 두 가지 경로에서 호출된다: (a) 인스턴스를 통째로 버리는 resetSingleton() 경로
+    //    (b) 같은 인스턴스에서 재오픈을 전제로 한 내부 self-close(팝업 X로 닫기/handshake timeout/
+    //    version mismatch 등, :442,477,495,511,556). singleton.ts의 리스너 재등록 루프
+    //    (`ensureSingleton`)는 `_transport === null`일 때만 도는데, (b) 경로는 `_transport`를
+    //    null로 만들지 않으므로 여기서 Set을 비우면 재등록 기회 없이 리스너가 영구히 사라진다.
+    //    Set은 인스턴스 스코프 상태이므로 인스턴스가 실제로 버려지는 (a) 시점에 GC로 자연 소멸한다.
 
     // 7. handshake state 리셋 — 재오픈 시 새 handshake (m02-02)
     this.handshakePromise = null
@@ -335,7 +356,8 @@ export class PopupTransport implements MessageTransport {
       if (event.origin !== this.origin) return
 
       const data = event.data
-      if (!data || typeof data !== 'object') return
+      // boundary-validation: array는 typeof 'object'를 통과하므로 명시적으로 배제
+      if (!data || typeof data !== 'object' || Array.isArray(data)) return
 
       // m07-02: _ready envelope 분기 (id/method가 부재한 신호 메시지)
       if ((data as { type?: unknown }).type === '_ready') {
@@ -348,6 +370,43 @@ export class PopupTransport implements MessageTransport {
           r()
         }
         return
+      }
+
+      // (m09-04-27) `_signProgress` 중간 신호 분기 — 반드시 id-매칭 응답 분기보다 **먼저** 걸려야
+      // 진행률 신호가 최종 응답으로 오해석되지 않는다(RECV-05 회귀 가드).
+      if ((data as { type?: unknown }).type === '_signProgress') {
+        const id = (data as { id?: unknown }).id
+        if (typeof id !== 'string') return
+        // boundary-validation: `_handshake_*`는 내부 기계 요청 id — dApp progress 콜백에 노출 금지
+        if (id.startsWith('_handshake_')) return
+        // boundary-validation: 이미 resolve/timeout된 요청의 stale progress는 무시
+        if (!this.pending.has(id)) return
+        const step = (data as { step?: unknown }).step
+        const total = (data as { total?: unknown }).total
+        // boundary-validation: typeof만으로는 NaN/Infinity/0/음수/소수/step>total을 통과시킨다.
+        // step/total은 "1부터 시작하는 진행 순번/총 횟수" 계약이므로 typeof + 정수 + 범위까지 검증한다.
+        if (
+          typeof step !== 'number' ||
+          typeof total !== 'number' ||
+          !Number.isInteger(step) ||
+          !Number.isInteger(total) ||
+          step < 1 ||
+          total < 1 ||
+          step > total
+        )
+          return
+        const roleRaw = (data as { role?: unknown }).role
+        const role = typeof roleRaw === 'string' ? roleRaw : undefined
+        // mutation-isolation: 여러 리스너가 같은 info를 공유하므로 in-place 수정으로부터 격리
+        const info: SignProgressInfo = Object.freeze({ requestId: id, step, total, role })
+        for (const h of this.signProgressHandlers) {
+          try {
+            h(info)
+          } catch {
+            // 리스너 에러가 메시지 루프를 죽이지 않도록 격리 (setState의 handler notify와 동일 원칙)
+          }
+        }
+        return // 최종 응답이 아니므로 pending 삭제/resolve 하지 않는다
       }
 
       // boundary-validation: ResponseEnvelope shape 검증

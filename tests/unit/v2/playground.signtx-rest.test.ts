@@ -336,6 +336,8 @@ it('T-U-REST-POLKADOT-01: polkadot 형제망 preset method/args/SS58/단일-체�
     // dead chain-specific 필드 생략 (sidechain에 mainnet identity auto-fill 방지)
     expect(tx).not.toHaveProperty('genesisHash')
     expect(tx).not.toHaveProperty('specVersion')
+    // (크로스 리뷰: 같은 카테고리의 network-identity 필드인데 열거 누락으로 남아있던 field)
+    expect(tx).not.toHaveProperty('transactionVersion')
   })
 })
 
@@ -489,20 +491,31 @@ it('T-BLOB-SHAPE-01(rest, polkadot): dot-scalehex-unsigned-passthrough — extra
   expect(tx).toHaveProperty('tip')
 })
 
-// 크로스리뷰(Codex) 발견 회귀 가드: args[0](display용 SS58)와 extra.scaleHex(authoritative,
-// signing 대상) 내부의 AccountId32가 byte-identical해야 한다 — 둘이 다르면 dApp 개발자가
-// "표시된 수신자"와 "실제 서명되는 수신자"가 다른 예제를 참고하게 되는 sign/display mismatch.
-it('T-BLOB-SHAPE-01(rest, polkadot): args[0] SS58 pubkey == scaleHex 내 AccountId32 (display/authoritative 일치)', () => {
+// 크로스리뷰(Codex) 발견 회귀 가드: scaleHex(authoritative, signing 대상) 내부의 AccountId32가
+// 문서화된 self-send 레퍼런스 주소(dot-transfer와 동일 계정)와 byte-identical해야 한다 — 다르면
+// note가 서술하는 "누구에게 서명하는가"와 실제 서명 바이트가 어긋나는 display/authoritative mismatch.
+//
+// (2026-07-22, 커밋 02bd6fa 이후 정정) 이 preset(Form A/blob)은 `method`/`args`를 두지 않는다 —
+// blob이 call을 통째로 담으므로 args를 병기하면 같은 값의 이중 표현이 되고, 그 순간 drift가 난다
+// (실측: 하네스가 blob의 dest만 치환하고 args[0]을 남겨 표시-서명 불일치가 발생한 전례, note 참조).
+// 따라서 이 테스트는 더 이상 preset 자신의 args[0]과 비교하지 않고, dot-transfer(Form B, args를
+// 유지하는 decoded preset)가 문서화한 동일 self-send 주소를 레퍼런스로 삼는다 — 원래 가드의 취지
+// ("표시되는 주소 == 실제 서명되는 주소")는 그대로 유지하면서 이중 표현 재도입은 피한다.
+it('T-BLOB-SHAPE-01(rest, polkadot): scaleHex 내 AccountId32 == 문서화된 self-send 레퍼런스 주소 (display/authoritative 일치)', () => {
   const p = restById('dot-scalehex-unsigned-passthrough')!
   const tx = p.transaction
-  const displayPubkey = decodeSs58(tx.args[0]).pubkey
+  expect(tx).not.toHaveProperty('args')
+  expect(tx).not.toHaveProperty('method')
+
+  const dotRef = SAMPLE_REST_PRESETS.find((x: any) => x.id === 'dot-transfer')
+  const referencePubkey = decodeSs58(dotRef.transaction.args[0]).pubkey
 
   // scaleHex = 0x + callIndex(2B) + MultiAddress tag(1B) + AccountId32(32B) + Compact<Balance>
   const hex = (tx.extra.scaleHex as string).slice(2)
   const bytes = Buffer.from(hex, 'hex')
   const accountId32 = bytes.subarray(3, 35)
 
-  expect(bytesEq(displayPubkey, new Uint8Array(accountId32))).toBe(true)
+  expect(bytesEq(referencePubkey, new Uint8Array(accountId32))).toBe(true)
 })
 
 // ─────────────────────────────────────────────────────────────────────────────

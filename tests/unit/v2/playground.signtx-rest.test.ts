@@ -333,11 +333,16 @@ it('T-U-REST-POLKADOT-01: polkadot 형제망 preset method/args/SS58/단일-체�
     expect(bytesEq(ss58.pubkey, dotPubkey)).toBe(true)
     // args[1] = Planck 금액 문자열 (decimals 18 → 1e18)
     expect(tx.args[1]).toBe('1000000000000000000')
-    // dead chain-specific 필드 생략 (sidechain에 mainnet identity auto-fill 방지)
-    expect(tx).not.toHaveProperty('genesisHash')
-    expect(tx).not.toHaveProperty('specVersion')
-    // (크로스 리뷰: 같은 카테고리의 network-identity 필드인데 열거 누락으로 남아있던 field)
-    expect(tx).not.toHaveProperty('transactionVersion')
+    // Form B(2026-07-22 확정): genesisHash/specVersion/transactionVersion은 필드 자체가
+    // 없어야 하는 게 아니라, "실값을 preset에 박아두지 않는다"는 all-zero placeholder로
+    // present 해야 한다(docs/v2-payload-contract.md:449) — prepare/실서명 시 wm이 체인
+    // 조회값으로 치환한다. 1d4201c 가드의 실체는 "다른 체인의 실 genesisHash 값이 섞여
+    // 들어가는 것"을 막는 것이므로, dot-transfer(레퍼런스)와 **동일한 neutral placeholder**
+    // 인지로 검증한다 — 필드 부재를 요구하면 Form B 계약 위반이 되면서도 이 가드 목적은
+    // 달성 못한다(실값이 박혀도 "필드가 있다"는 사실만으로는 안 걸림).
+    expect(tx.genesisHash).toBe(dotRef.transaction.genesisHash)
+    expect(tx.specVersion).toBe(dotRef.transaction.specVersion)
+    expect(tx.transactionVersion).toBe(dotRef.transaction.transactionVersion)
   })
 })
 
@@ -350,6 +355,8 @@ it('T-U-REST-SCOPE-01: 신규 cosmos/polkadot preset payload 식별자 ↔ appli
     'coreum-transfer', 'coreum-testnet-transfer', 'hippo-transfer', 'hippo-testnet-transfer',
     'astar-transfer', 'shibuya-transfer', 'creditcoin-transfer', 'creditcoin-testnet-transfer',
   ]
+  // 레퍼런스 dot-transfer — Form B neutral placeholder(all-zero) 대조용
+  const dotRef = SAMPLE_REST_PRESETS.find((x: any) => x.id === 'dot-transfer')
   newIds.forEach((id) => {
     const p = SAMPLE_REST_PRESETS.find((x: any) => x.id === id)
     expect(p).toBeDefined()
@@ -360,9 +367,12 @@ it('T-U-REST-SCOPE-01: 신규 cosmos/polkadot preset payload 식별자 ↔ appli
       const chainSeg = p.applicableChainIds[0].split('/')[0].split(':')[1]
       expect(p.transaction.chain_id).toBe(chainSeg)
     } else {
-      // polkadot: chain-specific dead 필드를 생략하여 mismatch 벡터 자체를 제거
-      expect(p.transaction).not.toHaveProperty('genesisHash')
-      expect(p.transaction).not.toHaveProperty('blockHash')
+      // polkadot: Form B는 genesisHash/blockHash가 present + neutral placeholder일 것을
+      // 요구한다(docs/v2-payload-contract.md:449) — 부재가 아니라 "dot-transfer와 동일한
+      // all-zero placeholder인가"가 1d4201c 가드의 실제 회귀 방지 축이다(다른 체인의 실값이
+      // 섞여 들어가는 것만 막으면 된다).
+      expect(p.transaction.genesisHash).toBe(dotRef.transaction.genesisHash)
+      expect(p.transaction.blockHash).toBe(dotRef.transaction.blockHash)
     }
   })
 })

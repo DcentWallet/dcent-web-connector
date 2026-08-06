@@ -14,11 +14,27 @@ import { _sanitizeSyncAccountItem } from '../../../../src/sign/_sanitizeSyncAcco
 
 const INDEX_HTML = resolve(__dirname, '../../../../docs/index.html')
 
-/** `<pre>await dcent.syncAccount([ … ])</pre>` 블록에서 배열 리터럴만 뽑는다. */
-function extractSyncAccountExamples (html: string): string[] {
-  const out: string[] = []
+interface DocExample { lang: 'EN' | 'KO', literal: string }
+
+/**
+ * `<pre>await dcent.syncAccount([ … ])</pre>` 블록에서 배열 리터럴을 **언어와 함께** 뽑는다.
+ *
+ * 언어 판정: 그 블록 앞쪽에서 더 가까운 등록 지점이 `DOC.register(` 이면 EN,
+ * `'<key>':{bcko:` 이면 KO. (문서가 EN 은 `DOC.register`, KO 는 `Object.assign(window.KO, …)`
+ * 로 나뉘어 있다.)
+ *
+ * 🔴 언어를 붙이는 이유(크로스 리뷰 R5): 총 개수만 세면 **EN 이 2개인 현재 구성에서 KO 예제가
+ *    사라져도 통과**한다. "EN + KO 를 본다"고 적어 놓고 실제로는 개수만 세면 그 서술이 거짓이 된다.
+ */
+function extractSyncAccountExamples (html: string): DocExample[] {
+  const out: DocExample[] = []
   const re = /<pre>await dcent\.syncAccount\(\[([\s\S]*?)\]\)<\/pre>/g
-  for (const m of html.matchAll(re)) out.push(`[${m[1]}]`)
+  for (const m of html.matchAll(re)) {
+    const at = m.index ?? 0
+    const en = html.lastIndexOf('DOC.register(', at)
+    const ko = html.lastIndexOf("':{bcko:", at)
+    out.push({ lang: en > ko ? 'EN' : 'KO', literal: `[${m[1]}]` })
+  }
   return out
 }
 
@@ -48,14 +64,17 @@ const html = readFileSync(INDEX_HTML, 'utf8')
 const examples = extractSyncAccountExamples(html)
 
 describe('T-DOC-01: docs/index.html syncAccount 예제 ↔ 실제 sanitizer', () => {
-  test('문서에서 예제 블록을 실제로 찾는다 (추출 실패가 초록으로 접히지 않게)', () => {
+  test('EN·KO 양쪽에서 예제 블록을 실제로 찾는다 (추출 실패가 초록으로 접히지 않게)', () => {
     // 🔴 이 단언이 없으면 정규식이 안 맞을 때 examples=[] 가 되어 아래 테스트가
     //    "0건 검증"으로 조용히 통과한다 — 이 파일이 고치려던 바로 그 실패 모드다.
-    expect(examples.length).toBeGreaterThanOrEqual(2) // EN + KO
+    //    총 개수가 아니라 **언어별**로 본다: EN 예제가 2개라 총합만 보면 KO 소실을 못 잡는다.
+    const langs = examples.map((e) => e.lang)
+    expect(langs).toContain('EN')
+    expect(langs).toContain('KO')
   })
 
   test('문서 예제의 모든 항목이 sanitizer 를 통과하고 값이 보존된다', () => {
-    for (const literal of examples) {
+    for (const { literal } of examples) {
       const items = evalArrayLiteral(literal)
       expect(items.length).toBeGreaterThan(0)
 

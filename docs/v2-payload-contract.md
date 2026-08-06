@@ -102,25 +102,11 @@ Bitcoin은 `dcent.sign({ method: 'signTransaction', chainId, payload })`로 서�
 
 **Source:** `playground/presets.bitcoin-tx.json`
 
-**Horizen(ZEN) — `option` 필수:** Horizen은 출력 스크립트가 BIP-115(`CHECKBLOCKATHEIGHT`, replay 방지)라 디바이스가 scriptPubKey 뒤에 `<block hash><height>`를 덧붙여 조립한다. 그 값은 `transaction.option`으로 **dApp이 직접 전달**해야 한다 — 값 산출에 블록 조회가 필요한데 서명 경로는 네트워크를 쓰지 않기 때문이다. 누락하면 디바이스가 `bip115 opt size too small: 0`으로 거부한다.
+**Horizen(ZEN) — 종료된 체인:** 네이티브 ZEN 체인은 **2025-07-23 Base ERC-20 마이그레이션으로 종료**되었다(구 mainchain과 EON EVM 체인 모두 discontinued). 기존 ZEN 잔고는 Base 상의 ERC-20 으로 이관되었고, 클레임은 지갑 message signing 기반 스냅샷이라 레거시 체인 트랜잭션을 요구하지 않는다.
 
-**권장 형태 — 값만 넘기고 조립은 지갑에 맡긴다.** `blockHash`는 익스플로러에 보이는 그대로(64 hex), `height`는 그 블록의 높이다. 바이트 역순 변환과 little-endian 인코딩은 지갑이 한다.
+따라서 `bip122:0007104ccda289427919efc39dc9e4d4/slip44:121` 로의 `signTransaction` 은 **더 이상 지원되지 않는다**. 종전에 이 문서가 안내하던 BIP-115 `option`(block hash + height) 규격은 그 체인 전용이었으므로 함께 제거했다.
 
-```js
-// Source: playground/presets.non-evm.json → zen-transfer
-{
-  transaction: {
-    inputs: [{ rawTransaction: '<prev tx hex>', index: 0, txType: 'p2pkh', keyPath: "m/44'/121'/0'/0/0" }],
-    outputs: [{ txType: 'p2pkh', amount: 990000, addresses: ['<zn... recipient>'] }],
-    // BIP-115 — Horizen 전용, 필수
-    option: { blockHash: '0000000021e6a0c8...7a6b5c4d', height: 1899800 }
-  }
-}
-```
-
-⚠️ 지갑이 보장하는 건 **바이트 순서까지**다. 그 해시가 정말 그 높이의 블록인지, 체인에 실재하는지는 확인하지 못한다 — 어긋나면 서명은 정상적으로 나오고 **broadcast에서 거부**된다. 두 값은 반드시 **같은 블록**의 것이어야 하고, 너무 최신 블록을 참조하면 reorg에 취약하다. D'CENT 앱은 `현재 높이 − 200`의 블록을 쓰므로 dApp도 같은 여유를 두는 편이 안전하다.
-
-이미 인코딩된 바이트열이 있으면 **hex 문자열**로 넘겨도 된다 — `<block hash 32바이트(표시형의 바이트 역순)><height(little-endian)>`, 짝수 길이, `0x` prefix 불가, 길이 prefix 없음(디바이스가 스스로 붙인다). 다만 **바이트 순서를 틀려도 디바이스는 크기(≥32바이트)만 보고 그대로 서명**하므로, 존재하지 않는 블록을 참조하는 트랜잭션이 만들어져 broadcast 단계에서야 실패한다. 위 object 형태를 쓰는 편이 안전하다. 두 형태 밖의 값이나 형식 위반은 `-32602`다.
+> 체인 자체가 닫혀 있어 서명이 성공하더라도 broadcast 할 대상이 없다. Base 상의 ZEN 은 일반 ERC-20 이므로 **Ethereum family 경로(`eip155:8453`)** 를 사용한다.
 
 **ZCASH도 `option`이 필수다** (2026-08-03 변경 — 이전에는 지갑이 자동으로 채웠다). ZCASH의 option은 consensus branch ID인데, 이 값은 네트워크 업그레이드 활성 높이마다 바뀐다. 서명기는 현재 블록 높이를 모르므로 **어떤 고정값을 써도 활성화 경계를 넘는 순간 틀린다** — 실제로 종전 자동 조립은 NU6.3 활성 이후 낡은 NU6.2 branch로 서명하고 있었다. 서명은 정상으로 보이고 broadcast에서만 거부되므로 원인이 드러나지 않는다.
 

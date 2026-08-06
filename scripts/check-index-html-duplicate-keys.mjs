@@ -25,16 +25,22 @@ import { dirname, resolve } from 'node:path'
 const here = dirname(fileURLToPath(import.meta.url))
 const INDEX = resolve(here, '../docs/index.html')
 
-/** 이미 중복이던 KO 키 — 후속 정리 대상. 새 중복은 여기 추가하지 말고 **고칠 것**. */
-const KNOWN_DUPLICATES = new Set([
-  'device-overview',
-  'set-connection-listener',
-  'popup-close',
-  'get-device-info',
-  'set-label',
-  'get-account-info',
-  'get-xpub',
-  'select-address',
+/**
+ * 이미 중복이던 KO 키 → **그 시점의 정확한 사본 수**. 새 중복은 여기 추가하지 말고 **고칠 것**.
+ *
+ * 🔴 Set 이 아니라 개수 맵인 이유(크로스 리뷰 라운드2): Set 이면 알려진 키의 중복을 개수와
+ *    무관하게 통과시켜, `get-account-info` 사본이 2→3 으로 **늘어나도 게이트가 초록**이다.
+ *    게이트가 "문제가 있는데 통과"하면 존재 이유가 사라진다. 개수까지 고정한다.
+ */
+const KNOWN_DUPLICATES = new Map([
+  ['device-overview', 2],
+  ['set-connection-listener', 2],
+  ['popup-close', 2],
+  ['get-device-info', 2],
+  ['set-label', 2],
+  ['get-account-info', 2],
+  ['get-xpub', 2],
+  ['select-address', 2],
 ])
 
 function collect(html, re) {
@@ -48,21 +54,25 @@ function collect(html, re) {
 
 const html = readFileSync(INDEX, 'utf8')
 
-const ko = collect(html, /^'([a-z0-9-]+)':\{bcko:/gm)
-const en = collect(html, /DOC\.register\('([a-z0-9-]+)'/g)
+const ko = collect(html, /^['"]([a-z0-9-]+)['"]:\{bcko:/gm)
+// 🔴 따옴표 두 종류를 모두 본다(크로스 리뷰 라운드2). 실측: 작은따옴표 32 / **큰따옴표 25**.
+//    작은따옴표만 매칭하던 초판은 등록의 44%를 못 봤고, 큰따옴표로 중복이 생기면 조용히 통과했다.
+const en = collect(html, /DOC\.register\(['"]([a-z0-9-]+)['"]/g)
 
 const problems = []
 for (const [lang, map] of [['KO', ko], ['EN', en]]) {
   for (const [key, count] of map) {
-    if (count <= 1) continue
-    if (lang === 'KO' && KNOWN_DUPLICATES.has(key)) continue
-    problems.push(`${lang} '${key}' × ${count}`)
+    const allowed = lang === 'KO' ? (KNOWN_DUPLICATES.get(key) ?? 1) : 1
+    if (count <= allowed) continue
+    problems.push(
+      `${lang} '${key}' × ${count}` + (allowed > 1 ? ` (알려진 중복 ${allowed}건에서 증가)` : ''),
+    )
   }
 }
 
 // allowlist 가 stale 해지는 것도 막는다 — 정리가 끝났는데 목록에 남아 있으면 다음 중복을
 // 조용히 통과시키는 구멍이 된다.
-const staleAllow = [...KNOWN_DUPLICATES].filter((k) => (ko.get(k) ?? 0) <= 1)
+const staleAllow = [...KNOWN_DUPLICATES.keys()].filter((k) => (ko.get(k) ?? 0) <= 1)
 
 if (problems.length > 0 || staleAllow.length > 0) {
   if (problems.length > 0) {

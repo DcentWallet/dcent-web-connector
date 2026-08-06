@@ -34,7 +34,8 @@
     "check:payload-contract": "node scripts/check-payload-contract-coverage.mjs",
     "check:payload-shape": "node scripts/check-payload-contract-shape.mjs",
     "check:index-refs": "node scripts/check-index-html-preset-refs.mjs",
-    "check:docs": "yarn lint:md && yarn check:payload-contract && yarn check:payload-shape && yarn check:index-refs",
+    "check:docs": "yarn lint:md && yarn check:payload-contract && yarn check:payload-shape && yarn check:index-refs && yarn check:index-dup",
+    "check:index-dup": "node scripts/check-index-html-duplicate-keys.mjs",
     "tsc": "tsc --noEmit"
   },
   "jest": {

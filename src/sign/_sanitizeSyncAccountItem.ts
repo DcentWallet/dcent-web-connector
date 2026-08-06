@@ -47,6 +47,9 @@ const BIP44_PATH_REGEX = /^m(\/\d+'?)+$/
  *  chain 타입 판정 안 함. 상한 128자는 실측 최장(Cosmos ibc/ denom 68자)의 여유값. */
 const TOKEN_CONTRACT_REGEX = /^[A-Za-z0-9._:\-/]{1,128}$/
 
+/** symbol 길이 상한 — 실측 최장 13자('BABYDOGEZILLA')의 여유값. 기기 슬롯은 8자(지갑이 truncate). */
+const TOKEN_SYMBOL_MAX = 32
+
 /** decimals 상한 — wm `assertWireTokenDecimalsRange`(u8 전제 [0,255])와 동일 계약.
  *  두 곳이 갈리면 connector를 통과한 값이 지갑에서 -32602로 죽어 원인 추적이 어려워진다. */
 const TOKEN_DECIMALS_MAX = 255
@@ -159,6 +162,12 @@ export function _sanitizeSyncAccountItem (raw: unknown): V2SyncAccountInfo {
     if (!TOKEN_CONTRACT_REGEX.test(rawContract)) {
       throw dcentException('param_error', 'invalid token.contract: ' + rawContract)
     }
+    // 완화된 whitelist 는 `__proto__` 같은 문자열도 **값**으로 통과시킨다. 형제
+    //   `_sanitizeChainId`(sanitize.ts:73)가 값에 대해서도 같은 셋을 차단하고 있으므로
+    //   동일 정책을 따른다 — 이 값은 하류에서 registry/parser lookup 키로 쓰인다.
+    if (FORBIDDEN_KEYS.has(rawContract.toLowerCase())) {
+      throw dcentException('param_error', `forbidden token.contract: ${rawContract}`)
+    }
 
     const token: NonNullable<V2SyncAccountInfo['token']> = { contract: rawContract }
 
@@ -167,6 +176,20 @@ export function _sanitizeSyncAccountItem (raw: unknown): V2SyncAccountInfo {
     if (rawToken.symbol !== undefined && rawToken.symbol !== null) {
       if (typeof rawToken.symbol !== 'string' || rawToken.symbol === '') {
         throw dcentException('param_error', 'invalid token.symbol: must be a non-empty string')
+      }
+      // 길이 cap + 제어문자 차단. `contract` 는 128자 상한이 있는데 symbol 만 무제한이면
+      //   같은 블록 안에서 정책이 갈린다 — dApp 이 메가바이트 문자열이나 개행/NUL 을 실어도
+      //   postMessage 와 에러 메시지를 그대로 타고 흐른다.
+      //   상한 32자는 실측(레지스트리 전 토큰 최장 심볼 13자 — 'BABYDOGEZILLA')의 여유값이다.
+      //   charset 전면 whitelist 는 두지 않는다 — 실 레지스트리에 non-ASCII 심볼이 존재해
+      //   (실측 1건) 정상 토큰을 막게 된다. 기기 표시는 지갑이 소문자화 + 8자 truncate 한다.
+      // 제어문자 자체를 막는 것이 목적이므로 정규식에 제어문자가 들어간다.
+      // eslint-disable-next-line no-control-regex
+      if (rawToken.symbol.length > TOKEN_SYMBOL_MAX || /[\u0000-\u001F\u007F]/.test(rawToken.symbol)) {
+        throw dcentException(
+          'param_error',
+          `invalid token.symbol: max ${TOKEN_SYMBOL_MAX} chars, no control characters`,
+        )
       }
       token.symbol = rawToken.symbol
     }
@@ -198,7 +221,14 @@ export function _sanitizeSyncAccountItem (raw: unknown): V2SyncAccountInfo {
     if (typeof o.meta !== 'object' || Array.isArray(o.meta)) {
       throw dcentException('param_error', 'invalid meta: must be a plain object')
     }
-    const addressFormat = _sanitizeAddressFormat((o.meta as Record<string, unknown>).addressFormat)
+    // 🔴 token 블록과 **동일하게** own-enumerable 만 읽는다. `o.meta` 에서 직접 읽으면
+    //    `meta: Object.create({ addressFormat: 'taproot' })` 의 상속값이 채택되어 BTC variant
+    //    선택이 조용히 바뀐다 (boundary-validation: own-property 우선 / T-SEC-INHERIT-03).
+    const srcMeta = o.meta as Record<string, unknown>
+    const rawAddressFormat = Object.prototype.hasOwnProperty.call(srcMeta, 'addressFormat')
+      ? srcMeta.addressFormat
+      : undefined
+    const addressFormat = _sanitizeAddressFormat(rawAddressFormat)
     if (addressFormat !== undefined) {
       out.meta = { addressFormat }
     }

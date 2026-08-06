@@ -25,6 +25,9 @@
  * T-C-TOK-04: 제거된 top-level contractAddress → unknown 필드로 drop (토큰 오인 없음)
  * T-C-TOK-05: token 블록 안 __proto__ own-key → forbidden key throw
  * T-SEC-INHERIT-02: token 블록 상속 속성 → 수집 안 됨(own-key 부재로 throw)
+ * T-SEC-INHERIT-03: meta 상속 속성 → addressFormat 미채택 (크로스 리뷰 발견)
+ * T-SEC-VAL-01: token.contract 값이 __proto__ 계열 → throw (형제 _sanitizeChainId 정책 일치)
+ * T-SEC-VAL-02: token.symbol 길이/제어문자 cap (+ 실측 최장 13자는 통과)
  *
  * connector-chain-addition-isolation: coin_group/coin_name 검증 제거 확인 포함.
  *   식별자 "형식" 판정도 하지 않는다 — 문자 whitelist + 길이만 본다(T-U-SYNC-07/T-C-TOK-03).
@@ -182,6 +185,64 @@ describe('syncAccount v2 — m09-04-12', () => {
     const sentInfos = sendSpy.mock.calls[0][0].params.accountInfos
     expect(sentInfos[0]).not.toHaveProperty('contractAddress')
     expect(sentInfos[0]).not.toHaveProperty('token')
+  })
+
+  test('T-SEC-INHERIT-03: meta 의 상속 속성은 수집 안 됨 → addressFormat 미채택', async () => {
+    // 🔴 크로스 리뷰(Codex) 발견. meta 는 own-property 스냅샷 없이 직접 읽고 있었다 —
+    //    `Object.create({ addressFormat: 'taproot' })` 의 상속값이 채택되면 BTC variant
+    //    선택(legacy/segwit/taproot)이 조용히 바뀐다.
+    const metaProto = { addressFormat: 'taproot' }
+    const inheritedMeta = Object.create(metaProto) as { addressFormat?: string }
+
+    const { transport } = ensureSingleton()
+    const sendSpy = jest.spyOn(transport, 'send').mockResolvedValue({ id: 'sm1', result: { ok: true } })
+
+    await syncAccount([{
+      chainId: 'bip122:000000000019d6689c085ae165831e93/slip44:0',
+      keyPath: "m/44'/0'/0'/0/0",
+      label: 'BTC-1',
+      meta: inheritedMeta as { addressFormat?: never },
+    }])
+
+    const sentInfos = sendSpy.mock.calls[0][0].params.accountInfos
+    expect(sentInfos[0]).not.toHaveProperty('meta')
+  })
+
+  test('T-SEC-VAL-01: token.contract 값이 __proto__/constructor/prototype → param_error throw', () => {
+    // 완화된 whitelist 는 이 문자열들을 **값**으로 통과시킨다. 형제 _sanitizeChainId 가
+    //   값에도 같은 셋을 차단하므로(sanitize.ts:73) 동일 정책을 따른다.
+    for (const contract of ['__proto__', 'constructor', 'PROTOTYPE']) {
+      expect(() =>
+        syncAccount([{ chainId: 'eip155:1', keyPath: "m/44'/60'/0'/0/0", label: 'tok', token: { contract } }]),
+      ).toThrow(
+        expect.objectContaining({ body: expect.objectContaining({ error: expect.objectContaining({ code: 'param_error' }) }) }),
+      )
+    }
+  })
+
+  test('T-SEC-VAL-02: token.symbol 길이 초과 / 제어문자 → param_error throw', () => {
+    // contract 는 128자 cap 이 있는데 symbol 만 무제한이던 비일관을 닫는다.
+    for (const symbol of ['S'.repeat(33), 'AB\u0000CD', 'line\nbreak']) {
+      expect(() =>
+        syncAccount([{
+          chainId: 'eip155:1',
+          keyPath: "m/44'/60'/0'/0/0",
+          label: 'tok',
+          token: { contract: '0x1111111111111111111111111111111111111111', symbol },
+        }]),
+      ).toThrow(
+        expect.objectContaining({ body: expect.objectContaining({ error: expect.objectContaining({ code: 'param_error' }) }) }),
+      )
+    }
+    // 실측 최장 심볼(13자)은 통과해야 한다 — 정상 케이스를 깨지 않는 positive 축.
+    expect(() =>
+      syncAccount([{
+        chainId: 'eip155:1',
+        keyPath: "m/44'/60'/0'/0/0",
+        label: 'tok',
+        token: { contract: '0x1111111111111111111111111111111111111111', symbol: 'BABYDOGEZILLA' },
+      }]),
+    ).not.toThrow()
   })
 
   test('T-SEC-INHERIT-02: token 블록의 상속(prototype) 속성은 수집 안 됨 → own-key 부재로 throw', () => {

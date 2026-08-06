@@ -74,14 +74,47 @@ export interface V1Response<TParam = Record<string, unknown>> {
  */
 export interface V2SyncAccountInfo {
   /** CAIP-19 chainId (예: 'eip155:1/slip44:60', 'bip122:000000000019d6689c085ae165831e93/slip44:0').
-   *  token도 부모 체인의 CAIP-19를 그대로 두고 asset은 contractAddress로 구분. */
+   *  token도 부모 체인의 CAIP-19를 그대로 두고 asset은 `token`으로 구분. */
   chainId: string
-  /** token asset일 때만 존재. native coin은 생략. */
-  contractAddress?: string
   /** BIP44 key path (예: "m/44'/60'/0'/0/0"). */
   keyPath: string
   /** D'CENT 지갑 표시 레이블. */
   label: string
+  /**
+   * 토큰 계정일 때만. native coin은 생략 (m13-02-08).
+   *
+   * NOTE(decision-anchor: m13-02-08-token-descriptor-parity):
+   *   필드 이름·의미를 **서명 경로의 토큰 descriptor(wm `WireTokenDescriptor`)와 일치**시킨다.
+   *   dApp이 이미 서명에서 쓰는 형식이라 새로 배울 것이 없고, 체인별 예외가 한쪽에만 반영되는
+   *   drift가 생기지 않는다. `to`/`amount`는 전송 전용이라 제외한다. `tokenId`(Tezos FA2 /
+   *   ERC-1155)도 제외한다 — 기기 wire(`WamiSyncAccountV2`)에 **담을 필드가 없고**
+   *   wm 해석기도 읽지 않아 효과가 0이다(토큰 구분은 컨트랙트 주소로 성립).
+   *   필드를 추가할 일이 생기면 **서명 쪽 descriptor를 먼저 보고 맞출 것.**
+   *
+   * ⚠️ 종전 top-level `contractAddress`를 대체한다. 그 필드는 v2가 npm에 published된 적이
+   *   없어(외부 소비자 0) 하위호환 대상이 아니며, 그 경로는 조회 키 불일치로 **한 번도 성공한
+   *   적이 없다**. 남기면 동작하지 않는 예제만 유효해 보이므로 제거했다.
+   */
+  token?: {
+    /**
+     * 토큰 컨트랙트/asset 식별자 — **체인이 실제로 쓰는 온체인 형식** 그대로.
+     * (예: EVM `0x…` / SPL base58 mint / Hedera `0.0.333611` / NEAR `token.sweat` /
+     *  Stellar `CODE-ISSUER` / Stacks `principal.contractName::assetName`)
+     * 지갑 내부 4-part 표기가 필요한 체인은 **지갑이 변환**한다 — dApp이 만들지 않는다.
+     */
+    contract: string
+    /**
+     * 표시용 심볼. 기기 아이콘 매칭 키의 원본이 된다(지갑이 소문자화 + 8자 truncate).
+     * 레지스트리 미등록 토큰이면 **사실상 필수** — 생략하면 컨트랙트 앞 10자가 심볼이 되어
+     * 기기에서 아이콘이 매칭되지 않는다.
+     */
+    symbol?: string
+    /**
+     * 소수 자릿수. 레지스트리 미등록 토큰이면 **필수** — 지갑의 descriptor 해석 진입 조건이라
+     * 없으면 `-32602`로 거절된다(근거 없이 조용히 합성하지 않는다).
+     */
+    decimals?: number
+  }
   /** 주소 인코딩 힌트 등 forward-compat 메타. 현재 known: `addressFormat`
    *  (BTC legacy/segwit-wrapped/segwit-native/taproot disambiguation — getAddress와 동일 enum, m09-04-09).
    *  같은 chainId(bip122/slip44:0)를 공유하는 BTC variant 를 구분해 sdk 가 coin_name 을 매핑한다. */

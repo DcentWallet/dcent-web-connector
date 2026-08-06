@@ -2593,8 +2593,26 @@ await dcent.getAddress(coinType, path, prefix?)</pre></div>
 <p class="lede">기기에 계정을 등록/동기화합니다.</p>
 <div class="code"><div class="cb-head"><span>ts</span><button class="copy">복사</button></div>
 <pre>await dcent.syncAccount(accounts: V2SyncAccountInfo[])
-// V2SyncAccountInfo = { chainId, contractAddress?, keyPath, label }</pre></div>
+// V2SyncAccountInfo = { chainId, keyPath, label, token?: { contract, symbol?, decimals? }, meta?: { addressFormat? } }</pre></div>
 <div class="note warn"><span class="ni">!</span><div>v1의 <code>{coin_group, coin_name}</code> 항목 형태는 제거되었습니다(breaking). <code>{chainId, keyPath, label}</code>를 사용하세요.</div></div>
+<h2>토큰 계정</h2>
+<p>토큰은 <code>token</code> 블록으로 기술합니다. 필드 이름·의미는 서명 경로의 토큰 descriptor와 동일합니다 — 같은 토큰을 두 벌로 기술할 필요가 없습니다.</p>
+<table class="params"><thead><tr><th>필드</th><th>타입</th><th>필수</th><th>설명</th></tr></thead><tbody>
+<tr><td><code>token.contract</code></td><td class="type">string</td><td><span class="badge b-opt">선택</span></td><td><strong>토큰 계정일 때만.</strong> 체인이 실제로 쓰는 <strong>온체인 식별자</strong>를 그대로 보냅니다 — 디센트 내부 4-part 표기가 아닙니다. EVM <code>0x…</code> / SPL base58 mint / Hedera <code>0.0.333611</code> / NEAR <code>token.sweat</code> / Stellar <code>CODE-ISSUER</code> / Stacks <code>principal.contractName::assetName</code>. 빈 값·형식 위반은 <code>param_error</code>.</td></tr>
+<tr><td><code>token.symbol</code></td><td class="type">string</td><td><span class="badge b-opt">선택</span></td><td>표시용 심볼. 기기가 이 값으로 코인 아이콘을 매칭합니다(지갑이 소문자화 + 8자 절단). <strong>디센트 레지스트리에 없는 토큰이면 사실상 필수</strong> — 생략하면 컨트랙트 앞 10자가 심볼이 되어 아이콘이 매칭되지 않습니다.</td></tr>
+<tr><td><code>token.decimals</code></td><td class="type">number</td><td><span class="badge b-opt">선택</span></td><td><code>[0, 255]</code> 정수. <strong>디센트 레지스트리에 없는 토큰이면 필수</strong> — 근거 없이 합성하지 않고 <code>-32602</code>로 거절합니다. 등록된 토큰이면 이 값은 무시됩니다(레지스트리 값 우선).</td></tr>
+</tbody></table>
+<div class="code"><div class="cb-head"><span>js</span><button class="copy">복사</button></div>
+<pre>await dcent.syncAccount([
+  // 코인
+  { chainId: 'eip155:1/slip44:60', keyPath: "m/44'/60'/0'/0/0", label: 'ETH-1' },
+  // 등록된 토큰 — contract 만으로 충분
+  { chainId: 'eip155:1/slip44:60', keyPath: "m/44'/60'/0'/0/0", label: 'USDT-1',
+    token: { contract: '0xdac17f958d2ee523a2206206994597c13d831ec7' } },
+  // 미등록 토큰 — symbol + decimals 를 함께 보낸다
+  { chainId: 'eip155:1/slip44:60', keyPath: "m/44'/60'/0'/0/0", label: 'FOO-1',
+    token: { contract: '0x1111111111111111111111111111111111111111', symbol: 'FOO', decimals: 6 } },
+])</pre></div>
 <div class="related"><a href="#/get-account-info">→ getAccountInfo</a></div>`},
 
 'get-xpub':{bcko:'<span>Core API</span> / Account API / getXPUB',ko:`
@@ -3109,21 +3127,35 @@ search:'getAccountInfo account list V2AccountInfo meta addressFormat contractAdd
 <div class="related"><a href="#/sync-account">→ syncAccount</a><a href="#/get-address">→ getAddress</a><a href="#/v1response">→ V1Response</a></div>`});
 
 DOC.register('sync-account',{title:'syncAccount',breadcrumb:'<span>Core API</span> / Account API / syncAccount',
-search:'syncAccount register accounts V2SyncAccountInfo chainId keyPath label contractAddress breaking',html:`
+search:'syncAccount register accounts V2SyncAccountInfo chainId keyPath label token contract symbol decimals breaking',html:`
 <h1 class="pt">syncAccount</h1>
 <p class="lede">Registers / synchronizes accounts on the device. Each item is validated (chainId charset + BIP-44 keyPath + label rule); chain resolution is delegated to the bridge.</p>
 <h2>Signature</h2>
 <div class="code"><div class="cb-head"><span>ts</span><button class="copy">Copy</button></div>
 <pre>await dcent.syncAccount(accounts: V2SyncAccountInfo[]): Promise&lt;V1Response&gt;
-// V2SyncAccountInfo = { chainId, contractAddress?, keyPath, label, meta?: { addressFormat? } }</pre></div>
+// V2SyncAccountInfo = { chainId, keyPath, label, token?: { contract, symbol?, decimals? }, meta?: { addressFormat? } }</pre></div>
 <h2>Parameters</h2>
 <table class="params"><thead><tr><th>Field</th><th>Type</th><th>Required</th><th>Notes</th></tr></thead><tbody>
 <tr><td><code>chainId</code></td><td class="type">string</td><td><span class="badge b-req">Required</span></td><td>Full CAIP-19</td></tr>
 <tr><td><code>keyPath</code></td><td class="type">string</td><td><span class="badge b-req">Required</span></td><td>BIP-44 — must match <code>/^m(\/\d+'?)+$/</code>, otherwise <code>param_error</code>.</td></tr>
 <tr><td><code>label</code></td><td class="type">string</td><td><span class="badge b-req">Required</span></td><td>Account label — 2–14 chars, <code>a-z A-Z 0-9 . ! # $ % &amp; + - _</code> only. <strong>No spaces</strong>; anything else is <code>param_error</code>.</td></tr>
-<tr><td><code>contractAddress</code></td><td class="type">string</td><td><span class="badge b-opt">Optional</span></td><td>For token accounts. Omitting it is fine, but sending an empty or malformed value is <code>param_error</code> (0x + 40–64 hex, or a 25–60 char base58 address).</td></tr>
+<tr><td><code>token.contract</code></td><td class="type">string</td><td><span class="badge b-opt">Optional</span></td><td>Present <strong>only for token accounts</strong>. Use the chain's <strong>on-chain identifier</strong> — not D’CENT’s internal 4-part form. EVM <code>0x…</code> / SPL base58 mint / Hedera <code>0.0.333611</code> / NEAR <code>token.sweat</code> / Stellar <code>CODE-ISSUER</code> / Stacks <code>principal.contractName::assetName</code>. Empty or malformed → <code>param_error</code>.</td></tr>
+<tr><td><code>token.symbol</code></td><td class="type">string</td><td><span class="badge b-opt">Optional</span></td><td>Display symbol. The device matches its coin icon on this value (lower-cased, truncated to 8 chars by the wallet). <strong>Effectively required for tokens that are not in D’CENT’s registry</strong> — without it the first 10 characters of the contract become the symbol and no icon matches.</td></tr>
+<tr><td><code>token.decimals</code></td><td class="type">number</td><td><span class="badge b-opt">Optional</span></td><td>Integer in <code>[0, 255]</code>. <strong>Required for tokens that are not in D’CENT’s registry</strong> — the bridge refuses to synthesize a token it cannot describe and returns <code>-32602</code>. Registered tokens ignore this field (registry values win).</td></tr>
+<tr><td colspan="4"><div class="note info"><span class="ni">i</span><div><b>Use the on-chain identifier.</b> Chains whose D’CENT registry entry uses an internal 4-part form (Stellar, Stacks, XRP) are converted <em>by the wallet</em> — send <code>AQUA-GBNZ…</code>, not <code>0.GBNZ….AQUA.999…</code>.</div></div></td></tr>
 <tr><td><code>meta.addressFormat</code></td><td class="type">enum</td><td><span class="badge b-opt">Optional</span></td><td>Same enum as <code>getAddress</code> (<code>legacy</code> / <code>segwit-wrapped</code> / <code>segwit-native</code> / <code>taproot</code>). Disambiguates BTC-family variants that share the same <code>chainId</code> (<code>bip122:.../slip44:0</code>) so the bridge can register the right <code>coin_name</code> — e.g. sync a <code>legacy</code> and a <code>segwit-native</code> account for the same BTC <code>keyPath</code> as two separate entries.</td></tr>
 </tbody></table>
+<div class="code"><div class="cb-head"><span>js</span><button class="copy">Copy</button></div>
+<pre>await dcent.syncAccount([
+  // coin
+  { chainId: 'eip155:1/slip44:60', keyPath: "m/44'/60'/0'/0/0", label: 'ETH-1' },
+  // registered token — contract alone is enough
+  { chainId: 'eip155:1/slip44:60', keyPath: "m/44'/60'/0'/0/0", label: 'USDT-1',
+    token: { contract: '0xdac17f958d2ee523a2206206994597c13d831ec7' } },
+  // unregistered token — send symbol + decimals as well
+  { chainId: 'eip155:1/slip44:60', keyPath: "m/44'/60'/0'/0/0", label: 'FOO-1',
+    token: { contract: '0x1111111111111111111111111111111111111111', symbol: 'FOO', decimals: 6 } },
+])</pre></div>
 <div class="code"><div class="cb-head"><span>js</span><button class="copy">Copy</button></div>
 <pre>await dcent.syncAccount([
   {

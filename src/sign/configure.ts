@@ -3,7 +3,8 @@
  *
  * - setLabel: v1 1:1 port (m08-01-02.5) — 변경 없음
  * - syncAccount: **v2 전환 (m09-04-12)** — SyncAccountInfo(coin_group/coin_name) →
- *   V2SyncAccountInfo(chainId/contractAddress?/keyPath/label).
+ *   V2SyncAccountInfo(chainId/keyPath/label/token?). (m13-02-08) 토큰은 top-level
+ *   `contractAddress` 대신 서명 경로와 같은 이름의 `token` descriptor로 기술한다.
  *   v1 chain 검증(isAvaliableCoinGroup / isAvailableSyncAccountCoinName) 제거.
  *   connector-chain-addition-isolation: chain-agnostic light sanitize만 수행.
  *   실제 chain resolve는 sdk/wm(m09-03-21) 위임.
@@ -40,7 +41,7 @@ export function setLabel (label: string): Promise<V1Response> {
  * dcent.syncAccount v2 — chainId + keyPath 기반 account 동기화 (m09-04-12 breaking change).
  *
  * **v2 전환**: 입력 타입이 v1 `SyncAccountInfo{coin_group, coin_name, label}[]` 에서
- * v2 `V2SyncAccountInfo{chainId, contractAddress?, keyPath, label}[]` 로 변경됨.
+ * v2 `V2SyncAccountInfo{chainId, keyPath, label, token?, meta?}[]` 로 변경됨.
  * v1 chain 검증(isAvaliableCoinGroup / isAvailableSyncAccountCoinName) 제거.
  *
  * connector는 chain-agnostic transport:

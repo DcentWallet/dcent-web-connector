@@ -38,9 +38,25 @@ v2에서 다음 21개 v1 sign wrapper가 **제거**됐다. 호출하면 `undefin
 진입점 동일 — `import dcent from 'dcent-web-connector'` (default export object). named export도 추가 제공.
 
 - **read-only**: `info`, `getDeviceInfo`, `getAddress`, `getXPUB`, `setLabel`, `selectAddress`
-  - \u26a0\ufe0f `getAccountInfo` \ub294 \uc774\ub984\uc740 \uac19\uc73c\ub098 **\uc751\ub2f5 shape \uac00 v2 \ub85c \ubc14\ub00c\uc5c8\ub2e4** (`V1Response<AccountListV2Payload>` \u2014 `src/sign/types.ts:124`).
-  - \u26a0\ufe0f `syncAccount` \ub294 **\uc785\ub825\uc774 breaking** \uc774\ub2e4: v1 `{coin_group, coin_name, label}` \u2192 v2 `{chainId, contractAddress?, keyPath, label}` (`src/sign/configure.ts:50`). v1 shape \ub294 \uac70\ubd80\ub41c\ub2e4.
-  - \ud83c\udd95 `getPublicKey` \ub294 v1 \ub300\uc751 \ud568\uc218\uac00 \uc5c6\ub294 **v2 \uc2e0\uaddc verb** \ub2e4 (`src/sign/publicKey.ts:9`).
+  - ⚠️ `getAccountInfo` 는 이름은 같으나 **응답 shape 가 v2 로 바뀌었다** (`V1Response<AccountListV2Payload>` — `src/sign/types.ts:124`).
+  - ⚠️ `syncAccount` 는 **입력이 breaking** 이다: v1 `{coin_group, coin_name, label}` → v2 `{chainId, keyPath, label, token?, meta?}` (`src/sign/configure.ts`). v1 shape 는 거부된다.
+
+    v1 은 dApp 이 **기기 wire 형식을 직접** 보냈다(`coin_group`/`coin_name`). v2 는 그 변환을
+    지갑이 한다 — dApp 은 체인과 식별자만 준다.
+
+    | v1 | v2 | 비고 |
+    |---|---|---|
+    | `coin_group` (예 `ETHEREUM`) | `chainId` (CAIP-19) | 코인·토큰 모두 **부모 체인**의 chainId 를 보낸다 |
+    | `coin_group` 이 토큰 그룹인 경우 (예 `ERC20`) | — (지갑이 도출) | `token.contract` 로부터 지갑이 결정한다 |
+    | `coin_name` (토큰: contract 15자 절단) | `token.contract` | **온체인 식별자**를 그대로. 절단·대문자화는 지갑이 한다 |
+    | — (v1 에 없음) | `token.symbol` / `token.decimals` | **미등록 토큰**에 필요. 없으면 `-32602` |
+    | `label` | `label` | 동일 (2–14자) |
+    | — (v1 에 없음) | `keyPath` | v2 신규 필수 (BIP-44) |
+
+    토큰 필드 이름은 **서명 경로의 `transaction.token` descriptor 와 동일**하다 — 같은 토큰을
+    두 벌로 기술할 필요가 없다. (초기 v2 에는 top-level `contractAddress` 가 있었으나 npm 에
+    배포된 적이 없고 조회 키 불일치로 동작한 적도 없어 m13-02-08 에서 제거했다.)
+  - 🆕 `getPublicKey` 는 v1 대응 함수가 없는 **v2 신규 verb** 다 (`src/sign/publicKey.ts:9`).
 - **Bitcoin tx builder**: `getBitcoinTransactionObject`, `addBitcoinTransactionInput`, `addBitcoinTransactionOutput`
 - **lifecycle**: `setTimeOutMs`, `setConnectionListener`, `popupWindowClose`
 - **enum**: `coinType`, `coinGroup`, `coinName`, `bitcoinTxType`, `klaytnTxType`, `xrpTxType`, `state`, `coinDecimals`

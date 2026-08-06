@@ -208,6 +208,26 @@ describe('syncAccount v2 — m09-04-12', () => {
     expect(sentInfos[0]).not.toHaveProperty('meta')
   })
 
+  test('T-SEC-INHERIT-03b: meta 의 non-enumerable own 속성도 수집 안 됨', async () => {
+    // 크로스 리뷰 R3 — hasOwnProperty 는 non-enumerable own 도 통과시킨다. 상위 항목/token 이
+    //   쓰는 own-**enumerable** 스냅샷과 규칙이 갈리면 안 된다.
+    const hiddenMeta = {}
+    Object.defineProperty(hiddenMeta, 'addressFormat', { value: 'taproot', enumerable: false })
+
+    const { transport } = ensureSingleton()
+    const sendSpy = jest.spyOn(transport, 'send').mockResolvedValue({ id: 'sm2', result: { ok: true } })
+
+    await syncAccount([{
+      chainId: 'bip122:000000000019d6689c085ae165831e93/slip44:0',
+      keyPath: "m/44'/0'/0'/0/0",
+      label: 'BTC-2',
+      meta: hiddenMeta as { addressFormat?: never },
+    }])
+
+    const sentInfos = sendSpy.mock.calls[0][0].params.accountInfos
+    expect(sentInfos[0]).not.toHaveProperty('meta')
+  })
+
   test('T-SEC-VAL-01: token.contract 값이 __proto__/constructor/prototype → param_error throw', () => {
     // 완화된 whitelist 는 이 문자열들을 **값**으로 통과시킨다. 형제 _sanitizeChainId 가
     //   값에도 같은 셋을 차단하므로(sanitize.ts:73) 동일 정책을 따른다.

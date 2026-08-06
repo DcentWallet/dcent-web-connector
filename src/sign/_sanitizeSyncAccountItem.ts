@@ -224,8 +224,11 @@ export function _sanitizeSyncAccountItem (raw: unknown): V2SyncAccountInfo {
     // 🔴 token 블록과 **동일하게** own-enumerable 만 읽는다. `o.meta` 에서 직접 읽으면
     //    `meta: Object.create({ addressFormat: 'taproot' })` 의 상속값이 채택되어 BTC variant
     //    선택이 조용히 바뀐다 (boundary-validation: own-property 우선 / T-SEC-INHERIT-03).
+    //    `hasOwnProperty` 가 아니라 `Object.keys()` 를 쓴다(크로스 리뷰 R3) — hasOwnProperty 는
+    //    **non-enumerable own** 속성도 통과시켜, 상위 항목/`token` 이 쓰는 own-**enumerable**
+    //    스냅샷과 규칙이 갈린다. 주석이 "own-enumerable" 이라 적혀 있으면 코드도 그래야 한다.
     const srcMeta = o.meta as Record<string, unknown>
-    const rawAddressFormat = Object.prototype.hasOwnProperty.call(srcMeta, 'addressFormat')
+    const rawAddressFormat = Object.keys(srcMeta).includes('addressFormat')
       ? srcMeta.addressFormat
       : undefined
     const addressFormat = _sanitizeAddressFormat(rawAddressFormat)

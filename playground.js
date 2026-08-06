@@ -3527,10 +3527,11 @@
   // 코인은 클릭한 노드의 chainId로 결정. explorer 지원 코인은 [Fetch UTXO]가 prev_tx/vout 자동 채움,
   // 미지원 코인(Bitcoin Gold/DigiByte/Ravencoin 등)은 prev_tx/vout 직접 입력 → 동일하게 build+sign.
   // ⚠ Horizen(slip44:121)은 예외 — 네이티브 ZEN 체인이 2025-07-23 Base ERC-20 마이그레이션으로 종료되어
-  //   서명해도 broadcast 할 체인이 없다. 전용 preset(zen-transfer)은 제거했다.
-  //   ⚠ bridge 의 chainId 단계 4200(Unsupported chain) 거부 게이트는 아직 없다(후속 작업) — 그때까지는
-  //   요청이 그대로 통과해 디바이스가 'bip115 opt size too small: 0' 으로 거부한다.
-  //   chains.json 항목은 그 게이트가 들어온 뒤 회귀 검증용으로 쓰려고 남겨둔다.
+  //   서명해도 broadcast 할 체인이 없다. 전용 preset(zen-transfer)은 제거했고, bridge 가 chainId
+  //   단계에서 4200(Unsupported chain)으로 거부한다(epic/m09-05-bridge-monorepo 20baaf2).
+  //   ⚠ 그 게이트는 **아직 배포 전**이라, 배포 전까지는 요청이 그대로 통과해 디바이스가
+  //   'bip115 opt size too small: 0' 으로 거부한다.
+  //   chains.json 항목은 문서 마커로만 남는다 — 거부의 회귀 가드는 bridge 단위 테스트가 소유한다.
   // 전 코인 동일 wm convertTransaction slot(flat wire)이라 모두 testable.
   var BTC_MEMPOOL_NETS = {
     testnet4: 'https://mempool.space/testnet4/api',

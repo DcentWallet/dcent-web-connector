@@ -685,7 +685,7 @@
     "family": "bitcoin",
     "displayName": "Horizen (discontinued)",
     "defaultKeyPath": "m/44'/121'/0'/0/0",
-    "_deprecated": "네이티브 ZEN 체인 종료 — 2025-07-23 Base ERC-20 마이그레이션 완료(구 mainchain·EON 모두 discontinued). explorer.horizen.io 는 EVM(Blockscout) API 로 전환돼 UTXO 조회 불가. ⚠ 2026-08-06 현재 bridge 에는 아직 차단이 없다 — chainId 단계에서 4200(Unsupported chain) 으로 거부하는 게이트는 후속 bridge 작업으로 들어간다. 항목을 남겨두는 이유는 그 거부가 들어온 뒤 커버리지 매트릭스가 INTENDED_REJECT 로 회귀 검증하게 하기 위함이다. ⚠ 이 필드는 어떤 코드도 읽지 않는 문서용 마커다 — 동작을 게이트하지 않는다."
+    "_deprecated": "네이티브 ZEN 체인 종료 — 2025-07-23 Base ERC-20 마이그레이션 완료(구 mainchain·EON 모두 discontinued). explorer.horizen.io 는 EVM(Blockscout) API 로 전환돼 UTXO 조회 불가. bridge 는 chainId 단계에서 4200(Unsupported chain) 으로 거부한다 — 게이트는 bridge epic/m09-05-bridge-monorepo(20baaf2) 의 DcentSdkClient 2.4 분기이며 **아직 배포 전**이다(배포 전까지는 요청이 통과해 디바이스가 'bip115 opt size too small: 0' 으로 거부한다). 그 거부의 회귀 가드는 bridge 단위 테스트(deprecatedChainGate.realwm.test.ts, T-U-DEPR-01~09)가 소유한다 — conformance 매트릭스는 (preset x applicableChainIds) 축이라 zen-transfer preset 을 걷어낸 시점에 HORIZEN 셀 자체가 사라졌다. 따라서 이 항목은 **커버리지용이 아니라 순수 문서 마커**다. ⚠ 이 필드는 어떤 코드도 읽지 않는 문서용 마커다 — 동작을 게이트하지 않는다."
   },
   {
     "chainId": "xrpl:0/slip44:144",

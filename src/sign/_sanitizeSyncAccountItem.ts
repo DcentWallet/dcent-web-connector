@@ -131,13 +131,18 @@ export function _sanitizeSyncAccountItem (raw: unknown): V2SyncAccountInfo {
     if (typeof o.token !== 'object' || Array.isArray(o.token)) {
       throw dcentException('param_error', 'invalid token: must be a plain object')
     }
-    const rawToken = o.token as Record<string, unknown>
-
-    // forbidden key 차단 — 상위 항목과 동일 정책. own-enumerable만 훑는다.
-    for (const k of Object.keys(rawToken)) {
+    // 🔴 상위 항목과 **동일하게** own-enumerable 스냅샷을 뜬 뒤 그것만 읽는다.
+    //    forbidden key 만 훑고 원본 객체에서 직접 읽으면, prototype 에만 `contract` 를 둔
+    //    객체(`Object.create({ contract: '…' })`)가 `Object.keys()` 에 안 잡혀 forbidden
+    //    검사를 통과한 뒤 **상속값이 채택**된다 — 상위 항목이 T-SEC-INHERIT-01 로 막아 둔
+    //    바로 그 구멍이 token 블록에만 남는 비대칭이 된다 (boundary-validation: own-property 우선).
+    const srcToken = o.token as Record<string, unknown>
+    const rawToken: Record<string, unknown> = Object.create(null)
+    for (const k of Object.keys(srcToken)) {
       if (FORBIDDEN_KEYS.has(k.toLowerCase())) {
         throw dcentException('param_error', `forbidden key: token.${k}`)
       }
+      rawToken[k] = srcToken[k]
     }
 
     // contract — **string 강제**. `String(x)` 로 coerce하지 않는다:

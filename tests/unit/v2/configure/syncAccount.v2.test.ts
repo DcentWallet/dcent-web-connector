@@ -24,6 +24,7 @@
  * T-C-TOK-03: 종전 정규식이 선차단하던 실제 식별자 7종 → 전부 통과 (완화 회귀 가드)
  * T-C-TOK-04: 제거된 top-level contractAddress → unknown 필드로 drop (토큰 오인 없음)
  * T-C-TOK-05: token 블록 안 __proto__ own-key → forbidden key throw
+ * T-SEC-INHERIT-02: token 블록 상속 속성 → 수집 안 됨(own-key 부재로 throw)
  *
  * connector-chain-addition-isolation: coin_group/coin_name 검증 제거 확인 포함.
  *   식별자 "형식" 판정도 하지 않는다 — 문자 whitelist + 길이만 본다(T-U-SYNC-07/T-C-TOK-03).
@@ -181,6 +182,24 @@ describe('syncAccount v2 — m09-04-12', () => {
     const sentInfos = sendSpy.mock.calls[0][0].params.accountInfos
     expect(sentInfos[0]).not.toHaveProperty('contractAddress')
     expect(sentInfos[0]).not.toHaveProperty('token')
+  })
+
+  test('T-SEC-INHERIT-02: token 블록의 상속(prototype) 속성은 수집 안 됨 → own-key 부재로 throw', () => {
+    // 🔴 상위 항목의 T-SEC-INHERIT-01 과 대칭. forbidden key 만 훑고 원본에서 직접 읽으면
+    //    prototype 에만 contract 를 둔 객체가 `Object.keys()` 에 안 잡혀 검사를 통과한 뒤
+    //    **상속값이 채택**된다. own-enumerable 스냅샷을 떠야 막힌다.
+    const tokenProto = { contract: '0xA0b86991c6218b36c1d19D4a2e9Eb0cE3606eB48' }
+    const inheritedToken = Object.create(tokenProto) as { contract: string }
+    expect(() =>
+      syncAccount([{
+        chainId: 'eip155:1',
+        keyPath: "m/44'/60'/0'/0/0",
+        label: 'myToken',
+        token: inheritedToken,
+      }]),
+    ).toThrow(
+      expect.objectContaining({ body: { error: { code: 'param_error', message: 'token.contract required' } } }),
+    )
   })
 
   test('T-C-TOK-05: token 블록 안의 __proto__ own-key → forbidden key throw + 오염 없음', () => {

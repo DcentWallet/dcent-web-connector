@@ -50,6 +50,12 @@
  *   (f) Support Matrix **row 렌더러** — 실제 렌더한 행의 `.m-fw` 셀이 정확히 2개이고 헤더와 컬럼 수가
  *       맞는지, `[object Object]` 가 없는지 (데이터·헤더만 보면 row 렌더러 회귀를 통째로 놓친다)
  *
+ * 🧭 **방향(bio↔x)도 검사 대상이다** — 라벨이 "있는가"만 보면 두 컬럼을 **맞바꿔도** 통과한다.
+ *    swap 은 템플릿 복붙에서 나오는 **실수**라 위 "의도적 우회는 범위 밖" 선언이 덮지 못하고,
+ *    착지하면 X 사용자가 "DCENT X" 컬럼에서 Biometric 라인 값을 읽어 **단일 컬럼 시절보다 나쁘다**.
+ *    판별자는 값이다 — `x` 는 전 항목 `1.0.0`, `bio` 는 대부분 다르다. 데이터(x 불변식) · 헤더 순서 ·
+ *    body 셀을 **인덱스**로 단언한다 (크로스 리뷰 R3).
+ *
  * 🧭 **산문(prose)도 검사 대상이다** — 표만 지키면 "표는 2컬럼인데 설명은 단일 모델"이 남는다.
  *    설명이 오해의 1차 진입점이므로 lead·note·FWNOTE 를 표와 같은 급으로 본다 (크로스 리뷰 R2).
  */
@@ -88,6 +94,30 @@ function badModelPair(v) {
   if (v === null || typeof v !== 'object' || Array.isArray(v)) return `모델 객체가 아님 (${JSON.stringify(v)})`
   const missing = ['bio', 'x'].filter((k) => typeof v[k] !== 'string' || v[k].trim() === '')
   return missing.length > 0 ? `${missing.join(' / ')} 키 누락 또는 빈 값 (${JSON.stringify(v)})` : null
+}
+
+/**
+ * 🧭 **방향(direction) 축** — 라벨이 "들어있는가"만 보면 bio↔x 를 **맞바꿔도** 통과한다.
+ * 그 상태는 X 사용자가 "DCENT X" 컬럼에서 Biometric 라인의 `2.35.0` 을 읽고 미지원으로 판단하게
+ * 만들어, 이 objective 가 대체한 단일 컬럼 상태보다 **더 나쁘다**. swap 은 템플릿 복붙에서 나오는
+ * **실수**라 헤더의 "의도적 우회는 범위 밖" 선언이 덮지 못한다 (크로스 리뷰 R3).
+ * 판별자는 **값**이다 — `x` 는 전 항목 `'1.0.0'` 이고 `bio` 는 대부분 다르다.
+ */
+const X_VALUE = '1.0.0'
+
+/**
+ * 표 헤더에서 모델 컬럼의 **순서**를 단언한다 (BIO 가 먼저, X 가 나중).
+ * @returns {{bioIdx:number, xIdx:number}|null} 열거 불가면 null
+ */
+function assertModelColumnOrder(cells, where, out) {
+  const texts = [...cells].map((c) => c.textContent)
+  const bioIdx = texts.findIndex((t) => t.includes(BIO))
+  const xIdx = texts.findIndex((t) => t.includes(X))
+  if (bioIdx === -1 || xIdx === -1) return null // 부재는 다른 검사가 이미 잡는다
+  if (bioIdx > xIdx) {
+    out.push(`${where}: 모델 컬럼 순서가 뒤집혔다 — ${BIO} 가 ${xIdx + 1}번째 뒤(${bioIdx + 1}번째)에 있다.`)
+  }
+  return { bioIdx, xIdx }
 }
 
 /* 🔴 모수(母數) floor — "찾은 것의 모양"만 보면 **보호 대상을 지우는 것**이 게이트를 초록으로
@@ -132,7 +162,11 @@ if (fwreq === null || typeof fwreq !== 'object' || Object.keys(fwreq).length ===
       const method = Array.isArray(row) ? row[0] : '(unknown)'
       const bad = Array.isArray(row) ? badModelPair(row[1]) : '행이 배열이 아님'
       if (bad) failures.push(`FWREQ["${chainId}"] ${method}: ${bad}`)
-      else fwreqCells += 1
+      else if (row[1].x !== X_VALUE) {
+        // 방향 축 — bio↔x 를 맞바꾸면 x 가 bio 라인 값(2.x)이 된다. X 값이 정당하게 갈라지는 날이
+        // 오면 이 단언이 먼저 빨개져서 게이트를 함께 갱신하게 만든다(fail-closed).
+        failures.push(`FWREQ["${chainId}"] ${method}: x 값이 "${row[1].x}" 다 — X 는 전 항목 "${X_VALUE}" 여야 한다(bio↔x 뒤바뀜?).`)
+      } else fwreqCells += 1
     }
   }
   // floor — 체인/행을 **지워서** 초록을 만드는 경로를 막는다
@@ -163,7 +197,9 @@ if (!Array.isArray(matrix) || matrix.length === 0) {
     }
     const bad = badModelPair(row.fw)
     if (bad) failures.push(`MATRIX "${name}" fw: ${bad}`)
-    else matrixChecked += 1
+    else if (row.fw.x !== X_VALUE) {
+      failures.push(`MATRIX "${name}" fw.x 가 "${row.fw.x}" 다 — X 는 전 항목 "${X_VALUE}" 여야 한다(bio↔x 뒤바뀜?).`)
+    } else matrixChecked += 1
   }
   // floor — 행 자체를 지우는 경로를 막는다
   if (matrix.length < MIN_MATRIX_ROWS) {
@@ -284,6 +320,23 @@ for (const b of reqBlocks) {
     const absent = absentLabels(thead.textContent)
     if (absent.length > 0) {
       failures.push(`Requirements 표 헤더 ${where} 에 모델 컬럼 누락: ${absent.join(' / ')}`)
+      continue
+    }
+    // 방향 축 — 헤더 순서 + 그 순서에 맞는 body 값
+    const order = assertModelColumnOrder(thead.querySelectorAll('th'), `Requirements 표 헤더 ${where}`, failures)
+    if (order === null) continue
+    const table = thead.closest('table')
+    for (const row of table?.querySelectorAll('tbody tr') ?? []) {
+      const tds = row.querySelectorAll('td')
+      const xCell = tds[order.xIdx]
+      if (xCell === undefined) continue
+      if (!xCell.textContent.includes(X_VALUE)) {
+        failures.push(
+          `Requirements 표 ${where} 의 X 컬럼에 "${xCell.textContent.trim().slice(0, 24)}" 가 있다 — ` +
+            `X 는 "${X_VALUE}" 여야 한다(bio↔x 셀이 뒤바뀌었을 수 있다).`,
+        )
+        break
+      }
     }
   }
   // 기기/펌웨어 카드는 **두 모델 필수**다. 라벨을 둘 다 지워 "your device" 류로 되돌리는 회귀를
@@ -346,6 +399,12 @@ for (const h of matrixHeaders) {
   if (missing.length > 0) {
     failures.push(`Support Matrix 헤더 [${h.id}.${h.field}] 에 모델 컬럼 누락: ${missing.join(' / ')}`)
   }
+  // 방향 축 — 두 컬럼의 **순서**. 라벨 존재만 보면 맞바꿔도 통과한다.
+  const bioAt = h.src.indexOf(`Min FW · ${BIO}`)
+  const xAt = h.src.indexOf(`Min FW · ${X}`)
+  if (bioAt !== -1 && xAt !== -1 && bioAt > xAt) {
+    failures.push(`Support Matrix 헤더 [${h.id}.${h.field}] 의 모델 컬럼 순서가 뒤집혔다 — ${BIO} 가 먼저여야 한다.`)
+  }
   // (g2) 표 아래 note 산문 — "두 컬럼은 서로 다른 버전 라인" 설명이 사라지면 사용자는 두 값을
   //      비교 가능한 값으로 읽는다(이 objective 가 막으려는 바로 그 오해다).
   const notes = [...JSDOM.fragment(h.src).querySelectorAll('.note')]
@@ -364,7 +423,12 @@ let rendererChecked = 0
 if (typeof w.injectFwReq !== 'function') {
   failures.push('window.injectFwReq 가 함수가 아니다 — 렌더러가 사라졌거나 스크립트 실행이 깨졌다.')
 } else {
-  const sampleChain = Object.keys(fwreq ?? {})[0]
+  // 방향 축을 실제로 판별하려면 **bio !== x 인 행**이 있는 체인을 골라야 한다. bio 와 x 가 같은
+  // 체인을 쓰면 셀을 맞바꿔도 출력이 바이트 단위로 같아 어떤 단언으로도 못 잡는다
+  // (`review-finding-class-closure` — 값의 차이가 유일한 판별자).
+  const fwreqEntries = Object.entries(fwreq ?? {})
+  const sampleChain =
+    fwreqEntries.find(([, rows]) => rows.some((r) => r?.[1]?.bio !== r?.[1]?.x))?.[0] ?? fwreqEntries[0]?.[0]
   if (!sampleChain) {
     failures.push('injectFwReq 렌더 검사를 돌릴 FWREQ 체인이 없다 — (a) 검사와 함께 실패한 상태다.')
   } else {
@@ -389,6 +453,23 @@ if (typeof w.injectFwReq !== 'function') {
       if (missing.length > 0) {
         failures.push(`injectFwReq(${lang}) 표 헤더에 모델 컬럼 누락: ${missing.join(' / ')} — 체인 페이지 전부에 영향.`)
       } else {
+        // 방향 축 ① 헤더 순서
+        const order = assertModelColumnOrder(thead.querySelectorAll('th'), `injectFwReq(${lang}) 표 헤더`, failures)
+        // 방향 축 ② body 셀 — bio !== x 인 행을 데이터에서 골라 **인덱스로** 대조
+        const dataRows = fwreq[sampleChain] ?? []
+        const dataIdx = dataRows.findIndex((r) => r?.[1]?.bio !== r?.[1]?.x)
+        const domRow = host.querySelectorAll('table.params tbody tr')[dataIdx]
+        if (order !== null && dataIdx !== -1 && domRow !== undefined) {
+          const tds = domRow.querySelectorAll('td')
+          const expect = dataRows[dataIdx][1]
+          const method = dataRows[dataIdx][0]
+          if (!tds[order.bioIdx]?.textContent.includes(expect.bio)) {
+            failures.push(`injectFwReq(${lang}) ${sampleChain} ${method} 의 ${BIO} 셀이 "${expect.bio}" 가 아니다 — bio↔x 뒤바뀜.`)
+          }
+          if (!tds[order.xIdx]?.textContent.includes(expect.x)) {
+            failures.push(`injectFwReq(${lang}) ${sampleChain} ${method} 의 ${X} 셀이 "${expect.x}" 가 아니다 — bio↔x 뒤바뀜.`)
+          }
+        }
         rendererChecked += 1
       }
       // (g3) 같은 렌더러의 **형제 표면** — lead 산문과 FWNOTE note. 헤더만 단언하면 산문에서
@@ -445,6 +526,25 @@ let matrixRowsChecked = 0
       break
     }
     matrixRowsChecked += 1
+  }
+  // 방향 축 — `fw.bio !== fw.x` 인 MATRIX 행을 골라 **셀 인덱스**로 대조한다.
+  // (셀이 2개 있는지만 보면 두 셀을 맞바꿔도 통과한다.)
+  const dirRow = (w.MATRIX ?? []).find((r) => r?.fw?.bio !== undefined && r.fw.bio !== r.fw.x)
+  if (dirRow !== undefined) {
+    const domRow = rows.find((r) => r.querySelector('td')?.textContent?.trim() === dirRow.n)
+    if (domRow === undefined) {
+      failures.push(`Support Matrix 에 "${dirRow.n}" 행이 렌더되지 않았다 — 방향 축 검사가 성립하지 않는다.`)
+    } else {
+      const cells = domRow.querySelectorAll('td.m-fw')
+      if (cells.length === 2) {
+        if (!cells[0].textContent.includes(dirRow.fw.bio)) {
+          failures.push(`Support Matrix "${dirRow.n}" 의 1번째 .m-fw 셀이 ${BIO} 값("${dirRow.fw.bio}")이 아니다 — bio↔x 뒤바뀜.`)
+        }
+        if (!cells[1].textContent.includes(dirRow.fw.x)) {
+          failures.push(`Support Matrix "${dirRow.n}" 의 2번째 .m-fw 셀이 ${X} 값("${dirRow.fw.x}")이 아니다 — bio↔x 뒤바뀜.`)
+        }
+      }
+    }
   }
   // 값이 실제로 bio/x 로 갈라져 나오는지 — 두 셀이 전부 `—` 인 행만 있으면 렌더가 데이터를 잃은 것이다.
   const versionRow = rows.find((r) => {

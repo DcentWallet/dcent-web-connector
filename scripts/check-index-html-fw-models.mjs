@@ -183,6 +183,47 @@ for (const h of matrixHeaders) {
   }
 }
 
+// ── (e) 동적 렌더러 injectFwReq (EN·KO 각각) ─────────────────────────────────
+// 🔴 노출 면적이 가장 큰 표면이다 — 이 렌더러 하나가 **FWREQ 를 가진 25개 체인 페이지 전부**의
+//    Requirements 표 헤더를 만든다. 헤더 상수(`bh`/`xh`)가 비면 25페이지에서 모델 컬럼이
+//    통째로 사라지는데, (a)~(d) 는 그것을 못 본다(하드코딩 4블록 + Support Matrix 2개만 본다).
+//    그래서 소스 문자열이 아니라 **렌더러를 실제로 호출**해 나온 `<thead>` 를 단언한다 —
+//    상수만 남고 실제 사용이 끊긴 경우까지 잡힌다.
+let rendererChecked = 0
+if (typeof w.injectFwReq !== 'function') {
+  failures.push('window.injectFwReq 가 함수가 아니다 — 렌더러가 사라졌거나 스크립트 실행이 깨졌다.')
+} else {
+  const sampleChain = Object.keys(fwreq ?? {})[0]
+  if (!sampleChain) {
+    failures.push('injectFwReq 렌더 검사를 돌릴 FWREQ 체인이 없다 — (a) 검사와 함께 실패한 상태다.')
+  } else {
+    for (const ko of [false, true]) {
+      const lang = ko ? 'KO' : 'EN'
+      const host = w.document.createElement('div')
+      // injectFwReq 는 `.method-chips` 를 앵커로 `afterend` 삽입한다 — 부모가 있어야 한다.
+      host.innerHTML = '<div class="method-chips"></div>'
+      try {
+        w.injectFwReq(host, sampleChain, ko)
+      } catch (e) {
+        failures.push(`injectFwReq(${lang}) 렌더 중 예외: ${e && e.message ? e.message : String(e)}`)
+        continue
+      }
+      const thead = host.querySelector('table.params thead')
+      if (thead === null) {
+        // fail-closed — 표가 안 나오면 아래 라벨 검사가 "위반 0건"으로 공허하게 통과한다.
+        failures.push(`injectFwReq(${lang}) 가 Requirements 표를 렌더하지 않았다 (체인 ${sampleChain}).`)
+        continue
+      }
+      const missing = [BIO, X].filter((label) => !thead.textContent.includes(label))
+      if (missing.length > 0) {
+        failures.push(`injectFwReq(${lang}) 표 헤더에 모델 컬럼 누락: ${missing.join(' / ')} — 체인 페이지 전부에 영향.`)
+      } else {
+        rendererChecked += 1
+      }
+    }
+  }
+}
+
 if (failures.length > 0) {
   console.error('✗ docs/index.html 펌웨어 표 모델 축(bio/x) 검사 실패')
   for (const f of failures) console.error(`  - ${f}`)
@@ -192,5 +233,6 @@ if (failures.length > 0) {
 console.log(
   `✓ docs/index.html 펌웨어 모델 축 — FWREQ ${fwreqCells}행(체인 ${Object.keys(fwreq).length}) · ` +
     `MATRIX ${matrixChecked}행 검사 / ${matrixSkipped}행 skip(fw 미지정) · ` +
-    `Requirements 블록 ${reqBlocks.length} · Support Matrix 헤더 ${matrixHeaders.length}`,
+    `Requirements 블록 ${reqBlocks.length} · Support Matrix 헤더 ${matrixHeaders.length} · ` +
+    `injectFwReq 렌더 ${rendererChecked}/2 (EN·KO)`,
 )

@@ -2935,7 +2935,7 @@ search:'getDeviceInfo device id firmware label connectType fingerprint coin_list
 <tr><td><code>coin_list</code></td><td class="type">{ name }[]?</td><td>Installed coin apps</td></tr>
 <tr><td><code>fingerprint</code></td><td class="type">{ max, enrolled }?</td><td>Biometric slots</td></tr>
 <tr><td><code>isAttached</code></td><td class="type">boolean?</td><td>Whether a device is attached</td></tr>
-<tr><td><code>deviceModel</code></td><td class="type">string?</td><td>Connected hardware model — <code>'DCENT-X'</code> for DCENT X, <code>undefined</code> for a D'CENT Biometric Wallet or a bridge that does not report the model. <strong>⚠️ Currently always <code>undefined</code></strong> — the bridge does not populate this field yet.</td></tr>
+<tr><td><code>deviceModel</code></td><td class="type">string?</td><td>Connected hardware model — <code>'DCENT-X'</code> for a DCENT X; <code>undefined</code> for a D'CENT Biometric Wallet or a bridge that does not report the model.</td></tr>
 </tbody></table>
 <h2>Request / Response</h2>
 <div class="io-pair"><div class="io-label">Request</div>
@@ -2945,7 +2945,7 @@ const label = res.body.parameter?.label      // typed access</pre></div>
 <div class="io-label">Response</div>
 <div class="code"><div class="cb-head"><span>json</span><button class="copy">Copy</button></div>
 <pre>{\n  \"header\": {\n    \"version\": \"1.0\",\n    \"status\": \"success\"\n  },\n  \"body\": {\n    \"command\": \"getDeviceInfo\",\n    \"parameter\": {\n      \"deviceId\": \"…\",\n      \"version\": \"2.x.x\",\n      \"ksm_version\": \"1.x.x\",\n      \"label\": \"My D'CENT\",\n      \"connectType\": \"usb\",\n      \"coin_list\": [\n        {\n          \"name\": \"ETHEREUM\"\n        }\n      ],\n      \"fingerprint\": {\n        \"max\": 10,\n        \"enrolled\": 2\n      }\n    }\n  }\n}</pre></div></div>
-<div class="note info"><span class="ni">i</span><div><code>deviceModel</code> is absent from this example on purpose — the bridge does not populate it yet, so it is <strong>always <code>undefined</code></strong> today. When a DCENT X reports its model the field arrives as <code>"deviceModel": "DCENT-X"</code>.</div></div><div class="note tip"><span class="ni">✓</span><div>Cache the result — device info rarely changes within a session.</div></div>
+<div class="note info"><span class="ni">i</span><div>This example is a <strong>D'CENT Biometric Wallet</strong>, which does not report a model — so <code>deviceModel</code> is absent. A <strong>DCENT X</strong> returns <code>"deviceModel": "DCENT-X"</code> in the same object.</div></div><div class="note tip"><span class="ni">✓</span><div>Cache the result — device info rarely changes within a session.</div></div>
 <div class="related"><a href="#/info">→ info</a><a href="#/set-label">→ setLabel</a><a href="#/v1response">→ V1Response</a></div>`});
 
 DOC.register('info',{title:'info',breadcrumb:'<span>Core API</span> / Device API / info',
@@ -3276,7 +3276,7 @@ Object.assign(window.KO, {
 <tr><td><code>coin_list</code></td><td class="type">{ name }[]?</td><td>설치된 코인 앱</td></tr>
 <tr><td><code>fingerprint</code></td><td class="type">{ max, enrolled }?</td><td>생체 슬롯</td></tr>
 <tr><td><code>isAttached</code></td><td class="type">boolean?</td><td>기기 부착 여부</td></tr>
-<tr><td><code>deviceModel</code></td><td class="type">string?</td><td>연결된 하드웨어 모델 — DCENT X는 <code>'DCENT-X'</code>, D'CENT Biometric Wallet 또는 모델을 보고하지 않는 브리지는 <code>undefined</code>. <strong>⚠️ 현재는 항상 <code>undefined</code></strong>입니다 — 브리지가 아직 이 값을 채우지 않습니다.</td></tr>
+<tr><td><code>deviceModel</code></td><td class="type">string?</td><td>연결된 하드웨어 모델 — DCENT X는 <code>'DCENT-X'</code>, D'CENT Biometric Wallet 또는 모델을 보고하지 않는 브리지는 <code>undefined</code>.</td></tr>
 </tbody></table>
 <h2>요청 / 응답</h2>
 <div class="io-pair"><div class="io-label">요청</div>
@@ -3286,7 +3286,7 @@ const label = res.body.parameter?.label      // typed 접근</pre></div>
 <div class="io-label">응답</div>
 <div class="code"><div class="cb-head"><span>json</span><button class="copy">복사</button></div>
 <pre>{\n  \"header\": {\n    \"version\": \"1.0\",\n    \"status\": \"success\"\n  },\n  \"body\": {\n    \"command\": \"getDeviceInfo\",\n    \"parameter\": {\n      \"deviceId\": \"…\",\n      \"version\": \"2.x.x\",\n      \"ksm_version\": \"1.x.x\",\n      \"label\": \"My D'CENT\",\n      \"connectType\": \"usb\",\n      \"coin_list\": [\n        {\n          \"name\": \"ETHEREUM\"\n        }\n      ],\n      \"fingerprint\": {\n        \"max\": 10,\n        \"enrolled\": 2\n      }\n    }\n  }\n}</pre></div></div>
-<div class="note info"><span class="ni">i</span><div>이 예제에 <code>deviceModel</code>이 없는 것은 의도적입니다 — 브리지가 아직 이 값을 채우지 않아 <strong>현재는 항상 <code>undefined</code></strong>입니다. DCENT X가 모델을 보고하면 <code>"deviceModel": "DCENT-X"</code>로 전달됩니다.</div></div><div class="note tip"><span class="ni">✓</span><div>결과를 캐시하세요 — 세션 내 기기 정보는 거의 바뀌지 않습니다.</div></div>
+<div class="note info"><span class="ni">i</span><div>이 예제는 모델을 보고하지 않는 <strong>D'CENT Biometric Wallet</strong>이라 <code>deviceModel</code>이 없습니다. <strong>DCENT X</strong>는 같은 객체에 <code>"deviceModel": "DCENT-X"</code>를 담아 반환합니다.</div></div><div class="note tip"><span class="ni">✓</span><div>결과를 캐시하세요 — 세션 내 기기 정보는 거의 바뀌지 않습니다.</div></div>
 <div class="related"><a href="#/info">→ info</a><a href="#/set-label">→ setLabel</a><a href="#/v1response">→ V1Response</a></div>`},
 
 'info':{bcko:'<span>Core API</span> / Device API / info',ko:`

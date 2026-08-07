@@ -226,15 +226,37 @@ export interface DeviceInfoPayload {
   connectType?: 'usb' | 'ble'
   /** 디바이스 부착 여부 */
   isAttached?: boolean
+  /**
+   * 연결된 하드웨어 모델 식별자 (m09-04-28).
+   *
+   * - `'DCENT-X'` — DCENT X (펌웨어 1.x 라인)
+   * - `undefined` — D'CENT Biometric Wallet(V1, 펌웨어 1.x~2.x 라인) 또는 모델을 보고하지 않는 옛 bridge
+   *
+   * NOTE(decision-anchor: dcentx-model-id-naming): 값 표기를 wm(`BleDeviceModel`,
+   * `hw/ble-device-configs.ts`)의 `'DCENT-X'`(하이픈)에 맞춘다 — 모바일 앱의
+   * `'BIO' | 'DCENT_X'`(언더바)와 **일부러 다르다**. 웹 SDK의 모델 값은 wm transport가
+   * 그대로 흘려보내는 값이고, 중간에서 재매핑하면 (a) wm이 모델을 추가할 때마다 매핑
+   * 테이블이 drift하고 (b) 매핑 누락 시 알 수 없는 모델이 조용히 `undefined`(=Biometric)로
+   * 접혀 **X에 Biometric 게이트가 적용되는 오판**이 생긴다. 모바일과 통일하려고 이 값을
+   * `'DCENT_X'`로 바꾸지 말 것 (2026-08-07 사용자 결정).
+   *
+   * connector는 이 값을 **relay만** 한다 — 판정(게이트/캐퍼빌리티)은 bridge 소관이다.
+   */
+  deviceModel?: string
 }
 
 /**
- * 컴파일 타임 계약 고정 — `deviceId` / `version` 이 wire 키다.
+ * 컴파일 타임 계약 고정 — `deviceId` / `version` / `deviceModel` 이 wire 키다.
  *
  * `tsconfig.json` 의 `include` 는 `src/**` 뿐이라 `tests/**` 는 `tsc` 가 보지 않고,
- * 단위 테스트도 babel-jest 라 타입 주석이 지워진다(크로스 리뷰 지적). 따라서 이름이 되돌아가는
- * 회귀는 **여기서만** 컴파일 에러로 잡힌다. 필드명을 v1 이름으로 되돌리면 이 선언이 깨진다.
+ * 단위 테스트도 babel-jest 라 타입 주석이 지워진다(크로스 리뷰 지적).
+ *
+ * ⚠️ 이 선언이 잡는 범위 (실측, 크로스 리뷰 R1):
+ *  - **부분 rename** — 인터페이스 필드만 바꾸고 이 리터럴을 그대로 두면 `TS2561` 로 잡힌다.
+ *  - **일관 rename** — 인터페이스와 이 리터럴을 **함께** 바꾸면 `yarn tsc` 는 exit 0 이다.
+ *    그 회귀는 `T-U-DEVMODEL-01`(tests/unit/v2/sign/info.test.ts)이 이 파일의 소스를 직접 읽어
+ *    `deviceModel` 키 존재를 단언하는 것으로 잡는다. 둘은 짝이며 어느 한쪽만으로는 부족하다.
  */
-const _deviceInfoWireKeyContract: DeviceInfoPayload = { deviceId: '', version: '' }
+const _deviceInfoWireKeyContract: DeviceInfoPayload = { deviceId: '', version: '', deviceModel: '' }
 void _deviceInfoWireKeyContract
 /* eslint-enable camelcase */

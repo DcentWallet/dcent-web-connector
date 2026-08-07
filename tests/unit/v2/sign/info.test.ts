@@ -16,6 +16,9 @@
  *    맞춰 default-generic을 쓰는 info()로 대상 변경.)
  */
 
+import { readFileSync } from 'fs'
+import { resolve as resolvePath } from 'path'
+
 import { info, getDeviceInfo, getAccountInfo } from '../../../../src/sign/info'
 import type { DeviceInfoPayload } from '../../../../src/sign/types'
 import { ensureSingleton, _resetForTesting } from '../../../../src/singleton'
@@ -111,6 +114,7 @@ describe('T-U-TYPE-* — DeviceInfoPayload / V1Response generic 타입 계약', 
         ksm_version: 'v1.0',
         state: 'initialised',
         isAttached: true,
+        deviceModel: 'DCENT-X',
       },
     })
     const resp = await getDeviceInfo()
@@ -124,6 +128,7 @@ describe('T-U-TYPE-* — DeviceInfoPayload / V1Response generic 타입 계약', 
     expect(resp.body.parameter?.ksm_version).toBe('v1.0')
     expect(resp.body.parameter?.state).toBe('initialised')
     expect(resp.body.parameter?.isAttached).toBe(true)
+    expect(resp.body.parameter?.deviceModel).toBe('DCENT-X')
   })
 
   test('T-U-TYPE-03: V1Response generic default — 타입 인자 없는 호출자(info())는 Record<string,unknown>', async () => {
@@ -135,5 +140,55 @@ describe('T-U-TYPE-* — DeviceInfoPayload / V1Response generic 타입 계약', 
     // info()는 V1Response(default generic)을 반환 — 임의 키 접근 가능
     const resp = await info()
     expect(resp.body.parameter?.foo).toBe('bar')
+  })
+})
+
+// ── T-U-DEVMODEL-* — deviceModel(모델 축) relay 계약 (m09-04-28) ────────────────
+// connector 는 모델을 **판정하지 않고 relay 만** 한다. 값을 채우는 것은 bridge(m13-02-10).
+describe('T-U-DEVMODEL-* — DeviceInfoPayload.deviceModel relay 계약', () => {
+  test('T-U-DEVMODEL-01: _deviceInfoWireKeyContract 가 deviceModel 을 wire 키로 고정', () => {
+    // babel-jest 는 타입을 지우므로 아래 할당은 문서화 + 런타임 스모크다.
+    const payload: DeviceInfoPayload = { deviceId: 'D1', version: '1.0.0', deviceModel: 'DCENT-X' }
+    expect(payload.deviceModel).toBe('DCENT-X')
+
+    // 진짜 compile-time 강제는 `yarn tsc`(include=src) 가 보는 src/sign/types.ts 의
+    // `_deviceInfoWireKeyContract` 다. 그 선언에서 키가 빠지면 여기서도 잡히도록 소스를 직접 읽는다
+    // (필드를 지우면 이 단언이 실패 → discriminating-test-required).
+    const src = readFileSync(resolvePath(__dirname, '../../../../src/sign/types.ts'), 'utf8')
+    const contract = /const _deviceInfoWireKeyContract: DeviceInfoPayload = \{([^}]*)\}/.exec(src)
+    expect(contract).not.toBeNull()
+    expect(contract?.[1]).toContain('deviceModel')
+    // 모델 값 표기 결정(하이픈 'DCENT-X')의 앵커 주석이 사라지지 않았는지도 함께 고정
+    expect(src).toContain('NOTE(decision-anchor: dcentx-model-id-naming)')
+  })
+
+  test('T-U-DEVMODEL-02: bridge 가 deviceModel 을 보내면 dApp payload 에 그대로 실린다', async () => {
+    const { transport } = ensureSingleton()
+    jest.spyOn(transport, 'send').mockResolvedValue({
+      id: 'r-model',
+      result: { deviceId: 'D-X-1', version: '1.0.0', deviceModel: 'DCENT-X' },
+    })
+
+    const resp = await getDeviceInfo()
+
+    // 재매핑 금지 — wm 표기('DCENT-X', 하이픈)가 그대로 dApp 까지 간다
+    expect(resp.body.parameter?.deviceModel).toBe('DCENT-X')
+    expect(resp.body.parameter?.version).toBe('1.0.0')
+  })
+
+  test('T-U-DEVMODEL-03: 옛 bridge(deviceModel 부재) 도 throw 없이 나머지 필드가 전달된다', async () => {
+    const { transport } = ensureSingleton()
+    jest.spyOn(transport, 'send').mockResolvedValue({
+      id: 'r-nomodel',
+      result: { deviceId: 'D-BIO-1', version: '2.35.0', label: 'bio' },
+    })
+
+    const resp = await getDeviceInfo()
+
+    expect(resp.header.status).toBe('success')
+    expect(resp.body.parameter?.deviceModel).toBeUndefined()
+    expect(resp.body.parameter?.deviceId).toBe('D-BIO-1')
+    expect(resp.body.parameter?.version).toBe('2.35.0')
+    expect(resp.body.parameter?.label).toBe('bio')
   })
 })

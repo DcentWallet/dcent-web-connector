@@ -659,58 +659,72 @@ function navLink(c){
 /* ---- per-network minimum firmware requirements ----
    Source: github.com/DcentWallet/info firmwareVersion.md (version a coin/method was introduced).
    WC-based methods (signData/signAuthEntry/getPublicKey + Cardano/Stellar signMessage) = 2.35.0 ("general message signing").
-   Rendered as a per-page Requirements table by injectFwReq(); Support Matrix "Min FW" column uses MATRIX row .fw. */
+   Rendered as a per-page Requirements table by injectFwReq(); Support Matrix "Min FW" columns use MATRIX row .fw.
+
+   Value shape: {bio, x} — both keys are REQUIRED.
+     bio = D'CENT Biometric Wallet (firmware 1.x~2.x line)   x = DCENT X (firmware 1.x line)
+
+   NOTE(decision-anchor: dcentx-fw-table-two-columns): 두 모델의 버전 라인(X 1.x vs Biometric 2.x)은
+   같은 수직선에서 비교할 수 없다. 단일 컬럼으로 합치면 X 사용자에게 "내 펌웨어 1.0.0 < 2.35.0 →
+   미지원"으로 읽혀, 실제로는 지원되는 기능을 안 쓰게 만든다. bio/x 두 키는 항상 함께 유지하고
+   단일 값으로 되돌리지 말 것 — `yarn check:index-fw-models`(scripts/check-index-html-fw-models.mjs)가
+   전 항목을 강제한다 (2026-08-07 사용자 결정, m09-04-28). */
 window.FWREQ = {
- "chain-ethereum":[["getAddress","1.0.0"],["signTransaction","1.0.0"],["signMessage","1.3.0"],["signTypedData","2.11.1"]],
- "chain-kaia":[["getAddress","1.5.1"],["signTransaction","1.5.1"],["signMessage","1.5.1"],["signTypedData","2.11.1"]],
- "chain-bitcoin":[["getAddress","1.0.0"],["signTransaction","1.0.0"]],
- "chain-bitcoincash":[["getAddress","1.5.1"],["signTransaction","1.5.1"]],
- "chain-litecoin":[["getAddress","1.5.1"],["signTransaction","1.5.1"]],
- "chain-dogecoin":[["getAddress","2.3.0"],["signTransaction","2.3.0"]],
- "chain-dash":[["getAddress","1.5.1"],["signTransaction","1.5.1"]],
- "chain-conflux":[["getAddress","2.18.3"],["signTransaction","2.18.3"]],
- "chain-solana":[["getAddress","2.16.5"],["signTransaction","2.16.5"],["signMessage","2.31.0"]],
- "chain-cardano":[["getAddress","2.7.0"],["signTransaction","2.7.0",{en:"plain transfer<br>CIP-30 / CIP-95 governance requests (DRep, voting, certificates) require <code>2.35.0</code>",ko:"일반 전송 기준<br>CIP-30 / CIP-95 거버넌스 요청(DRep·투표·인증서)은 <code>2.35.0</code> 필요"}],["signData","2.35.0"],["getPublicKey","2.35.0"]],
- "chain-cosmos":[["getAddress","2.21.0"],["signTransaction","2.21.0"]],
- "chain-xrp":[["getAddress","2.4.0"],["signTransaction","2.4.0",{en:"plain transfer<br>dApp (WalletConnect) requests require <code>2.35.0</code>",ko:"일반 전송 기준<br>댑(WalletConnect) 요청은 <code>2.35.0</code> 필요"}]],
- "chain-xahau":[["getAddress","2.32.0"],["signTransaction","2.32.0"]],
- "chain-tron":[["getAddress","2.3.0"],["signTransaction","2.3.0"]],
- "chain-stellar":[["getAddress","2.20.0"],["signTransaction","2.20.0",{en:"plain transfer<br>dApp (WalletConnect / Soroban) requests require <code>2.35.0</code>",ko:"일반 전송 기준<br>댑(WalletConnect / Soroban) 요청은 <code>2.35.0</code> 필요"}],["signMessage","2.35.0"],["signAuthEntry","2.35.0"]],
- "chain-polkadot":[["getAddress","2.19.1"],["signTransaction","2.19.1"],["signMessage","2.30.2"]],
- "chain-near":[["getAddress","2.24.0"],["signTransaction","2.24.0"]],
- "chain-hedera":[["getAddress","2.19.3"],["signTransaction","2.19.3"]],
- "chain-vechain":[["getAddress","2.23.4"],["signTransaction","2.23.4"]],
- "chain-filecoin":[["getAddress","2.33.0"],["signTransaction","2.33.0"]],
- "chain-tezos":[["getAddress","2.24.1"],["signTransaction","2.24.1"]],
- "chain-stacks":[["getAddress","2.14.1"],["signTransaction","2.14.1"]],
- "chain-algorand":[["getAddress","2.29.0"],["signTransaction","2.29.0"]],
- "chain-constellation":[["getAddress","2.34.0"],["signTransaction","2.34.0"]],
- "chain-havah":[["getAddress","2.26.0"],["signTransaction","2.26.0"]]
+ "chain-ethereum":[["getAddress",{bio:"1.0.0",x:"1.0.0"}],["signTransaction",{bio:"1.0.0",x:"1.0.0"}],["signMessage",{bio:"1.3.0",x:"1.0.0"}],["signTypedData",{bio:"2.11.1",x:"1.0.0"}]],
+ "chain-kaia":[["getAddress",{bio:"1.5.1",x:"1.0.0"}],["signTransaction",{bio:"1.5.1",x:"1.0.0"}],["signMessage",{bio:"1.5.1",x:"1.0.0"}],["signTypedData",{bio:"2.11.1",x:"1.0.0"}]],
+ "chain-bitcoin":[["getAddress",{bio:"1.0.0",x:"1.0.0"}],["signTransaction",{bio:"1.0.0",x:"1.0.0"}]],
+ "chain-bitcoincash":[["getAddress",{bio:"1.5.1",x:"1.0.0"}],["signTransaction",{bio:"1.5.1",x:"1.0.0"}]],
+ "chain-litecoin":[["getAddress",{bio:"1.5.1",x:"1.0.0"}],["signTransaction",{bio:"1.5.1",x:"1.0.0"}]],
+ "chain-dogecoin":[["getAddress",{bio:"2.3.0",x:"1.0.0"}],["signTransaction",{bio:"2.3.0",x:"1.0.0"}]],
+ "chain-dash":[["getAddress",{bio:"1.5.1",x:"1.0.0"}],["signTransaction",{bio:"1.5.1",x:"1.0.0"}]],
+ "chain-conflux":[["getAddress",{bio:"2.18.3",x:"1.0.0"}],["signTransaction",{bio:"2.18.3",x:"1.0.0"}]],
+ "chain-solana":[["getAddress",{bio:"2.16.5",x:"1.0.0"}],["signTransaction",{bio:"2.16.5",x:"1.0.0"}],["signMessage",{bio:"2.31.0",x:"1.0.0"}]],
+ "chain-cardano":[["getAddress",{bio:"2.7.0",x:"1.0.0"}],["signTransaction",{bio:"2.7.0",x:"1.0.0"},{en:"plain transfer<br>CIP-30 / CIP-95 governance requests (DRep, voting, certificates) require <code>2.35.0</code>",ko:"일반 전송 기준<br>CIP-30 / CIP-95 거버넌스 요청(DRep·투표·인증서)은 <code>2.35.0</code> 필요"}],["signData",{bio:"2.35.0",x:"1.0.0"}],["getPublicKey",{bio:"2.35.0",x:"1.0.0"}]],
+ "chain-cosmos":[["getAddress",{bio:"2.21.0",x:"1.0.0"}],["signTransaction",{bio:"2.21.0",x:"1.0.0"}]],
+ "chain-xrp":[["getAddress",{bio:"2.4.0",x:"1.0.0"}],["signTransaction",{bio:"2.4.0",x:"1.0.0"},{en:"plain transfer<br>dApp (WalletConnect) requests require <code>2.35.0</code>",ko:"일반 전송 기준<br>댑(WalletConnect) 요청은 <code>2.35.0</code> 필요"}]],
+ "chain-xahau":[["getAddress",{bio:"2.32.0",x:"1.0.0"}],["signTransaction",{bio:"2.32.0",x:"1.0.0"}]],
+ "chain-tron":[["getAddress",{bio:"2.3.0",x:"1.0.0"}],["signTransaction",{bio:"2.3.0",x:"1.0.0"}]],
+ "chain-stellar":[["getAddress",{bio:"2.20.0",x:"1.0.0"}],["signTransaction",{bio:"2.20.0",x:"1.0.0"},{en:"plain transfer<br>dApp (WalletConnect / Soroban) requests require <code>2.35.0</code>",ko:"일반 전송 기준<br>댑(WalletConnect / Soroban) 요청은 <code>2.35.0</code> 필요"}],["signMessage",{bio:"2.35.0",x:"1.0.0"}],["signAuthEntry",{bio:"2.35.0",x:"1.0.0"}]],
+ "chain-polkadot":[["getAddress",{bio:"2.19.1",x:"1.0.0"}],["signTransaction",{bio:"2.19.1",x:"1.0.0"}],["signMessage",{bio:"2.30.2",x:"1.0.0"}]],
+ "chain-near":[["getAddress",{bio:"2.24.0",x:"1.0.0"}],["signTransaction",{bio:"2.24.0",x:"1.0.0"}]],
+ "chain-hedera":[["getAddress",{bio:"2.19.3",x:"1.0.0"}],["signTransaction",{bio:"2.19.3",x:"1.0.0"}]],
+ "chain-vechain":[["getAddress",{bio:"2.23.4",x:"1.0.0"}],["signTransaction",{bio:"2.23.4",x:"1.0.0"}]],
+ "chain-filecoin":[["getAddress",{bio:"2.33.0",x:"1.0.0"}],["signTransaction",{bio:"2.33.0",x:"1.0.0"}]],
+ "chain-tezos":[["getAddress",{bio:"2.24.1",x:"1.0.0"}],["signTransaction",{bio:"2.24.1",x:"1.0.0"}]],
+ "chain-stacks":[["getAddress",{bio:"2.14.1",x:"1.0.0"}],["signTransaction",{bio:"2.14.1",x:"1.0.0"}]],
+ "chain-algorand":[["getAddress",{bio:"2.29.0",x:"1.0.0"}],["signTransaction",{bio:"2.29.0",x:"1.0.0"}]],
+ "chain-constellation":[["getAddress",{bio:"2.34.0",x:"1.0.0"}],["signTransaction",{bio:"2.34.0",x:"1.0.0"}]],
+ "chain-havah":[["getAddress",{bio:"2.26.0",x:"1.0.0"}],["signTransaction",{bio:"2.26.0",x:"1.0.0"}]]
 };
 window.FWNOTE = {
- "chain-ethereum":{en:"Values are for Ethereum mainnet. Some EVM chains need newer firmware — 64-bit chainIds require <code>2.19.7</code>, and several chains were added later (e.g. BSC <code>2.6.1</code>, Polygon <code>2.8.0</code>).",ko:"Ethereum 메인넷 기준입니다. 일부 EVM 체인은 더 최신 펌웨어가 필요합니다 — 64-bit chainId는 <code>2.19.7</code>, 일부 체인은 이후 추가되었습니다(예: BSC <code>2.6.1</code>, Polygon <code>2.8.0</code>)."},
- "chain-bitcoin":{en:"SegWit (bech32) addresses require firmware <code>1.7.0</code> or higher.",ko:"SegWit(bech32) 주소는 펌웨어 <code>1.7.0</code> 이상이 필요합니다."},
- "chain-solana":{en:"SPL token support was added in firmware <code>2.17.1</code>.",ko:"SPL 토큰 지원은 펌웨어 <code>2.17.1</code>에서 추가되었습니다."},
- "chain-cosmos":{en:"COREUM smart-token support was added in firmware <code>2.28.1</code>.",ko:"COREUM 스마트 토큰 지원은 펌웨어 <code>2.28.1</code>에서 추가되었습니다."},
- "chain-near":{en:"NEAR token (not native NEAR) requires firmware <code>2.27.1</code> or higher.",ko:"NEAR 토큰(네이티브 NEAR 제외)은 펌웨어 <code>2.27.1</code> 이상이 필요합니다."},
- "chain-polkadot":{en:"Astar and other Substrate parachains are a separate device family (Parachain), added in firmware <code>2.30.0</code> — distinct from Polkadot (DOT).",ko:"Astar 등 기타 Substrate 파라체인은 별도의 기기 계열(Parachain)로 펌웨어 <code>2.30.0</code>에서 추가되었습니다 — Polkadot(DOT)과 구분됩니다."},
- "chain-xrp":{en:"The dApp (WalletConnect) <code>signTransaction</code> path requires firmware <code>2.35.0+</code> and is supported — arbitrary XRPL transaction types (AccountSet, OfferCreate, EscrowCreate, TrustSet, …) sign through the same wire path.",ko:"dApp(WalletConnect) <code>signTransaction</code> 경로는 펌웨어 <code>2.35.0+</code>가 필요하며 지원됩니다 — 다양한 XRPL 트랜잭션 타입(AccountSet, OfferCreate, EscrowCreate, TrustSet 등)이 동일 wire 경로로 서명됩니다."},
- "chain-stellar":{en:"The dApp (WalletConnect / Soroban) <code>signTransaction</code> path requires firmware <code>2.35.0+</code> and is supported — see the <code>stellar-soroban-invoke-*</code> and <code>stellar-xdr-passthrough-blind-sign</code> playground presets.",ko:"dApp(WalletConnect / Soroban) <code>signTransaction</code> 경로는 펌웨어 <code>2.35.0+</code>가 필요하며 지원됩니다 — playground의 <code>stellar-soroban-invoke-*</code>, <code>stellar-xdr-passthrough-blind-sign</code> preset 참고."}
+ "chain-ethereum":{en:"Firmware versions below are for the <strong>D'CENT Biometric Wallet</strong> line — <strong>DCENT X</strong> supports them from <code>1.0.0</code>. Values are for Ethereum mainnet. Some EVM chains need newer firmware — 64-bit chainIds require <code>2.19.7</code>, and several chains were added later (e.g. BSC <code>2.6.1</code>, Polygon <code>2.8.0</code>).",ko:"아래 펌웨어 버전은 <strong>D'CENT Biometric Wallet</strong> 기준입니다 — <strong>DCENT X</strong>는 <code>1.0.0</code>부터 지원합니다. Ethereum 메인넷 기준입니다. 일부 EVM 체인은 더 최신 펌웨어가 필요합니다 — 64-bit chainId는 <code>2.19.7</code>, 일부 체인은 이후 추가되었습니다(예: BSC <code>2.6.1</code>, Polygon <code>2.8.0</code>)."},
+ "chain-bitcoin":{en:"Firmware versions below are for the <strong>D'CENT Biometric Wallet</strong> line — <strong>DCENT X</strong> supports them from <code>1.0.0</code>. SegWit (bech32) addresses require firmware <code>1.7.0</code> or higher.",ko:"아래 펌웨어 버전은 <strong>D'CENT Biometric Wallet</strong> 기준입니다 — <strong>DCENT X</strong>는 <code>1.0.0</code>부터 지원합니다. SegWit(bech32) 주소는 펌웨어 <code>1.7.0</code> 이상이 필요합니다."},
+ "chain-solana":{en:"Firmware versions below are for the <strong>D'CENT Biometric Wallet</strong> line — <strong>DCENT X</strong> supports them from <code>1.0.0</code>. SPL token support was added in firmware <code>2.17.1</code>.",ko:"아래 펌웨어 버전은 <strong>D'CENT Biometric Wallet</strong> 기준입니다 — <strong>DCENT X</strong>는 <code>1.0.0</code>부터 지원합니다. SPL 토큰 지원은 펌웨어 <code>2.17.1</code>에서 추가되었습니다."},
+ "chain-cosmos":{en:"Firmware versions below are for the <strong>D'CENT Biometric Wallet</strong> line — <strong>DCENT X</strong> supports them from <code>1.0.0</code>. COREUM smart-token support was added in firmware <code>2.28.1</code>.",ko:"아래 펌웨어 버전은 <strong>D'CENT Biometric Wallet</strong> 기준입니다 — <strong>DCENT X</strong>는 <code>1.0.0</code>부터 지원합니다. COREUM 스마트 토큰 지원은 펌웨어 <code>2.28.1</code>에서 추가되었습니다."},
+ "chain-near":{en:"Firmware versions below are for the <strong>D'CENT Biometric Wallet</strong> line — <strong>DCENT X</strong> supports them from <code>1.0.0</code>. NEAR token (not native NEAR) requires firmware <code>2.27.1</code> or higher.",ko:"아래 펌웨어 버전은 <strong>D'CENT Biometric Wallet</strong> 기준입니다 — <strong>DCENT X</strong>는 <code>1.0.0</code>부터 지원합니다. NEAR 토큰(네이티브 NEAR 제외)은 펌웨어 <code>2.27.1</code> 이상이 필요합니다."},
+ "chain-polkadot":{en:"Firmware versions below are for the <strong>D'CENT Biometric Wallet</strong> line — <strong>DCENT X</strong> supports them from <code>1.0.0</code>. Astar and other Substrate parachains are a separate device family (Parachain), added in firmware <code>2.30.0</code> — distinct from Polkadot (DOT).",ko:"아래 펌웨어 버전은 <strong>D'CENT Biometric Wallet</strong> 기준입니다 — <strong>DCENT X</strong>는 <code>1.0.0</code>부터 지원합니다. Astar 등 기타 Substrate 파라체인은 별도의 기기 계열(Parachain)로 펌웨어 <code>2.30.0</code>에서 추가되었습니다 — Polkadot(DOT)과 구분됩니다."},
+ "chain-xrp":{en:"Firmware versions below are for the <strong>D'CENT Biometric Wallet</strong> line — <strong>DCENT X</strong> supports them from <code>1.0.0</code>. The dApp (WalletConnect) <code>signTransaction</code> path requires firmware <code>2.35.0+</code> and is supported — arbitrary XRPL transaction types (AccountSet, OfferCreate, EscrowCreate, TrustSet, …) sign through the same wire path.",ko:"아래 펌웨어 버전은 <strong>D'CENT Biometric Wallet</strong> 기준입니다 — <strong>DCENT X</strong>는 <code>1.0.0</code>부터 지원합니다. dApp(WalletConnect) <code>signTransaction</code> 경로는 펌웨어 <code>2.35.0+</code>가 필요하며 지원됩니다 — 다양한 XRPL 트랜잭션 타입(AccountSet, OfferCreate, EscrowCreate, TrustSet 등)이 동일 wire 경로로 서명됩니다."},
+ "chain-stellar":{en:"Firmware versions below are for the <strong>D'CENT Biometric Wallet</strong> line — <strong>DCENT X</strong> supports them from <code>1.0.0</code>. The dApp (WalletConnect / Soroban) <code>signTransaction</code> path requires firmware <code>2.35.0+</code> and is supported — see the <code>stellar-soroban-invoke-*</code> and <code>stellar-xdr-passthrough-blind-sign</code> playground presets.",ko:"아래 펌웨어 버전은 <strong>D'CENT Biometric Wallet</strong> 기준입니다 — <strong>DCENT X</strong>는 <code>1.0.0</code>부터 지원합니다. dApp(WalletConnect / Soroban) <code>signTransaction</code> 경로는 펌웨어 <code>2.35.0+</code>가 필요하며 지원됩니다 — playground의 <code>stellar-soroban-invoke-*</code>, <code>stellar-xdr-passthrough-blind-sign</code> preset 참고."}
 };
 function injectFwReq(root,id,ko){
   const rows=window.FWREQ&&window.FWREQ[id]; if(!rows) return;
   const chips=root.querySelector('.method-chips'); if(!chips) return;
   const title=ko?'요구사항':'Requirements';
+  // 모델별 2컬럼 — 두 버전 라인은 비교 대상이 아니라 별개 축이다 (dcentx-fw-table-two-columns 참조)
   const lead=ko
-    ?'메서드별 최소 <strong>D\'CENT Biometric Wallet</strong> 펌웨어 버전입니다. 미달 시 펌웨어 업데이트 에러(<code>5005</code>)를 반환하고 브리지가 업데이트를 안내합니다.'
-    :'Minimum <strong>D\'CENT Biometric Wallet</strong> firmware for each method. Below this the request returns the firmware-update error (<code>5005</code>) and the bridge prompts to update.';
-  const mh=ko?'메서드':'Method', vh=ko?'최소 펌웨어':'Min firmware';
+    ?'메서드별 최소 펌웨어 버전입니다. 모델마다 버전 라인이 달라 <strong>D\'CENT Biometric Wallet</strong>과 <strong>DCENT X</strong>를 각각 표기합니다(서로 비교하는 값이 아닙니다). 미달 시 펌웨어 업데이트 에러(<code>5005</code>)를 반환하고 브리지가 업데이트를 안내합니다.'
+    :'Minimum firmware for each method. The two models are on different version lines, so <strong>D\'CENT Biometric Wallet</strong> and <strong>DCENT X</strong> are listed separately (the numbers are not comparable across models). Below this the request returns the firmware-update error (<code>5005</code>) and the bridge prompts to update.';
+  const mh=ko?'메서드':'Method', bh='D\'CENT Biometric Wallet', xh='DCENT X';
   const tr=rows.map(r=>{
     const q=r[2]?` <span class="muted">— ${ko?(r[2].ko||r[2].en):r[2].en}</span>`:'';
-    return `<tr><td><code>${r[0]}</code></td><td><code>${r[1]}</code> ${ko?'이상':'or higher'}${q}</td></tr>`;
+    // 값은 {bio,x} 객체가 계약이다. 옛 단일 문자열이 남아 있어도 페이지가 깨지지 않게 접어준다
+    // (계약 강제는 렌더가 아니라 check:index-fw-models 가 한다).
+    const v=(r[1]&&typeof r[1]==='object')?r[1]:{bio:r[1],x:'—'};
+    const cell=s=>s?`<code>${s}</code> ${ko?'이상':'or higher'}`:'—';
+    return `<tr><td><code>${r[0]}</code></td><td>${cell(v.bio)}${q}</td><td>${cell(v.x)}</td></tr>`;
   }).join('');
   const nt=(window.FWNOTE&&window.FWNOTE[id])?`<div class="note info"><span class="ni">i</span><div>${ko?window.FWNOTE[id].ko:window.FWNOTE[id].en}</div></div>`:'';
-  const html=`<h2>${title}</h2><p>${lead}</p><div style="overflow-x:auto"><table class="params"><thead><tr><th>${mh}</th><th>${vh}</th></tr></thead><tbody>${tr}</tbody></table></div>${nt}`;
+  const html=`<h2>${title}</h2><p>${lead}</p><div style="overflow-x:auto"><table class="params"><thead><tr><th>${mh}</th><th>${bh}</th><th>${xh}</th></tr></thead><tbody>${tr}</tbody></table></div>${nt}`;
   chips.insertAdjacentHTML('afterend',html);
 }
 /* ---- router ---- */
@@ -950,10 +964,10 @@ search:'overview browser-native architecture call flow chainId keyPath V1Respons
 
 <h2>Requirements</h2>
 <div class="reqs">
-  <div class="rq"><div class="k"><span class="ico"><svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><rect x="6" y="2" width="12" height="20" rx="2.5"/><path d="M9.5 6h5"/><circle cx="12" cy="17" r="1.6"/></svg></span>Device</div><div class="v">A <strong>D'CENT Biometric Wallet</strong>. Get one at the <a href="https://store-kr.dcentwallet.com/pages/dcent-biometric-crypto-wallet" target="_blank" rel="noopener">D'CENT store</a>.</div></div>
+  <div class="rq"><div class="k"><span class="ico"><svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><rect x="6" y="2" width="12" height="20" rx="2.5"/><path d="M9.5 6h5"/><circle cx="12" cy="17" r="1.6"/></svg></span>Device</div><div class="v">A <strong>D'CENT Biometric Wallet</strong> or a <strong>DCENT X</strong>. Get one at the <a href="https://store-kr.dcentwallet.com/pages/dcent-biometric-crypto-wallet" target="_blank" rel="noopener">D'CENT store</a>.</div></div>
   <div class="rq"><div class="k"><span class="ico"><svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><circle cx="12" cy="12" r="9"/><path d="M3 12h18M12 3c2.5 2.5 2.5 15 0 18M12 3c-2.5 2.5-2.5 15 0 18"/></svg></span>Browser</div><div class="v">WebHID and Web Bluetooth run only in <strong>Chromium-based</strong> browsers — Chrome, Edge, Brave, Opera. Firefox and Safari are not supported.</div></div>
   <div class="rq"><div class="k"><span class="ico"><svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M9 12a3 3 0 0 1 3-3h3a3 3 0 0 1 0 6h-1.5"/><path d="M15 12a3 3 0 0 1-3 3H9a3 3 0 0 1 0-6h1.5"/></svg></span>Connection</div><div class="v"><strong>USB</strong> (WebHID) or <strong>Bluetooth</strong> (Web Bluetooth), selected with <a href="#/set-transport"><code>setTransport()</code></a>. No bridge program to install.</div></div>
-  <div class="rq"><div class="k"><span class="ico"><svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><rect x="7" y="7" width="10" height="10" rx="1.5"/><path d="M10 3v3M14 3v3M10 18v3M14 18v3M3 10h3M3 14h3M18 10h3M18 14h3"/></svg></span>Firmware</div><div class="v">Some networks and methods require a minimum firmware version. An unsupported request returns the firmware-update error, and the bridge prompts to update.</div></div>
+  <div class="rq"><div class="k"><span class="ico"><svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><rect x="7" y="7" width="10" height="10" rx="1.5"/><path d="M10 3v3M14 3v3M10 18v3M14 18v3M3 10h3M3 14h3M18 10h3M18 14h3"/></svg></span>Firmware</div><div class="v">Some networks and methods require a minimum firmware version, listed per model — <strong>D'CENT Biometric Wallet</strong> (1.x~2.x line) and <strong>DCENT X</strong> (1.x line, from <code>1.0.0</code>). The two lines are separate and not comparable. An unsupported request returns the firmware-update error, and the bridge prompts to update.</div></div>
 </div>
 
 <h2>Install</h2>
@@ -1064,10 +1078,10 @@ ko:`
 
 <h2>요구사항</h2>
 <div class="reqs">
-  <div class="rq"><div class="k"><span class="ico"><svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><rect x="6" y="2" width="12" height="20" rx="2.5"/><path d="M9.5 6h5"/><circle cx="12" cy="17" r="1.6"/></svg></span>기기</div><div class="v"><strong>D'CENT 바이오메트릭 월렛</strong>이 필요합니다. <a href="https://store-kr.dcentwallet.com/pages/dcent-biometric-crypto-wallet" target="_blank" rel="noopener">D'CENT 스토어</a>에서 구매할 수 있습니다.</div></div>
+  <div class="rq"><div class="k"><span class="ico"><svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><rect x="6" y="2" width="12" height="20" rx="2.5"/><path d="M9.5 6h5"/><circle cx="12" cy="17" r="1.6"/></svg></span>기기</div><div class="v"><strong>D'CENT Biometric Wallet</strong>(바이오메트릭 월렛) 또는 <strong>DCENT X</strong>가 필요합니다. <a href="https://store-kr.dcentwallet.com/pages/dcent-biometric-crypto-wallet" target="_blank" rel="noopener">D'CENT 스토어</a>에서 구매할 수 있습니다.</div></div>
   <div class="rq"><div class="k"><span class="ico"><svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><circle cx="12" cy="12" r="9"/><path d="M3 12h18M12 3c2.5 2.5 2.5 15 0 18M12 3c-2.5 2.5-2.5 15 0 18"/></svg></span>브라우저</div><div class="v">WebHID와 Web Bluetooth는 <strong>Chromium 계열</strong> 브라우저 — Chrome, Edge, Brave, Opera — 에서만 동작합니다. Firefox / Safari는 미지원입니다.</div></div>
   <div class="rq"><div class="k"><span class="ico"><svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M9 12a3 3 0 0 1 3-3h3a3 3 0 0 1 0 6h-1.5"/><path d="M15 12a3 3 0 0 1-3 3H9a3 3 0 0 1 0-6h1.5"/></svg></span>연결 방식</div><div class="v"><strong>USB</strong>(WebHID) 또는 <strong>블루투스</strong>(Web Bluetooth)를 <a href="#/set-transport"><code>setTransport()</code></a>로 선택합니다. 설치할 브리지 프로그램이 없습니다.</div></div>
-  <div class="rq"><div class="k"><span class="ico"><svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><rect x="7" y="7" width="10" height="10" rx="1.5"/><path d="M10 3v3M14 3v3M10 18v3M14 18v3M3 10h3M3 14h3M18 10h3M18 14h3"/></svg></span>펌웨어</div><div class="v">일부 네트워크·메서드는 최소 펌웨어 버전이 필요합니다. 미지원 요청은 펌웨어 업데이트 에러를 반환하고, 브리지가 업데이트를 안내합니다.</div></div>
+  <div class="rq"><div class="k"><span class="ico"><svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><rect x="7" y="7" width="10" height="10" rx="1.5"/><path d="M10 3v3M14 3v3M10 18v3M14 18v3M3 10h3M3 14h3M18 10h3M18 14h3"/></svg></span>펌웨어</div><div class="v">일부 네트워크·메서드는 최소 펌웨어 버전이 필요하며, 모델별로 나눠 표기합니다 — <strong>D'CENT Biometric Wallet</strong>(1.x~2.x 라인), <strong>DCENT X</strong>(1.x 라인, <code>1.0.0</code>부터). 두 라인은 별개이며 서로 비교하는 값이 아닙니다. 미지원 요청은 펌웨어 업데이트 에러를 반환하고, 브리지가 업데이트를 안내합니다.</div></div>
 </div>
 
 <h2>설치</h2>
@@ -1417,43 +1431,43 @@ search:'sign method chainId payload keyPath transaction signTransaction signMess
 /* ===== Support Matrix ===== */
 window.MATRIX=[
  {n:"Ethereum / EVM",id:"chain-ethereum",cid:"eip155:1/slip44:60",kp:"m/44'/60'/<span class=tok-acc>&lt;accountIdx&gt;</span>'/0/0",af:"—",sT:1,sM:1,sTD:1,sD:0,sA:0},
- {n:"Kaia",id:"chain-kaia",cid:"eip155:8217/slip44:60",kp:"m/44'/60'/<span class=tok-acc>&lt;accountIdx&gt;</span>'/0/0",af:"—",sT:1,sM:1,sTD:1,sD:0,sA:0,fw:"1.5.1"},
+ {n:"Kaia",id:"chain-kaia",cid:"eip155:8217/slip44:60",kp:"m/44'/60'/<span class=tok-acc>&lt;accountIdx&gt;</span>'/0/0",af:"—",sT:1,sM:1,sTD:1,sD:0,sA:0,fw:{bio:"1.5.1",x:"1.0.0"}},
  {n:"XDC (XinFin)",id:"chain-ethereum",cid:"eip155:50/slip44:60",kp:"m/44'/550'/<span class=tok-acc>&lt;accountIdx&gt;</span>'/0/0",af:"—",sT:1,sM:0,sTD:0,sD:0,sA:0},
- {n:"Conflux",id:"chain-conflux",cid:"conflux:cfx/slip44:503",kp:"m/44'/60'/<span class=tok-acc>&lt;accountIdx&gt;</span>'",af:"base32",sT:1,sM:0,sTD:0,sD:0,sA:0,fw:"2.18.3"},
- {n:"Bitcoin",id:"chain-bitcoin",cid:"bip122:000000000019d6689c085ae165831e93/slip44:0",kp:"m/44'/0'/<span class=tok-acc>&lt;accountIdx&gt;</span>'/0/0",af:"legacy / segwit-native",sT:1,sM:0,sTD:0,sD:0,sA:0,fw:"1.0.0"},
- {n:"Bitcoin Cash",id:"chain-bitcoincash",cid:"bip122:000000000000000000651ef99cb9fcbe/slip44:145",kp:"m/44'/145'/<span class=tok-acc>&lt;accountIdx&gt;</span>'/0/0",af:"cashaddr",sT:1,sM:0,sTD:0,sD:0,sA:0,fw:"1.5.1"},
- {n:"Litecoin",id:"chain-litecoin",cid:"bip122:12a765e31ffd4059bada1e25190f6e98/slip44:2",kp:"m/44'/2'/<span class=tok-acc>&lt;accountIdx&gt;</span>'/0/0",af:"legacy",sT:1,sM:0,sTD:0,sD:0,sA:0,fw:"1.5.1"},
- {n:"Dogecoin",id:"chain-dogecoin",cid:"bip122:1a91e3dace36e2be3bf030a65679fe82/slip44:3",kp:"m/44'/3'/<span class=tok-acc>&lt;accountIdx&gt;</span>'/0/0",af:"legacy",sT:1,sM:0,sTD:0,sD:0,sA:0,fw:"2.3.0"},
- {n:"Dash",id:"chain-dash",cid:"bip122:00000ffd590b1485b3caadc19b22e637/slip44:5",kp:"m/44'/5'/<span class=tok-acc>&lt;accountIdx&gt;</span>'/0/0",af:"legacy",sT:1,sM:0,sTD:0,sD:0,sA:0,fw:"1.5.1"},
+ {n:"Conflux",id:"chain-conflux",cid:"conflux:cfx/slip44:503",kp:"m/44'/60'/<span class=tok-acc>&lt;accountIdx&gt;</span>'",af:"base32",sT:1,sM:0,sTD:0,sD:0,sA:0,fw:{bio:"2.18.3",x:"1.0.0"}},
+ {n:"Bitcoin",id:"chain-bitcoin",cid:"bip122:000000000019d6689c085ae165831e93/slip44:0",kp:"m/44'/0'/<span class=tok-acc>&lt;accountIdx&gt;</span>'/0/0",af:"legacy / segwit-native",sT:1,sM:0,sTD:0,sD:0,sA:0,fw:{bio:"1.0.0",x:"1.0.0"}},
+ {n:"Bitcoin Cash",id:"chain-bitcoincash",cid:"bip122:000000000000000000651ef99cb9fcbe/slip44:145",kp:"m/44'/145'/<span class=tok-acc>&lt;accountIdx&gt;</span>'/0/0",af:"cashaddr",sT:1,sM:0,sTD:0,sD:0,sA:0,fw:{bio:"1.5.1",x:"1.0.0"}},
+ {n:"Litecoin",id:"chain-litecoin",cid:"bip122:12a765e31ffd4059bada1e25190f6e98/slip44:2",kp:"m/44'/2'/<span class=tok-acc>&lt;accountIdx&gt;</span>'/0/0",af:"legacy",sT:1,sM:0,sTD:0,sD:0,sA:0,fw:{bio:"1.5.1",x:"1.0.0"}},
+ {n:"Dogecoin",id:"chain-dogecoin",cid:"bip122:1a91e3dace36e2be3bf030a65679fe82/slip44:3",kp:"m/44'/3'/<span class=tok-acc>&lt;accountIdx&gt;</span>'/0/0",af:"legacy",sT:1,sM:0,sTD:0,sD:0,sA:0,fw:{bio:"2.3.0",x:"1.0.0"}},
+ {n:"Dash",id:"chain-dash",cid:"bip122:00000ffd590b1485b3caadc19b22e637/slip44:5",kp:"m/44'/5'/<span class=tok-acc>&lt;accountIdx&gt;</span>'/0/0",af:"legacy",sT:1,sM:0,sTD:0,sD:0,sA:0,fw:{bio:"1.5.1",x:"1.0.0"}},
  {n:"eCash",id:"chain-ecash",cid:"bip122:000000000019d6689c085ae165831e93/slip44:145",kp:"m/44'/145'/<span class=tok-acc>&lt;accountIdx&gt;</span>'/0/0",af:"cashaddr",sT:1,sM:0,sTD:0,sD:0,sA:0},
  {n:"Zcash",id:"chain-zcash",cid:"bip122:00040fe8ec8471911baa1db1266ea15d/slip44:133",kp:"m/44'/133'/<span class=tok-acc>&lt;accountIdx&gt;</span>'/0/0",af:"transparent (t-addr)",sT:1,sM:0,sTD:0,sD:0,sA:0},
  {n:"Bitcoin Gold",id:"chain-bitcoingold",cid:"bip122:00000000e9fba3b4a12d04c0a48d70d5/slip44:156",kp:"m/44'/156'/<span class=tok-acc>&lt;accountIdx&gt;</span>'/0/0",af:"legacy",sT:1,sM:0,sTD:0,sD:0,sA:0},
  {n:"DigiByte",id:"chain-digibyte",cid:"bip122:7497ea1b465eb39f1c8f507bc877078f/slip44:20",kp:"m/44'/20'/<span class=tok-acc>&lt;accountIdx&gt;</span>'/0/0",af:"legacy / segwit-native",sT:1,sM:0,sTD:0,sD:0,sA:0},
  {n:"Ravencoin",id:"chain-ravencoin",cid:"bip122:0000006b444bc2f2ffe627be9d9e7e7a/slip44:175",kp:"m/44'/175'/<span class=tok-acc>&lt;accountIdx&gt;</span>'/0/0",af:"legacy",sT:1,sM:0,sTD:0,sD:0,sA:0},
  {n:"Horizen",id:"chain-horizen",cid:"bip122:0007104ccda289427919efc39dc9e4d4/slip44:121",kp:"m/44'/121'/<span class=tok-acc>&lt;accountIdx&gt;</span>'/0/0",af:"legacy",sT:0,sM:0,sTD:0,sD:0,sA:0},
- {n:"Solana",id:"chain-solana",cid:"solana:5eykt4UsFv8P8NJdTREpY1vzqKqZKvdp/slip44:501",kp:"m/44'/501'/<span class=tok-acc>&lt;accountIdx&gt;</span>'",af:"—",sT:1,sM:1,sTD:0,sD:0,sA:0,fw:"2.16.5"},
- {n:"Cardano",id:"chain-cardano",cid:"cip34:1-764824073",kp:"m/44'/1815'/<span class=tok-acc>&lt;accountIdx&gt;</span>'/0/0",af:"—",sT:1,sM:0,sTD:0,sD:1,sA:0,fw:"2.7.0"},
- {n:"Cosmos",id:"chain-cosmos",cid:"cosmos:cosmoshub-4/slip44:118",kp:"m/44'/118'/<span class=tok-acc>&lt;accountIdx&gt;</span>'/0/0",af:"—",sT:1,sM:0,sTD:0,sD:0,sA:0,fw:"2.21.0"},
+ {n:"Solana",id:"chain-solana",cid:"solana:5eykt4UsFv8P8NJdTREpY1vzqKqZKvdp/slip44:501",kp:"m/44'/501'/<span class=tok-acc>&lt;accountIdx&gt;</span>'",af:"—",sT:1,sM:1,sTD:0,sD:0,sA:0,fw:{bio:"2.16.5",x:"1.0.0"}},
+ {n:"Cardano",id:"chain-cardano",cid:"cip34:1-764824073",kp:"m/44'/1815'/<span class=tok-acc>&lt;accountIdx&gt;</span>'/0/0",af:"—",sT:1,sM:0,sTD:0,sD:1,sA:0,fw:{bio:"2.7.0",x:"1.0.0"}},
+ {n:"Cosmos",id:"chain-cosmos",cid:"cosmos:cosmoshub-4/slip44:118",kp:"m/44'/118'/<span class=tok-acc>&lt;accountIdx&gt;</span>'/0/0",af:"—",sT:1,sM:0,sTD:0,sD:0,sA:0,fw:{bio:"2.21.0",x:"1.0.0"}},
  {n:"BNB Beacon Chain",id:"chain-cosmos",cid:"cosmos:Binance-Chain-Tigris/slip44:714",kp:"m/44'/714'/<span class=tok-acc>&lt;accountIdx&gt;</span>'/0/0",af:"—",sT:1,sM:0,sTD:0,sD:0,sA:0},
  {n:"Coreum",id:"chain-cosmos",cid:"cosmos:coreum-mainnet-1/slip44:990",kp:"m/44'/990'/<span class=tok-acc>&lt;accountIdx&gt;</span>'/0/0",af:"—",sT:1,sM:0,sTD:0,sD:0,sA:0},
  {n:"Hippo Protocol",id:"chain-cosmos",cid:"cosmos:hippo-protocol-1/slip44:118",kp:"m/44'/118'/<span class=tok-acc>&lt;accountIdx&gt;</span>'/0/0",af:"—",sT:1,sM:0,sTD:0,sD:0,sA:0},
- {n:"XRP",id:"chain-xrp",cid:"xrpl:0/slip44:144",kp:"m/44'/144'/<span class=tok-acc>&lt;accountIdx&gt;</span>'/0/0",af:"—",sT:1,sM:0,sTD:0,sD:0,sA:0,fw:"2.4.0"},
- {n:"Xahau",id:"chain-xahau",cid:"xahau:mainnet/slip44:144",kp:"m/44'/144'/<span class=tok-acc>&lt;accountIdx&gt;</span>'/0/0",af:"—",sT:1,sM:0,sTD:0,sD:0,sA:0,fw:"2.32.0"},
- {n:"Tron",id:"chain-tron",cid:"tron:0x2b6653dc/slip44:195",kp:"m/44'/195'/<span class=tok-acc>&lt;accountIdx&gt;</span>'/0/0",af:"—",sT:1,sM:0,sTD:0,sD:0,sA:0,fw:"2.3.0"},
- {n:"Stellar",id:"chain-stellar",cid:"stellar:pubnet/slip44:148",kp:"m/44'/148'/<span class=tok-acc>&lt;accountIdx&gt;</span>'",af:"—",sT:1,sM:1,sTD:0,sD:0,sA:1,fw:"2.20.0"},
- {n:"Polkadot",id:"chain-polkadot",cid:"polkadot:91b171bb158e2d3848fa23a9f1c25182/slip44:354",kp:"m/44'/354'/<span class=tok-acc>&lt;accountIdx&gt;</span>'/0/0",af:"—",sT:1,sM:0,sTD:0,sD:0,sA:0,fw:"2.19.1"},
- {n:"Astar",id:"chain-polkadot",cid:"polkadot:9eb76c5184c4ab8679d2d5d819fdf90b/slip44:810",kp:"m/44'/810'/<span class=tok-acc>&lt;accountIdx&gt;</span>'/0/0",af:"—",sT:1,sM:1,sTD:0,sD:0,sA:0,fw:"2.30.0"},
- {n:"Shibuya (Astar testnet)",id:"chain-polkadot",cid:"polkadot:ddb89643205c8fe1c79afeb31f48d50f/slip44:810",kp:"m/44'/810'/<span class=tok-acc>&lt;accountIdx&gt;</span>'/0/0",af:"—",sT:1,sM:1,sTD:0,sD:0,sA:0,fw:"2.30.0"},
- {n:"Creditcoin",id:"chain-polkadot",cid:"polkadot:6673c7e2c2b7bde45a60c71ef70d9c7c/slip44:354",kp:"m/44'/354'/<span class=tok-acc>&lt;accountIdx&gt;</span>'/0/0",af:"—",sT:1,sM:1,sTD:0,sD:0,sA:0,fw:"2.30.0"},
- {n:"NEAR",id:"chain-near",cid:"near:mainnet/slip44:397",kp:"m/44'/397'/<span class=tok-acc>&lt;accountIdx&gt;</span>'",af:"—",sT:1,sM:0,sTD:0,sD:0,sA:0,fw:"2.24.0"},
- {n:"Hedera",id:"chain-hedera",cid:"hedera:mainnet/slip44:3030",kp:"m/44'/3030'/<span class=tok-acc>&lt;accountIdx&gt;</span>'",af:"—",sT:1,sM:0,sTD:0,sD:0,sA:0,fw:"2.19.3"},
- {n:"VeChain",id:"chain-vechain",cid:"vechain:b1ac3413d346d43539627e6be7ec1b4a/slip44:818",kp:"m/44'/60'/<span class=tok-acc>&lt;accountIdx&gt;</span>'/0/0",af:"—",sT:1,sM:0,sTD:0,sD:0,sA:0,fw:"2.23.4"},
- {n:"Filecoin",id:"chain-filecoin",cid:"fil:f/slip44:461",kp:"m/44'/461'/<span class=tok-acc>&lt;accountIdx&gt;</span>'/0/0",af:"—",sT:1,sM:0,sTD:0,sD:0,sA:0,fw:"2.33.0"},
- {n:"Tezos",id:"chain-tezos",cid:"tezos:NetXdQprcVkpaWU/slip44:1729",kp:"m/44'/1729'/<span class=tok-acc>&lt;accountIdx&gt;</span>'/0'",af:"—",sT:1,sM:0,sTD:0,sD:0,sA:0,fw:"2.24.1"},
- {n:"Stacks",id:"chain-stacks",cid:"stacks:1/slip44:5757",kp:"m/44'/5757'/<span class=tok-acc>&lt;accountIdx&gt;</span>'/0/0",af:"—",sT:1,sM:0,sTD:0,sD:0,sA:0,fw:"2.14.1"},
- {n:"Algorand",id:"chain-algorand",cid:"algorand:wGHE2Pwdvd7S12BL5FaOP20EGYesN73k/slip44:283",kp:"m/44'/283'/<span class=tok-acc>&lt;accountIdx&gt;</span>'/0/0",af:"—",sT:1,sM:0,sTD:0,sD:0,sA:0,fw:"2.29.0"},
- {n:"Constellation",id:"chain-constellation",cid:"constellation:mainnet/slip44:1137",kp:"m/44'/1137'/<span class=tok-acc>&lt;accountIdx&gt;</span>'/0/0",af:"—",sT:1,sM:0,sTD:0,sD:0,sA:0,fw:"2.34.0"},
- {n:"HAVAH",id:"chain-havah",cid:"havah:mainnet/slip44:858",kp:"m/44'/858'/<span class=tok-acc>&lt;accountIdx&gt;</span>'/0/0",af:"—",sT:1,sM:0,sTD:0,sD:0,sA:0,fw:"2.26.0"},
+ {n:"XRP",id:"chain-xrp",cid:"xrpl:0/slip44:144",kp:"m/44'/144'/<span class=tok-acc>&lt;accountIdx&gt;</span>'/0/0",af:"—",sT:1,sM:0,sTD:0,sD:0,sA:0,fw:{bio:"2.4.0",x:"1.0.0"}},
+ {n:"Xahau",id:"chain-xahau",cid:"xahau:mainnet/slip44:144",kp:"m/44'/144'/<span class=tok-acc>&lt;accountIdx&gt;</span>'/0/0",af:"—",sT:1,sM:0,sTD:0,sD:0,sA:0,fw:{bio:"2.32.0",x:"1.0.0"}},
+ {n:"Tron",id:"chain-tron",cid:"tron:0x2b6653dc/slip44:195",kp:"m/44'/195'/<span class=tok-acc>&lt;accountIdx&gt;</span>'/0/0",af:"—",sT:1,sM:0,sTD:0,sD:0,sA:0,fw:{bio:"2.3.0",x:"1.0.0"}},
+ {n:"Stellar",id:"chain-stellar",cid:"stellar:pubnet/slip44:148",kp:"m/44'/148'/<span class=tok-acc>&lt;accountIdx&gt;</span>'",af:"—",sT:1,sM:1,sTD:0,sD:0,sA:1,fw:{bio:"2.20.0",x:"1.0.0"}},
+ {n:"Polkadot",id:"chain-polkadot",cid:"polkadot:91b171bb158e2d3848fa23a9f1c25182/slip44:354",kp:"m/44'/354'/<span class=tok-acc>&lt;accountIdx&gt;</span>'/0/0",af:"—",sT:1,sM:0,sTD:0,sD:0,sA:0,fw:{bio:"2.19.1",x:"1.0.0"}},
+ {n:"Astar",id:"chain-polkadot",cid:"polkadot:9eb76c5184c4ab8679d2d5d819fdf90b/slip44:810",kp:"m/44'/810'/<span class=tok-acc>&lt;accountIdx&gt;</span>'/0/0",af:"—",sT:1,sM:1,sTD:0,sD:0,sA:0,fw:{bio:"2.30.0",x:"1.0.0"}},
+ {n:"Shibuya (Astar testnet)",id:"chain-polkadot",cid:"polkadot:ddb89643205c8fe1c79afeb31f48d50f/slip44:810",kp:"m/44'/810'/<span class=tok-acc>&lt;accountIdx&gt;</span>'/0/0",af:"—",sT:1,sM:1,sTD:0,sD:0,sA:0,fw:{bio:"2.30.0",x:"1.0.0"}},
+ {n:"Creditcoin",id:"chain-polkadot",cid:"polkadot:6673c7e2c2b7bde45a60c71ef70d9c7c/slip44:354",kp:"m/44'/354'/<span class=tok-acc>&lt;accountIdx&gt;</span>'/0/0",af:"—",sT:1,sM:1,sTD:0,sD:0,sA:0,fw:{bio:"2.30.0",x:"1.0.0"}},
+ {n:"NEAR",id:"chain-near",cid:"near:mainnet/slip44:397",kp:"m/44'/397'/<span class=tok-acc>&lt;accountIdx&gt;</span>'",af:"—",sT:1,sM:0,sTD:0,sD:0,sA:0,fw:{bio:"2.24.0",x:"1.0.0"}},
+ {n:"Hedera",id:"chain-hedera",cid:"hedera:mainnet/slip44:3030",kp:"m/44'/3030'/<span class=tok-acc>&lt;accountIdx&gt;</span>'",af:"—",sT:1,sM:0,sTD:0,sD:0,sA:0,fw:{bio:"2.19.3",x:"1.0.0"}},
+ {n:"VeChain",id:"chain-vechain",cid:"vechain:b1ac3413d346d43539627e6be7ec1b4a/slip44:818",kp:"m/44'/60'/<span class=tok-acc>&lt;accountIdx&gt;</span>'/0/0",af:"—",sT:1,sM:0,sTD:0,sD:0,sA:0,fw:{bio:"2.23.4",x:"1.0.0"}},
+ {n:"Filecoin",id:"chain-filecoin",cid:"fil:f/slip44:461",kp:"m/44'/461'/<span class=tok-acc>&lt;accountIdx&gt;</span>'/0/0",af:"—",sT:1,sM:0,sTD:0,sD:0,sA:0,fw:{bio:"2.33.0",x:"1.0.0"}},
+ {n:"Tezos",id:"chain-tezos",cid:"tezos:NetXdQprcVkpaWU/slip44:1729",kp:"m/44'/1729'/<span class=tok-acc>&lt;accountIdx&gt;</span>'/0'",af:"—",sT:1,sM:0,sTD:0,sD:0,sA:0,fw:{bio:"2.24.1",x:"1.0.0"}},
+ {n:"Stacks",id:"chain-stacks",cid:"stacks:1/slip44:5757",kp:"m/44'/5757'/<span class=tok-acc>&lt;accountIdx&gt;</span>'/0/0",af:"—",sT:1,sM:0,sTD:0,sD:0,sA:0,fw:{bio:"2.14.1",x:"1.0.0"}},
+ {n:"Algorand",id:"chain-algorand",cid:"algorand:wGHE2Pwdvd7S12BL5FaOP20EGYesN73k/slip44:283",kp:"m/44'/283'/<span class=tok-acc>&lt;accountIdx&gt;</span>'/0/0",af:"—",sT:1,sM:0,sTD:0,sD:0,sA:0,fw:{bio:"2.29.0",x:"1.0.0"}},
+ {n:"Constellation",id:"chain-constellation",cid:"constellation:mainnet/slip44:1137",kp:"m/44'/1137'/<span class=tok-acc>&lt;accountIdx&gt;</span>'/0/0",af:"—",sT:1,sM:0,sTD:0,sD:0,sA:0,fw:{bio:"2.34.0",x:"1.0.0"}},
+ {n:"HAVAH",id:"chain-havah",cid:"havah:mainnet/slip44:858",kp:"m/44'/858'/<span class=tok-acc>&lt;accountIdx&gt;</span>'/0/0",af:"—",sT:1,sM:0,sTD:0,sD:0,sA:0,fw:{bio:"2.26.0",x:"1.0.0"}},
 ];
 DOC.register('support-matrix',{title:'Support Matrix',breadcrumb:'Support Matrix',
 search:'support matrix network method chainId addressFormat filter search signTransaction signMessage signTypedData signData signAuthEntry',html:`
@@ -1473,10 +1487,10 @@ search:'support matrix network method chainId addressFormat filter search signTr
 <div style="overflow-x:auto">
 <table class="matrix"><thead><tr>
   <th>Network</th><th>chainId</th><th>keyPath</th><th>addrFmt</th>
-  <th title="signTransaction">sTx</th><th title="signMessage">sMsg</th><th title="signTypedData">sTyped</th><th title="signData">sData</th><th title="signAuthEntry">sAuth</th><th title="minimum device firmware — model-specific">Min FW</th><th></th>
+  <th title="signTransaction">sTx</th><th title="signMessage">sMsg</th><th title="signTypedData">sTyped</th><th title="signData">sData</th><th title="signAuthEntry">sAuth</th><th title="minimum firmware — D'CENT Biometric Wallet">Min FW · D'CENT Biometric Wallet</th><th title="minimum firmware — DCENT X">Min FW · DCENT X</th><th></th>
 </tr></thead><tbody id="mx-body"></tbody></table></div>
 <p class="muted" id="mx-count" style="font-size:12.5px"></p>
-<div class="note info"><span class="ni">i</span><div>chainId values are abbreviated for width; full values are on each network page and in <code>playground/chains.json</code> (151 entries \u2014 the matrix lists mainnets and EVM testnets; 24 non-EVM testnets and Kaia Kairos live only in that file). <strong>Min FW</strong> = minimum device firmware (model-specific); <code>—</code> = not yet specified.</div></div><div class="note info"><span class="ni">i</span><div><strong>Shared family payloads:</strong> every EVM network uses the Ethereum payload (<a href="#/chain-evm-list">Supported EVM Chains</a>); all Cosmos networks use the Cosmos path (<a href="#/chain-cosmos-list">Supported Cosmos Networks</a>); Astar / Shibuya / Creditcoin use the Polkadot / Substrate path (<a href="#/chain-polkadot-list">Supported Substrate Networks</a>). Bitcoin-family coins (eCash, Zcash, Bitcoin Gold, DigiByte, Ravencoin, Horizen) each have their own page but share the UTXO signing shape.</div></div>`,
+<div class="note info"><span class="ni">i</span><div>chainId values are abbreviated for width; full values are on each network page and in <code>playground/chains.json</code> (151 entries \u2014 the matrix lists mainnets and EVM testnets; 24 non-EVM testnets and Kaia Kairos live only in that file). <strong>Min FW</strong> = minimum device firmware, listed per model — <strong>D'CENT Biometric Wallet</strong> (1.x~2.x line) and <strong>DCENT X</strong> (1.x line). The two columns are separate version lines and are <em>not</em> comparable with each other; <code>—</code> = not yet specified.</div></div><div class="note info"><span class="ni">i</span><div><strong>Shared family payloads:</strong> every EVM network uses the Ethereum payload (<a href="#/chain-evm-list">Supported EVM Chains</a>); all Cosmos networks use the Cosmos path (<a href="#/chain-cosmos-list">Supported Cosmos Networks</a>); Astar / Shibuya / Creditcoin use the Polkadot / Substrate path (<a href="#/chain-polkadot-list">Supported Substrate Networks</a>). Bitcoin-family coins (eCash, Zcash, Bitcoin Gold, DigiByte, Ravencoin, Horizen) each have their own page but share the UTXO signing shape.</div></div>`,
 mount(){
   const body=document.getElementById('mx-body');const q=document.getElementById('mx-q');const m=document.getElementById('mx-m');
   const cnt=document.getElementById('mx-count');
@@ -1495,7 +1509,7 @@ mount(){
       <td><a href="#/${r.id}">${r.n}</a></td>
       <td><code>${r.cid}</code></td><td><code>${r.kp}</code></td><td>${r.af}</td>
       <td>${yn(r.sT)}</td><td>${yn(r.sM)}</td><td>${yn(r.sTD)}</td><td>${yn(r.sD)}</td><td>${yn(r.sA)}</td>
-      <td class="m-fw">${r.fw||'—'}</td>
+      <td class="m-fw">${(r.fw&&r.fw.bio)||'—'}</td><td class="m-fw">${(r.fw&&r.fw.x)||'—'}</td>
       <td class="m-link"><a href="#/${r.id}">View →</a></td></tr>`).join('');
     cnt.textContent=rows.length+' of '+ALL.length+' networks ('+(window.EVMCHAINS||[]).length+' EVM networks + '+(MATRIX.length-1)+' other networks)';
   }
@@ -2127,9 +2141,9 @@ search:'getPublicKey publicKey payment stake drep cardano governance keyPath acc
 <p class="lede">Retrieves account public keys for <strong>any supported chain</strong>. Most chains return a single <code>{ keyPath, publicKey }</code> for the path you asked for; <strong>Cardano</strong> returns its <code>payment</code>, <code>stake</code> and <code>drep</code> (governance) keys as a bundle in one call. This verb was split out of <code>getAddress</code>, which no longer returns any public key: <code>getAddress</code> now returns the address plus a <code>rewardAddress</code> (stake address — Cardano only).</p>
 <div class="note info"><span class="ni">i</span><div>D'CENT's Cardano derives on <strong>purpose 44'</strong> (<code>m/44'/1815'/…</code>), matching its getAddress path — <em>not</em> CIP-1852 <code>1852'</code>. The <code>1852'</code> purpose is reserved for future / external CIP-1852 key paths a dApp may pass explicitly.</div></div><div class="note delta"><span class="ni">◆</span><div><strong>All families are supported.</strong> The response is a union of two shapes — <strong>Cardano</strong> returns the <code>{ payment, stake, drep }</code> role bundle, every other family returns a single <code>{ keyPath, publicKey }</code>. Branch on the <code>chainId</code> you passed in. <em>Previously this verb was Cardano-only and other chains returned <code>method_not_found</code> (-32601); that is no longer the case.</em></div></div>
 <h2>Requirements</h2>
-<p>Minimum <strong>D'CENT Biometric Wallet</strong> firmware for each method. Below this the request returns the firmware-update error (<code>5005</code>) and the bridge prompts to update.</p>
-<div style="overflow-x:auto"><table class="params"><thead><tr><th>Method</th><th>Min firmware</th></tr></thead><tbody>
-<tr><td><code>getPublicKey</code></td><td><code>2.35.0</code> or higher <span class="muted">— every chain, including Cardano</span></td></tr>
+<p>Minimum firmware for each method. The two models are on different version lines, so <strong>D'CENT Biometric Wallet</strong> and <strong>DCENT X</strong> are listed separately (the numbers are not comparable across models). Below this the request returns the firmware-update error (<code>5005</code>) and the bridge prompts to update.</p>
+<div style="overflow-x:auto"><table class="params"><thead><tr><th>Method</th><th>D'CENT Biometric Wallet</th><th>DCENT X</th></tr></thead><tbody>
+<tr><td><code>getPublicKey</code></td><td><code>2.35.0</code> or higher <span class="muted">— every chain, including Cardano</span></td><td><code>1.0.0</code> or higher</td></tr>
 </tbody></table></div>
 <h2 id="getpublickey-params">Parameters</h2>
 <table class="params"><thead><tr><th>Field</th><th>Type</th><th>Required</th><th>Source</th><th>Description</th></tr></thead><tbody>
@@ -2182,9 +2196,9 @@ ko:`
 <p class="lede"><strong>모든 지원 체인</strong>의 계정 공개키를 조회합니다. 대부분의 체인은 요청한 경로의 <code>{ keyPath, publicKey }</code> 하나를 반환하고, <strong>Cardano</strong>만 <code>payment</code>·<code>stake</code>·<code>drep</code>(거버넌스) 키를 번들로 한 번에 반환합니다. 이 verb는 <code>getAddress</code>에서 분리되었으며, <code>getAddress</code>는 더 이상 공개키를 반환하지 않습니다(주소 + <code>rewardAddress</code>(stake 주소, Cardano 전용) 반환).</p>
 <div class="note info"><span class="ni">i</span><div>D'CENT의 Cardano는 getAddress와 동일하게 <strong>purpose 44'</strong>(<code>m/44'/1815'/…</code>)로 파생합니다 — CIP-1852의 <code>1852'</code>가 <em>아닙니다</em>. <code>1852'</code> purpose는 향후/외부 CIP-1852 keyPath(앱이 명시적으로 전달)를 위해 예약되어 있습니다.</div></div><div class="note delta"><span class="ni">◆</span><div><strong>모든 family를 지원합니다.</strong> 응답은 두 shape의 union입니다 — <strong>Cardano</strong>는 <code>{ payment, stake, drep }</code> role 번들, <strong>그 외 전 family</strong>는 단일 <code>{ keyPath, publicKey }</code>. 호출 시 넘긴 <code>chainId</code>로 분기하세요. <em>이전에는 Cardano 전용이었고 다른 체인은 <code>method_not_found</code>(-32601)을 반환했으나, 더 이상 그렇지 않습니다.</em></div></div>
 <h2>요구사항</h2>
-<p>메서드별 최소 <strong>D'CENT Biometric Wallet</strong> 펌웨어 버전입니다. 미달 시 펌웨어 업데이트 에러(<code>5005</code>)를 반환하고 브리지가 업데이트를 안내합니다.</p>
-<div style="overflow-x:auto"><table class="params"><thead><tr><th>메서드</th><th>최소 펌웨어</th></tr></thead><tbody>
-<tr><td><code>getPublicKey</code></td><td><code>2.35.0</code> 이상 <span class="muted">— Cardano 포함 전 체인</span></td></tr>
+<p>메서드별 최소 펌웨어 버전입니다. 모델마다 버전 라인이 달라 <strong>D'CENT Biometric Wallet</strong>과 <strong>DCENT X</strong>를 각각 표기합니다(서로 비교하는 값이 아닙니다). 미달 시 펌웨어 업데이트 에러(<code>5005</code>)를 반환하고 브리지가 업데이트를 안내합니다.</p>
+<div style="overflow-x:auto"><table class="params"><thead><tr><th>메서드</th><th>D'CENT Biometric Wallet</th><th>DCENT X</th></tr></thead><tbody>
+<tr><td><code>getPublicKey</code></td><td><code>2.35.0</code> 이상 <span class="muted">— Cardano 포함 전 체인</span></td><td><code>1.0.0</code> 이상</td></tr>
 </tbody></table></div>
 <h2 id="getpublickey-params">파라미터</h2>
 <table class="params"><thead><tr><th>Field</th><th>Type</th><th>Required</th><th>Source</th><th>설명</th></tr></thead><tbody>
@@ -2656,10 +2670,10 @@ await dcent.getAddress(coinType, path, prefix?)</pre></div>
 <div style="overflow-x:auto">
 <table class="matrix"><thead><tr>
   <th>네트워크</th><th>chainId</th><th>keyPath</th><th>주소형식</th>
-  <th title="signTransaction">sTx</th><th title="signMessage">sMsg</th><th title="signTypedData">sTyped</th><th title="signData">sData</th><th title="signAuthEntry">sAuth</th><th title="minimum device firmware — model-specific">Min FW</th><th></th>
+  <th title="signTransaction">sTx</th><th title="signMessage">sMsg</th><th title="signTypedData">sTyped</th><th title="signData">sData</th><th title="signAuthEntry">sAuth</th><th title="최소 펌웨어 — D'CENT Biometric Wallet">Min FW · D'CENT Biometric Wallet</th><th title="최소 펌웨어 — DCENT X">Min FW · DCENT X</th><th></th>
 </tr></thead><tbody id="mx-body"></tbody></table></div>
 <p class="muted" id="mx-count" style="font-size:12.5px"></p>
-<div class="note info"><span class="ni">i</span><div>chainId 값은 폭 때문에 축약되어 있습니다. 전체 값은 각 네트워크 페이지와 <code>playground/chains.json</code>(151개)에 있습니다. <strong>Min FW</strong> = 최소 기기 펌웨어(모델별); <code>—</code> = 미지정.</div></div><div class="note info"><span class="ni">i</span><div><strong>공유 family payload:</strong> 모든 EVM 네트워크는 Ethereum payload(<a href="#/chain-evm-list">지원 EVM 체인</a>)를, 모든 Cosmos 네트워크는 Cosmos 경로(<a href="#/chain-cosmos-list">지원 Cosmos 네트워크</a>)를, Astar / Shibuya / Creditcoin은 Polkadot / Substrate 경로(<a href="#/chain-polkadot-list">지원 Substrate 네트워크</a>)를 사용합니다. Bitcoin 계열 코인(eCash, Zcash, Bitcoin Gold, DigiByte, Ravencoin, Horizen)은 각각 자체 페이지를 가지며 UTXO 서명 shape을 공유합니다.</div></div>`},
+<div class="note info"><span class="ni">i</span><div>chainId 값은 폭 때문에 축약되어 있습니다. 전체 값은 각 네트워크 페이지와 <code>playground/chains.json</code>(151개)에 있습니다. <strong>Min FW</strong> = 최소 기기 펌웨어이며 모델별로 나눠 표기합니다 — <strong>D'CENT Biometric Wallet</strong>(1.x~2.x 라인), <strong>DCENT X</strong>(1.x 라인). 두 컬럼은 서로 다른 버전 라인이라 <em>서로 비교하는 값이 아닙니다</em>. <code>—</code> = 미지정.</div></div><div class="note info"><span class="ni">i</span><div><strong>공유 family payload:</strong> 모든 EVM 네트워크는 Ethereum payload(<a href="#/chain-evm-list">지원 EVM 체인</a>)를, 모든 Cosmos 네트워크는 Cosmos 경로(<a href="#/chain-cosmos-list">지원 Cosmos 네트워크</a>)를, Astar / Shibuya / Creditcoin은 Polkadot / Substrate 경로(<a href="#/chain-polkadot-list">지원 Substrate 네트워크</a>)를 사용합니다. Bitcoin 계열 코인(eCash, Zcash, Bitcoin Gold, DigiByte, Ravencoin, Horizen)은 각각 자체 페이지를 가지며 UTXO 서명 shape을 공유합니다.</div></div>`},
 });
 </script>
 
@@ -2902,7 +2916,7 @@ search:'core api overview connection device account sign methods',html:`
 <div class="related"><a href="#/set-transport">→ setTransport</a><a href="#/get-address">→ getAddress</a><a href="#/sign">→ sign()</a></div>`});
 
 DOC.register('get-device-info',{title:'getDeviceInfo',breadcrumb:'<span>Core API</span> / Device API / getDeviceInfo',
-search:'getDeviceInfo device id firmware label connectType fingerprint coin_list DeviceInfoPayload',html:`
+search:'getDeviceInfo device id firmware label connectType fingerprint coin_list DeviceInfoPayload deviceModel DCENT-X DCENT X hardware model 기기 모델',html:`
 <h1 class="pt">getDeviceInfo</h1>
 <p class="lede">Retrieves information about the connected D'CENT hardware wallet — device id, firmware version, label, and active transport. Returns a typed <code>V1Response&lt;DeviceInfoPayload&gt;</code>, so fields like <code>parameter.label</code> are directly accessible.</p>
 <h2>Summary</h2>
@@ -2921,6 +2935,7 @@ search:'getDeviceInfo device id firmware label connectType fingerprint coin_list
 <tr><td><code>coin_list</code></td><td class="type">{ name }[]?</td><td>Installed coin apps</td></tr>
 <tr><td><code>fingerprint</code></td><td class="type">{ max, enrolled }?</td><td>Biometric slots</td></tr>
 <tr><td><code>isAttached</code></td><td class="type">boolean?</td><td>Whether a device is attached</td></tr>
+<tr><td><code>deviceModel</code></td><td class="type">string?</td><td>Connected hardware model — <code>'DCENT-X'</code> for a DCENT X; <code>undefined</code> for a D'CENT Biometric Wallet or a bridge that does not report the model.</td></tr>
 </tbody></table>
 <h2>Request / Response</h2>
 <div class="io-pair"><div class="io-label">Request</div>
@@ -2930,7 +2945,7 @@ const label = res.body.parameter?.label      // typed access</pre></div>
 <div class="io-label">Response</div>
 <div class="code"><div class="cb-head"><span>json</span><button class="copy">Copy</button></div>
 <pre>{\n  \"header\": {\n    \"version\": \"1.0\",\n    \"status\": \"success\"\n  },\n  \"body\": {\n    \"command\": \"getDeviceInfo\",\n    \"parameter\": {\n      \"deviceId\": \"…\",\n      \"version\": \"2.x.x\",\n      \"ksm_version\": \"1.x.x\",\n      \"label\": \"My D'CENT\",\n      \"connectType\": \"usb\",\n      \"coin_list\": [\n        {\n          \"name\": \"ETHEREUM\"\n        }\n      ],\n      \"fingerprint\": {\n        \"max\": 10,\n        \"enrolled\": 2\n      }\n    }\n  }\n}</pre></div></div>
-<div class="note tip"><span class="ni">✓</span><div>Cache the result — device info rarely changes within a session.</div></div>
+<div class="note info"><span class="ni">i</span><div>This example is a <strong>D'CENT Biometric Wallet</strong>, which does not report a model — so <code>deviceModel</code> is absent. A <strong>DCENT X</strong> returns <code>"deviceModel": "DCENT-X"</code> in the same object.</div></div><div class="note tip"><span class="ni">✓</span><div>Cache the result — device info rarely changes within a session.</div></div>
 <div class="related"><a href="#/info">→ info</a><a href="#/set-label">→ setLabel</a><a href="#/v1response">→ V1Response</a></div>`});
 
 DOC.register('info',{title:'info',breadcrumb:'<span>Core API</span> / Device API / info',
@@ -3261,6 +3276,7 @@ Object.assign(window.KO, {
 <tr><td><code>coin_list</code></td><td class="type">{ name }[]?</td><td>설치된 코인 앱</td></tr>
 <tr><td><code>fingerprint</code></td><td class="type">{ max, enrolled }?</td><td>생체 슬롯</td></tr>
 <tr><td><code>isAttached</code></td><td class="type">boolean?</td><td>기기 부착 여부</td></tr>
+<tr><td><code>deviceModel</code></td><td class="type">string?</td><td>연결된 하드웨어 모델 — DCENT X는 <code>'DCENT-X'</code>, D'CENT Biometric Wallet 또는 모델을 보고하지 않는 브리지는 <code>undefined</code>.</td></tr>
 </tbody></table>
 <h2>요청 / 응답</h2>
 <div class="io-pair"><div class="io-label">요청</div>
@@ -3270,7 +3286,7 @@ const label = res.body.parameter?.label      // typed 접근</pre></div>
 <div class="io-label">응답</div>
 <div class="code"><div class="cb-head"><span>json</span><button class="copy">복사</button></div>
 <pre>{\n  \"header\": {\n    \"version\": \"1.0\",\n    \"status\": \"success\"\n  },\n  \"body\": {\n    \"command\": \"getDeviceInfo\",\n    \"parameter\": {\n      \"deviceId\": \"…\",\n      \"version\": \"2.x.x\",\n      \"ksm_version\": \"1.x.x\",\n      \"label\": \"My D'CENT\",\n      \"connectType\": \"usb\",\n      \"coin_list\": [\n        {\n          \"name\": \"ETHEREUM\"\n        }\n      ],\n      \"fingerprint\": {\n        \"max\": 10,\n        \"enrolled\": 2\n      }\n    }\n  }\n}</pre></div></div>
-<div class="note tip"><span class="ni">✓</span><div>결과를 캐시하세요 — 세션 내 기기 정보는 거의 바뀌지 않습니다.</div></div>
+<div class="note info"><span class="ni">i</span><div>이 예제는 모델을 보고하지 않는 <strong>D'CENT Biometric Wallet</strong>이라 <code>deviceModel</code>이 없습니다. <strong>DCENT X</strong>는 같은 객체에 <code>"deviceModel": "DCENT-X"</code>를 담아 반환합니다.</div></div><div class="note tip"><span class="ni">✓</span><div>결과를 캐시하세요 — 세션 내 기기 정보는 거의 바뀌지 않습니다.</div></div>
 <div class="related"><a href="#/info">→ info</a><a href="#/set-label">→ setLabel</a><a href="#/v1response">→ V1Response</a></div>`},
 
 'info':{bcko:'<span>Core API</span> / Device API / info',ko:`

@@ -17,13 +17,30 @@
  *   T-DOC-MODEL-04 → 뮤테이션 검출(이 스크립트를 대상으로 objective §8 3번 명령이 수행)
  *   T-DOC-SYNC-01  → `yarn check:docs` 체인에 배선됨
  *
- * 검사 4종:
+ * 🔴 그리고 "찾은 것의 모양"만 보지 않는다 — **모수(母數)에 floor** 를 건다. 모양만 보면
+ *    "보호 대상을 지우면 초록"이 성립하고(체인 삭제 / `fw` 키 삭제 / `<thead>` 통째 삭제),
+ *    그게 빨간 게이트를 만난 사람이 실제로 택하는 경로다. 크로스 리뷰 R1 에서 이 클래스로
+ *    6종의 뮤테이션이 전부 통과했다(M11~M16).
+ *
+ * objective m09-04-28 테스트 항목 매핑:
+ *   T-DOC-MODEL-01 → (a) FWREQ 전수      T-DOC-MODEL-02 → (b) MATRIX(fw 보유 행)
+ *   T-DOC-MODEL-03 → (c)/(d)/(e) EN·KO 4블록 + Min FW 헤더 2개 + 동적 렌더러
+ *   T-DOC-MODEL-04 → 뮤테이션 검출(이 스크립트를 대상으로 objective §8 3번 명령이 수행)
+ *   T-DOC-SYNC-01  → `yarn check:docs` 체인에 배선됨
+ *
+ * 검사 5종:
  *   (a) FWREQ — 전 체인 × 전 메서드 행의 값이 `{bio, x}` 두 키를 non-empty 로 보유
- *   (b) MATRIX — **`fw` 키가 있는 행만** 대상. `fw` 부재 행은 지금도 `—` 로 렌더되므로 skip
- *       (전 행에 `fw` 를 강제하면 현재 통과 중인 행이 곧바로 실패한다)
- *   (c) 하드코딩 Requirements/요구사항 블록 — EN/KO **각각** 두 모델 이름을 모두 포함
+ *              + 체인/행 수 floor (삭제로 초록 만들기 차단)
+ *   (b) MATRIX — `fw` 키가 있는 행은 `{bio, x}` 필수. `fw` 부재는 **allowlist 안에서만** 허용
+ *              (지금도 `—` 로 렌더되는 11행) + 행 수·검사 행 수 floor
+ *   (c) 하드코딩 Requirements/요구사항 블록 — EN/KO **각각** 두 모델 이름 보유.
+ *       블록 containment 뿐 아니라 **DOM 파싱 후 조각 단위**(`thead` / `.rq` 카드)로 본다.
+ *       정규식으로 자르지 않는 이유: `<thead class="…">` 처럼 속성 하나만 붙어도 리터럴 매칭이
+ *       전량 무력화되고 검사가 0건으로 조용히 통과한다(M12/M13). 펌웨어 카드는 두 모델 **필수**,
+ *       그 밖의 카드는 "한 모델만 말하는 상태"를 금지한다.
  *       (EN 만 고치고 KO 를 빠뜨린 상태를 잡는 것이 이 검사의 목적 — 실사고 선례가 있다)
  *   (d) Support Matrix 표 헤더 — EN/KO 각각 모델별 `Min FW` 컬럼 2개 보유
+ *   (e) 동적 렌더러 `injectFwReq` — EN/KO 각각 **실제 호출**해 주입된 `<thead>` 를 단언
  */
 import { readFileSync } from 'node:fs'
 import { fileURLToPath } from 'node:url'
@@ -62,6 +79,33 @@ function badModelPair(v) {
   return missing.length > 0 ? `${missing.join(' / ')} 키 누락 또는 빈 값 (${JSON.stringify(v)})` : null
 }
 
+/* 🔴 모수(母數) floor — "찾은 것의 모양"만 보면 **보호 대상을 지우는 것**이 게이트를 초록으로
+   만드는 가장 쉬운 길이 된다(빨간 게이트를 만난 사람이 실제로 택하는 경로다). 그래서 아래 하한을
+   함께 단언한다. 값이 정당하게 늘면 이 상수를 올리는 것이 리뷰 대상이 된다 — 줄이는 쪽은 막는다.
+
+   ※ "FWREQ 에 id 가 있는 MATRIX 행은 fw 필수" 같은 구조적 교차 단언은 **이 문서엔 성립하지 않는다**:
+     Ethereum/EVM·XDC(id=chain-ethereum), BNB Beacon Chain·Coreum·Hippo(id=chain-cosmos)는 FWREQ 키를
+     공유하면서도 정당하게 fw 가 없다(패밀리 페이지를 공유하는 행). 그래서 fw 부재는 **이름 allowlist**
+     로 고정한다 — 가드되던 행에서 fw 를 지우면 allowlist 밖이라 즉시 실패한다. */
+const MIN_FWREQ_CHAINS = 25
+const MIN_FWREQ_ROWS = 60
+const MIN_MATRIX_ROWS = 38
+const MIN_MATRIX_FW_ROWS = 27
+/** fw 가 정당하게 없는 행(= 지금도 `—` 로 렌더). MATRIX 의 `n` 은 38행 전부 고유하다. */
+const MATRIX_FW_EXEMPT = new Set([
+  'Ethereum / EVM',
+  'XDC (XinFin)',
+  'eCash',
+  'Zcash',
+  'Bitcoin Gold',
+  'DigiByte',
+  'Ravencoin',
+  'Horizen',
+  'BNB Beacon Chain',
+  'Coreum',
+  'Hippo Protocol',
+])
+
 // ── (a) FWREQ ────────────────────────────────────────────────────────────────
 const fwreq = w.FWREQ
 let fwreqCells = 0
@@ -80,6 +124,14 @@ if (fwreq === null || typeof fwreq !== 'object' || Object.keys(fwreq).length ===
       else fwreqCells += 1
     }
   }
+  // floor — 체인/행을 **지워서** 초록을 만드는 경로를 막는다
+  const chainCount = Object.keys(fwreq).length
+  if (chainCount < MIN_FWREQ_CHAINS) {
+    failures.push(`FWREQ 체인이 ${chainCount}개다 — 최소 ${MIN_FWREQ_CHAINS}개여야 한다(체인이 삭제됐다).`)
+  }
+  if (fwreqCells < MIN_FWREQ_ROWS) {
+    failures.push(`FWREQ 메서드 행이 ${fwreqCells}개다 — 최소 ${MIN_FWREQ_ROWS}개여야 한다(행이 삭제됐다).`)
+  }
 }
 
 // ── (b) MATRIX (fw 보유 행만) ────────────────────────────────────────────────
@@ -90,29 +142,49 @@ if (!Array.isArray(matrix) || matrix.length === 0) {
   failures.push('window.MATRIX 가 비어 있다 — 문서 스크립트 실행 실패로 검사가 성립하지 않는다.')
 } else {
   for (const row of matrix) {
+    const name = row?.n ?? row?.id ?? '(unnamed)'
     if (row?.fw === undefined) {
-      matrixSkipped += 1 // 지금도 `—` 로 렌더된다 — 2컬럼 전환 대상이 아니다
+      // 🔴 skip 은 **allowlist 안에서만** 허용한다. 그러지 않으면 "fw 키를 지우면 검사 대상에서
+      //    빠진다" 가 되어, 게이트를 초록으로 만드는 가장 쉬운 방법이 보호 대상 삭제가 된다.
+      if (MATRIX_FW_EXEMPT.has(name)) matrixSkipped += 1
+      else failures.push(`MATRIX "${name}" 에 fw 가 없다 — 지금까지 fw 를 갖던 행이다(삭제됐거나 오타).`)
       continue
     }
     const bad = badModelPair(row.fw)
-    if (bad) failures.push(`MATRIX "${row?.n ?? row?.id ?? '(unnamed)'}" fw: ${bad}`)
+    if (bad) failures.push(`MATRIX "${name}" fw: ${bad}`)
     else matrixChecked += 1
+  }
+  // floor — 행 자체를 지우는 경로를 막는다
+  if (matrix.length < MIN_MATRIX_ROWS) {
+    failures.push(`MATRIX 가 ${matrix.length}행이다 — 최소 ${MIN_MATRIX_ROWS}행이어야 한다(행이 삭제됐다).`)
+  }
+  if (matrixChecked < MIN_MATRIX_FW_ROWS) {
+    failures.push(
+      `MATRIX 에서 fw 를 검사한 행이 ${matrixChecked}개다 — 최소 ${MIN_MATRIX_FW_ROWS}개여야 한다(fw 가 사라졌다).`,
+    )
   }
 }
 
 // ── (c) 하드코딩 Requirements / 요구사항 블록 (EN·KO 각각) ────────────────────
+// 🔴 정규식으로 자르지 않는다 — `<thead class="...">` 처럼 속성 하나만 붙어도 리터럴 매칭이
+//    전량 무력화되고(검사 0건 = 조용한 통과), `.rq` 카드의 끝 앵커도 뒤에 형제가 붙는 순간
+//    무너진다. 문서를 이미 jsdom 으로 실행하고 있으므로 **DOM 으로 파싱**한다.
 const pages = w.PAGES ?? {}
 const reqBlocks = []
 for (const [id, page] of Object.entries(pages)) {
   for (const field of ['html', 'ko']) {
     const src = page?.[field]
     if (typeof src !== 'string') continue
-    const re = /<h2[^>]*>(?:Requirements|요구사항)<\/h2>/g
-    let m
-    while ((m = re.exec(src)) !== null) {
-      const start = m.index
-      const nextH2 = src.indexOf('<h2', start + m[0].length)
-      reqBlocks.push({ id, field, body: src.slice(start, nextH2 === -1 ? src.length : nextH2) })
+    const frag = JSDOM.fragment(src)
+    for (const h2 of frag.querySelectorAll('h2')) {
+      const heading = h2.textContent.trim()
+      if (heading !== 'Requirements' && heading !== '요구사항') continue
+      // 다음 h2 전까지의 형제를 블록으로 모은다. 원본을 옮기지 않도록 clone 해서 담는다.
+      const box = frag.ownerDocument.createElement('div')
+      for (let el = h2.nextElementSibling; el !== null && el.tagName !== 'H2'; el = el.nextElementSibling) {
+        box.appendChild(el.cloneNode(true))
+      }
+      reqBlocks.push({ id, field, box })
     }
   }
 }
@@ -128,34 +200,64 @@ for (const field of ['html', 'ko']) {
     failures.push(`${field === 'ko' ? 'KO' : 'EN'} 쪽 Requirements 블록이 하나도 없다 — 한쪽 언어가 통째로 빠졌다.`)
   }
 }
-/** 한 조각(표 헤더 / 카드)이 한 모델만 말하고 있으면 위반. 둘 다 없으면 비대상(무관 조각). */
-function missingModelLabels(fragment) {
-  const has = { [BIO]: fragment.includes(BIO), [X]: fragment.includes(X) }
-  if (!has[BIO] && !has[X]) return null
-  return [BIO, X].filter((label) => !has[label])
+/** 두 모델 중 이 조각에 없는 이름들. */
+function absentLabels(text) {
+  return [BIO, X].filter((label) => !text.includes(label))
 }
+/** 한 조각이 한 모델만 말하고 있으면 그 누락분. 둘 다 없으면 `null`(모델 무관 조각). */
+function partialModelLabels(text) {
+  const absent = absentLabels(text)
+  return absent.length === 1 ? absent : null
+}
+const FW_CARD_KEY = /^(Firmware|펌웨어)$/
 
 for (const b of reqBlocks) {
+  const where = `[${b.id}.${b.field}]`
+  const blockText = b.box.textContent
+
   // 블록 전체에 두 모델이 다 있어야 한다 (통째로 단일 모델로 되돌린 상태를 잡는다)
-  const missing = [BIO, X].filter((label) => !b.body.includes(label))
+  const missing = absentLabels(blockText)
   if (missing.length > 0) {
-    failures.push(`Requirements 블록 [${b.id}.${b.field}] 에 모델 표기 누락: ${missing.join(' / ')}`)
+    failures.push(`Requirements 블록 ${where} 에 모델 표기 누락: ${missing.join(' / ')}`)
+  }
+
+  const theads = b.box.querySelectorAll('thead')
+  const cards = b.box.querySelectorAll('.rq')
+  // fail-closed — 표도 카드도 없으면 아래 조각 검사가 전부 0건으로 공허하게 통과한다.
+  if (theads.length === 0 && cards.length === 0) {
+    failures.push(`Requirements 블록 ${where} 에 표(thead)도 카드(.rq)도 없다 — 구조가 사라졌다.`)
+  }
+  // 표가 있는데 헤더가 없으면(<thead> 통째 삭제) 그것도 실패다.
+  if (b.box.querySelector('table') !== null && theads.length === 0) {
+    failures.push(`Requirements 블록 ${where} 의 표에 <thead> 가 없다 — 모델 컬럼 검사가 성립하지 않는다.`)
   }
 
   // 🔴 블록 전체 containment 만으로는 부족하다 — 표 헤더에서 X 컬럼만 지워도 lead 문단에 이름이
-  //    남아 블록 단위로는 통과한다. 그래서 **조각 단위**로 "한쪽만 말하는 상태"를 금지한다.
-  for (const [, thead] of b.body.matchAll(/<thead>([\s\S]*?)<\/thead>/g)) {
-    const m = missingModelLabels(thead)
-    if (m === null) {
-      failures.push(`Requirements 표 헤더 [${b.id}.${b.field}] 에 모델 컬럼이 없다 — 2모델 표가 아니다.`)
-    } else if (m.length > 0) {
-      failures.push(`Requirements 표 헤더 [${b.id}.${b.field}] 에 모델 컬럼 누락: ${m.join(' / ')}`)
+  //    남아 블록 단위로는 통과한다. 그래서 **조각 단위**로 본다.
+  for (const thead of theads) {
+    const absent = absentLabels(thead.textContent)
+    if (absent.length > 0) {
+      failures.push(`Requirements 표 헤더 ${where} 에 모델 컬럼 누락: ${absent.join(' / ')}`)
     }
   }
-  for (const [, card] of b.body.matchAll(/<div class="rq">([\s\S]*?)(?=<div class="rq">|<\/div>\s*$)/g)) {
-    const m = missingModelLabels(card)
-    if (m !== null && m.length > 0) {
-      failures.push(`Requirements 카드 [${b.id}.${b.field}] 가 한 모델만 언급한다 — 누락: ${m.join(' / ')}`)
+  // 펌웨어 카드는 **두 모델 필수**다. 라벨을 둘 다 지워 "your device" 류로 되돌리는 회귀를
+  // "모델 무관 조각"으로 봐주면 안 되는 유일한 카드이기 때문이다.
+  const fwCards = [...cards].filter((c) => FW_CARD_KEY.test((c.querySelector('.k')?.textContent ?? '').trim()))
+  if (cards.length > 0 && fwCards.length === 0) {
+    failures.push(`Requirements 카드 ${where} 에 펌웨어(Firmware/펌웨어) 카드가 없다 — 앵커가 사라졌다.`)
+  }
+  for (const card of fwCards) {
+    const absent = absentLabels(card.textContent)
+    if (absent.length > 0) {
+      failures.push(`Requirements 펌웨어 카드 ${where} 에 모델 표기 누락: ${absent.join(' / ')}`)
+    }
+  }
+  // 나머지 카드(기기 카드 등)는 "한 모델만 말하는 상태"만 금지 — 모델 무관 카드(브라우저/연결)는 비대상
+  for (const card of cards) {
+    if (fwCards.includes(card)) continue
+    const partial = partialModelLabels(card.textContent)
+    if (partial !== null) {
+      failures.push(`Requirements 카드 ${where} 가 한 모델만 언급한다 — 누락: ${partial.join(' / ')}`)
     }
   }
 }

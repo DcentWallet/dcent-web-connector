@@ -249,8 +249,13 @@ export interface DeviceInfoPayload {
  * 컴파일 타임 계약 고정 — `deviceId` / `version` / `deviceModel` 이 wire 키다.
  *
  * `tsconfig.json` 의 `include` 는 `src/**` 뿐이라 `tests/**` 는 `tsc` 가 보지 않고,
- * 단위 테스트도 babel-jest 라 타입 주석이 지워진다(크로스 리뷰 지적). 따라서 이름이 되돌아가는
- * 회귀는 **여기서만** 컴파일 에러로 잡힌다. 필드명을 v1 이름으로 되돌리면 이 선언이 깨진다.
+ * 단위 테스트도 babel-jest 라 타입 주석이 지워진다(크로스 리뷰 지적).
+ *
+ * ⚠️ 이 선언이 잡는 범위 (실측, 크로스 리뷰 R1):
+ *  - **부분 rename** — 인터페이스 필드만 바꾸고 이 리터럴을 그대로 두면 `TS2561` 로 잡힌다.
+ *  - **일관 rename** — 인터페이스와 이 리터럴을 **함께** 바꾸면 `yarn tsc` 는 exit 0 이다.
+ *    그 회귀는 `T-U-DEVMODEL-01`(tests/unit/v2/sign/info.test.ts)이 이 파일의 소스를 직접 읽어
+ *    `deviceModel` 키 존재를 단언하는 것으로 잡는다. 둘은 짝이며 어느 한쪽만으로는 부족하다.
  */
 const _deviceInfoWireKeyContract: DeviceInfoPayload = { deviceId: '', version: '', deviceModel: '' }
 void _deviceInfoWireKeyContract

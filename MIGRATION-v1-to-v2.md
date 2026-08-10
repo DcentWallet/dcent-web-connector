@@ -105,6 +105,7 @@ interface ConnectionStateDetail {
 }
 
 interface DeviceBriefInfo {       // 표시용 — 전부 optional
+  deviceId?: string               // getDeviceInfo 의 deviceId 와 같은 이름
   label?: string                  // getDeviceInfo 의 label 과 같은 이름
   version?: string                // getDeviceInfo 의 version 과 같은 이름
   deviceModel?: string            // getDeviceInfo 의 deviceModel 과 같은 이름
@@ -169,11 +170,16 @@ dcent.setConnectionListener((state) => {
 을 뒷문으로 다시 들이는 셈이 된다. 개수는 그렇지 않다. 목록이 필요하면 `getDeviceInfo()` 를
 호출한다.
 
-#### 싣지 않는 것
+#### `deviceId` 는 싣고, 나머지 식별자는 싣지 않는다
 
-`deviceInfo` 에는 `deviceId` / `ksm_version` / 기기 `state` 를 **싣지 않는다.** 이 신호는 dApp 이
-요청하지 않아도 자동으로 나가므로 하드웨어 지문을 태우지 않는다. 필요하면 `getDeviceInfo()` 를
-직접 호출한다. `detail` 과 `detail.deviceInfo` 는 freeze 되어 있어 수정해도 반영되지 않는다.
+`deviceId` 는 **기기를 특정하는 값**이다. 이 신호는 dApp 이 요청하지 않아도 자동으로 나가므로,
+구독만 해도 재방문한 기기를 알아볼 수 있다 — 트레이드오프를 알고 써야 한다. 그럼에도 싣는
+이유는 **사용자 라벨이 설정되지 않은 기기를 구별할 다른 수단이 없기 때문**이다(모델명은 같은
+모델이면 전부 같다).
+
+`ksm_version`(보안칩 펌웨어)과 기기 `state` 는 **여전히 싣지 않는다** — 기기 식별에 필요하지
+않고, 기기 내부 상태를 자동 신호로 노출할 이유가 없다. 필요하면 `getDeviceInfo()` 를 직접
+호출한다. `detail` 과 `detail.deviceInfo` 는 freeze 되어 있어 수정해도 반영되지 않는다.
 
 기기 신호를 보내지 않는 구버전 브리지 팝업에서는 `detail.device` 가 `'unknown'` 으로 남을 뿐,
 팝업 축은 그대로 동작한다.

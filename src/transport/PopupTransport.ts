@@ -414,6 +414,7 @@ export class PopupTransport implements MessageTransport {
               : undefined
             // mutation-isolation: 방출 전에 freeze (SignProgressInfo 와 동일 원칙).
             info = Object.freeze({
+              deviceId: str(r.deviceId),
               label: str(r.label),
               version: str(r.version),
               deviceModel: str(r.deviceModel),

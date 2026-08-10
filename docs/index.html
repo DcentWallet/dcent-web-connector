@@ -3000,13 +3000,14 @@ search:'setConnectionListener connection state callback connected disconnected l
 <h2>DeviceBriefInfo</h2>
 <p>Display-only fields. Every field is optional — treat a missing value as "not reported". <strong>The field names match <a href="#/get-device-info"><code>getDeviceInfo</code></a>'s response</strong>, so an app using both APIs does not have to learn two vocabularies for the same value.</p>
 <table class="params"><thead><tr><th>Field</th><th>Type</th><th>Same as <code>getDeviceInfo</code></th><th>Description</th></tr></thead><tbody>
+<tr><td><code>deviceId</code></td><td class="type">string?</td><td><code>deviceId</code></td><td>Device identifier. The only way to tell devices apart when no label is set — see the note below.</td></tr>
 <tr><td><code>label</code></td><td class="type">string?</td><td><code>label</code></td><td>User-set device label.</td></tr>
 <tr><td><code>version</code></td><td class="type">string?</td><td><code>version</code></td><td>Firmware version string.</td></tr>
 <tr><td><code>deviceModel</code></td><td class="type">string?</td><td><code>deviceModel</code></td><td>Model name.</td></tr>
 <tr><td><code>connectType</code></td><td class="type">'usb' | 'ble' ?</td><td><code>connectType</code></td><td>How the device is attached.</td></tr>
 <tr><td><code>coinCount</code></td><td class="type">number?</td><td><span class="muted">(count of <code>coin_list</code>)</span></td><td>Number of coins installed. The <strong>list</strong> is not sent — an installed-coin set is semi-identifying, and this signal goes out unsolicited. Call <code>getDeviceInfo</code> for the list.</td></tr>
 </tbody></table>
-<div class="note info"><span class="ni">i</span><div><strong>Identifiers are intentionally excluded.</strong> <code>deviceId</code>, <code>ksm_version</code> and the device <code>state</code> are <strong>not</strong> carried on this signal — it is pushed automatically without the app asking, so it does not carry a hardware fingerprint. Call <a href="#/get-device-info"><code>getDeviceInfo</code></a> if you need them.</div></div>
+<div class="note warn"><span class="ni">!</span><div><strong><code>deviceId</code> identifies the device — know the trade-off.</strong> This signal is pushed automatically without the app asking, so an app that merely subscribes can recognise a returning device. It is carried anyway because a device with no user-set label has <strong>no other way</strong> to be told apart (the model name is identical across units). <code>ksm_version</code> and the device <code>state</code> are still <strong>not</strong> carried — they are not needed to identify a device. Call <a href="#/get-device-info"><code>getDeviceInfo</code></a> if you need those.</div></div>
 <h2>Example</h2>
 <div class="code"><div class="cb-head"><span>js</span><button class="copy">Copy</button></div>
 <pre>dcent.setConnectionListener((state, detail) => {
@@ -3377,13 +3378,14 @@ if (res.header.status === 'success') { /* 브리지 준비됨 */ }</pre></div>
 <h2>DeviceBriefInfo</h2>
 <p>표시용 필드입니다. 모두 optional이며, 값이 없으면 "보고되지 않음"으로 다루세요. <strong>필드 이름은 <a href="#/get-device-info"><code>getDeviceInfo</code></a> 응답과 동일합니다</strong> — 두 API를 함께 쓰는 앱이 같은 값을 두 어휘로 배우지 않도록 맞췄습니다.</p>
 <table class="params"><thead><tr><th>필드</th><th>타입</th><th><code>getDeviceInfo</code> 대응</th><th>설명</th></tr></thead><tbody>
+<tr><td><code>deviceId</code></td><td class="type">string?</td><td><code>deviceId</code></td><td>기기 식별자. 라벨이 설정되지 않은 기기를 구별하는 유일한 수단입니다 — 아래 주의 참조.</td></tr>
 <tr><td><code>label</code></td><td class="type">string?</td><td><code>label</code></td><td>사용자가 설정한 기기 라벨.</td></tr>
 <tr><td><code>version</code></td><td class="type">string?</td><td><code>version</code></td><td>펌웨어 버전 문자열.</td></tr>
 <tr><td><code>deviceModel</code></td><td class="type">string?</td><td><code>deviceModel</code></td><td>모델명.</td></tr>
 <tr><td><code>connectType</code></td><td class="type">'usb' | 'ble' ?</td><td><code>connectType</code></td><td>기기가 붙어 있는 방식.</td></tr>
 <tr><td><code>coinCount</code></td><td class="type">number?</td><td><span class="muted">(<code>coin_list</code>의 개수)</span></td><td>설치된 코인 개수. <strong>목록은 보내지 않습니다</strong> — 설치된 코인 조합 자체가 준-식별 정보인데 이 신호는 요청 없이 자동으로 나가기 때문입니다. 목록이 필요하면 <code>getDeviceInfo</code>를 호출하세요.</td></tr>
 </tbody></table>
-<div class="note info"><span class="ni">i</span><div><strong>식별자는 의도적으로 제외했습니다.</strong> <code>deviceId</code>, <code>ksm_version</code>, 기기 <code>state</code>는 이 신호에 <strong>싣지 않습니다</strong> — 앱이 요청하지 않아도 자동으로 나가는 신호라 하드웨어 지문을 태우지 않습니다. 필요하면 <a href="#/get-device-info"><code>getDeviceInfo</code></a>를 직접 호출하세요.</div></div>
+<div class="note warn"><span class="ni">!</span><div><strong><code>deviceId</code>는 기기를 특정합니다 — 트레이드오프를 알고 쓰세요.</strong> 이 신호는 앱이 요청하지 않아도 자동으로 나가므로, 구독만 해도 재방문한 기기를 알아볼 수 있습니다. 그럼에도 싣는 이유는 사용자 라벨이 설정되지 않은 기기를 구별할 <strong>다른 수단이 없기 때문</strong>입니다(모델명은 같은 모델이면 전부 같습니다). <code>ksm_version</code>과 기기 <code>state</code>는 <strong>여전히 싣지 않습니다</strong> — 기기 식별에 필요하지 않습니다. 그 값들이 필요하면 <a href="#/get-device-info"><code>getDeviceInfo</code></a>를 직접 호출하세요.</div></div>
 <h2>예시</h2>
 <div class="code"><div class="cb-head"><span>js</span><button class="copy">복사</button></div>
 <pre>dcent.setConnectionListener((state, detail) => {

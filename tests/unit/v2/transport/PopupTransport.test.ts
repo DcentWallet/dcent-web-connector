@@ -1407,7 +1407,7 @@ describe('PopupTransport', () => {
       dispatchResponse(DEFAULT_ORIGIN, {
         type: '_deviceState',
         device: 'connected',
-        info: { label: "D'CENT X", version: '2.35.1', deviceModel: 'DCENT-X', connectType: 'usb', coinCount: 42 },
+        info: { deviceId: 'DEADBEEF0123', label: "D'CENT X", version: '2.35.1', deviceModel: 'DCENT-X', connectType: 'usb', coinCount: 42 },
       })
       expect(h).toHaveBeenCalledTimes(1)
       // 1번째 인자는 팝업 축 — 여전히 connected (의미 불변)
@@ -1415,7 +1415,7 @@ describe('PopupTransport', () => {
       expect(h.mock.calls[0][1]).toEqual({
         popup: 'connected',
         device: 'connected',
-        deviceInfo: { label: "D'CENT X", version: '2.35.1', deviceModel: 'DCENT-X', connectType: 'usb', coinCount: 42 },
+        deviceInfo: { deviceId: 'DEADBEEF0123', label: "D'CENT X", version: '2.35.1', deviceModel: 'DCENT-X', connectType: 'usb', coinCount: 42 },
       })
     })
 
@@ -1462,16 +1462,18 @@ describe('PopupTransport', () => {
       dispatchResponse(DEFAULT_ORIGIN, {
         type: '_deviceState',
         device: 'connected',
-        info: { label: 'X', evil: 'DROP', deviceId: 'SHOULD-NOT-PASS', connectType: 'nope', coinCount: -1 },
+        info: { label: 'X', evil: 'DROP', ksm_version: 'SHOULD-NOT-PASS', state: 'initialised', connectType: 'nope', coinCount: -1 },
       })
       const detail = h.mock.calls[0][1]
       // 🔴 이름은 `getDeviceInfo()` 응답과 같아야 한다 — 두 API 를 같이 쓰는 dApp 이 어휘를 두 벌
       //    배우지 않게 하려는 것이 이 계약의 목적이라, 키 이름 자체가 회귀 대상이다.
-      expect(Object.keys(detail.deviceInfo)).toEqual(['label', 'version', 'deviceModel', 'connectType', 'coinCount'])
+      expect(Object.keys(detail.deviceInfo)).toEqual(['deviceId', 'label', 'version', 'deviceModel', 'connectType', 'coinCount'])
       expect(detail.deviceInfo.label).toBe('X')
-      // 화이트리스트 밖 필드는 실리지 않는다 — deviceId 는 의도적으로 계약에서 제외됐다.
+      // 화이트리스트 밖 필드는 실리지 않는다.
       expect('evil' in detail.deviceInfo).toBe(false)
-      expect('deviceId' in detail.deviceInfo).toBe(false)
+      // deviceId 는 이제 계약에 포함된다(2026-08-10 결정 변경) — 대신 ksm_version/state 는 여전히 제외.
+      expect('ksm_version' in detail.deviceInfo).toBe(false)
+      expect('state' in detail.deviceInfo).toBe(false)
       // 형식 위반 값은 undefined 로 접힌다(잘못된 값을 그대로 노출하지 않는다).
       expect(detail.deviceInfo.connectType).toBeUndefined()
       expect(detail.deviceInfo.coinCount).toBeUndefined()

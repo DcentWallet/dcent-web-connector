@@ -64,6 +64,11 @@ export type {
   TransportState,
   // m09-04-27: 다중 서명 진행률 payload 타입
   SignProgressInfo,
+  // 2026-08-10: 기기 축 — `setConnectionListener` 콜백 2번째 인자로 함께 오는 타입들.
+  DeviceState,
+  DeviceBriefInfo,
+  ConnectionStateDetail,
+  StateHandler,
 } from './transport/MessageTransport'
 export { PopupTransport } from './transport/PopupTransport'
 

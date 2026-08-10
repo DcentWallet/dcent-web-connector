@@ -2027,7 +2027,7 @@ search:'migration v1 v2 coin functions sign coinType chainId signed_tx signature
 <tr><td>Key path</td><td><code>key</code> / <code>path</code> args</td><td><code>payload.keyPath</code></td></tr>
 <tr><td>Response</td><td><code>V1Response</code></td><td><strong>same</strong> <code>V1Response</code> — but <code>signed_tx</code> → <code>signature</code></td></tr>
 <tr><td>Connection</td><td>Bridge app install + USB only</td><td>browser-direct (WebHID / BLE) + <code>setTransport</code></td></tr>
-<tr><td>Device / lifecycle</td><td><code>getDeviceInfo</code> / <code>setConnectionListener</code> / …</td><td><strong>same names</strong> (+ new <code>setTransport</code>)</td></tr>
+<tr><td>Device / lifecycle</td><td><code>getDeviceInfo</code> / <code>setConnectionListener</code> / …</td><td><strong>same names</strong> (+ new <code>setTransport</code>). <a href="#/set-connection-listener"><code>setConnectionListener</code></a> keeps its v1 first argument but gained a second one and <strong>fires more often</strong> — see its page.</td></tr>
 </tbody></table>
 <div class="note tip"><span class="ni">✓</span><div><strong>For users:</strong> no more Bridge download, and Bluetooth now works. <strong>For your code:</strong> Device/Account APIs stay nearly identical; only the <strong>Sign API</strong> consolidates into <code>sign()</code>, and you read <code>signature</code> instead of <code>signed_tx</code>.</div></div>
 <h2>Checklist</h2>
@@ -2501,9 +2501,11 @@ connectBtn.addEventListener('click', async () => {
 <p class="lede">기기 연결 상태가 바뀔 때 호출되는 콜백을 등록합니다.</p>
 <h2>시그니처</h2>
 <div class="code"><div class="cb-head"><span>ts</span><button class="copy">복사</button></div>
-<pre>dcent.setConnectionListener(listener: (state) => void): void</pre></div>
+<pre>dcent.setConnectionListener(
+  listener: (state: TransportState, detail: ConnectionStateDetail) =&gt; void
+): void</pre></div>
 <h2>참고</h2>
-<p>연결 UI(connecting / connected / disconnected)를 구동할 때 사용합니다. v1과 동일.</p>
+<p>연결 UI(connecting / connected / disconnected)를 구동할 때 사용합니다. 1번째 인자의 의미는 v1과 동일한 <strong>팝업 축</strong>이고, 2번째 인자에 팝업 축과 <strong>기기 축</strong>이 함께 담깁니다 — 기기 축만 바뀌어도 호출되므로 <strong>호출 빈도가 v1보다 늘어납니다</strong>.</p>
 <div class="related"><a href="#/set-transport">→ setTransport</a><a href="#/error-codes">→ 에러 코드</a></div>`},
 
 'popup-close':{bcko:'<span>Core API</span> / Device API / popupWindowClose',ko:`
@@ -2688,7 +2690,7 @@ Object.assign(window.KO, {
 <tr><td>키 경로</td><td><code>key</code> / <code>path</code> 인자</td><td><code>payload.keyPath</code></td></tr>
 <tr><td>응답</td><td><code>V1Response</code></td><td><strong>동일</strong> <code>V1Response</code> — 단 <code>signed_tx</code> → <code>signature</code></td></tr>
 <tr><td>연결</td><td>Bridge 앱 설치 + USB만</td><td>브라우저 직접(WebHID / BLE) + <code>setTransport</code></td></tr>
-<tr><td>Device / lifecycle</td><td><code>getDeviceInfo</code> / <code>setConnectionListener</code> / …</td><td><strong>함수명 동일</strong> (+ 신규 <code>setTransport</code>)</td></tr>
+<tr><td>Device / lifecycle</td><td><code>getDeviceInfo</code> / <code>setConnectionListener</code> / …</td><td><strong>함수명 동일</strong> (+ 신규 <code>setTransport</code>). <a href="#/set-connection-listener"><code>setConnectionListener</code></a>는 1번째 인자의 의미가 v1과 같지만 2번째 인자가 생겼고 <strong>호출 빈도가 늘어납니다</strong> — 해당 페이지 참조.</td></tr>
 </tbody></table>
 <div class="note tip"><span class="ni">✓</span><div><strong>사용자:</strong> Bridge 다운로드 불필요, 블루투스 연결 가능. <strong>코드:</strong> Device/Account API는 거의 동일하고, <strong>Sign API만</strong> <code>sign()</code>으로 통합, <code>signed_tx</code> 대신 <code>signature</code>를 읽습니다.</div></div>
 <h2>체크리스트</h2>
@@ -2892,7 +2894,7 @@ search:'core api overview connection device account sign methods',html:`
 <h2>Connection API</h2>
 <table class="params"><thead><tr><th>Method</th><th>Purpose</th></tr></thead><tbody>
 <tr><td><a href="#/set-transport"><code>setTransport</code></a></td><td>Choose WebHID or Bluetooth. <span class="badge b-tech">v2 new</span></td></tr>
-<tr><td><a href="#/set-connection-listener"><code>setConnectionListener</code></a></td><td><code>'connected'</code> / <code>'disconnected'</code> events.</td></tr>
+<tr><td><a href="#/set-connection-listener"><code>setConnectionListener</code></a></td><td>Popup <code>'connected'</code> / <code>'disconnected'</code> events, plus the separate <strong>device</strong> axis in the second argument. <span class="badge b-tech">v2 new</span></td></tr>
 <tr><td><a href="#/set-sign-progress-listener"><code>setSignProgressListener</code></a></td><td>Multi-signature progress (<code>step</code> / <code>total</code>). <span class="badge b-tech">v2 new</span></td></tr>
 <tr><td><a href="#/set-timeout"><code>setTimeOutMs</code></a></td><td>Request timeout.</td></tr>
 <tr><td><a href="#/popup-close"><code>popupWindowClose</code></a></td><td>Close popup, release transport.</td></tr>
@@ -2976,23 +2978,61 @@ if (res.header.status === 'success') { /* bridge ready */ }</pre></div>
 <div class="related"><a href="#/get-device-info">→ getDeviceInfo</a><a href="#/set-transport">→ setTransport</a></div>`});
 
 DOC.register('set-connection-listener',{title:'setConnectionListener',breadcrumb:'<span>Core API</span> / Connection API / setConnectionListener',
-search:'setConnectionListener connection state callback connected disconnected listener TransportState',html:`
+search:'setConnectionListener connection state callback connected disconnected listener TransportState deviceState device axis detail popup ConnectionStateDetail DeviceBriefInfo unknown unplug',html:`
 <h1 class="pt">setConnectionListener</h1>
-<p class="lede">Registers a callback that fires whenever the transport connection state changes. Use it to drive connection UI (spinner, connected badge, reconnect prompt).</p>
+<p class="lede">Registers a callback that fires whenever the connection state changes. The callback receives <strong>two independent axes</strong>: the <em>popup</em> axis (is the bridge window alive?) and the <em>device</em> axis (is a hardware wallet attached?). Use it to drive connection UI (spinner, connected badge, "please reconnect your device" prompt).</p>
 <h2>Signature</h2>
 <div class="code"><div class="cb-head"><span>ts</span><button class="copy">Copy</button></div>
-<pre>dcent.setConnectionListener(listener: (state: 'connected' | 'disconnected') => void): void</pre></div>
+<pre>dcent.setConnectionListener(
+  listener: (state: TransportState, detail: ConnectionStateDetail) =&gt; void
+): void</pre></div>
 <h2>Parameters</h2>
 <table class="params"><thead><tr><th>Field</th><th>Type</th><th>Description</th></tr></thead><tbody>
-<tr><td><code>listener</code></td><td class="type">(state) ⇒ void</td><td>Called with the current <code>TransportState</code>: <code>'connected'</code> or <code>'disconnected'</code>.</td></tr>
+<tr><td><code>state</code></td><td class="type">'connected' | 'disconnected'</td><td><strong>Popup axis only</strong> — unchanged from v1. <code>'connected'</code> means the bridge popup window is open, <strong>not</strong> that a device is attached.</td></tr>
+<tr><td><code>detail</code></td><td class="type">ConnectionStateDetail</td><td>Both axes at once. <span class="badge b-tech">v2 new</span> Older code written as <code>function (state) {…}</code> keeps working — JavaScript ignores the extra argument.</td></tr>
 </tbody></table>
+<h2>ConnectionStateDetail</h2>
+<table class="params"><thead><tr><th>Field</th><th>Type</th><th>Description</th></tr></thead><tbody>
+<tr><td><code>popup</code></td><td class="type">'connected' | 'disconnected'</td><td>Same value as the first argument — the bridge popup window.</td></tr>
+<tr><td><code>device</code></td><td class="type">'connected' | 'disconnected' | 'unknown'</td><td>The hardware wallet. <code>'unknown'</code> means <strong>not observable</strong> (before the popup opens, and after it closes) — it is deliberately not reported as <code>'disconnected'</code>, which would be a false claim that the device was removed.</td></tr>
+<tr><td><code>deviceInfo</code></td><td class="type">DeviceBriefInfo | undefined</td><td>Present only while <code>device === 'connected'</code>.</td></tr>
+</tbody></table>
+<h2>DeviceBriefInfo</h2>
+<p>Display-only fields. Every field is optional — treat a missing value as "not reported".</p>
+<table class="params"><thead><tr><th>Field</th><th>Type</th><th>Description</th></tr></thead><tbody>
+<tr><td><code>label</code></td><td class="type">string?</td><td>User-set device label.</td></tr>
+<tr><td><code>firmwareVersion</code></td><td class="type">string?</td><td>Firmware version string.</td></tr>
+<tr><td><code>deviceModel</code></td><td class="type">string?</td><td>Model name.</td></tr>
+<tr><td><code>transport</code></td><td class="type">'usb' | 'ble' ?</td><td>How the device is attached.</td></tr>
+<tr><td><code>coinCount</code></td><td class="type">number?</td><td>Number of coins installed on the device.</td></tr>
+</tbody></table>
+<div class="note info"><span class="ni">i</span><div><strong>Identifiers are intentionally excluded.</strong> <code>deviceId</code>, <code>ksm_version</code> and the device <code>state</code> are <strong>not</strong> carried on this signal — it is pushed automatically without the app asking, so it does not carry a hardware fingerprint. Call <a href="#/get-device-info"><code>getDeviceInfo</code></a> if you need them.</div></div>
 <h2>Example</h2>
 <div class="code"><div class="cb-head"><span>js</span><button class="copy">Copy</button></div>
-<pre>dcent.setConnectionListener((state) => {
-  if (state === 'connected') showConnected()
-  else showDisconnected()
+<pre>dcent.setConnectionListener((state, detail) => {
+  // popup axis — v1 behaviour, unchanged
+  if (state === 'connected') showPopupOpen()
+  else showPopupClosed()
+
+  // device axis — new
+  if (detail.device === 'connected') {
+    showDevice(detail.deviceInfo?.label, detail.deviceInfo?.transport)
+  } else if (detail.device === 'disconnected') {
+    promptReconnectDevice()          // cable pulled while the popup is still open
+  } else {
+    hideDeviceBadge()                // 'unknown' — nothing observed yet
+  }
 })</pre></div>
+<div class="note warn"><span class="ni">!</span><div><strong>The listener now fires more often than in v1.</strong> It is called when <strong>either</strong> axis changes, so <code>state</code> (the first argument) may repeat the same value across consecutive calls — v1 only called you when that one value changed. If your handler does work that must not repeat (analytics, a toast, a reconnect attempt), compare against your own previous value instead of assuming every call is a change of <code>state</code>.</div></div>
 <div class="note info"><span class="ni">i</span><div>The listener is cached and <strong>re-registered automatically</strong> after the transport is reset (e.g. after <code>popupWindowClose</code> + reconnect). Registering the same listener multiple times subscribes it multiple times — register once.</div></div>
+<h2>Notes</h2>
+<ul>
+  <li>The two axes are <strong>independent</strong>. Unplugging USB while the popup stays open changes only <code>detail.device</code>; <code>state</code> stays <code>'connected'</code>.</li>
+  <li>Closing the popup sets <code>popup: 'disconnected'</code> and <code>device: 'unknown'</code> in a <strong>single</strong> call.</li>
+  <li>Initial values before anything happens: <code>popup: 'disconnected'</code>, <code>device: 'unknown'</code>.</li>
+  <li><code>detail</code> and <code>detail.deviceInfo</code> are frozen — mutating them does not affect the connector, and your changes will not persist.</li>
+  <li>Older bridge popups that do not emit the device signal simply leave <code>detail.device</code> at <code>'unknown'</code>; the popup axis keeps working unchanged.</li>
+</ul>
 <div class="related"><a href="#/set-sign-progress-listener">→ setSignProgressListener</a><a href="#/set-transport">→ setTransport</a><a href="#/popup-close">→ popupWindowClose</a><a href="#/error-codes">→ Error Codes</a></div>`});
 
 DOC.register('set-sign-progress-listener',{title:'setSignProgressListener',breadcrumb:'<span>Core API</span> / Connection API / setSignProgressListener',
@@ -3234,7 +3274,7 @@ Object.assign(window.KO, {
 <h2>Connection API</h2>
 <table class="params"><thead><tr><th>메서드</th><th>용도</th></tr></thead><tbody>
 <tr><td><a href="#/set-transport"><code>setTransport</code></a></td><td>WebHID 또는 블루투스 선택. <span class="badge b-tech">v2 신규</span></td></tr>
-<tr><td><a href="#/set-connection-listener"><code>setConnectionListener</code></a></td><td><code>'connected'</code> / <code>'disconnected'</code> 이벤트.</td></tr>
+<tr><td><a href="#/set-connection-listener"><code>setConnectionListener</code></a></td><td>팝업 <code>'connected'</code> / <code>'disconnected'</code> 이벤트 + 2번째 인자로 오는 별도의 <strong>기기</strong> 축. <span class="badge b-tech">v2 신규</span></td></tr>
 <tr><td><a href="#/set-sign-progress-listener"><code>setSignProgressListener</code></a></td><td>다중 서명 진행률(<code>step</code> / <code>total</code>). <span class="badge b-tech">v2 신규</span></td></tr>
 <tr><td><a href="#/set-timeout"><code>setTimeOutMs</code></a></td><td>요청 timeout.</td></tr>
 <tr><td><a href="#/popup-close"><code>popupWindowClose</code></a></td><td>팝업 닫고 트랜스포트 해제.</td></tr>
@@ -3317,21 +3357,59 @@ if (res.header.status === 'success') { /* 브리지 준비됨 */ }</pre></div>
 
 'set-connection-listener':{bcko:'<span>Core API</span> / Connection API / setConnectionListener',ko:`
 <h1 class="pt">setConnectionListener</h1>
-<p class="lede">트랜스포트 연결 상태가 바뀔 때마다 호출되는 콜백을 등록합니다. 연결 UI(스피너, 연결 배지, 재연결 안내)를 구동할 때 사용합니다.</p>
+<p class="lede">연결 상태가 바뀔 때마다 호출되는 콜백을 등록합니다. 콜백은 <strong>서로 독립적인 두 축</strong>을 받습니다 — <em>팝업</em> 축(브리지 창이 살아있는가)과 <em>기기</em> 축(하드웨어 지갑이 붙어있는가). 연결 UI(스피너, 연결 배지, "기기를 다시 연결하세요" 안내)를 구동할 때 사용합니다.</p>
 <h2>시그니처</h2>
 <div class="code"><div class="cb-head"><span>ts</span><button class="copy">복사</button></div>
-<pre>dcent.setConnectionListener(listener: (state: 'connected' | 'disconnected') => void): void</pre></div>
+<pre>dcent.setConnectionListener(
+  listener: (state: TransportState, detail: ConnectionStateDetail) =&gt; void
+): void</pre></div>
 <h2>파라미터</h2>
 <table class="params"><thead><tr><th>필드</th><th>타입</th><th>설명</th></tr></thead><tbody>
-<tr><td><code>listener</code></td><td class="type">(state) ⇒ void</td><td>현재 <code>TransportState</code>(<code>'connected'</code> 또는 <code>'disconnected'</code>)로 호출됨.</td></tr>
+<tr><td><code>state</code></td><td class="type">'connected' | 'disconnected'</td><td><strong>팝업 축 전용</strong> — v1과 의미가 동일합니다. <code>'connected'</code>는 브리지 팝업 창이 열려 있다는 뜻이지 <strong>기기가 붙어 있다는 뜻이 아닙니다</strong>.</td></tr>
+<tr><td><code>detail</code></td><td class="type">ConnectionStateDetail</td><td>두 축을 한 번에 전달합니다. <span class="badge b-tech">v2 신규</span> <code>function (state) {…}</code> 형태로 작성된 기존 코드는 그대로 동작합니다 — JavaScript는 남는 인자를 무시합니다.</td></tr>
 </tbody></table>
+<h2>ConnectionStateDetail</h2>
+<table class="params"><thead><tr><th>필드</th><th>타입</th><th>설명</th></tr></thead><tbody>
+<tr><td><code>popup</code></td><td class="type">'connected' | 'disconnected'</td><td>1번째 인자와 같은 값 — 브리지 팝업 창.</td></tr>
+<tr><td><code>device</code></td><td class="type">'connected' | 'disconnected' | 'unknown'</td><td>하드웨어 지갑. <code>'unknown'</code>은 <strong>관측할 수 없음</strong>을 뜻합니다(팝업이 열리기 전, 그리고 닫힌 뒤). <code>'disconnected'</code>로 접지 않는 이유는 그게 "기기가 빠졌다"는 거짓 단정이 되기 때문입니다.</td></tr>
+<tr><td><code>deviceInfo</code></td><td class="type">DeviceBriefInfo | undefined</td><td><code>device === 'connected'</code>일 때만 존재합니다.</td></tr>
+</tbody></table>
+<h2>DeviceBriefInfo</h2>
+<p>표시용 필드입니다. 모두 optional이며, 값이 없으면 "보고되지 않음"으로 다루세요.</p>
+<table class="params"><thead><tr><th>필드</th><th>타입</th><th>설명</th></tr></thead><tbody>
+<tr><td><code>label</code></td><td class="type">string?</td><td>사용자가 설정한 기기 라벨.</td></tr>
+<tr><td><code>firmwareVersion</code></td><td class="type">string?</td><td>펌웨어 버전 문자열.</td></tr>
+<tr><td><code>deviceModel</code></td><td class="type">string?</td><td>모델명.</td></tr>
+<tr><td><code>transport</code></td><td class="type">'usb' | 'ble' ?</td><td>기기가 붙어 있는 방식.</td></tr>
+<tr><td><code>coinCount</code></td><td class="type">number?</td><td>기기에 설치된 코인 개수.</td></tr>
+</tbody></table>
+<div class="note info"><span class="ni">i</span><div><strong>식별자는 의도적으로 제외했습니다.</strong> <code>deviceId</code>, <code>ksm_version</code>, 기기 <code>state</code>는 이 신호에 <strong>싣지 않습니다</strong> — 앱이 요청하지 않아도 자동으로 나가는 신호라 하드웨어 지문을 태우지 않습니다. 필요하면 <a href="#/get-device-info"><code>getDeviceInfo</code></a>를 직접 호출하세요.</div></div>
 <h2>예시</h2>
 <div class="code"><div class="cb-head"><span>js</span><button class="copy">복사</button></div>
-<pre>dcent.setConnectionListener((state) => {
-  if (state === 'connected') showConnected()
-  else showDisconnected()
+<pre>dcent.setConnectionListener((state, detail) => {
+  // 팝업 축 — v1과 동일한 동작
+  if (state === 'connected') showPopupOpen()
+  else showPopupClosed()
+
+  // 기기 축 — 신규
+  if (detail.device === 'connected') {
+    showDevice(detail.deviceInfo?.label, detail.deviceInfo?.transport)
+  } else if (detail.device === 'disconnected') {
+    promptReconnectDevice()          // 팝업은 열린 채로 케이블이 빠진 경우
+  } else {
+    hideDeviceBadge()                // 'unknown' — 아직 관측된 것이 없음
+  }
 })</pre></div>
+<div class="note warn"><span class="ni">!</span><div><strong>listener 호출 빈도가 v1보다 늘어납니다.</strong> <strong>두 축 중 하나라도</strong> 바뀌면 호출되므로, 1번째 인자 <code>state</code>는 연속된 호출에서 같은 값이 반복될 수 있습니다 — v1은 그 값이 바뀔 때만 호출했습니다. 핸들러가 반복되면 안 되는 일(analytics 전송, 토스트 표시, 재연결 시도)을 한다면, 매 호출이 <code>state</code>의 변화라고 가정하지 말고 직접 이전 값과 비교하세요.</div></div>
 <div class="note info"><span class="ni">i</span><div>listener는 cache되어 트랜스포트 reset 후(예: <code>popupWindowClose</code> + 재연결) <strong>자동 재등록</strong>됩니다. 같은 listener를 여러 번 등록하면 그만큼 중복 구독되니 한 번만 등록하세요.</div></div>
+<h2>참고</h2>
+<ul>
+  <li>두 축은 <strong>독립</strong>입니다. 팝업이 열린 채로 USB를 뽑으면 <code>detail.device</code>만 바뀌고 <code>state</code>는 <code>'connected'</code>로 남습니다.</li>
+  <li>팝업이 닫히면 <code>popup: 'disconnected'</code> + <code>device: 'unknown'</code>이 <strong>1회 호출</strong>로 함께 전달됩니다.</li>
+  <li>아무 일도 없을 때의 초기값은 <code>popup: 'disconnected'</code>, <code>device: 'unknown'</code>입니다.</li>
+  <li><code>detail</code>과 <code>detail.deviceInfo</code>는 freeze되어 있습니다 — 수정해도 connector 내부 상태에 영향이 없고, 수정 내용이 유지되지도 않습니다.</li>
+  <li>기기 신호를 보내지 않는 구버전 브리지 팝업에서는 <code>detail.device</code>가 <code>'unknown'</code>으로 남을 뿐, 팝업 축은 그대로 동작합니다.</li>
+</ul>
 <div class="related"><a href="#/set-sign-progress-listener">→ setSignProgressListener</a><a href="#/set-transport">→ setTransport</a><a href="#/popup-close">→ popupWindowClose</a><a href="#/error-codes">→ 에러 코드</a></div>`},
 
 'set-sign-progress-listener':{bcko:'<span>Core API</span> / Connection API / setSignProgressListener',ko:`

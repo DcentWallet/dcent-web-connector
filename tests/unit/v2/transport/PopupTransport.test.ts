@@ -393,7 +393,9 @@ describe('PopupTransport', () => {
 
       void transport.send(makeEnvelope('a')).catch(() => {})
       await flushHandshake()
-      expect(handler).toHaveBeenCalledWith('connected')
+      // (2026-08-10) state 이벤트는 2번째 인자(detail)가 추가됐다. 1번째 인자의 의미는
+      // v1 그대로(팝업 축)여야 하므로 그 축만 단언한다.
+      expect(handler.mock.calls.at(-1)?.[0]).toBe('connected')
 
       transport.off('state', handler)
       handler.mockClear()
@@ -410,7 +412,7 @@ describe('PopupTransport', () => {
       transport.on('state', handler)
 
       await transport.close()
-      expect(handler).toHaveBeenCalledWith('disconnected')
+      expect(handler.mock.calls.at(-1)?.[0]).toBe('disconnected')
     })
   })
 
@@ -1372,14 +1374,128 @@ describe('PopupTransport', () => {
 
       await transport.close()
       // close()가 setState('disconnected')를 호출하므로 close 자체로 1회 호출된다
-      expect(stateHandler).toHaveBeenCalledWith('disconnected')
+      expect(stateHandler.mock.calls.at(-1)?.[0]).toBe('disconnected')
       stateHandler.mockClear()
 
       // 재오픈 시 connected로 다시 전환되는 것을 재등록 없이 그대로 관찰할 수 있어야 한다
       void transport.send(makeEnvelope('b')).catch(() => {})
       await flushHandshake()
 
-      expect(stateHandler).toHaveBeenCalledWith('connected')
+      expect(stateHandler.mock.calls.at(-1)?.[0]).toBe('connected')
+    })
+  })
+
+  // ===== 2026-08-10: 기기 축(_deviceState) =====
+  //
+  // 그때까지 `state` 이벤트는 **팝업 창의 생사**만 알렸다. 팝업이 열린 채로 USB 를 뽑아도
+  // 아무 신호가 안 나가서, dApp 은 "connected 하나 찍히고 그 뒤로 조용"한 것만 봤다.
+  // bridge 가 `_deviceState` 를 push 하고 여기서 기기 축을 더해 **두 축 중 하나라도 바뀌면**
+  // 발행한다. 1번째 인자의 의미(팝업 축)는 v1 호환 때문에 바꾸지 않는다.
+  describe('T-U-DEVSTATE-01~07: 기기 축 통합 (2026-08-10)', () => {
+    async function connected(): Promise<jest.Mock> {
+      transport = new PopupTransport()
+      const h = jest.fn()
+      transport.on('state', h)
+      void transport.send(makeEnvelope('a')).catch(() => {})
+      await flushHandshake()
+      h.mockClear() // 팝업 open 으로 인한 connected 1건 제거
+      return h
+    }
+
+    it('T-U-DEVSTATE-01: 🔴 팝업은 그대로인데 기기만 연결돼도 발행된다 (이 갭이 제보의 핵심)', async () => {
+      const h = await connected()
+      dispatchResponse(DEFAULT_ORIGIN, {
+        type: '_deviceState',
+        device: 'connected',
+        info: { label: "D'CENT X", firmwareVersion: '2.35.1', deviceModel: 'DCENT-X', transport: 'usb', coinCount: 42 },
+      })
+      expect(h).toHaveBeenCalledTimes(1)
+      // 1번째 인자는 팝업 축 — 여전히 connected (의미 불변)
+      expect(h.mock.calls[0][0]).toBe('connected')
+      expect(h.mock.calls[0][1]).toEqual({
+        popup: 'connected',
+        device: 'connected',
+        deviceInfo: { label: "D'CENT X", firmwareVersion: '2.35.1', deviceModel: 'DCENT-X', transport: 'usb', coinCount: 42 },
+      })
+    })
+
+    it('T-U-DEVSTATE-02: 🔴 팝업이 열린 채 기기만 빠져도 발행된다 (USB 뽑기)', async () => {
+      const h = await connected()
+      dispatchResponse(DEFAULT_ORIGIN, { type: '_deviceState', device: 'connected', info: { label: 'X' } })
+      h.mockClear()
+      dispatchResponse(DEFAULT_ORIGIN, { type: '_deviceState', device: 'disconnected' })
+      expect(h).toHaveBeenCalledTimes(1)
+      expect(h.mock.calls[0][0]).toBe('connected') // 팝업은 살아있다
+      expect(h.mock.calls[0][1].device).toBe('disconnected')
+      // 빠진 기기의 정보를 남겨두지 않는다
+      expect(h.mock.calls[0][1].deviceInfo).toBeUndefined()
+    })
+
+    it('T-U-DEVSTATE-03: 두 축 모두 그대로면 발행하지 않는다 (쌍 dedupe)', async () => {
+      const h = await connected()
+      dispatchResponse(DEFAULT_ORIGIN, { type: '_deviceState', device: 'connected', info: { label: 'X' } })
+      h.mockClear()
+      // 같은 상태 재통지 — 정보 필드가 달라도 축이 그대로면 리스너를 깨우지 않는다.
+      dispatchResponse(DEFAULT_ORIGIN, { type: '_deviceState', device: 'connected', info: { label: 'Y' } })
+      expect(h).not.toHaveBeenCalled()
+    })
+
+    it('T-U-DEVSTATE-04: 팝업이 닫히면 기기 축은 unknown 으로 되돌아간다 (disconnected 로 단정하지 않음)', async () => {
+      const h = await connected()
+      dispatchResponse(DEFAULT_ORIGIN, { type: '_deviceState', device: 'connected', info: { label: 'X' } })
+      h.mockClear()
+      await transport.close()
+      expect(h).toHaveBeenCalledTimes(1) // 두 축이 함께 바뀌어도 발행은 1회
+      expect(h.mock.calls[0][0]).toBe('disconnected')
+      expect(h.mock.calls[0][1]).toEqual({ popup: 'disconnected', device: 'unknown', deviceInfo: undefined })
+    })
+
+    it('T-U-DEVSTATE-05: 알 수 없는 device 값은 축을 오염시키지 않는다 (boundary-validation)', async () => {
+      const h = await connected()
+      dispatchResponse(DEFAULT_ORIGIN, { type: '_deviceState', device: 'weird' })
+      dispatchResponse(DEFAULT_ORIGIN, { type: '_deviceState' })
+      expect(h).not.toHaveBeenCalled()
+    })
+
+    it('T-U-DEVSTATE-06: info 는 known-fields 만 통과한다 (dapp-input-sanitization)', async () => {
+      const h = await connected()
+      dispatchResponse(DEFAULT_ORIGIN, {
+        type: '_deviceState',
+        device: 'connected',
+        info: { label: 'X', evil: 'DROP', deviceId: 'SHOULD-NOT-PASS', transport: 'nope', coinCount: -1 },
+      })
+      const detail = h.mock.calls[0][1]
+      expect(Object.keys(detail.deviceInfo)).toEqual(['label', 'firmwareVersion', 'deviceModel', 'transport', 'coinCount'])
+      expect(detail.deviceInfo.label).toBe('X')
+      // 화이트리스트 밖 필드는 실리지 않는다 — deviceId 는 의도적으로 계약에서 제외됐다.
+      expect('evil' in detail.deviceInfo).toBe(false)
+      expect('deviceId' in detail.deviceInfo).toBe(false)
+      // 형식 위반 값은 undefined 로 접힌다(잘못된 값을 그대로 노출하지 않는다).
+      expect(detail.deviceInfo.transport).toBeUndefined()
+      expect(detail.deviceInfo.coinCount).toBeUndefined()
+    })
+
+    it('T-U-DEVSTATE-07: detail 은 freeze 되어 dApp 이 내부 상태를 오염시킬 수 없다 (mutation-isolation)', async () => {
+      const h = await connected()
+      dispatchResponse(DEFAULT_ORIGIN, { type: '_deviceState', device: 'connected', info: { label: 'X' } })
+      const detail = h.mock.calls[0][1]
+      expect(Object.isFrozen(detail)).toBe(true)
+      expect(Object.isFrozen(detail.deviceInfo)).toBe(true)
+    })
+
+    it('T-U-DEVSTATE-08: id 가 없으므로 pending 응답 매칭을 건드리지 않는다 (하위호환 축)', async () => {
+      transport = new PopupTransport({ timeoutMs: 60000 })
+      const p = transport.send(makeEnvelope('a'))
+      await flushHandshake()
+      // `_deviceState` 는 id 가 없다 — 이 메시지가 'a' 를 조기 resolve 시키면 안 된다.
+      dispatchResponse(DEFAULT_ORIGIN, { type: '_deviceState', device: 'connected' })
+      let settled = false
+      void p.then(() => { settled = true }, () => { settled = true })
+      await Promise.resolve()
+      expect(settled).toBe(false)
+      // 진짜 응답이 와야 resolve 된다.
+      dispatchResponse(DEFAULT_ORIGIN, { id: 'a', result: { ok: true } })
+      await expect(p).resolves.toEqual({ id: 'a', result: { ok: true } })
     })
   })
 })

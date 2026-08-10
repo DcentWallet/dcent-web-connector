@@ -59,6 +59,11 @@ v2에서 다음 21개 v1 sign wrapper가 **제거**됐다. 호출하면 `undefin
   - 🆕 `getPublicKey` 는 v1 대응 함수가 없는 **v2 신규 verb** 다 (`src/sign/publicKey.ts:9`).
 - **Bitcoin tx builder**: `getBitcoinTransactionObject`, `addBitcoinTransactionInput`, `addBitcoinTransactionOutput`
 - **lifecycle**: `setTimeOutMs`, `setConnectionListener`, `popupWindowClose`
+  - ⚠️ `setConnectionListener` 는 **시그니처는 하위호환**이지만 **호출 빈도가 늘어났다**. 1번째 인자의
+    의미(팝업 축)는 v1 그대로라 `function (state) {...}` 형태의 기존 코드는 수정 없이 동작한다.
+    다만 v2 는 2번째 인자로 기기 축을 함께 주고 **두 축 중 하나라도 바뀌면** 호출하므로, 1번째
+    인자가 직전과 **같은 값으로 반복 호출**될 수 있다.
+    자세한 내용은 아래 "🆕 새로 추가된 것 › 기기 축" 절 참조.
 - **enum**: `coinType`, `coinGroup`, `coinName`, `bitcoinTxType`, `klaytnTxType`, `xrpTxType`, `state`, `coinDecimals`
 - **utility**: `unitConverter`
 - **validators**: `isAvaliableCoinType`, `isCzoneCoinType`, `isParachainCoinType`, `isBitcoinTxCoinType`, `isTokenType`, `getCzonePrifix`, `isAvaliableLabel`, `isAvaliableCoinGroup`, `isAvailableSyncAccountCoinName`
@@ -76,6 +81,91 @@ v2에서 다음 21개 v1 sign wrapper가 **제거**됐다. 호출하면 `undefin
 ### 브라우저 네이티브 트랜스포트
 
 `dcent.setTransport('hid' | 'ble')` — WebHID(USB) / Web Bluetooth. **D'CENT Bridge 앱 설치 불필요** (Chromium 브라우저 전용).
+
+### 🆕 기기 축 — `setConnectionListener` 2번째 인자
+
+v1 의 연결 상태는 **한 축**이었다. v2 는 그 축이 실제로 두 개라는 것을 드러낸다:
+
+| 축 | 무엇을 말하나 | 어디서 읽나 |
+|---|---|---|
+| **팝업** | 브리지 팝업 창이 살아있는가 | 1번째 인자 (= `detail.popup`) |
+| **기기** | 하드웨어 지갑이 붙어있는가 | `detail.device` (v2 신규) |
+
+두 축은 **독립**이다 — 팝업이 열린 채로 USB 를 뽑으면 기기 축만 바뀐다. v1 에서 `'connected'` 는
+"팝업이 열렸다"였지 "기기가 붙었다"가 아니었는데, 한 축만 보이니 그 구분이 불가능했다.
+
+```ts
+type TransportState = 'connected' | 'disconnected'          // 팝업 축 (v1 그대로)
+type DeviceState    = 'connected' | 'disconnected' | 'unknown'
+
+interface ConnectionStateDetail {
+  popup: TransportState
+  device: DeviceState
+  deviceInfo?: DeviceBriefInfo    // device === 'connected' 일 때만
+}
+
+interface DeviceBriefInfo {       // 표시용 — 전부 optional
+  label?: string
+  firmwareVersion?: string
+  deviceModel?: string
+  transport?: 'usb' | 'ble'
+  coinCount?: number
+}
+```
+
+```js
+dcent.setConnectionListener((state, detail) => {
+  // 팝업 축 — v1 코드 그대로 동작
+  if (state === 'connected') showPopupOpen()
+  else showPopupClosed()
+
+  // 기기 축 — 신규
+  if (detail.device === 'connected') showDevice(detail.deviceInfo?.label)
+  else if (detail.device === 'disconnected') promptReconnectDevice()
+  else hideDeviceBadge()                     // 'unknown'
+})
+```
+
+#### 🔴 호출 빈도가 늘어난다 (마이그레이션 시 확인할 것)
+
+**시그니처 자체는 하위호환이다** — JS 는 남는 인자를 무시하므로 `function (state) {...}` 로 등록한
+v1 코드는 수정 없이 그대로 동작한다. 바뀌는 것은 **얼마나 자주 불리는가**다:
+
+- v1: 팝업 축이 **바뀔 때만** 호출 → 매 호출이 곧 `state` 의 변화였다.
+- v2: **두 축 중 하나라도** 바뀌면 호출 → `state` 는 직전과 **같은 값으로 반복**될 수 있다.
+  (예: 팝업이 열린 채 기기를 뺐다 꽂으면 `state === 'connected'` 인 채로 2회 더 호출된다.)
+
+그래서 핸들러가 **반복되면 안 되는 일**을 하고 있다면 마이그레이션 시 손봐야 한다:
+
+```js
+// ❌ v2 에서 중복 실행될 수 있음 — "호출됐다 = state 가 바뀌었다" 가 더 이상 성립하지 않는다
+dcent.setConnectionListener((state) => {
+  if (state === 'disconnected') { analytics.track('disconnected'); retryConnect() }
+})
+
+// ✅ 직전 값과 직접 비교한다
+let prev = null
+dcent.setConnectionListener((state) => {
+  if (state !== prev) { prev = state; if (state === 'disconnected') { analytics.track('disconnected'); retryConnect() } }
+})
+```
+
+읽기(배지·스피너 갱신)만 하는 핸들러는 idempotent 하므로 **수정할 필요가 없다.**
+
+#### `'unknown'` 의 의미
+
+기기 축의 `'unknown'` 은 "기기가 없다"가 아니라 **"아직 모른다 / 관측할 수 없다"** 이다.
+팝업이 열리기 전과 팝업이 닫힌 뒤가 여기 해당한다. `'disconnected'` 로 접으면 "기기가 빠졌다"는
+거짓 단정이 dApp 에 나가므로 그렇게 하지 않는다. 초기값은 팝업 `'disconnected'` · 기기 `'unknown'`.
+
+#### 싣지 않는 것
+
+`deviceInfo` 에는 `deviceId` / `ksm_version` / 기기 `state` 를 **싣지 않는다.** 이 신호는 dApp 이
+요청하지 않아도 자동으로 나가므로 하드웨어 지문을 태우지 않는다. 필요하면 `getDeviceInfo()` 를
+직접 호출한다. `detail` 과 `detail.deviceInfo` 는 freeze 되어 있어 수정해도 반영되지 않는다.
+
+기기 신호를 보내지 않는 구버전 브리지 팝업에서는 `detail.device` 가 `'unknown'` 으로 남을 뿐,
+팝업 축은 그대로 동작한다.
 
 ---
 

@@ -22,10 +22,16 @@
 
 import { PopupTransport } from './transport/PopupTransport'
 import { SerialRequestQueue } from './queue/RequestQueue'
-import type { TransportState, SignProgressInfo } from './transport/MessageTransport'
+import type { SignProgressInfo, StateHandler } from './transport/MessageTransport'
 
-/** state listener 시그니처. lifecycle.ts의 ConnectionListener와 동일 형태. */
-export type StateListener = (state: TransportState) => void
+/**
+ * state listener 시그니처. lifecycle.ts의 ConnectionListener와 동일 형태.
+ *
+ * (2026-08-10) 2번째 인자 `detail` 추가 — 팝업 축과 기기 축을 함께 전달한다. 1번째 인자는
+ * v1 그대로(팝업 축)라 `function (state) {...}` 형태의 기존 dApp 코드가 그대로 동작한다.
+ * 자세한 계약은 `transport/MessageTransport.ts` 의 `StateHandler` 참조.
+ */
+export type StateListener = StateHandler
 
 /** (m09-04-27) signProgress listener 시그니처. lifecycle.ts의 SignProgressListener와 동일 형태. */
 export type SignProgressListener = (info: SignProgressInfo) => void

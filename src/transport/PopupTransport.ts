@@ -4,6 +4,10 @@ import {
   ResponseEnvelope,
   TransportState,
   SignProgressInfo,
+  DeviceState,
+  DeviceBriefInfo,
+  ConnectionStateDetail,
+  StateHandler,
 } from './MessageTransport'
 import { ProviderError } from '../error/ProviderError'
 import { ErrorCode } from '../error/ErrorCode'
@@ -101,7 +105,7 @@ export class PopupTransport implements MessageTransport {
    * 존재하므로 ensureHandshake가 새 handshake를 보내지 않음 → transport 변경 silent ignore.
    */
   private pendingTransport: 'hid' | 'ble' | undefined = undefined
-  private stateHandlers: Set<(state: TransportState) => void> = new Set()
+  private stateHandlers: Set<StateHandler> = new Set()
   /**
    * (m09-04-27) `_signProgress` 중간 신호 구독자. stateHandlers와 동일한 Set 패턴.
    * state와 달리 transport 로컬 상태가 아니라 bridge가 in-flight 요청에 대해 push하는 이벤트다.
@@ -110,6 +114,14 @@ export class PopupTransport implements MessageTransport {
   private messageListener: ((event: MessageEvent) => void) | null = null
   private closePollingInterval: ReturnType<typeof setInterval> | null = null
   private currentState: TransportState = 'disconnected'
+  /**
+   * (2026-08-10) 기기 축. 팝업 축(`currentState`)과 **독립**이다 — 팝업이 열린 채로 USB 를
+   * 뽑으면 이 값만 바뀐다. 초기값이 `'disconnected'` 가 아니라 `'unknown'` 인 이유는
+   * "아직 신호를 받은 적 없음"과 "기기가 빠졌음"을 구분하기 위해서다(MessageTransport.ts 참조).
+   */
+  private currentDeviceState: DeviceState = 'unknown'
+  /** `currentDeviceState === 'connected'` 일 때만 채워진다. */
+  private currentDeviceInfo: DeviceBriefInfo | undefined = undefined
   private handshakePromise: Promise<void> | null = null
   // m07-02: _ready 게이트 (B Gate) 상태
   private readyPromise: Promise<void> | null = null
@@ -217,23 +229,23 @@ export class PopupTransport implements MessageTransport {
     })
   }
 
-  on (event: 'state', handler: (state: TransportState) => void): void
+  on (event: 'state', handler: StateHandler): void
   on (event: 'signProgress', handler: (info: SignProgressInfo) => void): void
   on (
     event: 'state' | 'signProgress',
-    handler: ((state: TransportState) => void) | ((info: SignProgressInfo) => void),
+    handler: StateHandler | ((info: SignProgressInfo) => void),
   ): void {
-    if (event === 'state') { this.stateHandlers.add(handler as (state: TransportState) => void); return }
+    if (event === 'state') { this.stateHandlers.add(handler as StateHandler); return }
     if (event === 'signProgress') { this.signProgressHandlers.add(handler as (info: SignProgressInfo) => void); return }
   }
 
-  off (event: 'state', handler: (state: TransportState) => void): void
+  off (event: 'state', handler: StateHandler): void
   off (event: 'signProgress', handler: (info: SignProgressInfo) => void): void
   off (
     event: 'state' | 'signProgress',
-    handler: ((state: TransportState) => void) | ((info: SignProgressInfo) => void),
+    handler: StateHandler | ((info: SignProgressInfo) => void),
   ): void {
-    if (event === 'state') { this.stateHandlers.delete(handler as (state: TransportState) => void); return }
+    if (event === 'state') { this.stateHandlers.delete(handler as StateHandler); return }
     if (event === 'signProgress') { this.signProgressHandlers.delete(handler as (info: SignProgressInfo) => void); return }
   }
 
@@ -295,7 +307,11 @@ export class PopupTransport implements MessageTransport {
     this.popupWindow = null
 
     // 5. state → disconnected
-    this.setState('disconnected')
+    //    (2026-08-10) 기기 축은 'disconnected' 가 아니라 'unknown' 으로 되돌린다 — 팝업이
+    //    닫히면 기기 상태를 **관측할 수 없게** 되는 것이지 기기가 빠진 게 아니다. 여기서
+    //    'disconnected' 로 적으면 dApp 에 거짓 단정이 나간다(MessageTransport.ts DeviceState 참조).
+    //    두 축을 한 번에 넘겨 발행도 1회로 묶는다(applyState 의 쌍 dedupe).
+    this.applyState({ popup: 'disconnected', device: 'unknown', deviceInfo: undefined })
 
     // 6. (크로스 리뷰 C1로 제거됨, m09-04-27) state/signProgressHandlers는 **여기서 비우지 않는다**.
     //    close()는 두 가지 경로에서 호출된다: (a) 인스턴스를 통째로 버리는 resetSingleton() 경로
@@ -370,6 +386,43 @@ export class PopupTransport implements MessageTransport {
           r()
         }
         return
+      }
+
+      // (2026-08-10) `_deviceState` 기기 축 신호 분기.
+      //
+      // `_signProgress` 와 달리 **`id` 가 없다** — 특정 요청에 딸린 중간 알림이 아니라 요청과
+      // 무관한 lifecycle 신호이기 때문이다. 그 덕에 아래 id-매칭 응답 분기에 애초에 걸리지 않아,
+      // 이 타입을 모르는 구버전 connector 도 "id 없는 메시지"로 보고 그냥 흘린다(조기 resolve 로
+      // 실제 응답을 드롭하는 `_signProgress` 계열 하위호환 위험이 여기엔 없다).
+      if ((data as { type?: unknown }).type === '_deviceState') {
+        const device = (data as { device?: unknown }).device
+        // boundary-validation: 알려진 값만 수용 — 모르는 문자열로 축을 오염시키지 않는다.
+        if (device !== 'connected' && device !== 'disconnected') return
+
+        let info: DeviceBriefInfo | undefined
+        if (device === 'connected') {
+          const raw = (data as { info?: unknown }).info
+          if (typeof raw === 'object' && raw !== null) {
+            const r = raw as Record<string, unknown>
+            // dapp-input-sanitization: known-fields whitelist 로만 추출한다. bridge 가 보낸
+            // 객체를 그대로 spread 하면 프로토타입 오염/미지 필드가 dApp 까지 그대로 흘러간다.
+            const str = (v: unknown): string | undefined => (typeof v === 'string' && v.length > 0 ? v : undefined)
+            const transport = r.transport === 'usb' || r.transport === 'ble' ? r.transport : undefined
+            const coinCount = typeof r.coinCount === 'number' && Number.isInteger(r.coinCount) && r.coinCount >= 0
+              ? r.coinCount
+              : undefined
+            // mutation-isolation: 방출 전에 freeze (SignProgressInfo 와 동일 원칙).
+            info = Object.freeze({
+              label: str(r.label),
+              firmwareVersion: str(r.firmwareVersion),
+              deviceModel: str(r.deviceModel),
+              transport,
+              coinCount,
+            })
+          }
+        }
+        this.setDeviceState(device, info)
+        return // 최종 응답이 아니므로 pending 삭제/resolve 하지 않는다
       }
 
       // (m09-04-27) `_signProgress` 중간 신호 분기 — 반드시 id-매칭 응답 분기보다 **먼저** 걸려야
@@ -591,11 +644,50 @@ export class PopupTransport implements MessageTransport {
   }
 
   private setState (state: TransportState): void {
-    if (this.currentState === state) return
-    this.currentState = state
+    this.applyState({ popup: state })
+  }
+
+  /**
+   * (2026-08-10) 기기 축 갱신 — bridge 의 `_deviceState` push 가 호출한다.
+   *
+   * `info` 는 `device === 'connected'` 일 때만 유지한다. disconnected/unknown 으로 가면서
+   * 직전 기기 정보를 남겨두면 "빠진 기기의 정보"가 화면에 계속 붙어 있게 된다.
+   */
+  private setDeviceState (device: DeviceState, info?: DeviceBriefInfo): void {
+    this.applyState({ device, deviceInfo: device === 'connected' ? info : undefined })
+  }
+
+  /**
+   * 두 축을 한 곳에서 갱신하고, **둘 중 하나라도 바뀐 경우에만** 발행한다.
+   *
+   * 🔴 dedupe 를 팝업 축 단독이 아니라 **쌍(popup, device)** 으로 하는 것이 이 함수의 핵심이다.
+   * 예전에는 `if (this.currentState === state) return` 이라 팝업 축만 비교했고, 그래서 팝업이
+   * 열린 채로 기기가 빠져도 아무 신호가 안 나갔다(사용자 제보: "connected 하나만 찍히고 그 뒤로
+   * 조용하다"). 기기 축을 추가하면서 이 비교도 함께 넓히지 않으면 새 축이 영원히 안 보인다.
+   *
+   * `deviceInfo` 는 비교 대상에서 제외한다 — 상태가 같은데 정보 필드만 미세하게 다른 재통지로
+   * 리스너를 깨우지 않기 위해서다(기기가 붙어 있는 동안 bridge 가 같은 상태를 재전송할 수 있다).
+   */
+  private applyState (next: { popup?: TransportState, device?: DeviceState, deviceInfo?: DeviceBriefInfo }): void {
+    const popup = next.popup ?? this.currentState
+    const device = next.device ?? this.currentDeviceState
+    const changed = popup !== this.currentState || device !== this.currentDeviceState
+    this.currentState = popup
+    this.currentDeviceState = device
+    if ('deviceInfo' in next) this.currentDeviceInfo = next.deviceInfo
+    if (!changed) return
+
+    // mutation-isolation: 방출 객체를 freeze — dApp 이 in-place 로 고쳐도 내부 상태가 오염되지
+    // 않는다(`SignProgressInfo` 와 동일 원칙). deviceInfo 는 수신 시점에 이미 freeze 돼 있다.
+    const detail: ConnectionStateDetail = Object.freeze({
+      popup,
+      device,
+      deviceInfo: this.currentDeviceInfo,
+    })
     for (const handler of this.stateHandlers) {
       try {
-        handler(state)
+        // 1번째 인자는 v1 호환(팝업 축) — 의미를 바꾸지 않는다. 두 축은 2번째 인자로 전달.
+        handler(popup, detail)
       } catch {
         // 사용자 핸들러 에러는 silently swallow (transport 내부에 영향 없음)
       }

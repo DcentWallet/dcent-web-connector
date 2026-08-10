@@ -407,16 +407,17 @@ export class PopupTransport implements MessageTransport {
             // dapp-input-sanitization: known-fields whitelist 로만 추출한다. bridge 가 보낸
             // 객체를 그대로 spread 하면 프로토타입 오염/미지 필드가 dApp 까지 그대로 흘러간다.
             const str = (v: unknown): string | undefined => (typeof v === 'string' && v.length > 0 ? v : undefined)
-            const transport = r.transport === 'usb' || r.transport === 'ble' ? r.transport : undefined
+            // 필드 이름은 `getDeviceInfo()` 응답과 동일하다(MessageTransport.ts DeviceBriefInfo 참조).
+            const connectType = r.connectType === 'usb' || r.connectType === 'ble' ? r.connectType : undefined
             const coinCount = typeof r.coinCount === 'number' && Number.isInteger(r.coinCount) && r.coinCount >= 0
               ? r.coinCount
               : undefined
             // mutation-isolation: 방출 전에 freeze (SignProgressInfo 와 동일 원칙).
             info = Object.freeze({
               label: str(r.label),
-              firmwareVersion: str(r.firmwareVersion),
+              version: str(r.version),
               deviceModel: str(r.deviceModel),
-              transport,
+              connectType,
               coinCount,
             })
           }

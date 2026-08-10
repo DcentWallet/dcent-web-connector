@@ -105,11 +105,11 @@ interface ConnectionStateDetail {
 }
 
 interface DeviceBriefInfo {       // 표시용 — 전부 optional
-  label?: string
-  firmwareVersion?: string
-  deviceModel?: string
-  transport?: 'usb' | 'ble'
-  coinCount?: number
+  label?: string                  // getDeviceInfo 의 label 과 같은 이름
+  version?: string                // getDeviceInfo 의 version 과 같은 이름
+  deviceModel?: string            // getDeviceInfo 의 deviceModel 과 같은 이름
+  connectType?: 'usb' | 'ble'     // getDeviceInfo 의 connectType 과 같은 이름
+  coinCount?: number              // coin_list 의 '개수' — 목록은 보내지 않는다(아래 참조)
 }
 ```
 
@@ -120,7 +120,7 @@ dcent.setConnectionListener((state, detail) => {
   else showPopupClosed()
 
   // 기기 축 — 신규
-  if (detail.device === 'connected') showDevice(detail.deviceInfo?.label)
+  if (detail.device === 'connected') showDevice(detail.deviceInfo?.label, detail.deviceInfo?.connectType)
   else if (detail.device === 'disconnected') promptReconnectDevice()
   else hideDeviceBadge()                     // 'unknown'
 })
@@ -157,6 +157,17 @@ dcent.setConnectionListener((state) => {
 기기 축의 `'unknown'` 은 "기기가 없다"가 아니라 **"아직 모른다 / 관측할 수 없다"** 이다.
 팝업이 열리기 전과 팝업이 닫힌 뒤가 여기 해당한다. `'disconnected'` 로 접으면 "기기가 빠졌다"는
 거짓 단정이 dApp 에 나가므로 그렇게 하지 않는다. 초기값은 팝업 `'disconnected'` · 기기 `'unknown'`.
+
+#### 필드 이름은 `getDeviceInfo()` 와 같다
+
+같은 값을 두 어휘로 배우지 않도록 이름을 맞췄다 — `label` / `version` / `deviceModel` /
+`connectType`. `detail.deviceInfo.version` 을 쓸 자리에 `firmwareVersion` 을 써서 조용히
+`undefined` 를 읽는 사고를 없애려는 것이다.
+
+`coinCount` 만 짝(`coin_list`)과 이름이 다른데, 배열을 그대로 보내지 않기 때문이다 —
+**설치된 코인 조합 자체가 준-식별 정보**라, 목록을 실으면 아래에서 뺀 `deviceId`/`ksm_version`
+을 뒷문으로 다시 들이는 셈이 된다. 개수는 그렇지 않다. 목록이 필요하면 `getDeviceInfo()` 를
+호출한다.
 
 #### 싣지 않는 것
 

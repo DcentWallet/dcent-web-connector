@@ -51,18 +51,32 @@ export type DeviceState = 'connected' | 'disconnected' | 'unknown'
 /**
  * (2026-08-10) 기기 연결 시 함께 오는 표시용 정보.
  *
+ * 🔴 **필드 이름은 `getDeviceInfo()` 응답과 동일하다** — `label` / `version` / `deviceModel` /
+ * `connectType`. 두 API 를 같이 쓰는 dApp 이 같은 값을 두 어휘로 배우지 않게 하기 위해서다
+ * (2026-08-10 사용자 결정). 이름이 갈리면 `detail.deviceInfo.version` 을 쓸 자리에
+ * `firmwareVersion` 을 써 조용히 `undefined` 를 읽는 사고가 난다.
+ *
  * dApp 이 `getDeviceInfo()` 로 직접 받을 수 있는 값의 부분집합이며, **개별 식별자
  * (`deviceId`/`ksm_version`/`state`)는 싣지 않는다** — 요청 없이 자동으로 나가는 신호에
  * 하드웨어 지문을 태우지 않기 위해서다(2026-08-10 결정). 필요하면 dApp 이 `getDeviceInfo()` 를
  * 직접 호출한다.
  *
+ * `coinCount` 만 `getDeviceInfo()` 에 짝(`coin_list`)이 있는데도 이름이 다르다. 배열을 그대로
+ * 보내지 않기 때문이다 — **설치된 코인 조합 자체가 준-식별 정보**라, 목록을 실으면 위에서 뺀
+ * `deviceId`/`ksm_version` 을 뒷문으로 다시 들이는 셈이 된다. 개수는 그렇지 않다.
+ *
  * 모든 필드 readonly + 방출 시 `Object.freeze` — `SignProgressInfo` 와 동일 원칙(mutation-isolation).
  */
 export interface DeviceBriefInfo {
+  /** 사용자 설정 라벨. `getDeviceInfo()` 의 `label` 과 같다. */
   readonly label?: string
-  readonly firmwareVersion?: string
+  /** 펌웨어 버전. `getDeviceInfo()` 의 `version` 과 같다. */
+  readonly version?: string
+  /** 모델명. `getDeviceInfo()` 의 `deviceModel` 과 같다. */
   readonly deviceModel?: string
-  readonly transport?: 'usb' | 'ble'
+  /** 연결 방식. `getDeviceInfo()` 의 `connectType` 과 같다. */
+  readonly connectType?: 'usb' | 'ble'
+  /** 설치된 코인 **개수**. `getDeviceInfo()` 는 목록(`coin_list`)을 주지만 여기선 개수만 — 위 주석 참조. */
   readonly coinCount?: number
 }
 

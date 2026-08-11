@@ -4,10 +4,16 @@
  * v1의 `messageReceive` 핸들러가 dApp에 돌려주던 payload(`{header, body}`) 구조와 1:1 호환.
  * dApp이 v2 통합 sign API를 호출할 때 받는 응답이 v1 시절과 동일한 shape을 갖도록 보장한다.
  *
+ * **m12-03**: V1Response를 generic으로 확장해 `body.parameter`에 typed narrow를 지원.
+ * 기존 호출자는 default `TParam = Record<string, unknown>`으로 backward-compat.
+ * `DeviceInfoPayload` 신설.
+ *
  * 룰 준수:
  *   - mutation-isolation: V1Response는 매 호출마다 새 객체로 생성 (call.ts 참조)
  *   - boundary-validation: header/body 필드 존재 여부는 호출자 또는 _assertV1Success가 검증
  */
+
+import type { AddressFormat } from './address'
 
 /* eslint-disable camelcase */
 /** 응답 헤더 — v1 dcent.call() 응답의 `header` 필드 형태.
@@ -24,12 +30,17 @@ export interface V1ResponseHeader {
 }
 /* eslint-enable camelcase */
 
-/** 응답 본문 — v1 dcent.call() 응답의 `body` 필드 형태. */
-export interface V1ResponseBody {
+/**
+ * 응답 본문 — v1 dcent.call() 응답의 `body` 필드 형태.
+ *
+ * **m12-03**: `parameter` 필드를 generic `TParam`으로 typed.
+ * 기존 호출자는 default `Record<string, unknown>`으로 backward-compat.
+ */
+export interface V1ResponseBody<TParam = Record<string, unknown>> {
   /** command 종류 — 'transaction' / 'getAddress' / 'getDeviceInfo' 등 */
   command?: string
   /** 성공 응답 페이로드 — signed_tx / address / device_id 등 */
-  parameter?: Record<string, unknown>
+  parameter?: TParam
   /** 실패 응답 — code/message 쌍 */
   error?: {
     code: string
@@ -43,8 +54,209 @@ export interface V1ResponseBody {
  * v1 시절 dApp이 받던 `{header, body}` 구조와 1:1 동등.
  * v2에서는 underlying transport가 JSON-RPC 2.0 envelope을 사용하지만,
  * connector facade가 이 envelope을 V1Response로 매핑하여 dApp 호환성을 유지한다.
+ *
+ * **m12-03**: Generic `TParam` 지원 — `getDeviceInfo()`의 반환 타입을
+ * `V1Response<DeviceInfoPayload>`로 narrow 가능. 기존 호출자는 default로 동작.
  */
-export interface V1Response {
+export interface V1Response<TParam = Record<string, unknown>> {
   header: V1ResponseHeader
-  body: V1ResponseBody
+  body: V1ResponseBody<TParam>
 }
+
+/* eslint-disable camelcase */
+/**
+ * v2 account wire — syncAccount 입력 항목 (m09-04-12).
+ *
+ * connector-chain-addition-isolation: chainId는 chain-agnostic whitelist 형식 검증만.
+ * 실제 chain resolve는 sdk/wm(m09-03-21)에 위임.
+ *
+ * dapp-input-sanitization: _sanitizeSyncAccountItem이 known-fields만 통과.
+ */
+export interface V2SyncAccountInfo {
+  /** CAIP-19 chainId (예: 'eip155:1/slip44:60', 'bip122:000000000019d6689c085ae165831e93/slip44:0').
+   *  token도 부모 체인의 CAIP-19를 그대로 두고 asset은 `token`으로 구분. */
+  chainId: string
+  /** BIP44 key path (예: "m/44'/60'/0'/0/0"). */
+  keyPath: string
+  /** D'CENT 지갑 표시 레이블. */
+  label: string
+  /**
+   * 토큰 계정일 때만. native coin은 생략 (m13-02-08).
+   *
+   * NOTE(decision-anchor: m13-02-08-token-descriptor-parity):
+   *   필드 이름·의미를 **서명 경로의 토큰 descriptor(wm `WireTokenDescriptor`)와 일치**시킨다.
+   *   dApp이 이미 서명에서 쓰는 형식이라 새로 배울 것이 없고, 체인별 예외가 한쪽에만 반영되는
+   *   drift가 생기지 않는다. `to`/`amount`는 전송 전용이라 제외한다. `tokenId`(Tezos FA2 /
+   *   ERC-1155)도 제외한다 — 기기 wire(`WamiSyncAccountV2`)에 **담을 필드가 없고**
+   *   wm 해석기도 읽지 않아 효과가 0이다(토큰 구분은 컨트랙트 주소로 성립).
+   *   필드를 추가할 일이 생기면 **서명 쪽 descriptor를 먼저 보고 맞출 것.**
+   *
+   * ⚠️ 종전 top-level `contractAddress`를 대체한다. 그 필드는 v2가 npm에 published된 적이
+   *   없어(외부 소비자 0) 하위호환 대상이 아니며, 그 경로는 조회 키 불일치로 **한 번도 성공한
+   *   적이 없다**. 남기면 동작하지 않는 예제만 유효해 보이므로 제거했다.
+   */
+  token?: {
+    /**
+     * 토큰 컨트랙트/asset 식별자 — **체인이 실제로 쓰는 온체인 형식** 그대로.
+     * (예: EVM `0x…` / SPL base58 mint / Hedera `0.0.333611` / NEAR `token.sweat` /
+     *  Stellar `CODE-ISSUER` / Stacks `principal.contractName::assetName`)
+     * 지갑 내부 4-part 표기가 필요한 체인은 **지갑이 변환**한다 — dApp이 만들지 않는다.
+     */
+    contract: string
+    /**
+     * 표시용 심볼. 기기 아이콘 매칭 키의 원본이 된다(지갑이 소문자화 + 8자 truncate).
+     * 레지스트리 미등록 토큰이면 **사실상 필수** — 생략하면 컨트랙트 앞 10자가 심볼이 되어
+     * 기기에서 아이콘이 매칭되지 않는다.
+     */
+    symbol?: string
+    /**
+     * 소수 자릿수. 레지스트리 미등록 토큰이면 **필수** — 지갑의 descriptor 해석 진입 조건이라
+     * 없으면 `-32602`로 거절된다(근거 없이 조용히 합성하지 않는다).
+     */
+    decimals?: number
+  }
+  /** 주소 인코딩 힌트 등 forward-compat 메타. 현재 known: `addressFormat`
+   *  (BTC legacy/segwit-wrapped/segwit-native/taproot disambiguation — getAddress와 동일 enum, m09-04-09).
+   *  같은 chainId(bip122/slip44:0)를 공유하는 BTC variant 를 구분해 sdk 가 coin_name 을 매핑한다. */
+  meta?: { addressFormat?: AddressFormat }
+}
+
+/**
+ * 진화하는 account-info 부가 메타데이터 (forward-compat 확장점).
+ * SYNC: sdk accountV2 `V2AccountMeta` (정본 shape B) ↔ 짝 m09-03-27(sdk, addressFormat 도출) / m09-04-20(connector).
+ *
+ * **connector 변경 최소화 목적**: connector는 dApp이 npm으로 가져가는 패키지라 재배포가 어렵다.
+ * sdk(웹 배포)가 account-info에 추가하는 device-파생/진화 값들을 이 bag에 모아두면, sdk가 새 키를
+ * 추가해도 index signature가 이미 수용하므로 connector 타입을 다시 수정·재배포할 필요가 없다.
+ * (known 키는 문서화 목적의 optional 필드.) connector는 forward만 하므로 의미 해석 불필요.
+ */
+export interface V2AccountMeta {
+  /** wm 미등록 커스텀 토큰. true면 chainId는 deviceStoreId에서 derive한 부모 체인이며,
+   *  풀 contractAddress는 device가 coin_name을 15자 truncate하여 복원 불가. native와 구분용. */
+  customToken?: true
+  /** customToken일 때 device coin_name(EVM: 15자 contract truncate, SPL 등: 토큰 이름) 표시 힌트. */
+  deviceCoinName?: string
+  /** 주소 인코딩 variant 힌트 (3축 disambiguation의 encoding 축). sdk가 도출(m09-03-27), connector는
+   *  forward만. 'segwit-native'=BIP-84 bech32 / 'legacy'=같은 chainId에 segwit 형제가 실재하는
+   *  bitcoin-family base(BITCOIN/DIGIBYTE 등)에만 부여. 그 외(customAddressPathFor/legacyFor 변형)는
+   *  인코딩이 같아 keyPath로 구분(미부여). dApp은 BTC legacy/segwit 구분에 사용. */
+  addressFormat?: AddressFormat
+  /** forward-compat: 추후 sdk가 추가하는 account-info 부가값. connector 재배포 없이 확장.
+   *  (addressFormat은 known 키로 승격되기 전부터 이 index signature로 이미 통과되어 왔다.) */
+  [key: string]: unknown
+}
+
+/**
+ * v2 account wire — getAccountInfo 응답 항목 (m09-04-12).
+ *
+ * sdk(m09-03-21)가 enrich한 결과 shape. connector는 응답을 forward만 — 타입 narrow 전용.
+ *
+ * **정본 shape B** (2026-06-23 확정): resolved는 chainId=full CAIP-19(자산 caip19, 별도 caip19 필드 없음),
+ * 자산 구분은 contractAddress, 인코딩 variant는 meta.addressFormat. token은 부모 체인 caip19 + contractAddress.
+ * SYNC: sdk accountV2 `V2AccountInfo` ↔ 짝 m09-03-27(sdk B 정렬) / m09-04-20(connector 명문화).
+ * 양측 drift는 sdk T-SYNC-01 + connector getAccountInfo.v2 drift-guard 테스트가 감지.
+ *
+ * mutation-isolation: V1Response가 call.ts에서 매 호출마다 새 객체로 생성.
+ */
+export type V2AccountInfo =
+  | {
+      /** resolve 성공 — CAIP-19 chainId. native는 자산 caip19(예 'eip155:1/slip44:60'),
+       *  token은 부모 체인 caip19. 자산 구분은 contractAddress (별도 caip19 필드 없음). */
+      chainId: string
+      /** token asset address. native이면 undefined. */
+      contractAddress?: string
+      /** 디바이스 address_path */
+      keyPath: string
+      /** D'CENT 레이블 */
+      label: string
+      /** 진화하는 부가 메타데이터(customToken 등). sdk가 새 키를 넣어도 connector 수정 불필요. */
+      meta?: V2AccountMeta
+      unresolved?: false
+    }
+  | {
+      /** resolve 실패 (custom coin / 미등록 / collision) */
+      chainId: null
+      unresolved: true
+      /** 디바이스 raw 응답 (v1 shape 보존) */
+      raw: { coin_group: string; coin_name: string; address_path: string; label: string }
+    }
+
+/**
+ * getAccountInfo 응답 body.parameter shape (m09-04-12).
+ */
+export interface AccountListV2Payload {
+  account: V2AccountInfo[]
+}
+/* eslint-enable camelcase */
+
+/* eslint-disable camelcase */
+/**
+ * D'CENT 디바이스 정보 응답 payload (m12-03).
+ *
+ * `getDeviceInfo()` 응답의 `body.parameter` shape.
+ * 모든 필드는 optional — b11-02(sdk)가 미SHIPPED이면 새 필드가 wire에 없어도 graceful.
+ * race-safe-cross-repo exemption에 따라 옛 sdk 응답에서는 새 필드가 `undefined`로 들어온다.
+ *
+ * mutation-isolation: coin_list 배열은 V1Response가 call.ts에서 매 호출마다 새 객체로
+ * 생성되므로 caller mutation은 내부 상태를 오염시키지 않는다 (T-SEC-MUT-01).
+ */
+export interface DeviceInfoPayload {
+  /**
+   * 하드웨어 디바이스 고유 식별자.
+   *
+   * ⚠️ (문서↔코드 감사 C3, 2026-07-21) **v1 의 `device_id` 가 아니라 `deviceId` 다.**
+   * bridge 가 wire 로 내보내는 실제 키는 `deviceId`/`version` 인데(`DeviceInfoResult.ts`),
+   * 이 타입이 v1 이름(`device_id`/`fw_version`)을 선언하고 있어 dApp 이 타입을 믿고 읽으면
+   * 항상 `undefined` 였다. v2 는 wire 키로 통일한다(사용자 결정 2026-07-21).
+   */
+  deviceId?: string
+  /** 펌웨어 버전 (예: '2.8.1'). v1 의 `fw_version` 에 대응 — wire 키는 `version`. */
+  version?: string
+  /** KSM 버전 (보안 칩 펌웨어) */
+  ksm_version?: string
+  /** 디바이스 상태 (예: 'initialised') */
+  state?: string
+  /** 등록된 코인 리스트 */
+  coin_list?: Array<{ name: string }>
+  /** 지문 등록 정보 */
+  fingerprint?: { max: number; enrolled: number }
+  /** 사용자 설정 레이블 */
+  label?: string
+  /** 연결 타입 */
+  connectType?: 'usb' | 'ble'
+  /** 디바이스 부착 여부 */
+  isAttached?: boolean
+  /**
+   * 연결된 하드웨어 모델 식별자 (m09-04-28).
+   *
+   * - `'DCENT-X'` — DCENT X (펌웨어 1.x 라인)
+   * - `undefined` — D'CENT Biometric Wallet(V1, 펌웨어 1.x~2.x 라인) 또는 모델을 보고하지 않는 옛 bridge
+   *
+   * NOTE(decision-anchor: dcentx-model-id-naming): 값 표기를 wm(`BleDeviceModel`,
+   * `hw/ble-device-configs.ts`)의 `'DCENT-X'`(하이픈)에 맞춘다 — 모바일 앱의
+   * `'BIO' | 'DCENT_X'`(언더바)와 **일부러 다르다**. 웹 SDK의 모델 값은 wm transport가
+   * 그대로 흘려보내는 값이고, 중간에서 재매핑하면 (a) wm이 모델을 추가할 때마다 매핑
+   * 테이블이 drift하고 (b) 매핑 누락 시 알 수 없는 모델이 조용히 `undefined`(=Biometric)로
+   * 접혀 **X에 Biometric 게이트가 적용되는 오판**이 생긴다. 모바일과 통일하려고 이 값을
+   * `'DCENT_X'`로 바꾸지 말 것 (2026-08-07 사용자 결정).
+   *
+   * connector는 이 값을 **relay만** 한다 — 판정(게이트/캐퍼빌리티)은 bridge 소관이다.
+   */
+  deviceModel?: string
+}
+
+/**
+ * 컴파일 타임 계약 고정 — `deviceId` / `version` / `deviceModel` 이 wire 키다.
+ *
+ * `tsconfig.json` 의 `include` 는 `src/**` 뿐이라 `tests/**` 는 `tsc` 가 보지 않고,
+ * 단위 테스트도 babel-jest 라 타입 주석이 지워진다(크로스 리뷰 지적).
+ *
+ * ⚠️ 이 선언이 잡는 범위 (실측, 크로스 리뷰 R1):
+ *  - **부분 rename** — 인터페이스 필드만 바꾸고 이 리터럴을 그대로 두면 `TS2561` 로 잡힌다.
+ *  - **일관 rename** — 인터페이스와 이 리터럴을 **함께** 바꾸면 `yarn tsc` 는 exit 0 이다.
+ *    그 회귀는 `T-U-DEVMODEL-01`(tests/unit/v2/sign/info.test.ts)이 이 파일의 소스를 직접 읽어
+ *    `deviceModel` 키 존재를 단언하는 것으로 잡는다. 둘은 짝이며 어느 한쪽만으로는 부족하다.
+ */
+const _deviceInfoWireKeyContract: DeviceInfoPayload = { deviceId: '', version: '', deviceModel: '' }
+void _deviceInfoWireKeyContract
+/* eslint-enable camelcase */

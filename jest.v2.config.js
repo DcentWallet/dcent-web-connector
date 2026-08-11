@@ -5,6 +5,9 @@
 module.exports = {
   testEnvironment: 'jsdom',
   testMatch: ['**/tests/unit/v2/**/*.test.ts'],
+  // jsdom이 노출하지 않는 브라우저 전역을 공급 — 없으면 그 API에 의존하는 가드가
+  // catch로 흘러 꺼진 채 테스트만 초록이 된다 (tests/unit/v2/setup/structuredClone.js 주석 참조).
+  setupFiles: ['<rootDir>/tests/unit/v2/setup/structuredClone.js'],
   transform: {
     '^.+\\.tsx?$': 'babel-jest',
   },

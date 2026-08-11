@@ -22,15 +22,36 @@
 
 import { PopupTransport } from './transport/PopupTransport'
 import { SerialRequestQueue } from './queue/RequestQueue'
-import type { TransportState } from './transport/MessageTransport'
+import type { SignProgressInfo, StateHandler } from './transport/MessageTransport'
 
-/** state listener 시그니처. lifecycle.ts의 ConnectionListener와 동일 형태. */
-export type StateListener = (state: TransportState) => void
+/**
+ * state listener 시그니처. lifecycle.ts의 ConnectionListener와 동일 형태.
+ *
+ * (2026-08-10) 2번째 인자 `detail` 추가 — 팝업 축과 기기 축을 함께 전달한다. 1번째 인자는
+ * v1 그대로(팝업 축)라 `function (state) {...}` 형태의 기존 dApp 코드가 그대로 동작한다.
+ * 자세한 계약은 `transport/MessageTransport.ts` 의 `StateHandler` 참조.
+ */
+export type StateListener = StateHandler
+
+/** (m09-04-27) signProgress listener 시그니처. lifecycle.ts의 SignProgressListener와 동일 형태. */
+export type SignProgressListener = (info: SignProgressInfo) => void
+
+// build-time 주입 bridge popup URL (webpack DefinePlugin). webpack 미경유(jest 등)에서는
+// 미정의 → typeof 가드로 '' 취급 → PopupTransport 기본값.
+declare const __DCENT_BRIDGE_POPUP_URL__: string
+const _bridgePopUpUrl: string =
+  typeof __DCENT_BRIDGE_POPUP_URL__ === 'string' ? __DCENT_BRIDGE_POPUP_URL__ : ''
 
 let _transport: PopupTransport | null = null
 let _queue: SerialRequestQueue | null = null
 let _stateListeners: StateListener[] = []
+// (m09-04-27) `_signProgress` 리스너 캐시. _stateListeners와 완전 동형 —
+// transport 미생성 시 cache → 다음 ensureSingleton에서 일괄 재등록.
+let _signProgressListeners: SignProgressListener[] = []
 let _pendingTimeoutMs: number | undefined
+// (DC-2701) 연결 단위 transport 힌트. transport 미생성 시 cache → 다음 ensureSingleton에 적용.
+// undefined = 미설정(default). lifecycle.setTransport가 _setPendingTransport로 등록.
+let _pendingTransport: 'hid' | 'ble' | undefined
 
 /**
  * lazy singleton — 첫 호출 시 PopupTransport + SerialRequestQueue 생성.
@@ -38,6 +59,7 @@ let _pendingTimeoutMs: number | undefined
  *
  * 새로 생성되는 시점에 cached `_pendingTimeoutMs`가 있으면 즉시 적용,
  * cached `_stateListeners`가 있으면 모두 transport.on('state', ...)으로 재등록한다.
+ * cached `_signProgressListeners`도 동일하게 transport.on('signProgress', ...)으로 재등록한다.
  * resetSingleton 후의 자동 복구 동작 (T-U-04, T-U-07).
  */
 export function ensureSingleton (): {
@@ -45,12 +67,18 @@ export function ensureSingleton (): {
   queue: SerialRequestQueue
 } {
   if (!_transport) {
-    _transport = new PopupTransport({})
+    _transport = new PopupTransport(_bridgePopUpUrl ? { popUpUrl: _bridgePopUpUrl } : {})
     if (_pendingTimeoutMs !== undefined) {
       _transport.setTimeoutMs(_pendingTimeoutMs)
     }
+    if (_pendingTransport !== undefined) {
+      _transport.setPendingTransport(_pendingTransport)
+    }
     for (const l of _stateListeners) {
       _transport.on('state', l)
+    }
+    for (const l of _signProgressListeners) {
+      _transport.on('signProgress', l)
     }
     _queue = new SerialRequestQueue()
   }
@@ -60,6 +88,7 @@ export function ensureSingleton (): {
 /**
  * singleton을 닫고 인스턴스를 해제한다.
  * `_stateListeners`와 `_pendingTimeoutMs`는 보존 — 다음 ensureSingleton 호출 시 자동 복구.
+ * `_signProgressListeners`도 동일하게 보존된다.
  *
  * close()는 PopupTransport 내부에서 fire-and-forget으로 처리되며, 이 함수는 throw하지 않는다.
  * popup이 이미 닫혀있거나 transport가 cleanup 중이어도 silent하게 진행 (async-hygiene 룰).
@@ -73,7 +102,7 @@ export function resetSingleton (): void {
     _transport = null
     _queue = null
   }
-  // _stateListeners와 _pendingTimeoutMs는 의도적으로 유지
+  // _stateListeners, _signProgressListeners, _pendingTimeoutMs는 의도적으로 유지
 }
 
 // === 후속 child(m08-01-02 등)가 사용할 internal hook ===
@@ -101,6 +130,18 @@ export function _registerStateListener (listener: StateListener): void {
 }
 
 /**
+ * (m09-04-27) lifecycle.ts의 setSignProgressListener가 사용.
+ * listener를 cached 목록에 추가하고, transport가 이미 존재하면 즉시 attach.
+ * _registerStateListener와 완전 동형 — 다중 서명 진행률 신호 전용 별도 채널.
+ */
+export function _registerSignProgressListener (listener: SignProgressListener): void {
+  _signProgressListeners.push(listener)
+  if (_transport) {
+    _transport.on('signProgress', listener)
+  }
+}
+
+/**
  * lifecycle.ts의 setTimeOutMs가 사용.
  * transport가 없으면 pending에 저장, 있으면 즉시 적용.
  *
@@ -112,6 +153,20 @@ export function _setPendingTimeout (ms: number): void {
   _pendingTimeoutMs = ms
   if (_transport) {
     _transport.setTimeoutMs(ms)
+  }
+}
+
+/**
+ * (DC-2701) lifecycle.ts의 setTransport가 사용 — 연결 단위 transport 힌트 등록.
+ * transport가 없으면 cache, 있으면 즉시 setPendingTransport. 다음 ensureSingleton에서 cache 적용.
+ *
+ * first-wins: popup이 이미 열려 handshake가 송신된 뒤면 PopupTransport가 silent ignore한다.
+ * sanitize는 caller(lifecycle.setTransport)가 _sanitizeTransportOption으로 수행.
+ */
+export function _setPendingTransport (transport: 'hid' | 'ble' | undefined): void {
+  _pendingTransport = transport
+  if (_transport) {
+    _transport.setPendingTransport(transport)
   }
 }
 
@@ -132,5 +187,7 @@ export function _resetForTesting (): void {
   _transport = null
   _queue = null
   _stateListeners = []
+  _signProgressListeners = []
   _pendingTimeoutMs = undefined
+  _pendingTransport = undefined
 }

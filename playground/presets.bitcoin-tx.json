@@ -1,0 +1,40 @@
+[
+  {
+    "id": "btx:p2wpkh-single",
+    "scenarioCode": "093",
+    "label": "Bitcoin P2WPKH (single utxo → single output)",
+    "applicableMethodIds": ["btx:new", "btx:addInput", "btx:addOutput", "btx:buildAndSign"],
+    "chainId": "bip122:000000000019d6689c085ae165831e93/slip44:0",
+    "keyPath": "m/44'/0'/0'/0/0",
+    "input": {
+      "prev_tx": "020000000111111111111111111111111111111111111111111111111111111111111111110000000000ffffffff0190d0030000000000160014b3b0dff00aa8580082a04ca6b0bdf097ac302e2f00000000",
+      "utxo_idx": 0,
+      "type": "p2wpkh",
+      "key": "m/44'/0'/0'/0/0"
+    },
+    "output": {
+      "type": "p2wpkh",
+      "value": "200000",
+      "to": "bc1qgfpyysjzgfpyysjzgfpyysjzgfpyysjz5t4fq5"
+    }
+  },
+  {
+    "id": "btx:p2pkh-single",
+    "scenarioCode": "094",
+    "label": "Bitcoin Legacy P2PKH (single utxo → single output)",
+    "applicableMethodIds": ["btx:new", "btx:addInput", "btx:addOutput", "btx:buildAndSign"],
+    "chainId": "bip122:000000000933ea01ad0ee984209779ba/slip44:0",
+    "keyPath": "m/44'/1'/0'/0/0",
+    "input": {
+      "prev_tx": "020000000111111111111111111111111111111111111111111111111111111111111111110000000000ffffffff01f0490200000000001976a914070707070707070707070707070707070707070788ac00000000",
+      "utxo_idx": 0,
+      "type": "p2pkh",
+      "key": "m/44'/1'/0'/0/0"
+    },
+    "output": {
+      "type": "p2pkh",
+      "value": "100000",
+      "to": "mmZJGTYyMqVoMYQZvY5jzF9uWREKyk1bPj"
+    }
+  }
+]

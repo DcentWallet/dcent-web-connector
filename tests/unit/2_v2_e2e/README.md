@@ -93,4 +93,4 @@ E2E_HEADLESS=false yarn unit-v2-e2e --testPathPattern=01_handshake
 - sdk 측 변경 — sdk는 read-only consumer (m02-03 SHIPPED 결과 그대로)
 - e2e retry 정책 — flakiness 발생 시 cycle 03+에서 도입
 - Playwright 마이그레이션 — jest-puppeteer flakiness 봐서 cycle 03+ 결정
-- production sdk(`https://bridge.dcentwallet.com/v2`) 대상 e2e — cycle 08 prod 배포 후
+- production sdk(`https://v2bridge.dcentwallet.com/`) 대상 e2e — cycle 08 prod 배포 후

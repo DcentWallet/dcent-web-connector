@@ -9,7 +9,12 @@
   <title>Title</title>
   <script src="https://code.jquery.com/jquery-3.3.1.js"></script>
   <script src="plugin/jquery.json-editor.min.js"></script>
-  <script src="dcent-web-connector.min.js"></script>
+  <!-- 로컬 빌드(src-v1 → dist/v1)를 로드. published 0.16.0은 chrome.runtime.getManifest guard가
+       불완전하여, 지갑 확장(MetaMask 등)이 주입한 partial chrome.runtime에서 init 크래시한다.
+       로컬 src-v1:39는 `&& chrome.runtime.getManifest` guard가 있어 안전. yarn dev/build가 v1도 함께 빌드.
+       트레이드오프: clone 후 빌드 없이 열면 dist/v1 미존재로 404 (published는 빌드 없이 동작했음).
+       진짜 해결은 v1 재배포로 published 0.16.x guard 패치 (release manager 영역). -->
+  <script src="dist/v1/dcent-web-connector.min.js"></script>
 
   <link href="https://stackpath.bootstrapcdn.com/bootstrap/4.1.3/css/bootstrap.min.css" rel="stylesheet"
     integrity="sha384-MCw98/SFnGE8fJT3GXwEOngsV7Zt27NXFoaoApmYm81iuXoPkFOJwJ8ERdknLPMO" crossorigin="anonymous">

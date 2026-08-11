@@ -1,0 +1,225 @@
+[
+  {
+    "id": "syncAccount:eth-single",
+    "scenarioCode": "088",
+    "label": "Ethereum (single)",
+    "applicableMethodIds": [
+      "account:syncAccount"
+    ],
+    "value": [
+      {
+        "chainId": "eip155:1/slip44:60",
+        "keyPath": "m/44'/60'/0'/0/0",
+        "label": "ETH-1"
+      }
+    ]
+  },
+  {
+    "id": "syncAccount:btc-legacy",
+    "scenarioCode": "089",
+    "label": "Bitcoin — legacy (P2PKH, 1xxx)",
+    "applicableMethodIds": [
+      "account:syncAccount"
+    ],
+    "value": [
+      {
+        "chainId": "bip122:000000000019d6689c085ae165831e93/slip44:0",
+        "keyPath": "m/44'/0'/0'/0/0",
+        "label": "BTC-LEGACY-01",
+        "meta": {
+          "addressFormat": "legacy"
+        }
+      }
+    ]
+  },
+  {
+    "id": "syncAccount:btc-segwit-native",
+    "scenarioCode": "090",
+    "label": "Bitcoin — segwit-native (P2WPKH, bc1q)",
+    "applicableMethodIds": [
+      "account:syncAccount"
+    ],
+    "value": [
+      {
+        "chainId": "bip122:000000000019d6689c085ae165831e93/slip44:0",
+        "keyPath": "m/44'/0'/0'/0/0",
+        "label": "BTC-SEGWIT-01",
+        "meta": {
+          "addressFormat": "segwit-native"
+        }
+      }
+    ]
+  },
+  {
+    "id": "syncAccount:btc-both-formats",
+    "scenarioCode": "091",
+    "label": "Bitcoin — legacy + segwit-native 동시",
+    "applicableMethodIds": [
+      "account:syncAccount"
+    ],
+    "value": [
+      {
+        "chainId": "bip122:000000000019d6689c085ae165831e93/slip44:0",
+        "keyPath": "m/44'/0'/0'/0/0",
+        "label": "BTC-LEGACY-01",
+        "meta": {
+          "addressFormat": "legacy"
+        }
+      },
+      {
+        "chainId": "bip122:000000000019d6689c085ae165831e93/slip44:0",
+        "keyPath": "m/44'/0'/0'/0/0",
+        "label": "BTC-SEGWIT-01",
+        "meta": {
+          "addressFormat": "segwit-native"
+        }
+      }
+    ]
+  },
+  {
+    "id": "syncAccount:multi",
+    "scenarioCode": "092",
+    "label": "Multi (ETH + BTC legacy + BTC segwit-native)",
+    "applicableMethodIds": [
+      "account:syncAccount"
+    ],
+    "value": [
+      {
+        "chainId": "eip155:1/slip44:60",
+        "keyPath": "m/44'/60'/0'/0/0",
+        "label": "ETH-1"
+      },
+      {
+        "chainId": "bip122:000000000019d6689c085ae165831e93/slip44:0",
+        "keyPath": "m/44'/0'/0'/0/0",
+        "label": "BTC-LEGACY-01",
+        "meta": {
+          "addressFormat": "legacy"
+        }
+      },
+      {
+        "chainId": "bip122:000000000019d6689c085ae165831e93/slip44:0",
+        "keyPath": "m/44'/0'/0'/0/0",
+        "label": "BTC-SEGWIT-01",
+        "meta": {
+          "addressFormat": "segwit-native"
+        }
+      }
+    ]
+  },
+  {
+    "id": "syncAccount:erc20-registered",
+    "scenarioCode": "102",
+    "label": "ERC20 registered (USDT)",
+    "applicableMethodIds": [
+      "account:syncAccount"
+    ],
+    "value": [
+      {
+        "chainId": "eip155:1/slip44:60",
+        "keyPath": "m/44'/60'/0'/0/0",
+        "label": "USDT-1",
+        "token": {
+          "contract": "0xdac17f958d2ee523a2206206994597c13d831ec7"
+        }
+      }
+    ]
+  },
+  {
+    "id": "syncAccount:erc20-custom",
+    "scenarioCode": "103",
+    "label": "ERC20 unregistered",
+    "applicableMethodIds": [
+      "account:syncAccount"
+    ],
+    "value": [
+      {
+        "chainId": "eip155:1/slip44:60",
+        "keyPath": "m/44'/60'/0'/0/0",
+        "label": "CUSTOM-1",
+        "token": {
+          "contract": "0x1111111111111111111111111111111111111111",
+          "symbol": "FOO",
+          "decimals": 6
+        }
+      }
+    ]
+  },
+  {
+    "id": "syncAccount:spl-usdt",
+    "scenarioCode": "104",
+    "label": "SPL token (USDT)",
+    "applicableMethodIds": [
+      "account:syncAccount"
+    ],
+    "value": [
+      {
+        "chainId": "solana:5eykt4UsFv8P8NJdTREpY1vzqKqZKvdp/slip44:501",
+        "keyPath": "m/44'/501'/0'",
+        "label": "SPL-USDT",
+        "token": {
+          "contract": "Es9vMFrzaCERmJfrF4H2FYD4KCoNkY11McCe8BenwNYB"
+        }
+      }
+    ]
+  },
+  {
+    "id": "syncAccount:stellar-token",
+    "scenarioCode": "105",
+    "label": "Stellar asset (AQUA)",
+    "applicableMethodIds": [
+      "account:syncAccount"
+    ],
+    "value": [
+      {
+        "chainId": "stellar:pubnet/slip44:148",
+        "keyPath": "m/44'/148'/0'",
+        "label": "AQUA-1",
+        "token": {
+          "contract": "AQUA-GBNZILSTVQZ4R7IKQDGHYGY2QXL5QOFJYQMXPKWRRM5PAV7Y4M67AQUA"
+        }
+      }
+    ]
+  },
+  {
+    "id": "syncAccount:coin-and-token",
+    "scenarioCode": "106",
+    "label": "Coin + token (mixed)",
+    "applicableMethodIds": [
+      "account:syncAccount"
+    ],
+    "value": [
+      {
+        "chainId": "eip155:1/slip44:60",
+        "keyPath": "m/44'/60'/0'/0/0",
+        "label": "ETH-1"
+      },
+      {
+        "chainId": "eip155:1/slip44:60",
+        "keyPath": "m/44'/60'/0'/0/0",
+        "label": "USDT-1",
+        "token": {
+          "contract": "0xdac17f958d2ee523a2206206994597c13d831ec7"
+        }
+      }
+    ]
+  },
+  {
+    "id": "syncAccount:unknown-token",
+    "scenarioCode": "107",
+    "label": "Unknown token (reject)",
+    "applicableMethodIds": [
+      "account:syncAccount"
+    ],
+    "value": [
+      {
+        "chainId": "eip155:1/slip44:60",
+        "keyPath": "m/44'/60'/0'/0/0",
+        "label": "NOPE-1",
+        "token": {
+          "contract": "0x2222222222222222222222222222222222222222"
+        }
+      }
+    ]
+  }
+]

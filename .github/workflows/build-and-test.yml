@@ -32,6 +32,8 @@ jobs:
         node-version: ${{ matrix.node-version }}
     - run: yarn install --frozen-lockfile
     - run: yarn lint
+    - name: Docs — markdown lint + payload-contract coverage & shape
+      run: yarn check:docs
     - run: yarn build
     - run: yarn unit-v2
     - run: yarn unit-mock

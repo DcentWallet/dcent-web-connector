@@ -1,9 +1,11 @@
 /**
- * T-E-05 — setTimeoutMs override → TIMEOUT (5006)
+ * T-E-05 — handshakeTimeoutMs가 request setTimeoutMs와 분리됨 (decoupling 계약, PR #175)
  *
- * setTimeoutMs(2000)으로 default 60s를 단축한 뒤
- * popUpUrl을 listener 없는 빈 페이지(harness :9091/empty.html)로 향하게 하여
- * 2s 후 ProviderError(TIMEOUT, 5006)로 reject 검증.
+ * empty.html(listener 없음)은 handshake ack가 오지 않아 handshake 단계에서 실패한다.
+ * request용 setTimeoutMs를 크게(60s) 잡아도, handshake는 전용 handshakeTimeoutMs(2s)로
+ * 제어되므로 ~2s에 5006으로 수렴해야 한다. setTimeoutMs가 handshake까지 지배하던
+ * 구(PR #175 이전) 커플링이면 이 케이스는 60s를 기다려 spec timeout(30s)을 초과한다 →
+ * 회귀 가드. (Codex 크로스 리뷰 R2 finding 반영)
  */
 const { launchBrowser } = require('./launchBrowser')
 
@@ -28,10 +30,15 @@ describe('[v2 e2e] T-E-05 setTimeoutMs → TIMEOUT', () => {
     await page.evaluate(() => (window as any).dcentTest.close())
   })
 
-  it('T-E-05: setTimeoutMs(2000) + empty.html → 5006 TIMEOUT', async () => {
+  it('T-E-05: handshakeTimeoutMs(2000) < 큰 setTimeoutMs(60000) → 2s에 5006 (decoupling)', async () => {
     await page.evaluate((url: string) => {
-      ;(window as any).dcentTest.newTransport({ popUpUrl: url })
-      ;(window as any).dcentTest.setTimeoutMs(2000)
+      ;(window as any).dcentTest.newTransport({
+        popUpUrl: url,
+        handshakeTimeoutMs: 2000,
+        readyTimeoutMs: 500,
+      })
+      // request timeout을 크게 잡아도 handshake 실패경로에는 영향 없어야 함 (decoupling)
+      ;(window as any).dcentTest.setTimeoutMs(60000)
     }, EMPTY_URL)
 
     const start = Date.now()
@@ -42,8 +49,8 @@ describe('[v2 e2e] T-E-05 setTimeoutMs → TIMEOUT', () => {
 
     expect(result.ok).toBe(false)
     expect(result.error.code).toBe(5006)
-    // 2s 이상은 보장(setTimeoutMs 적용 확인). 상한은 default 60s와 분리만 되면 충분
-    // (slowmo/visual mode에서 puppeteer protocol overhead로 elapsed 증가 가능 — 30s까지 허용)
+    // ~2.5s(readyTimeout 0.5 + handshakeTimeout 2)에 수렴. setTimeoutMs(60000)에 커플링되면
+    // 이 상한을 초과 → 회귀. (slowmo/visual overhead 흡수 위해 30s까지 허용)
     expect(elapsed).toBeGreaterThan(1500)
     expect(elapsed).toBeLessThan(30000)
   }, 30000)

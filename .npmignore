@@ -1,3 +1,11 @@
+# 🔴 tarball 포함 여부의 최종 권한은 `package.json#files` 허용목록이다.
+#    npm은 `files`를 이 파일보다 우선 적용하므로, `files`에 열거된 경로(또는 그 하위)를
+#    여기에 적어도 **무효**다. 제외하려면 `files`에서 빼야 한다.
+#    (실측: `files`에 "docs/" / "index-v2.html" / "playground.js"가 있던 동안
+#     아래 항목들이 전부 무시되고 tarball에 포함됐다 — PR #177 리뷰 P2)
+#    이 파일은 `files`의 디렉터리 항목(`dist/v2/`, `src/`) 안을 걸러낼 때만 실효가 있다.
+#    회귀 가드: tests/unit/v2/packaging.npmignore-vs-files.test.ts
+
 examples
 node_modules
 tests/coverage
@@ -7,3 +15,4 @@ index-v2.html
 playground.js
 playground/
 scripts/
+docs/index.html

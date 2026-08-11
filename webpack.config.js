@@ -6,7 +6,13 @@ const {
 const HtmlWebpackPlugin = require('html-webpack-plugin')
 const CopyPlugin = require('copy-webpack-plugin')
 
-module.exports = {
+module.exports = (env, argv) => {
+    // bridge popup URL 빌드 시점 주입 (production 기본값 / development localhost).
+    const isProd = (argv && argv.mode) === 'production'
+    const bridgePopUpUrl =
+        process.env.DCENT_BRIDGE_POPUP_URL || (isProd ? '' : 'http://localhost:5173')
+
+    return {
     mode: 'development', // or 'production'
     target: 'web',
     entry: {
@@ -75,6 +81,9 @@ module.exports = {
         new webpack.ProvidePlugin({
             Buffer: ['buffer', 'Buffer'],
         }),
+        new webpack.DefinePlugin({
+            __DCENT_BRIDGE_POPUP_URL__: JSON.stringify(bridgePopUpUrl),
+        }),
         new CopyPlugin([{
             from: 'plugin',
             to: 'plugin'
@@ -87,5 +96,6 @@ module.exports = {
         static: {
             directory: path.join(__dirname, 'dist')
         }
+    }
     }
 }

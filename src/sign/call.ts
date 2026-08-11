@@ -30,11 +30,18 @@
 import { _getQueue, _getTransport } from '../singleton'
 import { _genId } from './idGen'
 import { providerErrorToV1 } from './error'
+import { ProviderError } from '../error/ProviderError'
+import { ErrorCode } from '../error/ErrorCode'
 import type { V1Response, V1ResponseHeader, V1ResponseBody } from './types'
 
-/** _call 입력 — method 이름 + optional params 객체. */
+/** _call 입력 — method 이름 + optional chainId(CAIP-19) + optional params 객체. */
 export interface CallInput {
   method: string
+  /**
+   * CAIP-19 chain identifier — m09-04-01 NEW schema에서 sign API가 별도 필드로 분리.
+   * sign 외 read-only/lifecycle 메서드(getDeviceInfo / info 등)는 chainId가 없을 수 있어 optional.
+   */
+  chainId?: string
   params?: Record<string, unknown>
 }
 
@@ -52,10 +59,35 @@ function isV1ResponseShape (result: unknown): result is V1Response {
 }
 
 /**
+ * v1 payload(parameter) deep-clone helper — mutation-isolation.
+ *
+ * shallow spread(`{ ...parameter }`)는 top-level 키만 분리하므로, parameter가
+ * **중첩 객체/배열**을 담으면(예: getPublicKey의 `{payment,stake,drep}` role 객체,
+ * getAccountInfo의 account 배열) dApp이 `parameter.payment.publicKey`를 in-place 변경할 때
+ * popup이 보낸 원본(또는 같은 객체를 재사용하는 다음 응답)에 leak된다.
+ * deep-clone으로 반환 시점에 완전히 분리한다.
+ *
+ * v1 wire payload는 postMessage(structured clone)를 거친 JSON-호환 데이터이므로
+ * structuredClone이 안전하다. 비-cloneable 값이 섞인 예외는 JSON 라운드트립으로 fallback,
+ * 그조차 실패하면 원본을 그대로 반환(가용성 우선).
+ */
+function deepClonePlain<T> (value: T): T {
+  try {
+    return structuredClone(value)
+  } catch {
+    try {
+      return JSON.parse(JSON.stringify(value)) as T
+    } catch {
+      return value
+    }
+  }
+}
+
+/**
  * raw payload를 v1 호환 success V1Response로 wrap한다.
  * popup이 v1 형식이 아닌 raw 결과를 보낸 경우의 매퍼.
  *
- * 매 호출마다 새 객체 생성 — mutation-isolation.
+ * 매 호출마다 새 객체 생성 — mutation-isolation (중첩 payload는 deep-clone).
  */
 function wrapV1Success (result: unknown, method: string): V1Response {
   const header: V1ResponseHeader = {
@@ -68,8 +100,8 @@ function wrapV1Success (result: unknown, method: string): V1Response {
   }
   if (result !== undefined && result !== null) {
     if (typeof result === 'object') {
-      // shallow copy로 호출자 mutation 격리 (mutation-isolation)
-      body.parameter = { ...(result as Record<string, unknown>) }
+      // deep clone으로 호출자 mutation 격리 — 중첩 객체/배열까지 분리 (mutation-isolation)
+      body.parameter = deepClonePlain(result as Record<string, unknown>)
     } else {
       // primitive는 'value' 키로 wrap
       body.parameter = { value: result }
@@ -90,7 +122,8 @@ function cloneV1Response (response: V1Response): V1Response {
     body: { command: response.body.command },
   }
   if (response.body.parameter) {
-    cloned.body.parameter = { ...response.body.parameter }
+    // deep clone — 중첩 객체/배열(role별 publicKey, account 목록 등)까지 호출자 mutation 격리
+    cloned.body.parameter = deepClonePlain(response.body.parameter)
   }
   if (response.body.error) {
     cloned.body.error = {
@@ -109,36 +142,48 @@ function cloneV1Response (response: V1Response): V1Response {
  */
 export async function _call (input: CallInput): Promise<V1Response> {
   const queue = _getQueue()
+  const transport = _getTransport()
   const id = _genId()
+
+  // (DC-2701) transport 힌트는 연결 단위 dcent.setTransport()가 singleton에 등록한다.
+  // _call은 더 이상 per-call transport를 다루지 않는다 (handshake first-wins).
 
   try {
     const envelope = await queue.enqueue(() =>
-      _getTransport().send({ id, method: input.method, params: input.params }),
+      transport.send({
+        id,
+        method: input.method,
+        // chainId는 optional — sign API에서만 채워지고 그 외 lifecycle 메서드는 undefined.
+        // MessageTransport.send는 임의 envelope 필드를 그대로 forward하므로 sdk 측이 수신.
+        ...(input.chainId !== undefined ? { chainId: input.chainId } : {}),
+        params: input.params,
+      }),
     )
 
-    // boundary-validation: envelope shape
     if (envelope && envelope.error) {
-      // popup이 envelope.error로 실패를 보낸 경우 (드물지만 spec 가능)
-      const code = envelope.error.code
+      // popup(sdk PopupListener)이 envelope.error로 실패를 보낸 경우. sdk는 ProviderRpcError의
+      // number code (예: -32601 method_not_found, -32603 internal_error, -32602 invalid_params)를
+      // 그대로 envelope.error.code에 보존해 송신한다. dApp이 보는 v1 string code 의미를
+      // 보존하려면 ProviderError 인스턴스로 wrap해 V2_TO_V1_CODE 테이블을 거쳐야 한다 —
+      // plain Error로 넘기면 'internal_error'로 평탄화되어 -32601 등 JSON-RPC 표준 의미가 유실됨.
+      // 매핑 테이블에 없는 code는 여전히 'internal_error' fallback (V2_TO_V1_CODE 정의 기준).
+      const rawCode = envelope.error.code
+      const code = typeof rawCode === 'number' ? rawCode : ErrorCode.INTERNAL_ERROR
       const message = envelope.error.message ?? ''
-      // ProviderError-equivalent로 매핑 (providerErrorToV1 재사용)
-      // mock된 ProviderError-like 객체 생성 — 구조만 맞추면 매핑 동작
-      const errLike = Object.assign(new Error(message), { code }) as Error & { code: number }
-      // providerErrorToV1는 instanceof ProviderError 검사로 구분하므로 이 경로는 fallback
-      // 'internal_error' 또는 specific code 매핑이 필요하면 별도 헬퍼 사용
-      // 여기서는 일반 Error 경로로 fallback (T-U-ERR-04 동등)
-      return providerErrorToV1(errLike)
+      const providerErr = new ProviderError(code, message, envelope.error.data)
+      const v1Err = providerErrorToV1(providerErr)
+      return v1Err
     }
 
     const result = envelope?.result
 
-    // 응답이 v1 형식이면 그대로 사용 (단, 매번 새 객체로 복사 — mutation-isolation)
+    let v1: V1Response
     if (isV1ResponseShape(result)) {
-      return cloneV1Response(result)
+      v1 = cloneV1Response(result)
+    } else {
+      v1 = wrapV1Success(result, input.method)
     }
-
-    // raw payload → v1 success로 wrap
-    return wrapV1Success(result, input.method)
+    return v1
   } catch (err) {
     // PopupTransport.send가 reject한 ProviderError 또는 generic Error
     return providerErrorToV1(err as Error)

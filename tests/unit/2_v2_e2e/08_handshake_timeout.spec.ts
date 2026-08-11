@@ -2,9 +2,13 @@
  * T-E-08 — handshake timeout (listener 부재)
  *
  * popUpUrl을 listener 없는 빈 페이지(harness :9091/empty.html)로 향하게 하면
- * 연결된 popup에서 `_handshake` ack가 오지 않음. setTimeoutMs(3000) 후 ProviderError(TIMEOUT, 5006).
+ * 연결된 popup에서 `_handshake` ack가 오지 않음 → handshakeTimeoutMs 만료 후
+ * ProviderError(TIMEOUT, 5006).
  *
- * (T-E-05와 차이: T-E-05는 send timeout 일반, T-E-08은 specifically handshake가 ack 받지 못한 경우)
+ * PR #175 decoupling: handshake ack 대기는 request timeoutMs(180s)가 아닌 전용
+ * handshakeTimeoutMs로 제어된다. 따라서 이 실패경로는 newTransport에 짧은
+ * handshakeTimeoutMs(+readyTimeoutMs)를 주어 빠르게 5006으로 수렴시킨다
+ * (구: setTimeoutMs(3000) — decoupling 이후 setTimeoutMs는 request 경로만 조정).
  */
 const { launchBrowser } = require('./launchBrowser')
 
@@ -29,10 +33,13 @@ describe('[v2 e2e] T-E-08 handshake timeout', () => {
     await page.evaluate(() => (window as any).dcentTest.close())
   })
 
-  it('T-E-08: empty.html (listener 없음) + setTimeoutMs(3000) → 5006', async () => {
+  it('T-E-08: empty.html (listener 없음) + handshakeTimeoutMs(3000) → 5006', async () => {
     await page.evaluate((url: string) => {
-      ;(window as any).dcentTest.newTransport({ popUpUrl: url })
-      ;(window as any).dcentTest.setTimeoutMs(3000)
+      ;(window as any).dcentTest.newTransport({
+        popUpUrl: url,
+        handshakeTimeoutMs: 3000,
+        readyTimeoutMs: 500,
+      })
     }, EMPTY_URL)
 
     const start = Date.now()

@@ -5,11 +5,12 @@
  * m02-01 21건 (T-U-01 ~ T-U-15, T-U-08 4 subcase + T-U-09a + T-U-11 2 subcase)
  *  + m02-02 14건 (T-U-HS-01 ~ T-U-HS-10, T-U-HS-04 5 subcase 포함)
  *  = 35건
+ *  + m09-04-27 10건(T-U-SIGNPROGRESS-CONN-01~05, 07~10)
  */
 import { PopupTransport } from '../../../../src/transport/PopupTransport'
 import { ProviderError } from '../../../../src/error/ProviderError'
 import { ErrorCode } from '../../../../src/error/ErrorCode'
-import { MessageEnvelope, ResponseEnvelope, TransportState } from '../../../../src/transport/MessageTransport'
+import { MessageEnvelope, ResponseEnvelope, TransportState, SignProgressInfo } from '../../../../src/transport/MessageTransport'
 
 interface MockPopup {
   closed: boolean
@@ -17,8 +18,8 @@ interface MockPopup {
   postMessage: jest.Mock
 }
 
-const DEFAULT_URL = 'https://bridge.dcentwallet.com/v2'
-const DEFAULT_ORIGIN = 'https://bridge.dcentwallet.com'
+const DEFAULT_URL = 'https://v2bridge.dcentwallet.com/'
+const DEFAULT_ORIGIN = 'https://v2bridge.dcentwallet.com'
 
 function makeMockPopup(): MockPopup {
   const popup: MockPopup = {
@@ -35,8 +36,24 @@ function makeEnvelope(id: string, method = 'test_method'): MessageEnvelope<{ x: 
   return { id, method, params: { x: 1 } }
 }
 
-function dispatchResponse(origin: string, data: unknown): void {
+/**
+ * 현재 테스트의 팝업 stub — `dispatchResponse` 가 `event.source` 로 붙인다.
+ * beforeEach 가 매번 갱신한다(테스트 간 누수 방지로 afterEach 에서 null).
+ */
+let activeMockPopup: unknown = null
+
+/**
+ * 팝업이 보낸 메시지를 흉내낸다.
+ *
+ * 🔴 `source` 를 반드시 실어야 한다 — `_deviceState` 분기가 `event.source !== this.popupWindow`
+ * 로 현재 팝업 바인딩을 검사하기 때문이다(같은 origin 의 다른 창이 기기 축을 뒤집는 것을 막는
+ * 가드). `MessageEvent` 생성자는 임의 객체를 `source` 로 받지 않으므로 defineProperty 로 붙인다.
+ *
+ * @param source 기본값은 현재 팝업. **다른 창에서 온 메시지**를 흉내내려면 명시적으로 넘긴다.
+ */
+function dispatchResponse(origin: string, data: unknown, source: unknown = activeMockPopup): void {
   const event = new MessageEvent('message', { origin, data: data as never })
+  Object.defineProperty(event, 'source', { value: source, configurable: true })
   window.dispatchEvent(event)
 }
 
@@ -141,6 +158,8 @@ describe('PopupTransport', () => {
   beforeEach(() => {
     jest.useFakeTimers()
     mockPopup = makeMockPopup()
+    // dispatchResponse 의 기본 event.source — 실제로는 팝업이 보내므로 테스트도 그렇게 흉내낸다.
+    activeMockPopup = mockPopup
     openSpy = jest
       .spyOn(window, 'open')
       .mockImplementation(() => mockPopup as unknown as Window)
@@ -152,6 +171,7 @@ describe('PopupTransport', () => {
     jest.useRealTimers()
     openSpy.mockRestore()
     uninstallReadyAutoRespond()
+    activeMockPopup = null
   })
 
   // ===== T-U-01: send happy path =====
@@ -272,7 +292,8 @@ describe('PopupTransport', () => {
   // ===== T-U-07: origin mismatch =====
   describe('T-U-07: origin mismatch silent drop', () => {
     it('다른 origin의 메시지는 무시 — pending 영향 0', async () => {
-      transport = new PopupTransport()
+      // timeout을 assertion 수단으로만 사용 — default(180s)와 분리해 60000으로 고정
+      transport = new PopupTransport({ timeoutMs: 60000 })
       const promise = transport.send(makeEnvelope('req-1'))
       await flushHandshake()
 
@@ -294,7 +315,8 @@ describe('PopupTransport', () => {
       ['T-U-08c (id 누락)', { result: 'no-id' }],
       ['T-U-08d (id non-string)', { id: 123, result: 'x' }],
     ])('%s → silent drop, pending unchanged', async (_label, badData) => {
-      transport = new PopupTransport()
+      // timeout을 assertion 수단으로만 사용 — default(180s)와 분리해 60000으로 고정
+      transport = new PopupTransport({ timeoutMs: 60000 })
       const promise = transport.send(makeEnvelope('req-1'))
       await flushHandshake()
 
@@ -310,7 +332,8 @@ describe('PopupTransport', () => {
   // ===== T-U-09: unknown id silent drop =====
   describe('T-U-09: unknown id silent drop', () => {
     it('모르는 id의 응답은 무시 (이미 timeout 처리된 후 도착할 수 있음)', async () => {
-      transport = new PopupTransport()
+      // timeout을 assertion 수단으로만 사용 — default(180s)와 분리해 60000으로 고정
+      transport = new PopupTransport({ timeoutMs: 60000 })
       const promise = transport.send(makeEnvelope('req-1'))
       await flushHandshake()
 
@@ -389,7 +412,9 @@ describe('PopupTransport', () => {
 
       void transport.send(makeEnvelope('a')).catch(() => {})
       await flushHandshake()
-      expect(handler).toHaveBeenCalledWith('connected')
+      // (2026-08-10) state 이벤트는 2번째 인자(detail)가 추가됐다. 1번째 인자의 의미는
+      // v1 그대로(팝업 축)여야 하므로 그 축만 단언한다.
+      expect(handler.mock.calls.at(-1)?.[0]).toBe('connected')
 
       transport.off('state', handler)
       handler.mockClear()
@@ -406,7 +431,7 @@ describe('PopupTransport', () => {
       transport.on('state', handler)
 
       await transport.close()
-      expect(handler).toHaveBeenCalledWith('disconnected')
+      expect(handler.mock.calls.at(-1)?.[0]).toBe('disconnected')
     })
   })
 
@@ -439,7 +464,16 @@ describe('PopupTransport', () => {
       expect(openSpy).toHaveBeenCalledWith(DEFAULT_URL, '_blank')
       expect(mockPopup.postMessage).toHaveBeenCalledWith(expect.any(Object), DEFAULT_ORIGIN)
 
+      // default timeout = 180000 (60s에서 상향, CIP-95 2회 서명 대응).
+      // 60000으로의 회귀를 잡기 위해: 60s 시점엔 아직 pending, 180s에 TIMEOUT.
+      let settled = false
+      promise.then(() => { settled = true }, () => { settled = true })
+
       jest.advanceTimersByTime(60000)
+      await Promise.resolve()
+      expect(settled).toBe(false) // 60s에 안 끊김 → default > 60s 증명
+
+      jest.advanceTimersByTime(120000) // 총 180s
       await expect(promise).rejects.toMatchObject({ code: ErrorCode.TIMEOUT })
 
       await transport.close()
@@ -486,10 +520,11 @@ describe('PopupTransport', () => {
         (c: unknown[]) => (c[0] as { method?: string })?.method === '_handshake',
       )
       expect(handshakeCalls.length).toBe(1)
-      const handshakeMsg = handshakeCalls[0][0] as { id: string; method: string; params: { version: string; clientName: string } }
+      const handshakeMsg = handshakeCalls[0][0] as { id: string; method: string; params: { version: string; clientName: string; transport: string | undefined } }
       expect(handshakeMsg.id.startsWith('_handshake_')).toBe(true)
       expect(handshakeMsg.method).toBe('_handshake')
-      expect(handshakeMsg.params).toEqual({ version: '2.0', clientName: 'connector' })
+      // m09-04-03 / DC-2701: 옵션 미명시 → default(transport undefined). sdk가 둘 다 picker + HID auto.
+      expect(handshakeMsg.params).toEqual({ version: '2.0', clientName: 'connector', transport: undefined })
       expect(handshakeCalls[0][1]).toBe(DEFAULT_ORIGIN)
 
       await transport.close()
@@ -574,8 +609,9 @@ describe('PopupTransport', () => {
 
   // ===== T-U-HS-05: handshake timeout =====
   describe('T-U-HS-05: handshake timeout', () => {
-    it('default 60s 안에 ack 안 옴 → TIMEOUT reject + close()', async () => {
-      transport = new PopupTransport()
+    it('handshakeTimeoutMs 안에 ack 안 옴 → TIMEOUT reject + close()', async () => {
+      // handshake는 전용 handshakeTimeoutMs 사용 — assertion 수단으로 60000 고정
+      transport = new PopupTransport({ handshakeTimeoutMs: 60000 })
       // handshake auto-respond 비활성화 (응답 안 옴)
       mockPopup.postMessage.mockImplementation(() => { /* swallow */ })
 
@@ -586,6 +622,46 @@ describe('PopupTransport', () => {
 
       await expect(promise).rejects.toMatchObject({ code: ErrorCode.TIMEOUT })
       expect(mockPopup.close).toHaveBeenCalled()
+    })
+  })
+
+  // ===== T-U-HS-07: handshake timeout이 request timeoutMs(180s)에 커플링되지 않음 =====
+  // Claude 크로스 리뷰 WARNING 회귀 가드 (PR #175): timeoutMs 180s 상향이
+  // handshake ack까지 상속하면 dead popup이 190s 붙잡는 latency 회귀. handshake는
+  // 전용 default 60s를 유지해야 한다.
+  describe('T-U-HS-07: handshake timeout decoupled from request timeoutMs', () => {
+    it('timeoutMs=180000(default)여도 handshake는 60s에 TIMEOUT (180s 미상속)', async () => {
+      // request timeout만 180s, handshakeTimeoutMs는 미지정 → default 60s
+      transport = new PopupTransport({ timeoutMs: 180000 })
+      mockPopup.postMessage.mockImplementation(() => { /* ack 안 옴 */ })
+
+      const promise = transport.send(makeEnvelope('req-1'))
+      let settled = false
+      promise.then(() => { settled = true }, () => { settled = true })
+      await flushHandshake()
+
+      // 59s 시점: 아직 pending (60s 미도달)
+      jest.advanceTimersByTime(59000)
+      await Promise.resolve()
+      expect(settled).toBe(false)
+
+      // 60s 시점: handshake TIMEOUT (180s를 기다리지 않음)
+      jest.advanceTimersByTime(1000)
+      await expect(promise).rejects.toMatchObject({ code: ErrorCode.TIMEOUT })
+      expect(mockPopup.close).toHaveBeenCalled()
+    })
+  })
+
+  // ===== T-U-HS-08: handshakeTimeoutMs boundary-validation =====
+  describe('T-U-HS-08: handshakeTimeoutMs 검증', () => {
+    it.each([
+      ['0', 0],
+      ['음수', -1],
+      ['NaN', NaN],
+      ['Infinity', Number.POSITIVE_INFINITY],
+    ])('%s → INVALID_PARAMS throw', (_label, bad) => {
+      expect(() => new PopupTransport({ handshakeTimeoutMs: bad as number }))
+        .toThrow(ProviderError)
     })
   })
 
@@ -988,6 +1064,586 @@ describe('PopupTransport', () => {
       expect(t.readyTimer).toBeNull()
       expect(t.readyPromise).toBeNull()
       expect(t.resolveReady).toBeNull()
+    })
+  })
+
+  // ===== T-U-SIGNPROGRESS-CONN-01: 정상 progress 수신 =====
+  describe('T-U-SIGNPROGRESS-CONN-01: pending id의 유효 _signProgress', () => {
+    it('handler가 정확한 SignProgressInfo로 1회 호출', async () => {
+      transport = new PopupTransport({ timeoutMs: 60000 })
+      const handler = jest.fn<void, [SignProgressInfo]>()
+      transport.on('signProgress', handler)
+
+      const promise = transport.send(makeEnvelope('req-sp-1'))
+      await flushHandshake()
+
+      dispatchResponse(DEFAULT_ORIGIN, {
+        id: 'req-sp-1', type: '_signProgress', step: 1, total: 2, role: 'payment',
+      })
+
+      expect(handler).toHaveBeenCalledTimes(1)
+      expect(handler).toHaveBeenCalledWith({
+        requestId: 'req-sp-1', step: 1, total: 2, role: 'payment',
+      })
+
+      dispatchResponse(DEFAULT_ORIGIN, { id: 'req-sp-1', result: { ok: true } })
+      await promise
+      await transport.close()
+    })
+  })
+
+  // ===== T-U-SIGNPROGRESS-CONN-02: stale/미매칭 id =====
+  describe('T-U-SIGNPROGRESS-CONN-02: pending에 없는 id', () => {
+    it('handler 미호출 + 원 요청은 그대로 timeout', async () => {
+      transport = new PopupTransport({ timeoutMs: 60000 })
+      const handler = jest.fn<void, [SignProgressInfo]>()
+      transport.on('signProgress', handler)
+
+      const promise = transport.send(makeEnvelope('req-sp-2'))
+      await flushHandshake()
+
+      dispatchResponse(DEFAULT_ORIGIN, {
+        id: 'not-a-pending-id', type: '_signProgress', step: 1, total: 2,
+      })
+      expect(handler).not.toHaveBeenCalled()
+
+      jest.advanceTimersByTime(60000)
+      await expect(promise).rejects.toMatchObject({ code: ErrorCode.TIMEOUT })
+      await transport.close()
+    })
+  })
+
+  // ===== T-U-SIGNPROGRESS-CONN-11: 내부 handshake id는 progress 채널에서 필터링된다 =====
+  describe('T-U-SIGNPROGRESS-CONN-11: handshake id 필터링', () => {
+    it('아직 pending인 _handshake_* id로 온 progress는 무시된다 (내부 id 비노출)', async () => {
+      transport = new PopupTransport({ timeoutMs: 60000 })
+      const handler = jest.fn<void, [SignProgressInfo]>()
+      transport.on('signProgress', handler)
+
+      let handshakeId: string | undefined
+      mockPopup.postMessage.mockImplementation((message: { method?: unknown; id?: unknown }, msgOrigin: string) => {
+        if (message?.method === '_handshake' && typeof message.id === 'string') {
+          handshakeId = message.id
+          // handshake id가 this.pending에 이미 등록된 시점(postMessage 직전 set) — 그 id로
+          // progress를 흉내내도 handshake-prefix 가드가 pending 여부와 무관하게 먼저 막아야 한다.
+          dispatchResponse(msgOrigin, { id: message.id, type: '_signProgress', step: 1, total: 2 })
+          Promise.resolve().then(() => {
+            dispatchResponse(msgOrigin, {
+              id: message.id, result: { version: '2.0', serverName: 'bridge-ui' },
+            })
+          })
+        }
+      })
+      installReadyAutoRespondOnce(DEFAULT_ORIGIN, '2.0', 'bridge-ui')
+
+      void transport.send(makeEnvelope('req-sp-11')).catch(() => {})
+      await flushHandshake()
+
+      expect(handshakeId).toMatch(/^_handshake_/)
+      expect(handler).not.toHaveBeenCalled()
+      await transport.close()
+    })
+  })
+
+  // ===== T-U-SIGNPROGRESS-CONN-03: malformed payload silent ignore =====
+  describe('T-U-SIGNPROGRESS-CONN-03: malformed payload', () => {
+    it.each([
+      ['CONN-03a (step 누락)', { id: 'req-sp-3', type: '_signProgress', total: 2 }],
+      ['CONN-03b (total 누락)', { id: 'req-sp-3', type: '_signProgress', step: 1 }],
+      ['CONN-03c (step non-number)', { id: 'req-sp-3', type: '_signProgress', step: '1', total: 2 }],
+      ['CONN-03d (total non-number)', { id: 'req-sp-3', type: '_signProgress', step: 1, total: null }],
+      ['CONN-03e (id 누락)', { type: '_signProgress', step: 1, total: 2 }],
+      ['CONN-03f (id non-string)', { id: 42, type: '_signProgress', step: 1, total: 2 }],
+      ['CONN-03g (step NaN)', { id: 'req-sp-3', type: '_signProgress', step: NaN, total: 2 }],
+      ['CONN-03h (total Infinity)', { id: 'req-sp-3', type: '_signProgress', step: 1, total: Infinity }],
+      ['CONN-03i (step 0)', { id: 'req-sp-3', type: '_signProgress', step: 0, total: 2 }],
+      ['CONN-03j (step 음수)', { id: 'req-sp-3', type: '_signProgress', step: -1, total: 2 }],
+      ['CONN-03k (step 소수)', { id: 'req-sp-3', type: '_signProgress', step: 1.5, total: 2 }],
+      ['CONN-03l (total 0)', { id: 'req-sp-3', type: '_signProgress', step: 1, total: 0 }],
+      ['CONN-03m (step > total)', { id: 'req-sp-3', type: '_signProgress', step: 3, total: 2 }],
+      ['CONN-03n (top-level data가 배열)', ['req-sp-3', '_signProgress', 1, 2]],
+    ])('%s → throw 없이 silent ignore + pending 보존', async (_label, badData) => {
+      transport = new PopupTransport({ timeoutMs: 60000 })
+      const handler = jest.fn<void, [SignProgressInfo]>()
+      transport.on('signProgress', handler)
+
+      const promise = transport.send(makeEnvelope('req-sp-3'))
+      await flushHandshake()
+
+      expect(() => dispatchResponse(DEFAULT_ORIGIN, badData)).not.toThrow()
+      expect(handler).not.toHaveBeenCalled()
+
+      // pending이 보존되었는지 — 진짜 최종 응답이 여전히 resolve된다
+      dispatchResponse(DEFAULT_ORIGIN, { id: 'req-sp-3', result: { ok: true } })
+      const res = (await promise) as ResponseEnvelope<{ ok: true }>
+      expect(res.result).toEqual({ ok: true })
+      await transport.close()
+    })
+  })
+
+  // ===== T-U-SIGNPROGRESS-CONN-04: pending 미삭제 회귀 가드 =====
+  describe('T-U-SIGNPROGRESS-CONN-04: progress 후 최종 응답 정상 resolve', () => {
+    it('progress 2회 수신해도 pending 유지 → 최종 응답 resolve', async () => {
+      transport = new PopupTransport({ timeoutMs: 60000 })
+      const handler = jest.fn<void, [SignProgressInfo]>()
+      transport.on('signProgress', handler)
+
+      const promise = transport.send(makeEnvelope('req-sp-4'))
+      await flushHandshake()
+
+      dispatchResponse(DEFAULT_ORIGIN, { id: 'req-sp-4', type: '_signProgress', step: 1, total: 3 })
+      dispatchResponse(DEFAULT_ORIGIN, { id: 'req-sp-4', type: '_signProgress', step: 2, total: 3 })
+
+      expect(handler).toHaveBeenCalledTimes(2)
+      expect(handler).toHaveBeenNthCalledWith(1, { requestId: 'req-sp-4', step: 1, total: 3, role: undefined })
+
+      dispatchResponse(DEFAULT_ORIGIN, { id: 'req-sp-4', result: { done: true } })
+      const res = (await promise) as ResponseEnvelope<{ done: true }>
+      expect(res.result).toEqual({ done: true })
+      await transport.close()
+    })
+  })
+
+  // ===== T-U-SIGNPROGRESS-CONN-05: 기존 경로 회귀 0 =====
+  describe('T-U-SIGNPROGRESS-CONN-05: _ready / 일반 응답 경로 회귀 0', () => {
+    it('signProgress 리스너가 등록되어 있어도 _ready 게이트 + 일반 응답 매칭이 그대로 동작', async () => {
+      transport = new PopupTransport({ timeoutMs: 60000 })
+      const handler = jest.fn<void, [SignProgressInfo]>()
+      transport.on('signProgress', handler)
+
+      const env = makeEnvelope('req-sp-5')
+      const promise = transport.send<{ x: number }, { ok: true }>(env)
+      await flushHandshake()
+
+      // _ready 게이트가 열렸어야 실제 send postMessage가 나간다
+      expect(mockPopup.postMessage).toHaveBeenCalledWith(env, DEFAULT_ORIGIN)
+
+      // 일반 응답(type 필드 없음)은 새 분기에 가로채이지 않고 정상 resolve
+      dispatchResponse(DEFAULT_ORIGIN, { id: 'req-sp-5', result: { ok: true } })
+      const res = (await promise) as ResponseEnvelope<{ ok: true }>
+      expect(res.result).toEqual({ ok: true })
+      expect(handler).not.toHaveBeenCalled()
+      await transport.close()
+    })
+  })
+
+  // ===== T-U-SIGNPROGRESS-CONN-07: 다중 리스너 + off + 에러 격리 =====
+  describe('T-U-SIGNPROGRESS-CONN-07: 다중 리스너 / off / 에러 격리', () => {
+    it('CONN-07a: 2개 등록 시 둘 다 호출, off한 리스너는 이후 미호출', async () => {
+      transport = new PopupTransport({ timeoutMs: 60000 })
+      const h1 = jest.fn<void, [SignProgressInfo]>()
+      const h2 = jest.fn<void, [SignProgressInfo]>()
+      transport.on('signProgress', h1)
+      transport.on('signProgress', h2)
+
+      const promise = transport.send(makeEnvelope('req-sp-7'))
+      await flushHandshake()
+
+      dispatchResponse(DEFAULT_ORIGIN, { id: 'req-sp-7', type: '_signProgress', step: 1, total: 2 })
+      expect(h1).toHaveBeenCalledTimes(1)
+      expect(h2).toHaveBeenCalledTimes(1)
+
+      transport.off('signProgress', h1)
+      dispatchResponse(DEFAULT_ORIGIN, { id: 'req-sp-7', type: '_signProgress', step: 2, total: 2 })
+      expect(h1).toHaveBeenCalledTimes(1) // off 이후 미호출
+      expect(h2).toHaveBeenCalledTimes(2)
+
+      dispatchResponse(DEFAULT_ORIGIN, { id: 'req-sp-7', result: { ok: true } })
+      await promise
+      await transport.close()
+    })
+
+    it('CONN-07b: 한 리스너가 throw해도 나머지 리스너 호출 + 메시지 루프 생존', async () => {
+      transport = new PopupTransport({ timeoutMs: 60000 })
+      const bad = jest.fn<void, [SignProgressInfo]>(() => { throw new Error('listener boom') })
+      const good = jest.fn<void, [SignProgressInfo]>()
+      transport.on('signProgress', bad)
+      transport.on('signProgress', good)
+
+      const promise = transport.send(makeEnvelope('req-sp-7b'))
+      await flushHandshake()
+
+      expect(() => dispatchResponse(DEFAULT_ORIGIN, {
+        id: 'req-sp-7b', type: '_signProgress', step: 1, total: 2,
+      })).not.toThrow()
+      expect(bad).toHaveBeenCalledTimes(1)
+      expect(good).toHaveBeenCalledTimes(1)
+
+      // 루프 생존 — 이후 최종 응답도 정상 처리
+      dispatchResponse(DEFAULT_ORIGIN, { id: 'req-sp-7b', result: { ok: true } })
+      await promise
+      await transport.close()
+    })
+  })
+
+  // ===== T-U-SIGNPROGRESS-CONN-08: role opaque passthrough =====
+  describe('T-U-SIGNPROGRESS-CONN-08: role opaque', () => {
+    it('알려지지 않은 role 문자열도 그대로 전달, non-string role은 undefined로 정규화', async () => {
+      transport = new PopupTransport({ timeoutMs: 60000 })
+      const handler = jest.fn<void, [SignProgressInfo]>()
+      transport.on('signProgress', handler)
+
+      const promise = transport.send(makeEnvelope('req-sp-8'))
+      await flushHandshake()
+
+      dispatchResponse(DEFAULT_ORIGIN, {
+        id: 'req-sp-8', type: '_signProgress', step: 1, total: 2, role: 'unknown-future-key',
+      })
+      expect(handler).toHaveBeenNthCalledWith(1, {
+        requestId: 'req-sp-8', step: 1, total: 2, role: 'unknown-future-key',
+      })
+
+      dispatchResponse(DEFAULT_ORIGIN, {
+        id: 'req-sp-8', type: '_signProgress', step: 2, total: 2, role: 42,
+      })
+      expect(handler).toHaveBeenNthCalledWith(2, {
+        requestId: 'req-sp-8', step: 2, total: 2, role: undefined,
+      })
+
+      dispatchResponse(DEFAULT_ORIGIN, { id: 'req-sp-8', result: { ok: true } })
+      await promise
+      await transport.close()
+    })
+  })
+
+  // ===== T-U-SIGNPROGRESS-CONN-09: 리스너 미등록 no-op =====
+  describe('T-U-SIGNPROGRESS-CONN-09: 리스너 미등록 상태', () => {
+    it('_signProgress 수신해도 throw 없음 + side-effect 없음', async () => {
+      transport = new PopupTransport({ timeoutMs: 60000 })
+      // on('signProgress', ...) 호출하지 않음 — signProgressHandlers는 빈 Set
+
+      const promise = transport.send(makeEnvelope('req-sp-9'))
+      await flushHandshake()
+
+      expect(() => dispatchResponse(DEFAULT_ORIGIN, {
+        id: 'req-sp-9', type: '_signProgress', step: 1, total: 2, role: 'payment',
+      })).not.toThrow()
+
+      // side-effect 0 — pending 그대로라 최종 응답이 정상 resolve
+      dispatchResponse(DEFAULT_ORIGIN, { id: 'req-sp-9', result: { ok: true } })
+      const res = (await promise) as ResponseEnvelope<{ ok: true }>
+      expect(res.result).toEqual({ ok: true })
+      await transport.close()
+    })
+  })
+
+  // ===== T-U-SIGNPROGRESS-CONN-10: close() 후 리스너 생존 (크로스 리뷰 C1 수정, m09-04-27 API-03) =====
+  // close()는 (a) resetSingleton()이 인스턴스를 통째로 버리는 경로와 (b) 팝업을 X로 닫거나
+  // handshake가 실패해 같은 인스턴스로 재오픈을 전제하는 내부 self-close 경로 둘 다에서 호출된다.
+  // (b) 경로에서 handler Set을 비우면 singleton의 재등록 루프(`_transport === null`일 때만 동작)가
+  // 돌지 않아 dApp 리스너가 그 페이지 세션 내내 침묵한다 — close()는 handler Set을 건드리지 않는다.
+  describe('T-U-SIGNPROGRESS-CONN-10: close() 후에도 리스너가 생존한다', () => {
+    interface HandlerSets {
+      stateHandlers: Set<unknown>
+      signProgressHandlers: Set<unknown>
+    }
+
+    it('T-U-SIGNPROGRESS-CONN-10a: close()는 stateHandlers / signProgressHandlers를 비우지 않는다', async () => {
+      transport = new PopupTransport()
+      const stateHandler = jest.fn<void, [TransportState]>()
+      const progressHandler = jest.fn<void, [SignProgressInfo]>()
+      transport.on('state', stateHandler)
+      transport.on('signProgress', progressHandler)
+
+      void transport.send(makeEnvelope('a')).catch(() => {})
+      await flushHandshake()
+
+      // eslint-disable-next-line uap/no-as-unknown-as -- private Set 필드(stateHandlers/signProgressHandlers) 직접 접근 목적, mock factory 아님(실 인스턴스 캐스팅)
+      const sets = transport as unknown as HandlerSets
+      expect(sets.signProgressHandlers.size).toBe(1)
+
+      await transport.close()
+
+      // 인스턴스가 살아있는 한(= resetSingleton 미경유) 두 Set 모두 유지되어야 한다
+      expect(sets.stateHandlers.size).toBe(1)
+      expect(sets.signProgressHandlers.size).toBe(1)
+    })
+
+    it('T-U-SIGNPROGRESS-CONN-10b: close() 후 재오픈해도 signProgress 리스너가 계속 발동한다', async () => {
+      transport = new PopupTransport()
+      const progressHandler = jest.fn<void, [SignProgressInfo]>()
+      transport.on('signProgress', progressHandler)
+
+      void transport.send(makeEnvelope('a')).catch(() => {})
+      await flushHandshake()
+
+      await transport.close()
+      progressHandler.mockClear()
+
+      // 재오픈 — close()가 handshakePromise / readyPromise / popupWindow를 리셋해두므로
+      // 같은 인스턴스로 새 세션을 열 수 있다. 이때 messageListener가 다시 설치된다.
+      void transport.send(makeEnvelope('b')).catch(() => {})
+      await flushHandshake()
+
+      // 새 세션의 pending id로 유효한 progress를 보낸다.
+      // C1 수정 전에는 close()가 Set을 비워 여기서 리스너가 호출되지 않는 회귀가 있었다.
+      dispatchResponse(DEFAULT_ORIGIN, { id: 'b', type: '_signProgress', step: 1, total: 2, role: 'payment' })
+
+      expect(progressHandler).toHaveBeenCalledWith({ requestId: 'b', step: 1, total: 2, role: 'payment' })
+    })
+
+    it('T-U-SIGNPROGRESS-CONN-10c: close() 후 재오픈해도 state 리스너가 계속 발동한다 (대칭 회귀 가드)', async () => {
+      transport = new PopupTransport()
+      const stateHandler = jest.fn<void, [TransportState]>()
+      transport.on('state', stateHandler)
+
+      void transport.send(makeEnvelope('a')).catch(() => {})
+      await flushHandshake()
+      stateHandler.mockClear()
+
+      await transport.close()
+      // close()가 setState('disconnected')를 호출하므로 close 자체로 1회 호출된다
+      expect(stateHandler.mock.calls.at(-1)?.[0]).toBe('disconnected')
+      stateHandler.mockClear()
+
+      // 재오픈 시 connected로 다시 전환되는 것을 재등록 없이 그대로 관찰할 수 있어야 한다
+      void transport.send(makeEnvelope('b')).catch(() => {})
+      await flushHandshake()
+
+      expect(stateHandler.mock.calls.at(-1)?.[0]).toBe('connected')
+    })
+  })
+
+  // ===== 2026-08-10: 기기 축(_deviceState) =====
+  //
+  // 그때까지 `state` 이벤트는 **팝업 창의 생사**만 알렸다. 팝업이 열린 채로 USB 를 뽑아도
+  // 아무 신호가 안 나가서, dApp 은 "connected 하나 찍히고 그 뒤로 조용"한 것만 봤다.
+  // bridge 가 `_deviceState` 를 push 하고 여기서 기기 축을 더해 **두 축 중 하나라도 바뀌면**
+  // 발행한다. 1번째 인자의 의미(팝업 축)는 v1 호환 때문에 바꾸지 않는다.
+  describe('T-U-DEVSTATE-01~07: 기기 축 통합 (2026-08-10)', () => {
+    async function connected(): Promise<jest.Mock> {
+      transport = new PopupTransport()
+      const h = jest.fn()
+      transport.on('state', h)
+      void transport.send(makeEnvelope('a')).catch(() => {})
+      await flushHandshake()
+      h.mockClear() // 팝업 open 으로 인한 connected 1건 제거
+      return h
+    }
+
+    it('T-U-DEVSTATE-01: 🔴 팝업은 그대로인데 기기만 연결돼도 발행된다 (이 갭이 제보의 핵심)', async () => {
+      const h = await connected()
+      dispatchResponse(DEFAULT_ORIGIN, {
+        type: '_deviceState',
+        device: 'connected',
+        info: { deviceId: 'DEADBEEF0123', label: "D'CENT X", version: '2.35.1', deviceModel: 'DCENT-X', connectType: 'usb', coinCount: 42 },
+      })
+      expect(h).toHaveBeenCalledTimes(1)
+      // 1번째 인자는 팝업 축 — 여전히 connected (의미 불변)
+      expect(h.mock.calls[0][0]).toBe('connected')
+      expect(h.mock.calls[0][1]).toEqual({
+        popup: 'connected',
+        device: 'connected',
+        deviceInfo: { deviceId: 'DEADBEEF0123', label: "D'CENT X", version: '2.35.1', deviceModel: 'DCENT-X', connectType: 'usb', coinCount: 42 },
+      })
+    })
+
+    it('T-U-DEVSTATE-02: 🔴 팝업이 열린 채 기기만 빠져도 발행된다 (USB 뽑기)', async () => {
+      const h = await connected()
+      dispatchResponse(DEFAULT_ORIGIN, { type: '_deviceState', device: 'connected', info: { label: 'X' } })
+      h.mockClear()
+      dispatchResponse(DEFAULT_ORIGIN, { type: '_deviceState', device: 'disconnected' })
+      expect(h).toHaveBeenCalledTimes(1)
+      expect(h.mock.calls[0][0]).toBe('connected') // 팝업은 살아있다
+      expect(h.mock.calls[0][1].device).toBe('disconnected')
+      // 빠진 기기의 정보를 남겨두지 않는다
+      expect(h.mock.calls[0][1].deviceInfo).toBeUndefined()
+    })
+
+    it('T-U-DEVSTATE-03: 두 축 모두 그대로면 발행하지 않는다 (쌍 dedupe)', async () => {
+      const h = await connected()
+      dispatchResponse(DEFAULT_ORIGIN, { type: '_deviceState', device: 'connected', info: { label: 'X' } })
+      h.mockClear()
+      // 같은 상태 재통지 — 정보 필드가 달라도 축이 그대로면 리스너를 깨우지 않는다.
+      dispatchResponse(DEFAULT_ORIGIN, { type: '_deviceState', device: 'connected', info: { label: 'Y' } })
+      expect(h).not.toHaveBeenCalled()
+    })
+
+    it('T-U-DEVSTATE-04: 팝업이 닫히면 기기 축은 unknown 으로 되돌아간다 (disconnected 로 단정하지 않음)', async () => {
+      const h = await connected()
+      dispatchResponse(DEFAULT_ORIGIN, { type: '_deviceState', device: 'connected', info: { label: 'X' } })
+      h.mockClear()
+      await transport.close()
+      expect(h).toHaveBeenCalledTimes(1) // 두 축이 함께 바뀌어도 발행은 1회
+      expect(h.mock.calls[0][0]).toBe('disconnected')
+      expect(h.mock.calls[0][1]).toEqual({ popup: 'disconnected', device: 'unknown', deviceInfo: undefined })
+    })
+
+    it('T-U-DEVSTATE-05: 알 수 없는 device 값은 축을 오염시키지 않는다 (boundary-validation)', async () => {
+      const h = await connected()
+      dispatchResponse(DEFAULT_ORIGIN, { type: '_deviceState', device: 'weird' })
+      dispatchResponse(DEFAULT_ORIGIN, { type: '_deviceState' })
+      expect(h).not.toHaveBeenCalled()
+    })
+
+    it('T-U-DEVSTATE-06: info 는 known-fields 만 통과한다 (dapp-input-sanitization)', async () => {
+      const h = await connected()
+      dispatchResponse(DEFAULT_ORIGIN, {
+        type: '_deviceState',
+        device: 'connected',
+        info: { label: 'X', evil: 'DROP', ksm_version: 'SHOULD-NOT-PASS', state: 'initialised', connectType: 'nope', coinCount: -1 },
+      })
+      const detail = h.mock.calls[0][1]
+      // 🔴 이름은 `getDeviceInfo()` 응답과 같아야 한다 — 두 API 를 같이 쓰는 dApp 이 어휘를 두 벌
+      //    배우지 않게 하려는 것이 이 계약의 목적이라, 키 이름 자체가 회귀 대상이다.
+      expect(Object.keys(detail.deviceInfo)).toEqual(['deviceId', 'label', 'version', 'deviceModel', 'connectType', 'coinCount'])
+      expect(detail.deviceInfo.label).toBe('X')
+      // 화이트리스트 밖 필드는 실리지 않는다.
+      expect('evil' in detail.deviceInfo).toBe(false)
+      // deviceId 는 이제 계약에 포함된다(2026-08-10 결정 변경) — 대신 ksm_version/state 는 여전히 제외.
+      expect('ksm_version' in detail.deviceInfo).toBe(false)
+      expect('state' in detail.deviceInfo).toBe(false)
+      // 형식 위반 값은 undefined 로 접힌다(잘못된 값을 그대로 노출하지 않는다).
+      expect(detail.deviceInfo.connectType).toBeUndefined()
+      expect(detail.deviceInfo.coinCount).toBeUndefined()
+    })
+
+    it('T-U-DEVSTATE-07: detail 은 freeze 되어 dApp 이 내부 상태를 오염시킬 수 없다 (mutation-isolation)', async () => {
+      const h = await connected()
+      dispatchResponse(DEFAULT_ORIGIN, { type: '_deviceState', device: 'connected', info: { label: 'X' } })
+      const detail = h.mock.calls[0][1]
+      expect(Object.isFrozen(detail)).toBe(true)
+      expect(Object.isFrozen(detail.deviceInfo)).toBe(true)
+    })
+
+    it('T-U-DEVSTATE-08: id 가 없으므로 pending 응답 매칭을 건드리지 않는다 (하위호환 축)', async () => {
+      transport = new PopupTransport({ timeoutMs: 60000 })
+      const p = transport.send(makeEnvelope('a'))
+      await flushHandshake()
+      // `_deviceState` 는 id 가 없다 — 이 메시지가 'a' 를 조기 resolve 시키면 안 된다.
+      dispatchResponse(DEFAULT_ORIGIN, { type: '_deviceState', device: 'connected' })
+      let settled = false
+      void p.then(() => { settled = true }, () => { settled = true })
+      await Promise.resolve()
+      expect(settled).toBe(false)
+      // 진짜 응답이 와야 resolve 된다.
+      dispatchResponse(DEFAULT_ORIGIN, { id: 'a', result: { ok: true } })
+      await expect(p).resolves.toEqual({ id: 'a', result: { ok: true } })
+    })
+
+    // ===== PR #177 리뷰 반영 (2026-08-11) =====
+
+    it('T-U-DEVSTATE-09: 🔴 기기가 바뀌면(deviceId 변경) 같은 connected 라도 발행된다', async () => {
+      const h = await connected()
+      // (1) bridge 가 getDeviceInfo 실패로 **info 없이** connected 를 보낸 상태
+      dispatchResponse(DEFAULT_ORIGIN, { type: '_deviceState', device: 'connected' })
+      expect(h).toHaveBeenCalledTimes(1)
+      expect(h.mock.calls[0][1].deviceInfo).toBeUndefined()
+      h.mockClear()
+
+      // (2) 기기가 준비돼 실제 정보가 담긴 connected 가 다시 온다 — device 축은 그대로다.
+      //     deviceId 를 비교에 넣지 않으면 여기서 발행이 안 되고 dApp 은 빈 정보에 고정된다.
+      dispatchResponse(DEFAULT_ORIGIN, {
+        type: '_deviceState',
+        device: 'connected',
+        info: { deviceId: 'DEV-A', label: 'first' },
+      })
+      expect(h).toHaveBeenCalledTimes(1)
+      expect(h.mock.calls[0][1].deviceInfo.deviceId).toBe('DEV-A')
+      h.mockClear()
+
+      // (3) 다른 기기로 교체 — 축은 여전히 connected 지만 식별자가 다르므로 발행돼야 한다.
+      dispatchResponse(DEFAULT_ORIGIN, {
+        type: '_deviceState',
+        device: 'connected',
+        info: { deviceId: 'DEV-B', label: 'second' },
+      })
+      expect(h).toHaveBeenCalledTimes(1)
+      expect(h.mock.calls[0][1].deviceInfo.deviceId).toBe('DEV-B')
+    })
+
+    it('T-U-DEVSTATE-10: 대조군 — deviceId 가 같으면 표시 필드만 달라도 발행하지 않는다', async () => {
+      const h = await connected()
+      dispatchResponse(DEFAULT_ORIGIN, {
+        type: '_deviceState',
+        device: 'connected',
+        info: { deviceId: 'DEV-A', label: 'X', version: '1.0.0' },
+      })
+      h.mockClear()
+      // 같은 기기의 표시 필드만 변한 재통지 — dedupe 의 원래 목적(잡음 억제)은 유지돼야 한다.
+      // 이 단언이 없으면 T-U-DEVSTATE-09 를 "전부 발행" 으로 고쳐도 통과한다(판별력 확보).
+      dispatchResponse(DEFAULT_ORIGIN, {
+        type: '_deviceState',
+        device: 'connected',
+        info: { deviceId: 'DEV-A', label: 'Y', version: '2.0.0' },
+      })
+      expect(h).not.toHaveBeenCalled()
+    })
+
+    it('T-U-DEVSTATE-11: 🔴 현재 팝업이 아닌 창이 보낸 _deviceState 는 무시된다 (event.source 바인딩)', async () => {
+      const h = await connected()
+      dispatchResponse(DEFAULT_ORIGIN, {
+        type: '_deviceState',
+        device: 'connected',
+        info: { deviceId: 'DEV-A' },
+      })
+      h.mockClear()
+
+      // 같은 origin 의 **다른 창**(이전 lifecycle 의 잔존 팝업 / dApp 이 연 다른 창).
+      // origin 만 검사하면 이 메시지가 기기 축을 뒤집고 deviceId 를 심는다.
+      const otherWindow = makeMockPopup()
+      dispatchResponse(DEFAULT_ORIGIN, { type: '_deviceState', device: 'disconnected' }, otherWindow)
+      dispatchResponse(
+        DEFAULT_ORIGIN,
+        { type: '_deviceState', device: 'connected', info: { deviceId: 'EVIL' } },
+        otherWindow,
+      )
+      expect(h).not.toHaveBeenCalled()
+
+      // 그리고 내부 상태도 오염되지 않았어야 한다 — 현재 팝업이 축을 바꾸면 직전 값(DEV-A)
+      // 기준으로 판정된다. 남의 메시지가 currentDeviceInfo 를 EVIL 로 갈아뒀다면
+      // 이 재통지는 "달라졌다"로 잘못 판정되어 발행된다.
+      dispatchResponse(DEFAULT_ORIGIN, {
+        type: '_deviceState',
+        device: 'connected',
+        info: { deviceId: 'DEV-A' },
+      })
+      expect(h).not.toHaveBeenCalled()
+    })
+
+    it('T-U-DEVSTATE-12: 🔴 팝업이 교체되면 기기 축이 unknown 으로 리셋되고 발행된다', async () => {
+      const h = await connected()
+      dispatchResponse(DEFAULT_ORIGIN, {
+        type: '_deviceState',
+        device: 'connected',
+        info: { deviceId: 'OLD-DEVICE', label: 'old' },
+      })
+      h.mockClear()
+
+      // 사용자가 팝업을 **직접 닫는다**. 500ms 폴링이 돌기 전이라 close() 는 아직 안 불렸다
+      // — 이 창이 이 결함의 무대다.
+      mockPopup.closed = true
+
+      // 그 사이 dApp 이 send() 를 부르면 ensurePopup 이 close() 를 거치지 않고 새 팝업을 연다.
+      const nextPopup = makeMockPopup()
+      activeMockPopup = nextPopup
+      openSpy.mockImplementation(() => nextPopup as unknown as Window)
+      installHandshakeAutoRespond(nextPopup)
+      void transport.send(makeEnvelope('after-replace')).catch(() => {})
+      await flushHandshake()
+
+      // 🔴 팝업 축은 'connected' 그대로라 **쌍 dedupe 에 걸려 발행이 0 이 되는 것**이 결함이었다.
+      //    새 팝업은 아직 기기를 관측하지 못했으므로 'unknown' 이어야 하고, 그 변화로 발행된다.
+      const deviceEmits = h.mock.calls.filter((c) => c[1].device === 'unknown')
+      // 팝업 교체가 dApp 에 전혀 안 보이면 안 된다 (결함 시 0건)
+      expect(deviceEmits.length).toBeGreaterThanOrEqual(1)
+      const [, detail] = deviceEmits[0]
+      // 팝업 축은 여전히 connected — 새 창이 열렸으므로
+      expect(detail.popup).toBe('connected')
+      // 기기가 빠진 게 아니라 '관측 불가' — disconnected 로 단정하면 dApp 에 거짓말이 나간다
+      expect(detail.device).toBe('unknown')
+      // 옛 기기 정보가 남으면 dApp 이 없는 기기를 표시한다
+      expect(detail.deviceInfo).toBeUndefined()
+
+      // 새 팝업이 실제 기기를 보고하면 그때 채워진다 (교체 후에도 축이 살아있는지).
+      h.mockClear()
+      dispatchResponse(DEFAULT_ORIGIN, {
+        type: '_deviceState',
+        device: 'connected',
+        info: { deviceId: 'NEW-DEVICE' },
+      })
+      expect(h).toHaveBeenCalledTimes(1)
+      expect(h.mock.calls[0][1].deviceInfo.deviceId).toBe('NEW-DEVICE')
     })
   })
 })

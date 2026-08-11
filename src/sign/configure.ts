@@ -1,37 +1,28 @@
 /**
- * v1 setLabel / syncAccount / selectAddress port (m08-01-02.5)
+ * setLabel / syncAccount / selectAddress (m08-01-02.5, v2 전환 m09-04-12)
  *
- * v1 src-v1/index.js의 `dcent.setLabel` (l705-716), `dcent.syncAccount` (l724-745),
- * `dcent.selectAddress` (l762-772)를 1:1 port.
- *
- * **v1 1:1 보존 디테일**:
- *   - setLabel: `isAvaliableLabel` regex 검증 → throw `param_error` ('Invalid Label : ' + label)
- *   - syncAccount: per-account 3종 검증 (early throw) — coinGroup → coinName → label 순서
- *     - coin_group: `isAvaliableCoinGroup` fail → `coin_group_error`
- *     - coin_name: `isAvailableSyncAccountCoinName` fail → `coin_name_error`
- *     - label: `isAvaliableLabel` fail → `param_error` ('Invalid Label - ' + label)
- *   - selectAddress: `Array.isArray` 검증만 → throw `param_error`
+ * - setLabel: v1 1:1 port (m08-01-02.5) — 변경 없음
+ * - syncAccount: **v2 전환 (m09-04-12)** — SyncAccountInfo(coin_group/coin_name) →
+ *   V2SyncAccountInfo(chainId/keyPath/label/token?). (m13-02-08) 토큰은 top-level
+ *   `contractAddress` 대신 서명 경로와 같은 이름의 `token` descriptor로 기술한다.
+ *   v1 chain 검증(isAvaliableCoinGroup / isAvailableSyncAccountCoinName) 제거.
+ *   connector-chain-addition-isolation: chain-agnostic light sanitize만 수행.
+ *   실제 chain resolve는 sdk/wm(m09-03-21) 위임.
+ * - selectAddress: v1 1:1 port (m08-01-02.5) — 변경 없음
  *
  * 룰 준수:
- *   - boundary-validation: 모든 인자 검증 후 _call
- *   - error-handling-consistency: 모든 검증 실패는 dcentException throw (v1 1:1 메시지)
+ *   - connector-chain-addition-isolation: chain enum / coin_group 검증 제거
+ *   - dapp-input-sanitization: _sanitizeSyncAccountItem per-item sanitize
+ *   - boundary-validation: 비배열 accountInfos → throw
+ *   - error-handling-consistency: 모든 검증 실패는 dcentException throw
  *   - reuse-shared-utils: validators는 sibling 모듈에서 import
  */
 
 import { _call } from './call'
 import { isAvaliableLabel } from './labelValidator'
-import { isAvaliableCoinGroup, isAvailableSyncAccountCoinName } from './coinGroupValidator'
+import { _sanitizeSyncAccountItem } from './_sanitizeSyncAccountItem'
 import { dcentException } from '../v1/dcent-exception'
-import type { V1Response } from './types'
-
-/* eslint-disable camelcase */
-/** sync account info — v1 wire format에 맞춰 snake_case. */
-export interface SyncAccountInfo {
-  coin_group: string
-  coin_name: string
-  label: string
-}
-/* eslint-enable camelcase */
+import type { V1Response, V2SyncAccountInfo } from './types'
 
 /**
  * v1 dcent.setLabel (src-v1/index.js#l705-716) 1:1 port.
@@ -47,33 +38,42 @@ export function setLabel (label: string): Promise<V1Response> {
 }
 
 /**
- * v1 dcent.syncAccount (src-v1/index.js#l724-745) 1:1 port.
+ * dcent.syncAccount v2 — chainId + keyPath 기반 account 동기화 (m09-04-12 breaking change).
  *
- * Account 정보 동기화 — 추가 또는 갱신.
- * Per-account 3종 검증 (coin_group / coin_name / label) — early throw on first failure.
+ * **v2 전환**: 입력 타입이 v1 `SyncAccountInfo{coin_group, coin_name, label}[]` 에서
+ * v2 `V2SyncAccountInfo{chainId, keyPath, label, token?, meta?}[]` 로 변경됨.
+ * v1 chain 검증(isAvaliableCoinGroup / isAvailableSyncAccountCoinName) 제거.
  *
- * @param accountInfos 검증 후 디바이스에 sync할 account 배열
- * @throws dcentException 첫 invalid account의 첫 invalid 필드에서 throw (v1 동일 순서)
+ * connector는 chain-agnostic transport:
+ *   - chainId 형식 whitelist(_sanitizeChainId) + keyPath BIP44 + label regex 검증만 수행
+ *   - chain resolve / coin_group-coin_name 매핑은 sdk(m09-03-21) → wm 위임
+ *
+ * **BREAKING**: v1 SyncAccountInfo 파라미터 타입은 더 이상 허용되지 않는다.
+ * 마이그레이션: { coin_group, coin_name, label } → { chainId, keyPath, label }
+ * (마이그레이션 가이드는 m09-04-04/06 docs child 담당)
+ *
+ * @param accountInfos v2 account 항목 배열 — 각 항목은 _sanitizeSyncAccountItem으로 검증
+ * @throws dcentException('param_error') — 비배열 / invalid 항목
  */
-export function syncAccount (accountInfos: SyncAccountInfo[]): Promise<V1Response> {
-  for (let i = 0; i < accountInfos.length; i = i + 1) {
-    const account = accountInfos[i]
-
-    if (!isAvaliableCoinGroup(account.coin_group)) {
-      throw dcentException('coin_group_error', 'not supported coin group')
-    }
-    if (!isAvailableSyncAccountCoinName(account)) {
-      throw dcentException('coin_name_error', 'not supported coin name')
-    }
-    if (!isAvaliableLabel(account.label)) {
-      throw dcentException('param_error', 'Invalid Label - ' + account.label)
-    }
+export function syncAccount (accountInfos: V2SyncAccountInfo[]): Promise<V1Response> {
+  // boundary-validation: 비배열 입력 → throw (selectAddress T-U-SEL-02 패턴 통일)
+  if (!Array.isArray(accountInfos)) {
+    throw dcentException('param_error', 'accountInfos is not array')
   }
-  return _call({ method: 'syncAccount', params: { accountInfos } })
+
+  // per-item sanitize — _sanitizeSyncAccountItem이 throw on invalid
+  const safe = accountInfos.map(_sanitizeSyncAccountItem)
+
+  return _call({ method: 'syncAccount', params: { accountInfos: safe } })
 }
 
 /**
  * v1 dcent.selectAddress (src-v1/index.js#l762-772) 1:1 port.
+ *
+ * mutation-isolation: 검증한 배열과 전송하는 배열을 같은 값으로 고정하기 위해 얕은 복사본을
+ * 넘긴다. `_call`은 SerialRequestQueue로 요청을 직렬화하므로 검증과 실제 `postMessage` 사이에
+ * 지연 창이 있고, 원본 참조를 넘기면 그 사이 호출자의 push/splice가 그대로 전송된다.
+ * (원소는 string 계약이라 얕은 복사로 충분 — sign()의 `_snapshotPayload`와 같은 축)
  *
  * @param addresses 선택할 address 배열
  * @throws dcentException('param_error') Array가 아닌 경우
@@ -82,5 +82,5 @@ export function selectAddress (addresses: string[]): Promise<V1Response> {
   if (!Array.isArray(addresses)) {
     throw dcentException('param_error', 'addresses is not array')
   }
-  return _call({ method: 'selectAddress', params: { addresses } })
+  return _call({ method: 'selectAddress', params: { addresses: [...addresses] } })
 }

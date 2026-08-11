@@ -1,6 +1,7 @@
 [
   {
     "id": "algo-payment",
+    "scenarioCode": "060",
     "label": "Algorand ALGO payment",
     "family": "algorand",
     "applicableChainIds": [
@@ -10,74 +11,179 @@
     "sourceUrl": "https://github.com/algorand/js-algorand-sdk",
     "transaction": {
       "type": "pay",
-      "from": "ALGORAND7XVFXWDX5HGMI6TEIIIYNYXATWJDAWTOGCHKZHJV2KLYE5LZQ4",
-      "to": "ALGORAND7XVFXWDX5HGMI6TEIIIYNYXATWJDAWTOGCHKZHJV2KLYE5LZQ4",
+      "from": "Y76M3MSY6DKBRHBL7C3NNDXGS5IIMQVQVUAB6MP4XEMMGVF2QWNPL226CA",
+      "to": "737777777777777777777777777777777777777777777777777UFEJ2CI",
       "amount": 1000000,
       "fee": 1000,
-      "firstRound": 1,
-      "lastRound": 1000,
+      "firstRound": 34000000,
+      "lastRound": 34001000,
+      "genesisID": "mainnet-v1.0",
+      "genesisHash": "wGHE2Pwdvd7S12BL5FaOP20EGYesN73ktiHc0CYz/uo="
+    }
+  },
+  {
+    "id": "algo-asa-transfer",
+    "scenarioCode": "061",
+    "label": "Algorand ASA transfer (USDC axfer)",
+    "family": "algorand",
+    "applicableChainIds": [
+      "algorand:wGHE2Pwdvd7S12BL5FaOP20EGYesN73k/slip44:283"
+    ],
+    "note": "Algorand ASA(axfer) 토큰 전송. assetIndex 31566704 = USDC(decimals 6, amount 1000 = 0.001 USDC). m02-05-55(DC-2904) wire ASA 서명 검증용. ⚠️ 반드시 Algorand 메인넷 체인으로 서명(USDC ASA는 ALGORAND 메인넷 parent에만 등록 — 다른 체인 선택 시 tier-1 miss → -32602). ⚠️ from/to를 기기 자기 계정으로 교체(self-send) — owner≠signer면 broadcast 거부, 수신자 USDC opt-in 선행 필요. native ALGO가 아닌 USDC 토큰으로 서명·표시되는지 확인.",
+    "sourceUrl": "https://github.com/algorand/js-algorand-sdk",
+    "transaction": {
+      "type": "axfer",
+      "assetIndex": 31566704,
+      "from": "Y76M3MSY6DKBRHBL7C3NNDXGS5IIMQVQVUAB6MP4XEMMGVF2QWNPL226CA",
+      "to": "Y76M3MSY6DKBRHBL7C3NNDXGS5IIMQVQVUAB6MP4XEMMGVF2QWNPL226CA",
+      "amount": 1000,
+      "fee": 1000,
+      "firstRound": 34000000,
+      "lastRound": 34001000,
       "genesisID": "mainnet-v1.0",
       "genesisHash": "wGHE2Pwdvd7S12BL5FaOP20EGYesN73ktiHc0CYz/uo="
     }
   },
   {
     "id": "cfx-transfer",
+    "scenarioCode": "062",
     "label": "Conflux CFX transfer",
     "family": "conflux",
     "applicableChainIds": [
       "conflux:cfx/slip44:503"
     ],
-    "note": "Conflux Core Space 송금 트랜잭션 (EVM 호환). chainId 1029 = Conflux Hydra mainnet. from/to/value 수정 후 송금.",
+    "note": "Conflux Core Space 송금 트랜잭션. chainId 1029 = Conflux mainnet. 2026-06-09 HW smoke: hex to(40/41 모두)에서 기기 SYSTEM HALT(coin-ethereum transaction.c:3164, CONFLUX_FINISH). 가설 — 펌웨어는 to를 CIP-37 base32(cfx:)로 기대(sw-proxy convertConfluxAddressToHex가 cfx:/0x 둘 다 받지만 실기기는 base32 경로 기대 추정). → to/from을 실제 cfx: 메인넷 주소로 교체 후 재검증.",
     "sourceUrl": "https://github.com/Conflux-Chain/js-conflux-sdk",
     "transaction": {
-      "from": "0x1B25fB6E9579B5fC7BAc3D80Bc1bAd3e63CB9b14",
-      "to": "0x1A2b4cF52dc1B6d0D0e3c4C3B5b3A0cF52dc1B6d0",
+      "from": "cfx:acf2rcsh8payyxpg6xj7b0ztswwh81ute60tsw35j7",
+      "to": "cfx:acf2rcsh8payyxpg6xj7b0ztswwh81ute60tsw35j7",
       "value": "0x10",
       "gas": "0x5208",
       "gasPrice": "0x3b9aca00",
       "nonce": "0x0",
       "chainId": "0x405",
-      "epochHeight": "0x0",
+      "epochHeight": "0x6a1b2c",
       "storageLimit": "0x0",
       "data": "0x"
     }
   },
   {
+    "id": "cfx-crc20-transfer-unregistered",
+    "scenarioCode": "095",
+    "label": "Conflux CRC-20 transfer (unregistered token, raw calldata)",
+    "family": "conflux",
+    "applicableChainIds": [
+      "conflux:cfx/slip44:503"
+    ],
+    "note": "【INTENDED_REJECT — m04-01-15(DC-3467) 어댑터 머지 후 동작 변경】 미등록 CRC-20 form-E(raw calldata, descriptor 없음). m04-01-15 CONFLUX wire 어댑터가 form-E 를 intercept 하여 wireTokenResolver 3-tier 해석을 강제한다: tier-1(registry) miss — WCFX(0x8d7df9316faa0586e175b5e6d03c6bda76e3d950)는 cfx-crc20.json 미등록, tier-2(RPC metadata hook) 불가 — CONFLUX 어댑터는 tokenMetadataHook 미보유(VECHAIN/NEAR 만 보유)라 online 이어도 조회 불가, tier-3(descriptor) 부재 → -32602 fail-closed('cannot resolve token', silent native 오서명 차단). ★어댑터 머지 전(2026-07-26 실기기 검증)엔 opaque pass-through 로 signed 되었으나 기기에 실수신자·토큰 수량이 안 보이는 display-only 갭이 있었고, 이제 그 갭을 fail-closed 로 닫았다. 표시가 되려면 form-D descriptor 를 제공해야 한다 → 자매 preset cfx-crc20-transfer-unregistered-formd(097) 참조(descriptor decimals 로 tier-3 합성 → signed). 등록 토큰 form-E 서명은 cfx-crc20-transfer(096, FansCoin). recipient 는 placeholder(0x1111...1111) — 이 preset 은 서명되지 않으므로 값은 무의미.",
+    "sourceUrl": "https://www.confluxscan.org/address/cfx:acg158kvr8zanb1bs048ryb6rtrhr283ma70vz70tx",
+    "transaction": {
+      "from": "cfx:acf2rcsh8payyxpg6xj7b0ztswwh81ute60tsw35j7",
+      "to": "cfx:acg158kvr8zanb1bs048ryb6rtrhr283ma70vz70tx",
+      "value": "0x0",
+      "gas": "0x186a0",
+      "gasPrice": "0x3b9aca00",
+      "nonce": "0x0",
+      "chainId": "0x405",
+      "epochHeight": "0x6a1b2c",
+      "storageLimit": "0x0",
+      "data": "0xa9059cbb00000000000000000000000011111111111111111111111111111111111111110000000000000000000000000000000000000000000000000000000000000000"
+    }
+  },
+  {
+    "id": "cfx-crc20-transfer",
+    "scenarioCode": "096",
+    "label": "Conflux CRC-20 transfer (registered token, form-E raw calldata)",
+    "family": "conflux",
+    "applicableChainIds": [
+      "conflux:cfx/slip44:503"
+    ],
+    "note": "등록 CRC-20 토큰 전송 — form-E raw calldata. to=FansCoin 컨트랙트(cfx:achc8nxj7r451c223m18w2dwjnmhkd6rxawrvkvsy2, cfx-crc20.json 등록: symbol FC, decimals 18), value=0x0, data=transfer(address,uint256) calldata. m04-01-15(DC-3467) CONFLUX wire 어댑터가 form-E 를 intercept → extractConfluxTokenIdentity 로 {contract, recipient, amount} 추출 → tier-1(registry) hit → TokenAccount 합성 → convertConfluxTransaction remap 으로 recipient/amount 를 calldata 디코드값(실수신자/실수량)으로 재기입. ★어댑터 전 opaque pass-through(095) 와 달리 기기에 FC 심볼·수량·실수신자가 표시된다(display-only 갭 해소). data 의 recipient(selector 다음 32B word 하위 20B = 0x1cad0b19bb29d4674531d6f115237e16afce377c)·amount(1e18 = 1 FC)는 표시 데모용 예시이며, 실기기 self-send 검증 시 recipient 를 본인 CONFLUX 주소(convertConfluxAddressToHex)로 교체한다(asset risk 0). 미등록 form-E 는 cfx-crc20-transfer-unregistered(095, INTENDED_REJECT), 미등록 form-D 는 cfx-crc20-transfer-unregistered-formd(097) 참조.",
+    "sourceUrl": "https://www.confluxscan.org/address/cfx:achc8nxj7r451c223m18w2dwjnmhkd6rxawrvkvsy2",
+    "transaction": {
+      "from": "cfx:acf2rcsh8payyxpg6xj7b0ztswwh81ute60tsw35j7",
+      "to": "cfx:achc8nxj7r451c223m18w2dwjnmhkd6rxawrvkvsy2",
+      "value": "0x0",
+      "gas": "0x186a0",
+      "gasPrice": "0x3b9aca00",
+      "nonce": "0x0",
+      "chainId": "0x405",
+      "epochHeight": "0x6a1b2c",
+      "storageLimit": "0x0",
+      "data": "0xa9059cbb0000000000000000000000001cad0b19bb29d4674531d6f115237e16afce377c0000000000000000000000000000000000000000000000000de0b6b3a7640000"
+    }
+  },
+  {
+    "id": "cfx-crc20-transfer-unregistered-formd",
+    "scenarioCode": "097",
+    "label": "Conflux CRC-20 transfer — form-D descriptor (unregistered token)",
+    "family": "conflux",
+    "applicableChainIds": [
+      "conflux:cfx/slip44:503"
+    ],
+    "note": "미등록(커스텀) CRC-20 전송 — form-D descriptor. wm m04-01-15(DC-3467) buildCrc20TransferFromDescriptor 가 transaction.token={contract,to,amount} 를 CRC-20 transfer calldata(a9059cbb + pad32(to) + pad32(amount)) 로 인코딩해 form-E CONFLUX EVM tx({to:contract, value:0x0, data})를 합성한다(봉투 필드 chainId/epochHeight/gas/gasPrice/storageLimit/nonce 는 top-level 에서 spread 보존). ★form-E(cfx-crc20-transfer)와 달리 cfx-crc20.json 미등록이라도 서명·표시된다 — descriptor 의 decimals 가 wm 3-tier resolver 의 tier-3 로 쓰이기 때문(CONFLUX 는 tokenMetadataHook 미보유라 tier-2 RPC 경로가 없어 descriptor 가 유일한 미등록 표시 수단). contract=WCFX(cfx:acg158kvr8zanb1bs048ryb6rtrhr283ma70vz70tx = 0x8d7df9316faa0586e175b5e6d03c6bda76e3d950)는 Conflux mainnet 실재 Wrapped CFX + cfx-crc20.json 미등록 — 실재 토큰을 쓰는 이유는 'wm 미등록' 과 '네트워크 미등록' 이 겹쳐 검증 전제가 무너지지 않도록(TOKEN-REGISTRY-CONTRACT §0, VeChain/TRON descriptor preset 과 동일 원칙). ⚠️ symbol/decimals(WCFX/18)는 앱이 assert 하는 표시값(descriptor 가 tier-3 SoT). ⚠️ token.to(0x1cad0b19bb29d4674531d6f115237e16afce377c)는 예시 수신자 — CONFLUX 하네스는 self-send 패치를 하지 않으므로(Pattern B passthrough) 실기기 self-send 검증 시 본인 주소로 교체한다. amount=1e18(1 WCFX, base units). 검증: /verify-wire-sign 계열 — assetKind=token, native CFX 아님.",
+    "sourceUrl": "https://www.confluxscan.org/address/cfx:acg158kvr8zanb1bs048ryb6rtrhr283ma70vz70tx",
+    "transaction": {
+      "from": "cfx:acf2rcsh8payyxpg6xj7b0ztswwh81ute60tsw35j7",
+      "gas": "0x186a0",
+      "gasPrice": "0x3b9aca00",
+      "nonce": "0x0",
+      "chainId": "0x405",
+      "epochHeight": "0x6a1b2c",
+      "storageLimit": "0x0",
+      "token": {
+        "contract": "cfx:acg158kvr8zanb1bs048ryb6rtrhr283ma70vz70tx",
+        "to": "0x1cad0b19bb29d4674531d6f115237e16afce377c",
+        "amount": "1000000000000000000",
+        "decimals": 18,
+        "symbol": "WCFX"
+      }
+    }
+  },
+  {
     "id": "atom-transfer",
+    "scenarioCode": "063",
     "label": "Cosmos ATOM transfer",
     "family": "cosmos",
     "applicableChainIds": [
       "cosmos:cosmoshub-4/slip44:118"
     ],
-    "note": "Cosmos Hub MsgSend (cosmjs StdSignDoc). amount 단위는 uatom (1 ATOM = 1,000,000). fromAddress/toAddress/amount 수정 후 송금.",
+    "note": "Cosmos Hub MsgSend — wm 기대 형식 Amino SignDoc (msgs[].type + from_address/to_address/chain_id snake_case). amount 단위 uatom (1 ATOM = 1e6). ⚠️ from_address는 디바이스 실 cosmoshub 계정이어야 서명 성공(self-send 시 to_address 동일). account_number/sequence/pub_key는 대표값(유효 형식) — network 모드에선 wm가 sign 시 live REST로 덮어쓰고, no-network 모드에선 preset 값 그대로 사용 — sender가 on-chain 미존재면 404. 현재 from/to=cosmos1n9a7x46880h6qrtjmvwxrlgt0yprj702kcv0hr (디바이스 self-send). 실서명 검증은 짝 m09-04-13(swproxy e2e). ⚠️ amount=10000 (0.01 ATOM) — 값을 키우지 말 것. cosmoshub는 메인넷이라 faucet이 없어 실기기 계정 잔액이 소액이다. 이전 값 1000000(1 ATOM)은 실기기 검증에서 브로드캐스트는 수락(code 0)됐으나 실행 단계에서 `spendable balance 50874uatom is smaller than 1000000uatom: insufficient funds`로 실패했다(2026-07-22, 블록 32144289). self-send라도 검증 시점에 잔액 ≥ amount + fee 여야 하므로, 온체인 성공까지 도달하려면 amount는 잔액 규모 안에 있어야 한다. fee 5000 uatom은 cosmoshub 최소가스가격을 충족하므로 유지.",
     "sourceUrl": "https://github.com/cosmos/cosmjs",
     "transaction": {
+      "chain_id": "cosmoshub-4",
+      "account_number": "12345",
+      "sequence": "3",
+      "fee": {
+        "amount": [
+          {
+            "denom": "uatom",
+            "amount": "5000"
+          }
+        ],
+        "gas": "200000"
+      },
       "msgs": [
         {
-          "typeUrl": "/cosmos.bank.v1beta1.MsgSend",
+          "type": "cosmos-sdk/MsgSend",
           "value": {
-            "fromAddress": "cosmos1qpe9h7lndhg27gpsxq8r43kytt7uzkfrxvqhnq",
-            "toAddress": "cosmos1qpe9h7lndhg27gpsxq8r43kytt7uzkfrxvqhnq",
+            "from_address": "cosmos1n9a7x46880h6qrtjmvwxrlgt0yprj702kcv0hr",
+            "to_address": "cosmos1n9a7x46880h6qrtjmvwxrlgt0yprj702kcv0hr",
             "amount": [
-              { "denom": "uatom", "amount": "1000000" }
+              {
+                "denom": "uatom",
+                "amount": "10000"
+              }
             ]
           }
         }
       ],
-      "fee": {
-        "amount": [
-          { "denom": "uatom", "amount": "5000" }
-        ],
-        "gas": "200000"
-      },
-      "memo": "",
-      "chainId": "cosmoshub-4",
-      "accountNumber": "0",
-      "sequence": "0"
+      "memo": ""
     }
   },
   {
     "id": "fil-transfer",
+    "scenarioCode": "064",
     "label": "Filecoin FIL transfer",
     "family": "fil",
     "applicableChainIds": [
@@ -99,30 +205,33 @@
   },
   {
     "id": "dot-transfer",
+    "scenarioCode": "065",
     "label": "Polkadot DOT transfer",
     "family": "polkadot",
     "applicableChainIds": [
       "polkadot:91b171bb158e2d3848fa23a9f1c25182/slip44:354"
     ],
-    "note": "Polkadot balances.transfer extrinsic. args[1] 단위는 Planck (1 DOT = 10^10 Planck). args[0] 수신자 주소 + args[1] 금액 수정 후 송금.",
+    "note": "⚠️ `balances.transfer` 는 라이브 런타임에 **존재하지 않는다** — Substrate 가 제거하고 `transferAllowDeath` 로 대체했다(실측 2026-07-14: polkadot spec 2003000 / astar spec 2207 의 `balances.*` = transferAllowDeath·transferKeepAlive·transferAll·forceTransfer… — `transfer` 없음). Polkadot balances.transferAllowDeath extrinsic. args[0]=수신자 주소, args[1]=금액(Planck, 1 DOT = 1e10). ⚠️ wm convertTransaction은 method/args[0]/args[1]만 소비 — era/specVersion/transactionVersion/blockHash/genesisHash는 무시(dead, sign 시 wm가 live getPolkadotApi로 nonce/fee/era 재도출). sender 계정은 keyPath에서 도출(노드 도달 필요). args[0]은 디바이스 DOT 자기 주소 14dyYY72MDtfxAAjFnqwCR3YihV5UrqzMjEAf1ABXJ4vzLZj (self-send). 실서명 검증은 짝 m09-04-13(swproxy e2e). 【2026-07-22 확정 형태 — noNetwork pure-signer】 이 preset 은 **decoded 형태(Form B)** 다. Substrate 서명 payload 에 실제로 들어가는 값(`call`=method/args · `era` · `nonce` · `tip` · `blockHash` · `genesisHash` · `specVersion` · `transactionVersion`)을 **앱이 전부 제공**하고 wm 은 그 값을 그대로 써야 한다(자체 재도출 금지). `fee` 는 기기 표시용으로 앱이 준다. ⚠️ 아래 값들은 **전부 placeholder(가짜값)** 이며 prepare 가 실값으로 치환한다: `era`(→최신 헤더 기준 mortal period 600) · `blockHash`(→그 era 의 짝 블록 hash) · `genesisHash`(→`api.genesisHash`, **실제 서명 대상 체인**의 값. chainId 의 reference 를 신뢰하지 않는다 — Creditcoin 은 chainId 와 실 genesis 가 어긋나 있고 Polkadot 은 provider 가 Asset Hub 에 붙는다) · `specVersion`/`transactionVersion`(→`api.runtimeVersion`) · `nonce` · `fee`(→`paymentInfo().partialFee`) · `args[0]`(→기기 2번째 account, self-send 금지). ⚠️ `era` 는 가짜값을 mortal 처럼 만들 수 없다 — `0x00` 으로 시작하는 값은 전부 Immortal 로 디코드되므로 더미를 두고 prepare 가 통째로 교체한다. Immortal 로 서명하려면 `blockHash === genesisHash` 여야 짝이 맞는다. ⚠️ 현재 wm 은 이 형태를 noNetwork 에서 **거부**한다(게이트 5.3b, blob 의무화) — 그래서 하네스가 임시로 `extra.scaleHex` 를 조립해 붙인다. 형태 대조에 뜨는 `추가 1: extra.scaleHex` 는 **미착륙 wm 갭의 신호**이며, wm 이 Form B 를 수용하면 사라진다.",
     "sourceUrl": "https://github.com/polkadot-js/api",
     "transaction": {
-      "method": "balances.transfer",
+      "method": "balances.transferAllowDeath",
       "args": [
-        "15oF4uVJwmo4TdGW7VfQxNLavjCXviqxT9S1MgbjMNHr6Sp5",
+        "14dyYY72MDtfxAAjFnqwCR3YihV5UrqzMjEAf1ABXJ4vzLZj",
         "1000000000000"
       ],
       "era": "0x00",
       "nonce": 0,
       "tip": 0,
-      "specVersion": 9430,
-      "transactionVersion": 24,
-      "blockHash": "0x91b171bb158e2d3848fa23a9f1c25182fb8e20313b2c1eb49219da7a70ce90c3",
-      "genesisHash": "0x91b171bb158e2d3848fa23a9f1c25182fb8e20313b2c1eb49219da7a70ce90c3"
+      "fee": "0",
+      "specVersion": 0,
+      "transactionVersion": 0,
+      "blockHash": "0x0000000000000000000000000000000000000000000000000000000000000000",
+      "genesisHash": "0x0000000000000000000000000000000000000000000000000000000000000000"
     }
   },
   {
     "id": "stx-transfer",
+    "scenarioCode": "066",
     "label": "Stacks STX transfer",
     "family": "stacks",
     "applicableChainIds": [
@@ -138,24 +247,50 @@
       "fee": "180",
       "nonce": "0",
       "anchorMode": 3,
+      "network": "mainnet"
+    }
+  },
+  {
+    "id": "stacks-allow-mode-reject",
+    "scenarioCode": "067",
+    "label": "Stacks postConditionMode:allow + 무 post-condition (거부 데모, 음성)",
+    "family": "stacks",
+    "applicableChainIds": [
+      "stacks:1/slip44:5757"
+    ],
+    "note": "음성(negative) preset — postConditionMode:\"allow\"(1) + post-condition 0개는 자산가드를 제거하는데 기기에 표시가 없어 wm(m04-01-09 §4-9)이 -32602 로 거부한다. **서명되면 안 되는 케이스**. 기대: bridge error -32602 \"postConditionMode\":\"allow\" requires at least one explicit post-condition.",
+    "sourceUrl": "https://github.com/hirosystems/stacks.js",
+    "transaction": {
+      "txType": "tokenTransfer",
+      "recipient": "SP3FBR2AGK5H9QBDH3EEN6DF8EK8JY7RX8QJ5SVTE",
+      "amount": "1000000",
+      "memo": "",
+      "fee": "180",
+      "nonce": "0",
+      "anchorMode": 3,
       "postConditionMode": 1,
       "network": "mainnet"
     }
   },
   {
     "id": "xtz-transfer",
+    "scenarioCode": "068",
     "label": "Tezos XTZ transfer",
     "family": "tezos",
     "applicableChainIds": [
-      "tezos:NetXdQprcVkpaWU/slip44:1729"
+      "tezos:NetXdQprcVkpaWU/slip44:1729",
+      "tezos:NetXnHfVqm9iesp/slip44:1729"
     ],
-    "note": "Tezos transaction operation (taquito). amount 단위는 mutez (1 XTZ = 1,000,000). source/destination/amount 수정 후 송금.",
+    "note": "Tezos transaction operation (taquito). amount 단위는 mutez (1 XTZ = 1,000,000). source/destination/amount 수정 후 송금. `counter`/`extra.branch` 는 **대표값(placeholder)** — 앱이 체인 실값으로 치환한다(counter 는 조회값+1). wm 이 `extra.branch` 로 local-forge 하므로(signTransactionFromWire → forgeTezosLocally) 앱은 forge 하지 않는다. branch placeholder 는 형제 FA preset 들과 동일한 Genesis 해시.",
     "sourceUrl": "https://github.com/ecadlabs/taquito",
     "transaction": {
       "kind": "transaction",
       "source": "tz1burnburnburnburnburnburnburjAYjjX",
       "fee": "1420",
       "counter": "1",
+      "extra": {
+        "branch": "BLockGenesisGenesisGenesisGenesisGenesisf79b5d1CoW2"
+      },
       "gasLimit": "10307",
       "storageLimit": "257",
       "amount": "1000000",
@@ -164,6 +299,7 @@
   },
   {
     "id": "vet-transfer",
+    "scenarioCode": "069",
     "label": "VeChain VET transfer",
     "family": "vechain",
     "applicableChainIds": [
@@ -173,7 +309,7 @@
     "sourceUrl": "https://github.com/vechain/thor-devkit.js",
     "transaction": {
       "chainTag": 74,
-      "blockRef": "0x0000000000000000",
+      "blockRef": "0x00b3c1e4a5f6d7e8",
       "expiration": 720,
       "clauses": [
         {
@@ -184,8 +320,589 @@
       ],
       "gasPriceCoef": 0,
       "gas": 21000,
+      "fee": "210000000000000000",
       "dependsOn": null,
       "nonce": "0x0"
+    }
+  },
+  {
+    "id": "trx-transfer",
+    "scenarioCode": "070",
+    "label": "TRON TRX transfer",
+    "family": "tron",
+    "applicableChainIds": [
+      "tron:0x2b6653dc/slip44:195"
+    ],
+    "note": "TRON TRX 송금 — TronWeb-native shape (raw_data.contract[0].type=TransferContract, wm tron/wire-convert.js). amount 단위 SUN (1 TRX = 1e6 SUN). owner_address/to_address 는 base58(T...) 또는 hex(41...) 모두 허용. ⚠️ ref_block_bytes/ref_block_hash 는 앱이 최신 solid block 에서 만들어 넣어야 하는 필수 입력이다(TAPOS — 참조 블록이 최근 65536 블록 이내). 브리지는 noNetwork 로 서명하므로 아무것도 재생성하지 않는다. 이 preset 의 값은 형식 예시일 뿐 stale 이므로 **서명 데모 전용**이며 그대로 broadcast 하면 TaposError 로 거부된다. expiration/timestamp 는 wm 가 로컬(Date.now)에서 생성한다. owner_address==to_address self-send (asset-risk 0). 수정 후 송금.",
+    "sourceUrl": "https://github.com/tronprotocol/tronweb",
+    "transaction": {
+      "raw_data": {
+        "contract": [
+          {
+            "type": "TransferContract",
+            "parameter": {
+              "value": {
+                "owner_address": "TJRabPrwbZy45sbavfcjinPJC18kjpRTv8",
+                "to_address": "TJRabPrwbZy45sbavfcjinPJC18kjpRTv8",
+                "amount": 1000000
+              },
+              "type_url": "type.googleapis.com/protocol.TransferContract"
+            }
+          }
+        ],
+        "ref_block_bytes": "b801",
+        "ref_block_hash": "e4a5f6d7c8b9a0e1",
+        "expiration": 0,
+        "timestamp": 0
+      },
+      "raw_data_hex": "",
+      "fee_limit": 1000000,
+      "fee": 1100000
+    }
+  },
+  {
+    "id": "trx-trc20-transfer",
+    "scenarioCode": "071",
+    "label": "TRON TRC20 token transfer",
+    "family": "tron",
+    "applicableChainIds": [
+      "tron:0x2b6653dc/slip44:195"
+    ],
+    "note": "토큰 전송 — TRC20 transfer. TriggerSmartContract(wm tron/wire-convert.js, selector a9059cbb). 예시: USDT-TRC20(contract_address=TR7NHqjeKQxGTCi8q8ZY4pL8otSzgjLj6t). owner_address는 base58(T...) 또는 hex(41...) 모두 허용 — 현재 디바이스 self 주소. data: a9059cbb + recipient(32바이트, 현재 0 placeholder — 본인 주소 hex 20바이트를 left-pad) + amount(32바이트, 현재 0x3e8=1000=0.001 USDT, 6 decimals). ref_block_*/expiration/timestamp는 wm가 getNodeInfo로 재생성. fee_limit는 컨트랙트 실행비(현재 100 TRX). 기기 펌웨어가 TRC20 토큰 표시 경로 보유.",
+    "sourceUrl": "https://developers.tron.network/docs/trc20-contract-interaction",
+    "transaction": {
+      "raw_data": {
+        "contract": [
+          {
+            "type": "TriggerSmartContract",
+            "parameter": {
+              "value": {
+                "owner_address": "TJRabPrwbZy45sbavfcjinPJC18kjpRTv8",
+                "contract_address": "TR7NHqjeKQxGTCi8q8ZY4pL8otSzgjLj6t",
+                "data": "a9059cbb000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000003e8"
+              },
+              "type_url": "type.googleapis.com/protocol.TriggerSmartContract"
+            }
+          }
+        ],
+        "ref_block_bytes": "b801",
+        "ref_block_hash": "e4a5f6d7c8b9a0e1",
+        "expiration": 0,
+        "timestamp": 0
+      },
+      "raw_data_hex": "",
+      "fee_limit": 100000000,
+      "fee": 1100000
+    }
+  },
+  {
+    "id": "trx-trc20-approve",
+    "scenarioCode": "072",
+    "label": "TRON TRC20 approve (dApp request)",
+    "family": "tron",
+    "applicableChainIds": [
+      "tron:0x2b6653dc/slip44:195"
+    ],
+    "note": "댑 요청 — TRC20 approve(spender,uint256). TRON dApp(JustLend/SunSwap 등)이 토큰 사용 권한을 요청할 때 보내는 TriggerSmartContract(selector 095ea7b3). 예시: USDT-TRC20를 임의 spender에 max 승인. ⚠️ spender(data 1번째 32바이트, 현재 0 placeholder)를 실제 컨트랙트 주소 hex로 교체, unlimited(0xff..ff) 대신 필요 금액만 승인 권장. contract_address/owner_address 교체. fee_limit 100 TRX.",
+    "sourceUrl": "https://developers.tron.network/docs/trc20-contract-interaction",
+    "transaction": {
+      "raw_data": {
+        "contract": [
+          {
+            "type": "TriggerSmartContract",
+            "parameter": {
+              "value": {
+                "owner_address": "TJRabPrwbZy45sbavfcjinPJC18kjpRTv8",
+                "contract_address": "TR7NHqjeKQxGTCi8q8ZY4pL8otSzgjLj6t",
+                "data": "095ea7b30000000000000000000000000000000000000000000000000000000000000000ffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffff"
+              },
+              "type_url": "type.googleapis.com/protocol.TriggerSmartContract"
+            }
+          }
+        ],
+        "ref_block_bytes": "b801",
+        "ref_block_hash": "e4a5f6d7c8b9a0e1",
+        "expiration": 0,
+        "timestamp": 0
+      },
+      "raw_data_hex": "",
+      "fee_limit": 100000000,
+      "fee": 1100000
+    }
+  },
+  {
+    "id": "vet-vip180-transfer",
+    "scenarioCode": "073",
+    "label": "VeChain VIP-180 token transfer",
+    "family": "vechain",
+    "applicableChainIds": [
+      "vechain:b1ac3413d346d43539627e6be7ec1b4a/slip44:818"
+    ],
+    "note": "토큰 전송 — VeChain VIP-180(ERC-20 호환) token transfer (VTHO 예시). clauses[0].to=토큰 컨트랙트, value=0x0, data=transfer(address,uint256) calldata. 예시: VTHO(VeThor, contract 0x0000...456E65726779), amount=0x3e8. ⚠️ wm vechain은 clauses[0]만 사용(multi-clause 미지원). data recipient(selector 다음 32바이트 하위 20B, 현재 0 placeholder)를 본인 주소로 교체 시 self-send. ✅ m02-05-75(DC-3096)부터 wm이 VIP-180을 식별→TokenAccount 합성→device에 토큰 symbol/수량/수신자 표시(더 이상 opaque pass-through 아님). 정식 §9 테스트 preset은 non-evm.json의 vechain-vip180-transfer(SHA, self-send-ready) 참조. blockRef/nonce는 송금 전 갱신.",
+    "sourceUrl": "https://docs.vechain.org/core-concepts/transactions",
+    "transaction": {
+      "chainTag": 74,
+      "blockRef": "0x00b3c1e4a5f6d7e8",
+      "expiration": 720,
+      "clauses": [
+        {
+          "to": "0x0000000000000000000000000000456E65726779",
+          "value": "0x0",
+          "data": "0xa9059cbb000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000003e8"
+        }
+      ],
+      "gasPriceCoef": 0,
+      "gas": 80000,
+      "fee": "800000000000000000",
+      "dependsOn": null,
+      "nonce": "0x0"
+    }
+  },
+  {
+    "id": "vet-vip180-descriptor-transfer",
+    "scenarioCode": "074",
+    "label": "VeChain VIP-180 descriptor transfer (unregistered token)",
+    "family": "vechain",
+    "applicableChainIds": [
+      "vechain:b1ac3413d346d43539627e6be7ec1b4a/slip44:818"
+    ],
+    "note": "미등록(커스텀) 토큰 전송 — form-D descriptor. wm m02-08-14(DC-3245) buildVip180TransferFromDescriptor 가 transaction.token={contract,to,amount} 를 VIP-180 transfer calldata(a9059cbb + pad32(to) + pad32(amount)) 로 인코딩해 clauses[0]={to:contract, value:\"0\", data} 를 생성한다(봉투 필드는 spread 로 보존). ★form-E(vet-vip180-transfer / vechain-vip180-transfer)와 달리 vechain-erc20.json registry 등록 불필요 — descriptor 의 decimals 가 wm 3-tier resolver 의 tier-3 로 쓰이기 때문. contract=0x4e17357053da4b473e2daa2c65c2c949545724b8 은 VeUSD(dec 6) — VeChain mainnet 온체인 실재 + vechain-erc20.json 미등록 (2026-07-20 RPC 확증: hasCode=true, symbol()=VeUSD, decimals()=6). wm 에 등록된 VIP-180 은 VTHO/SHA/OCE/HAI 4개뿐이라 그 4개를 쓰면 form-E 로도 통과해 form-D 커버리지가 0 이 된다. ⚠️ 실재 토큰을 쓰는 이유: 서명은 실재와 무관하나(noNetwork), 실재하지 않으면 [wm 미등록] 과 [네트워크 미등록] 이 겹쳐 검증 전제가 무너진다(TOKEN-REGISTRY-CONTRACT.md §0). ⚠️ DC-3208 이후 VeChain wire 는 top-level fee(총 수수료, base units) 필수 — 미제공 시 -32602. blockRef 는 noNetwork 게이트가 top-level 에서 읽으므로 반드시 보존해야 한다(하네스가 best block 으로 갱신). token.to 는 하네스 patchVechain 이 연결 계정으로 치환(self-send, asset risk 0). 검증: /verify-wire-sign VECHAIN (assetKind=token, native VET 아님).",
+    "sourceUrl": "https://docs.vechain.org/core-concepts/transactions",
+    "transaction": {
+      "chainTag": 74,
+      "blockRef": "0x00b3c1e4a5f6d7e8",
+      "expiration": 720,
+      "token": {
+        "contract": "0x4e17357053da4b473e2daa2c65c2c949545724b8",
+        "to": "0x0000000000000000000000000000000000000000",
+        "amount": "1000",
+        "decimals": 6,
+        "symbol": "VeUSD"
+      },
+      "gasPriceCoef": 0,
+      "gas": 80000,
+      "fee": "800000000000000000",
+      "dependsOn": null,
+      "nonce": "0x0"
+    }
+  },
+  {
+    "id": "coreum-transfer",
+    "scenarioCode": "075",
+    "label": "Coreum CORE transfer",
+    "family": "cosmos",
+    "applicableChainIds": [
+      "cosmos:coreum-mainnet-1/slip44:990"
+    ],
+    "note": "Coreum CORE transfer — wm Amino SignDoc(MsgSend). denom ucore.  from/to=core1n9a7x46880h6qrtjmvwxrlgt0yprj7029k55sc(디바이스 self-send, atom 키 재인코딩). account_number/sequence는 대표값 — network 모드=wm live REST 덮어쓰기, no-network 모드=preset 값 그대로 사용. applicableChainIds 단일-체인(1d4201c 가드). 실서명 검증은 짝 m09-04-13. ⚠️ amount=10000 (0.01 TX) — 값을 키우지 말 것. Coreum mainnet 은 faucet 이 없어 실기기 계정 잔액이 소액이다(2026-07-22 실측 0.592 TX). 이전 값 1000000(1 TX)은 잔액을 초과해 온체인 실행이 불가능했다 — atom-transfer 가 같은 이유로 블록 32144289 에서 insufficient funds 로 실패한 선례가 있다. self-send 라도 검증 시점에 잔액 ≥ amount + fee 여야 한다. fee 는 preset 값이 아니라 prepare 가 wm 산출값으로 교체한다(Coreum 은 동적 수수료 모델).",
+    "sourceUrl": "https://github.com/cosmos/cosmjs",
+    "transaction": {
+      "chain_id": "coreum-mainnet-1",
+      "account_number": "12345",
+      "sequence": "3",
+      "fee": {
+        "amount": [
+          {
+            "denom": "ucore",
+            "amount": "5000"
+          }
+        ],
+        "gas": "200000"
+      },
+      "msgs": [
+        {
+          "type": "cosmos-sdk/MsgSend",
+          "value": {
+            "from_address": "core1n9a7x46880h6qrtjmvwxrlgt0yprj7029k55sc",
+            "to_address": "core1n9a7x46880h6qrtjmvwxrlgt0yprj7029k55sc",
+            "amount": [
+              {
+                "denom": "ucore",
+                "amount": "10000"
+              }
+            ]
+          }
+        }
+      ],
+      "memo": ""
+    }
+  },
+  {
+    "id": "coreum-assetft-transfer",
+    "scenarioCode": "076",
+    "label": "Coreum assetft (smart-token) transfer",
+    "family": "cosmos",
+    "applicableChainIds": [
+      "cosmos:coreum-mainnet-1/slip44:990"
+    ],
+    "note": "m02-05-54 검증용. wm Amino SignDoc(bank MsgSend)인데 amount[0].denom = assetft 토큰 denom. 기대: extractCosmosTokenIdentity가 denom을 토큰으로 식별 → tier-1 registry hit(smart-token.json 'test', parent CZONE:core, decimals 6) → TokenAccount 합성 → MsgSend가 token denom으로 서명(native ucore 아님). 54 전이면 native ucore로 silent 오서명(버그). amount '1000000' = 1 token(6dec). fee는 항상 native ucore. from/to=디바이스 coreum self-send. account_number/sequence는 대표값 — network 모드=wm live REST 덮어쓰기, no-network 모드=그대로 사용. /verify-wire-sign COSMOS로 byte 검증: MsgSend denom=token + secp recover=device 계정.",
+    "sourceUrl": "https://docs.coreum.dev/docs/modules/assetft",
+    "transaction": {
+      "chain_id": "coreum-mainnet-1",
+      "account_number": "12345",
+      "sequence": "3",
+      "fee": {
+        "amount": [
+          {
+            "denom": "ucore",
+            "amount": "5000"
+          }
+        ],
+        "gas": "200000"
+      },
+      "msgs": [
+        {
+          "type": "cosmos-sdk/MsgSend",
+          "value": {
+            "from_address": "core1n9a7x46880h6qrtjmvwxrlgt0yprj7029k55sc",
+            "to_address": "core1n9a7x46880h6qrtjmvwxrlgt0yprj7029k55sc",
+            "amount": [
+              {
+                "denom": "test-core14ljz7w9lc2yrg66gtfklk94p4jzzmla32ft2s8",
+                "amount": "1000000"
+              }
+            ]
+          }
+        }
+      ],
+      "memo": ""
+    }
+  },
+  {
+    "id": "coreum-testnet-transfer",
+    "scenarioCode": "077",
+    "label": "Coreum Testnet CORE transfer",
+    "family": "cosmos",
+    "applicableChainIds": [
+      "cosmos:coreum-testnet-1/slip44:990"
+    ],
+    "note": "Coreum Testnet CORE transfer — wm Amino SignDoc(MsgSend). denom utestcore.  from/to=testcore1n9a7x46880h6qrtjmvwxrlgt0yprj702nz0flw(디바이스 self-send, atom 키 재인코딩). account_number/sequence는 대표값 — network 모드=wm live REST 덮어쓰기, no-network 모드=preset 값 그대로 사용. applicableChainIds 단일-체인(1d4201c 가드). 실서명 검증은 짝 m09-04-13.",
+    "sourceUrl": "https://github.com/cosmos/cosmjs",
+    "transaction": {
+      "chain_id": "coreum-testnet-1",
+      "account_number": "12345",
+      "sequence": "3",
+      "fee": {
+        "amount": [
+          {
+            "denom": "utestcore",
+            "amount": "5000"
+          }
+        ],
+        "gas": "200000"
+      },
+      "msgs": [
+        {
+          "type": "cosmos-sdk/MsgSend",
+          "value": {
+            "from_address": "testcore1n9a7x46880h6qrtjmvwxrlgt0yprj702nz0flw",
+            "to_address": "testcore1n9a7x46880h6qrtjmvwxrlgt0yprj702nz0flw",
+            "amount": [
+              {
+                "denom": "utestcore",
+                "amount": "1000000"
+              }
+            ]
+          }
+        }
+      ],
+      "memo": ""
+    }
+  },
+  {
+    "id": "hippo-transfer",
+    "scenarioCode": "078",
+    "label": "Hippo Protocol HP transfer",
+    "family": "cosmos",
+    "applicableChainIds": [
+      "cosmos:hippo-protocol-1/slip44:118"
+    ],
+    "note": "Hippo Protocol HP transfer — wm Amino SignDoc(MsgSend). denom ahp.  from/to=hippo1n9a7x46880h6qrtjmvwxrlgt0yprj7028s65fc(디바이스 self-send, atom 키 재인코딩). account_number/sequence는 대표값 — network 모드=wm live REST 덮어쓰기, no-network 모드=preset 값 그대로 사용. applicableChainIds 단일-체인(1d4201c 가드). 실서명 검증은 짝 m09-04-13.",
+    "sourceUrl": "https://github.com/cosmos/cosmjs",
+    "transaction": {
+      "chain_id": "hippo-protocol-1",
+      "account_number": "12345",
+      "sequence": "3",
+      "fee": {
+        "amount": [
+          {
+            "denom": "ahp",
+            "amount": "5000"
+          }
+        ],
+        "gas": "200000"
+      },
+      "msgs": [
+        {
+          "type": "cosmos-sdk/MsgSend",
+          "value": {
+            "from_address": "hippo1n9a7x46880h6qrtjmvwxrlgt0yprj7028s65fc",
+            "to_address": "hippo1n9a7x46880h6qrtjmvwxrlgt0yprj7028s65fc",
+            "amount": [
+              {
+                "denom": "ahp",
+                "amount": "1000000"
+              }
+            ]
+          }
+        }
+      ],
+      "memo": ""
+    }
+  },
+  {
+    "id": "hippo-testnet-transfer",
+    "scenarioCode": "079",
+    "label": "Hippo Protocol Testnet HP transfer",
+    "family": "cosmos",
+    "applicableChainIds": [
+      "cosmos:hippo-protocol-testnet-1/slip44:118"
+    ],
+    "note": "Hippo Protocol Testnet HP transfer — wm Amino SignDoc(MsgSend). denom ahp.  from/to=hippo1n9a7x46880h6qrtjmvwxrlgt0yprj7028s65fc(디바이스 self-send, atom 키 재인코딩). account_number/sequence는 대표값 — network 모드=wm live REST 덮어쓰기, no-network 모드=preset 값 그대로 사용. applicableChainIds 단일-체인(1d4201c 가드). 실서명 검증은 짝 m09-04-13.",
+    "sourceUrl": "https://github.com/cosmos/cosmjs",
+    "transaction": {
+      "chain_id": "hippo-protocol-testnet-1",
+      "account_number": "12345",
+      "sequence": "3",
+      "fee": {
+        "amount": [
+          {
+            "denom": "ahp",
+            "amount": "5000"
+          }
+        ],
+        "gas": "200000"
+      },
+      "msgs": [
+        {
+          "type": "cosmos-sdk/MsgSend",
+          "value": {
+            "from_address": "hippo1n9a7x46880h6qrtjmvwxrlgt0yprj7028s65fc",
+            "to_address": "hippo1n9a7x46880h6qrtjmvwxrlgt0yprj7028s65fc",
+            "amount": [
+              {
+                "denom": "ahp",
+                "amount": "1000000"
+              }
+            ]
+          }
+        }
+      ],
+      "memo": ""
+    }
+  },
+  {
+    "id": "astar-transfer",
+    "scenarioCode": "080",
+    "label": "Astar ASTR transfer",
+    "family": "polkadot",
+    "applicableChainIds": [
+      "polkadot:9eb76c5184c4ab8679d2d5d819fdf90b/slip44:810"
+    ],
+    "note": "⚠️ `balances.transfer` 는 라이브 런타임에 **존재하지 않는다** — Substrate 가 제거하고 `transferAllowDeath` 로 대체했다(실측 2026-07-14: polkadot spec 2003000 / astar spec 2207 의 `balances.*` = transferAllowDeath·transferKeepAlive·transferAll·forceTransfer… — `transfer` 없음). Astar ASTR transfer — wm convertTransaction은 method/args[0]/args[1]만 소비(era/specVersion/blockHash/genesisHash는 아래 Form B대로 all-zero placeholder로 present — wm이 live api로 실값 재도출·치환한다. applicableChainIds를 단일-체인으로 고정해 mainnet identity가 다른 체인에 auto-fill되는 걸 막는다, 1d4201c 가드). args[0]=SS58(prefix 5) 자기주소 self-send(ZaGqVp3GgGJjTC3nTF45vNfx8CYkmzbJRzpjRNgqa3NQ4r3, DOT 키 재인코딩), args[1]=Planck(decimals 18, 1 token=1e18). applicableChainIds 단일-체인. 실서명 검증은 짝 m09-04-13. 【2026-07-22 확정 형태 — noNetwork pure-signer】 이 preset 은 **decoded 형태(Form B)** 다. Substrate 서명 payload 에 실제로 들어가는 값(`call`=method/args · `era` · `nonce` · `tip` · `blockHash` · `genesisHash` · `specVersion` · `transactionVersion`)을 **앱이 전부 제공**하고 wm 은 그 값을 그대로 써야 한다(자체 재도출 금지). `fee` 는 기기 표시용으로 앱이 준다. ⚠️ 아래 값들은 **전부 placeholder(가짜값)** 이며 prepare 가 실값으로 치환한다: `era`(→최신 헤더 기준 mortal period 600) · `blockHash`(→그 era 의 짝 블록 hash) · `genesisHash`(→`api.genesisHash`, **실제 서명 대상 체인**의 값. chainId 의 reference 를 신뢰하지 않는다 — Creditcoin 은 chainId 와 실 genesis 가 어긋나 있고 Polkadot 은 provider 가 Asset Hub 에 붙는다) · `specVersion`/`transactionVersion`(→`api.runtimeVersion`) · `nonce` · `fee`(→`paymentInfo().partialFee`) · `args[0]`(→기기 2번째 account, self-send 금지). ⚠️ `era` 는 가짜값을 mortal 처럼 만들 수 없다 — `0x00` 으로 시작하는 값은 전부 Immortal 로 디코드되므로 더미를 두고 prepare 가 통째로 교체한다. Immortal 로 서명하려면 `blockHash === genesisHash` 여야 짝이 맞는다. ⚠️ 현재 wm 은 이 형태를 noNetwork 에서 **거부**한다(게이트 5.3b, blob 의무화) — 그래서 하네스가 임시로 `extra.scaleHex` 를 조립해 붙인다. 형태 대조에 뜨는 `추가 1: extra.scaleHex` 는 **미착륙 wm 갭의 신호**이며, wm 이 Form B 를 수용하면 사라진다.",
+    "sourceUrl": "https://github.com/polkadot-js/api",
+    "transaction": {
+      "method": "balances.transferAllowDeath",
+      "args": [
+        "ZaGqVp3GgGJjTC3nTF45vNfx8CYkmzbJRzpjRNgqa3NQ4r3",
+        "1000000000000000000"
+      ],
+      "era": "0x00",
+      "nonce": 0,
+      "tip": 0,
+      "fee": "0",
+      "specVersion": 0,
+      "transactionVersion": 0,
+      "blockHash": "0x0000000000000000000000000000000000000000000000000000000000000000",
+      "genesisHash": "0x0000000000000000000000000000000000000000000000000000000000000000"
+    }
+  },
+  {
+    "id": "shibuya-transfer",
+    "scenarioCode": "081",
+    "label": "Shibuya SBY transfer",
+    "family": "polkadot",
+    "applicableChainIds": [
+      "polkadot:ddb89643205c8fe1c79afeb31f48d50f/slip44:810"
+    ],
+    "note": "⚠️ `balances.transfer` 는 라이브 런타임에 **존재하지 않는다** — Substrate 가 제거하고 `transferAllowDeath` 로 대체했다(실측 2026-07-14: polkadot spec 2003000 / astar spec 2207 의 `balances.*` = transferAllowDeath·transferKeepAlive·transferAll·forceTransfer… — `transfer` 없음). Shibuya SBY transfer — wm convertTransaction은 method/args[0]/args[1]만 소비(era/specVersion/blockHash/genesisHash는 아래 Form B대로 all-zero placeholder로 present — wm이 live api로 실값 재도출·치환한다. applicableChainIds를 단일-체인으로 고정해 mainnet identity가 다른 체인에 auto-fill되는 걸 막는다, 1d4201c 가드). args[0]=SS58(prefix 5) 자기주소 self-send(ZaGqVp3GgGJjTC3nTF45vNfx8CYkmzbJRzpjRNgqa3NQ4r3, DOT 키 재인코딩), args[1]=Planck(decimals 18, 1 token=1e18). applicableChainIds 단일-체인. 실서명 검증은 짝 m09-04-13. 【2026-07-22 확정 형태 — noNetwork pure-signer】 이 preset 은 **decoded 형태(Form B)** 다. Substrate 서명 payload 에 실제로 들어가는 값(`call`=method/args · `era` · `nonce` · `tip` · `blockHash` · `genesisHash` · `specVersion` · `transactionVersion`)을 **앱이 전부 제공**하고 wm 은 그 값을 그대로 써야 한다(자체 재도출 금지). `fee` 는 기기 표시용으로 앱이 준다. ⚠️ 아래 값들은 **전부 placeholder(가짜값)** 이며 prepare 가 실값으로 치환한다: `era`(→최신 헤더 기준 mortal period 600) · `blockHash`(→그 era 의 짝 블록 hash) · `genesisHash`(→`api.genesisHash`, **실제 서명 대상 체인**의 값. chainId 의 reference 를 신뢰하지 않는다 — Creditcoin 은 chainId 와 실 genesis 가 어긋나 있고 Polkadot 은 provider 가 Asset Hub 에 붙는다) · `specVersion`/`transactionVersion`(→`api.runtimeVersion`) · `nonce` · `fee`(→`paymentInfo().partialFee`) · `args[0]`(→기기 2번째 account, self-send 금지). ⚠️ `era` 는 가짜값을 mortal 처럼 만들 수 없다 — `0x00` 으로 시작하는 값은 전부 Immortal 로 디코드되므로 더미를 두고 prepare 가 통째로 교체한다. Immortal 로 서명하려면 `blockHash === genesisHash` 여야 짝이 맞는다. ⚠️ 현재 wm 은 이 형태를 noNetwork 에서 **거부**한다(게이트 5.3b, blob 의무화) — 그래서 하네스가 임시로 `extra.scaleHex` 를 조립해 붙인다. 형태 대조에 뜨는 `추가 1: extra.scaleHex` 는 **미착륙 wm 갭의 신호**이며, wm 이 Form B 를 수용하면 사라진다.",
+    "sourceUrl": "https://github.com/polkadot-js/api",
+    "transaction": {
+      "method": "balances.transferAllowDeath",
+      "args": [
+        "ZaGqVp3GgGJjTC3nTF45vNfx8CYkmzbJRzpjRNgqa3NQ4r3",
+        "1000000000000000000"
+      ],
+      "era": "0x00",
+      "nonce": 0,
+      "tip": 0,
+      "fee": "0",
+      "specVersion": 0,
+      "transactionVersion": 0,
+      "blockHash": "0x0000000000000000000000000000000000000000000000000000000000000000",
+      "genesisHash": "0x0000000000000000000000000000000000000000000000000000000000000000"
+    }
+  },
+  {
+    "id": "creditcoin-transfer",
+    "scenarioCode": "082",
+    "label": "Creditcoin CTC transfer",
+    "family": "polkadot",
+    "applicableChainIds": [
+      "polkadot:6673c7e2c2b7bde45a60c71ef70d9c7c/slip44:354"
+    ],
+    "note": "⚠️ `balances.transfer` 는 라이브 런타임에 **존재하지 않는다** — Substrate 가 제거하고 `transferAllowDeath` 로 대체했다(실측 2026-07-14: polkadot spec 2003000 / astar spec 2207 의 `balances.*` = transferAllowDeath·transferKeepAlive·transferAll·forceTransfer… — `transfer` 없음). Creditcoin CTC transfer — wm convertTransaction은 method/args[0]/args[1]만 소비(era/specVersion/blockHash/genesisHash는 아래 Form B대로 all-zero placeholder로 present — wm이 live api로 실값 재도출·치환한다. applicableChainIds를 단일-체인으로 고정해 mainnet identity가 다른 체인에 auto-fill되는 걸 막는다, 1d4201c 가드). args[0]=SS58(prefix 42) 자기주소 self-send(5FhgQCqxVSdCWdADJ9nw4GDPs5VRnZHrHEVgViApyD3Qp1TZ, DOT 키 재인코딩), args[1]=Planck(decimals 18, 1 token=1e18). applicableChainIds 단일-체인. 실서명 검증은 짝 m09-04-13. 【2026-07-22 확정 형태 — noNetwork pure-signer】 이 preset 은 **decoded 형태(Form B)** 다. Substrate 서명 payload 에 실제로 들어가는 값(`call`=method/args · `era` · `nonce` · `tip` · `blockHash` · `genesisHash` · `specVersion` · `transactionVersion`)을 **앱이 전부 제공**하고 wm 은 그 값을 그대로 써야 한다(자체 재도출 금지). `fee` 는 기기 표시용으로 앱이 준다. ⚠️ 아래 값들은 **전부 placeholder(가짜값)** 이며 prepare 가 실값으로 치환한다: `era`(→최신 헤더 기준 mortal period 600) · `blockHash`(→그 era 의 짝 블록 hash) · `genesisHash`(→`api.genesisHash`, **실제 서명 대상 체인**의 값. chainId 의 reference 를 신뢰하지 않는다 — Creditcoin 은 chainId 와 실 genesis 가 어긋나 있고 Polkadot 은 provider 가 Asset Hub 에 붙는다) · `specVersion`/`transactionVersion`(→`api.runtimeVersion`) · `nonce` · `fee`(→`paymentInfo().partialFee`) · `args[0]`(→기기 2번째 account, self-send 금지). ⚠️ `era` 는 가짜값을 mortal 처럼 만들 수 없다 — `0x00` 으로 시작하는 값은 전부 Immortal 로 디코드되므로 더미를 두고 prepare 가 통째로 교체한다. Immortal 로 서명하려면 `blockHash === genesisHash` 여야 짝이 맞는다. ⚠️ 현재 wm 은 이 형태를 noNetwork 에서 **거부**한다(게이트 5.3b, blob 의무화) — 그래서 하네스가 임시로 `extra.scaleHex` 를 조립해 붙인다. 형태 대조에 뜨는 `추가 1: extra.scaleHex` 는 **미착륙 wm 갭의 신호**이며, wm 이 Form B 를 수용하면 사라진다.",
+    "sourceUrl": "https://github.com/polkadot-js/api",
+    "transaction": {
+      "method": "balances.transferAllowDeath",
+      "args": [
+        "5FhgQCqxVSdCWdADJ9nw4GDPs5VRnZHrHEVgViApyD3Qp1TZ",
+        "1000000000000000000"
+      ],
+      "era": "0x00",
+      "nonce": 0,
+      "tip": 0,
+      "fee": "0",
+      "specVersion": 0,
+      "transactionVersion": 0,
+      "blockHash": "0x0000000000000000000000000000000000000000000000000000000000000000",
+      "genesisHash": "0x0000000000000000000000000000000000000000000000000000000000000000"
+    }
+  },
+  {
+    "id": "creditcoin-testnet-transfer",
+    "scenarioCode": "083",
+    "label": "Creditcoin Testnet CTC transfer",
+    "family": "polkadot",
+    "applicableChainIds": [
+      "polkadot:8a2e8af69a7892d2e60a77e3df4e0fa0/slip44:354"
+    ],
+    "note": "⚠️ `balances.transfer` 는 라이브 런타임에 **존재하지 않는다** — Substrate 가 제거하고 `transferAllowDeath` 로 대체했다(실측 2026-07-14: polkadot spec 2003000 / astar spec 2207 의 `balances.*` = transferAllowDeath·transferKeepAlive·transferAll·forceTransfer… — `transfer` 없음). Creditcoin Testnet CTC transfer — wm convertTransaction은 method/args[0]/args[1]만 소비(era/specVersion/blockHash/genesisHash는 아래 Form B대로 all-zero placeholder로 present — wm이 live api로 실값 재도출·치환한다. applicableChainIds를 단일-체인으로 고정해 mainnet identity가 다른 체인에 auto-fill되는 걸 막는다, 1d4201c 가드). args[0]=SS58(prefix 42) 자기주소 self-send(5FhgQCqxVSdCWdADJ9nw4GDPs5VRnZHrHEVgViApyD3Qp1TZ, DOT 키 재인코딩), args[1]=Planck(decimals 18, 1 token=1e18). applicableChainIds 단일-체인. 실서명 검증은 짝 m09-04-13. 【2026-07-22 확정 형태 — noNetwork pure-signer】 이 preset 은 **decoded 형태(Form B)** 다. Substrate 서명 payload 에 실제로 들어가는 값(`call`=method/args · `era` · `nonce` · `tip` · `blockHash` · `genesisHash` · `specVersion` · `transactionVersion`)을 **앱이 전부 제공**하고 wm 은 그 값을 그대로 써야 한다(자체 재도출 금지). `fee` 는 기기 표시용으로 앱이 준다. ⚠️ 아래 값들은 **전부 placeholder(가짜값)** 이며 prepare 가 실값으로 치환한다: `era`(→최신 헤더 기준 mortal period 600) · `blockHash`(→그 era 의 짝 블록 hash) · `genesisHash`(→`api.genesisHash`, **실제 서명 대상 체인**의 값. chainId 의 reference 를 신뢰하지 않는다 — Creditcoin 은 chainId 와 실 genesis 가 어긋나 있고 Polkadot 은 provider 가 Asset Hub 에 붙는다) · `specVersion`/`transactionVersion`(→`api.runtimeVersion`) · `nonce` · `fee`(→`paymentInfo().partialFee`) · `args[0]`(→기기 2번째 account, self-send 금지). ⚠️ `era` 는 가짜값을 mortal 처럼 만들 수 없다 — `0x00` 으로 시작하는 값은 전부 Immortal 로 디코드되므로 더미를 두고 prepare 가 통째로 교체한다. Immortal 로 서명하려면 `blockHash === genesisHash` 여야 짝이 맞는다. ⚠️ 현재 wm 은 이 형태를 noNetwork 에서 **거부**한다(게이트 5.3b, blob 의무화) — 그래서 하네스가 임시로 `extra.scaleHex` 를 조립해 붙인다. 형태 대조에 뜨는 `추가 1: extra.scaleHex` 는 **미착륙 wm 갭의 신호**이며, wm 이 Form B 를 수용하면 사라진다.",
+    "sourceUrl": "https://github.com/polkadot-js/api",
+    "transaction": {
+      "method": "balances.transferAllowDeath",
+      "args": [
+        "5FhgQCqxVSdCWdADJ9nw4GDPs5VRnZHrHEVgViApyD3Qp1TZ",
+        "1000000000000000000"
+      ],
+      "era": "0x00",
+      "nonce": 0,
+      "tip": 0,
+      "fee": "0",
+      "specVersion": 0,
+      "transactionVersion": 0,
+      "blockHash": "0x0000000000000000000000000000000000000000000000000000000000000000",
+      "genesisHash": "0x0000000000000000000000000000000000000000000000000000000000000000"
+    }
+  },
+  {
+    "id": "trx-trc20-descriptor-transfer",
+    "scenarioCode": "084",
+    "label": "TRON TRC20 transfer — form-D descriptor (미등록/커스텀 토큰)",
+    "family": "tron",
+    "applicableChainIds": [
+      "tron:0x2b6653dc/slip44:195"
+    ],
+    "note": "미등록(커스텀) 토큰 전송 — form-D descriptor. wm m02-05-68 buildTrc20TransferFromDescriptor 가 transaction.token={contract,to,amount} 를 TRC-20 transfer calldata(a9059cbb + pad32(to) + pad32(amount)) 로 빌드 → generic {type:'trigger'} shape → 서명. ★form-E(trx-trc20-transfer, raw_data 봉투)와 달리 registry 등록 불필요 — 미등록 TRC-20 컨트랙트도 서명 가능. contract=TThzxNRLrW2Brp9DcTQU8i4Wd9udCWEdZ3 은 stUSDT(JustLend staked USDT, dec 18) — **TRON mainnet 온체인 실재 + trc-token.json 미등록**(2026-07-20 RPC 확증: getcontract bytecode 有, symbol()=stUSDT, decimals()=18). descriptor 에 decimals 가 있으면 wm 3-tier resolver 가 tier-3(descriptor)로 합성 → on-chain RPC 없이 해석된다. ⚠️ 온체인 실재 토큰을 쓰는 이유: 서명 자체는 실재와 무관하나(noNetwork), 실재하지 않는 컨트랙트를 쓰면 'wm 미등록' 과 '네트워크 미등록' 이 겹쳐 검증 전제가 무너진다(TOKEN-REGISTRY-CONTRACT.md §0). owner 는 transaction.owner_address(또는 from)에서 read-only — 없으면 sender undefined → convertTransaction -32602(오서명 방지). amount=base units 문자열(×10^decimals 재스케일 금지). ⚠️ ref_block_bytes/ref_block_hash 는 no-network 서명의 **필수 입력**이며 앱이 최신 solid block 에서 만들어 넣어야 한다(TAPOS: 참조 블록이 최근 65536 블록 이내여야 broadcast 가능). 이 preset 의 값은 형식 예시일 뿐 stale 이므로 **서명 데모 전용** — 그대로 broadcast 하면 거부된다. ⚠️ token.to/owner_address 를 본인 디바이스 TRON 계정(T...)으로 교체(self-send 권장, asset risk 0). 다른 토큰으로 교체할 때는 (a) 온체인 실재 (b) trc-token.json 미등록 두 조건을 모두 확인할 것(§0). 검증: /verify-wire-sign TRON (assetKind=token, native TRX 아님, signer=owner).",
+    "sourceUrl": "https://developers.tron.network/docs/trc20-contract-interaction",
+    "transaction": {
+      "token": {
+        "contract": "TThzxNRLrW2Brp9DcTQU8i4Wd9udCWEdZ3",
+        "to": "TJRabPrwbZy45sbavfcjinPJC18kjpRTv8",
+        "amount": "1000000000000000",
+        "decimals": 18,
+        "symbol": "stUSDT"
+      },
+      "owner_address": "TJRabPrwbZy45sbavfcjinPJC18kjpRTv8",
+      "raw_data": {
+        "ref_block_bytes": "b801",
+        "ref_block_hash": "e4a5f6d7c8b9a0e1"
+      },
+      "fee": 1100000
+    }
+  },
+  {
+    "id": "cosmos-assetft-descriptor-transfer",
+    "scenarioCode": "085",
+    "label": "Cosmos assetft transfer — form-D descriptor (미등록/커스텀 토큰)",
+    "family": "cosmos",
+    "applicableChainIds": [
+      "cosmos:coreum-mainnet-1/slip44:990"
+    ],
+    "note": "미등록(커스텀) 토큰 전송 — form-D descriptor. wm m02-05-69 buildCosmosTokenTransferFromDescriptor 가 transaction.token={contract,to,amount} 를 amino MsgSend 봉투(msgs:[{type:'cosmos-sdk/MsgSend', value:{from_address,to_address,amount:[{denom:contract,amount}]}}]) 로 빌드 → 서명. ★form-E(coreum-assetft-transfer)와 달리 smart-token.json registry 등록 불필요 — 미등록 denom 도 서명 가능. contract=txd-core1pjt5jvv7dwmr5pfk5ecc5mc38rahas7d90vklk 는 TXDex Rewards Token(symbol TXD, precision 6) — coreum mainnet 온체인 실재 + smart-token.json 미등록 (2026-07-22 assetft/bank 메타데이터 조회 확증). ⚠️ burn_rate 0.0005(0.05%) — self-send 여도 전송분의 0.05%가 소각된다(send_commission_rate 는 0). ★ 이전 값 drop-core1zhs909…studdrz(XRPL 브리지 XRP)에서 교체한 이유: 실기기 검증 계정이 drop- 토큰을 **보유하지 않아**(잔액 0) 온체인 실행이 항상 `insufficient funds`로 실패했다 — 서명·수수료 경로는 통과하는데 온체인 성공(VERIFIED)에는 구조적으로 도달 불가 (2026-07-22 실측: txid E549B8FE…, 블록 80374439, code 5). txd- 는 검증 계정이 실제 보유(100 TXD)하므로 form-D descriptor 경로를 온체인까지 관통 검증할 수 있다. 두 토큰 모두 [온체인 실재 + wm 미등록] 전제를 동일하게 만족한다. descriptor 에 decimals 가 있으면 wm 3-tier resolver 가 tier-3(descriptor)로 합성 → on-chain RPC 없이 해석되므로 denom 실재 여부는 서명에 영향 없다(noNetwork). 그럼에도 실재 토큰을 쓰는 이유: 실재하지 않으면 [wm 미등록] 과 [네트워크 미등록] 이 겹쳐 검증 전제가 무너진다(TOKEN-REGISTRY-CONTRACT.md §0). 이전 값 utkn-core1qjhx… 는 실존 이슈어 주소에 조작된 subunit 을 붙인 가짜 denom 이었다(3개 엔드포인트 전부 token not found, supply 0). denom 은 chain-prefix 검증 없이 verbatim 사용(54 parity). amount=base units(decimals 6 → 1000000=1토큰, 재스케일 없음). sender 는 transaction.from 에서 read-only — convertTransaction 이 denom drop 후 buildTransaction 이 합성 TokenAccount.contractAddress(=denom)로 재주입. account_number/sequence/fee 는 대표값 — network 모드=wm live REST 덮어쓰기, no-network 모드=그대로 사용. ⚠️ token.to/from 을 본인 디바이스 Coreum 계정(core1...)으로 확인/교체(self-send 권장, asset risk 0). ⚠️ 반드시 Coreum mainnet(slip44:990). 검증: /verify-wire-sign COSMOS (MsgSend denom=token, native ucore 아님; secp recover=device 계정).",
+    "sourceUrl": "https://docs.coreum.dev/docs/modules/assetft",
+    "transaction": {
+      "token": {
+        "contract": "txd-core1pjt5jvv7dwmr5pfk5ecc5mc38rahas7d90vklk",
+        "to": "core1qjhxdnswckx9l2yn2p8yyq2sphcjnlu9qg68ll",
+        "amount": "1000000",
+        "decimals": 6,
+        "symbol": "TXD"
+      },
+      "from": "core1qjhxdnswckx9l2yn2p8yyq2sphcjnlu9qg68ll",
+      "chain_id": "coreum-mainnet-1",
+      "account_number": "12345",
+      "sequence": "3",
+      "fee": {
+        "amount": [
+          {
+            "denom": "ucore",
+            "amount": "5000"
+          }
+        ],
+        "gas": "200000"
+      },
+      "memo": ""
+    }
+  },
+  {
+    "id": "algo-asa-descriptor-transfer",
+    "scenarioCode": "086",
+    "label": "Algorand ASA transfer — form-D descriptor (미등록/커스텀 토큰)",
+    "family": "algorand",
+    "applicableChainIds": [
+      "algorand:wGHE2Pwdvd7S12BL5FaOP20EGYesN73k/slip44:283"
+    ],
+    "note": "미등록(커스텀) ASA 전송 — form-D descriptor. wm m02-05-69 buildAlgorandAssetTransferFromDescriptor 가 transaction.token={contract,to,amount} 를 axfer 봉투({type:'axfer',assetIndex,from,to,amount}) 로 빌드 → 서명. ★form-E(algo-asa-transfer)와 달리 algo-asset.json registry 등록 불필요 — 미등록 assetIndex 도 서명 가능. contract=312769 은 Tether USDt(dec 6) — ALGO mainnet 온체인 실재 + algo-asset.json 미등록 (2026-07-20 RPC 확증). 이전 값 987654321 은 indexer 404 인 합성 assetIndex 였다. descriptor 에 decimals 가 있으면 wm 3-tier resolver 가 tier-3(descriptor)로 합성 → on-chain RPC 없이 해석되므로 assetIndex 실재 여부는 서명에 영향 없다(noNetwork). 그럼에도 실재 토큰을 쓰는 이유: 실재하지 않으면 [wm 미등록] 과 [네트워크 미등록] 이 겹쳐 검증 전제가 무너진다(TOKEN-REGISTRY-CONTRACT.md §0).. assetIndex 는 /^[1-9][0-9]*$/ 검증(비숫자면 -32602, downstream +contractAddress silent NaN 차단). from 보존 필수(convert 첫 분기 typeof obj.from==='string' 요구) — 없으면 pass-through 로 빠져 미서명. 실제 assetIndex 는 합성 account.currency.contractAddress 에서 읽음. fee/firstRound/lastRound/genesisHash 는 sign 시 wm live REST(suggested params)가 덮어씀. ⚠️ token.to/from 을 본인 디바이스 Algorand 계정으로 확인/교체(self-send 권장, asset risk 0). ⚠️ 반드시 Algorand mainnet(slip44:283). 검증: /verify-wire-sign ALGORAND (axfer assetIndex=token, native ALGO 'pay' 아님; ed25519 verify=device 계정).",
+    "sourceUrl": "https://github.com/algorand/js-algorand-sdk",
+    "transaction": {
+      "token": {
+        "contract": "312769",
+        "to": "Y76M3MSY6DKBRHBL7C3NNDXGS5IIMQVQVUAB6MP4XEMMGVF2QWNPL226CA",
+        "amount": "1000",
+        "decimals": 6,
+        "symbol": "USDt"
+      },
+      "from": "Y76M3MSY6DKBRHBL7C3NNDXGS5IIMQVQVUAB6MP4XEMMGVF2QWNPL226CA",
+      "fee": 1000,
+      "firstRound": 34000000,
+      "lastRound": 34001000,
+      "genesisID": "mainnet-v1.0",
+      "genesisHash": "wGHE2Pwdvd7S12BL5FaOP20EGYesN73ktiHc0CYz/uo="
+    }
+  },
+  {
+    "id": "dot-scalehex-unsigned-passthrough",
+    "scenarioCode": "087",
+    "label": "Polkadot SCALE-encoded unsigned extrinsic passthrough (blind-sign)",
+    "family": "polkadot",
+    "applicableChainIds": [
+      "polkadot:91b171bb158e2d3848fa23a9f1c25182/slip44:354"
+    ],
+    "note": "★blind-sign 패스스루 — `WIRE-NONETWORK-SDK-CHANGES-2026-07-13.md` §2 Polkadot row. 【payload key = `extra.scaleHex`】 SCALE-encoded unsigned call. method/args 는 **표시용**이고 실 서명 바이트는 scaleHex 가 authoritative — wm convert 가 scaleHex 를 우선 채택한다(DC-3217). Polkadot 은 다른 blob family(Stellar xdr / Hedera·Tezos unsignedTx)와 달리 완전 blind-sign 이 아니라 **partial** — wm 이 표시-안전(display-safety) metadata/header RPC 는 계속 수행한다(consensus-autofill 인 nonce/era/blockHash 는 안 함). ⚠️ **blob 은 체인별 인코딩이다 — 대표값이 아니다.** call 앞 2바이트 = (pallet index, call index) 인데 pallet index 가 런타임마다 다르다. 아래 hex 는 **wm 의 POLKADOT provider 가 실제로 붙는 체인**(Polkadot **Asset Hub**/statemint — Asset Hub Migration 이후 balances 가 여기로 이전, blockExplorerUrl 도 assethub-polkadot.subscan.io) 기준 `balances.transferAllowDeath` 인코딩이다: `0x0a00…`(Asset Hub Balances=pallet 10). 같은 바이트가 **릴레이 체인에선 pallet 5=Balances** 라 릴레이 인코딩(`0x0500…`)을 넣으면 Asset Hub 에선 **`preimage.notePreimage` 로 디코드**되어 전혀 다른 call 이 서명된다(실측 2026-07-14). amount=1000000000000 (=**100 DOT** — DOT decimals 는 10 이다. 이전 note 의 “1 DOT” 은 오기, 실측 정정 2026-07-22), dest AccountId32 는 args[0](dot-transfer 와 동일 self-send SS58 주소)의 SS58-디코드 pubkey 와 byte-identical(display↔authoritative 일치 — 별도 파생값 사용 금지). nonce/tip 은 app 제공 유지. 실 서명 검증은 sdk sibling swproxy 하네스(m09-05-11). broadcast 안 함. 【2026-07-22 확정 형태 — noNetwork pure-signer】 이 preset 은 **blob 형태(Form A)** 다. `extra.scaleHex` 가 call 을 통째로 담고(그래서 `method`/`args` 는 사람이 읽기 위한 주석이며 wm 은 읽지 않는다), call 에 들어있지 않은 나머지 서명 payload 값(`era`·`nonce`·`tip`·`blockHash`·`genesisHash`·`specVersion`·`transactionVersion`)과 표시용 `fee` 는 **앱이 전부 제공**한다. Form B(decoded) 와 달리 `extra.scaleHex` 는 **실 blob**(placeholder 아님) 이다 — 이 preset 의 존재 이유가 blind-sign 경로 검증이라 재조립하지 않고 그대로 서명한다. ⚠️ 아래 fresh state 는 placeholder(가짜값)이며 prepare 가 치환한다: `era`·`blockHash`·`genesisHash`·`specVersion`·`transactionVersion`·`nonce`·`fee`. `genesisHash` 는 chainId 가 아니라 **실제 서명 대상 provider** 에서 읽는다 — 실측 2026-07-22: 이 preset 의 chainId 는 릴레이(`91b171bb…`)를 가리키지만 wm 이 붙는 곳은 **Asset Hub**(genesis `0x68d56f15…`, specVersion 2003001)다. 하드코딩하면 조용히 무효 서명이 된다. ⚠️ **`method`/`args` 는 두지 않는다** — blob 이 call 을 통째로 담으므로 같은 값을 두 번 표현하게 되고 그 순간 drift 가 난다(실측 2026-07-22: 하네스가 blob 의 dest 만 치환하고 args[0] 을 남겨 표시용 필드와 서명 바이트가 서로 다른 수취인을 가리켰다). 사람이 읽을 정보는 이 note 가 담는다 — 위 blob 은 `balances.transferAllowDeath(dest=14dyYY72MDtfxAAjFnqwCR3YihV5UrqzMjEAf1ABXJ4vzLZj, amount=1000000000000 planck = **100 DOT**, DOT decimals 10)` 이다.",
+    "sourceUrl": "https://github.com/polkadot-js/api",
+    "transaction": {
+      "era": "0x00",
+      "nonce": 0,
+      "tip": 0,
+      "fee": "0",
+      "specVersion": 0,
+      "transactionVersion": 0,
+      "blockHash": "0x0000000000000000000000000000000000000000000000000000000000000000",
+      "genesisHash": "0x0000000000000000000000000000000000000000000000000000000000000000",
+      "extra": {
+        "scaleHex": "0x0a0000a0e7e0c97fddb687bb4e3a9b20a47314320c3b4b124c829a1e65b705dd0edb31070010a5d4e8"
+      }
     }
   }
 ]

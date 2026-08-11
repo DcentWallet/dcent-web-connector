@@ -1600,5 +1600,50 @@ describe('PopupTransport', () => {
       })
       expect(h).not.toHaveBeenCalled()
     })
+
+    it('T-U-DEVSTATE-12: 🔴 팝업이 교체되면 기기 축이 unknown 으로 리셋되고 발행된다', async () => {
+      const h = await connected()
+      dispatchResponse(DEFAULT_ORIGIN, {
+        type: '_deviceState',
+        device: 'connected',
+        info: { deviceId: 'OLD-DEVICE', label: 'old' },
+      })
+      h.mockClear()
+
+      // 사용자가 팝업을 **직접 닫는다**. 500ms 폴링이 돌기 전이라 close() 는 아직 안 불렸다
+      // — 이 창이 이 결함의 무대다.
+      mockPopup.closed = true
+
+      // 그 사이 dApp 이 send() 를 부르면 ensurePopup 이 close() 를 거치지 않고 새 팝업을 연다.
+      const nextPopup = makeMockPopup()
+      activeMockPopup = nextPopup
+      openSpy.mockImplementation(() => nextPopup as unknown as Window)
+      installHandshakeAutoRespond(nextPopup)
+      void transport.send(makeEnvelope('after-replace')).catch(() => {})
+      await flushHandshake()
+
+      // 🔴 팝업 축은 'connected' 그대로라 **쌍 dedupe 에 걸려 발행이 0 이 되는 것**이 결함이었다.
+      //    새 팝업은 아직 기기를 관측하지 못했으므로 'unknown' 이어야 하고, 그 변화로 발행된다.
+      const deviceEmits = h.mock.calls.filter((c) => c[1].device === 'unknown')
+      // 팝업 교체가 dApp 에 전혀 안 보이면 안 된다 (결함 시 0건)
+      expect(deviceEmits.length).toBeGreaterThanOrEqual(1)
+      const [, detail] = deviceEmits[0]
+      // 팝업 축은 여전히 connected — 새 창이 열렸으므로
+      expect(detail.popup).toBe('connected')
+      // 기기가 빠진 게 아니라 '관측 불가' — disconnected 로 단정하면 dApp 에 거짓말이 나간다
+      expect(detail.device).toBe('unknown')
+      // 옛 기기 정보가 남으면 dApp 이 없는 기기를 표시한다
+      expect(detail.deviceInfo).toBeUndefined()
+
+      // 새 팝업이 실제 기기를 보고하면 그때 채워진다 (교체 후에도 축이 살아있는지).
+      h.mockClear()
+      dispatchResponse(DEFAULT_ORIGIN, {
+        type: '_deviceState',
+        device: 'connected',
+        info: { deviceId: 'NEW-DEVICE' },
+      })
+      expect(h).toHaveBeenCalledTimes(1)
+      expect(h.mock.calls[0][1].deviceInfo.deviceId).toBe('NEW-DEVICE')
+    })
   })
 })

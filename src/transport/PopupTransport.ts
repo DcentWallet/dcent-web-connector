@@ -362,7 +362,22 @@ export class PopupTransport implements MessageTransport {
       )
       return
     }
-    this.setState('connected')
+    // 🔴 **팝업이 새로 열리면 기기 축도 함께 되돌린다** (2026-08-11, PR #177 리뷰 P2).
+    //
+    // 팝업 축만 갱신하면, 사용자가 팝업을 직접 닫고 **500ms 폴링이 돌기 전에** dApp 이
+    // `send()` 를 부른 경우 `close()` 를 거치지 않고 여기서 새 팝업이 열린다. 그러면 이전
+    // 팝업의 `device:'connected'` + 옛 `deviceId` 가 그대로 이어지고, 폴링은 이후 살아있는
+    // 새 팝업을 보므로 다시 발동하지 않는다. 게다가 `currentState` 가 이미 'connected' 라
+    // 쌍 dedupe 에 걸려 **리스너가 한 번도 불리지 않는다** — dApp 은 팝업이 바뀐 사실도,
+    // 기기 축이 미상이 된 사실도 알 수 없다.
+    //
+    // 'unknown' 인 이유는 `close()` 와 같다 — 새 팝업은 아직 기기를 **관측하지 못한** 것이지
+    // 기기가 빠진 게 아니다. 'disconnected' 로 적으면 dApp 에 거짓 단정이 나간다.
+    // 새 팝업이 handshake 후 `_deviceState` 를 보내면 그때 실제 값으로 채워진다.
+    //
+    // 첫 오픈(이전 팝업 없음)에서는 device 가 이미 'unknown' 이라 이 항은 no-op 이고,
+    // 팝업 축 전환(disconnected → connected)만 1회 발행된다 — 종전과 동일하다.
+    this.applyState({ popup: 'connected', device: 'unknown', deviceInfo: undefined })
   }
 
   private ensureMessageListener (): void {
@@ -659,9 +674,10 @@ export class PopupTransport implements MessageTransport {
     return localMajor.length > 0 && remoteMajor.length > 0 && localMajor === remoteMajor
   }
 
-  private setState (state: TransportState): void {
-    this.applyState({ popup: state })
-  }
+  // (2026-08-11) `setState(popup)` 헬퍼 제거 — 유일한 호출자였던 `ensurePopup` 이 두 축을
+  // 함께 넘기도록 바뀌면서 죽은 코드가 됐다(PR #177 리뷰 P2). 팝업 축 **단독** 갱신 경로를
+  // 남겨두면 같은 결함(한 축만 고쳐 다른 축이 stale)이 재도입되기 쉬우므로 헬퍼 자체를 없앤다.
+  // 축 갱신은 이제 `applyState`(둘 다 명시) 또는 `setDeviceState`(기기 축 전용) 둘 뿐이다.
 
   /**
    * (2026-08-10) 기기 축 갱신 — bridge 의 `_deviceState` push 가 호출한다.

@@ -8,9 +8,7 @@
   "files": [
     "dist/v2/",
     "src/",
-    "docs/",
-    "playground.js",
-    "index-v2.html",
+    "docs/v2-payload-contract.md",
     "MIGRATION-v1-to-v2.md",
     "README.md",
     "LICENSE"

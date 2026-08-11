@@ -70,6 +70,11 @@ export function syncAccount (accountInfos: V2SyncAccountInfo[]): Promise<V1Respo
 /**
  * v1 dcent.selectAddress (src-v1/index.js#l762-772) 1:1 port.
  *
+ * mutation-isolation: 검증한 배열과 전송하는 배열을 같은 값으로 고정하기 위해 얕은 복사본을
+ * 넘긴다. `_call`은 SerialRequestQueue로 요청을 직렬화하므로 검증과 실제 `postMessage` 사이에
+ * 지연 창이 있고, 원본 참조를 넘기면 그 사이 호출자의 push/splice가 그대로 전송된다.
+ * (원소는 string 계약이라 얕은 복사로 충분 — sign()의 `_snapshotPayload`와 같은 축)
+ *
  * @param addresses 선택할 address 배열
  * @throws dcentException('param_error') Array가 아닌 경우
  */
@@ -77,5 +82,5 @@ export function selectAddress (addresses: string[]): Promise<V1Response> {
   if (!Array.isArray(addresses)) {
     throw dcentException('param_error', 'addresses is not array')
   }
-  return _call({ method: 'selectAddress', params: { addresses } })
+  return _call({ method: 'selectAddress', params: { addresses: [...addresses] } })
 }

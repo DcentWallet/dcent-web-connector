@@ -36,8 +36,24 @@ function makeEnvelope(id: string, method = 'test_method'): MessageEnvelope<{ x: 
   return { id, method, params: { x: 1 } }
 }
 
-function dispatchResponse(origin: string, data: unknown): void {
+/**
+ * 현재 테스트의 팝업 stub — `dispatchResponse` 가 `event.source` 로 붙인다.
+ * beforeEach 가 매번 갱신한다(테스트 간 누수 방지로 afterEach 에서 null).
+ */
+let activeMockPopup: unknown = null
+
+/**
+ * 팝업이 보낸 메시지를 흉내낸다.
+ *
+ * 🔴 `source` 를 반드시 실어야 한다 — `_deviceState` 분기가 `event.source !== this.popupWindow`
+ * 로 현재 팝업 바인딩을 검사하기 때문이다(같은 origin 의 다른 창이 기기 축을 뒤집는 것을 막는
+ * 가드). `MessageEvent` 생성자는 임의 객체를 `source` 로 받지 않으므로 defineProperty 로 붙인다.
+ *
+ * @param source 기본값은 현재 팝업. **다른 창에서 온 메시지**를 흉내내려면 명시적으로 넘긴다.
+ */
+function dispatchResponse(origin: string, data: unknown, source: unknown = activeMockPopup): void {
   const event = new MessageEvent('message', { origin, data: data as never })
+  Object.defineProperty(event, 'source', { value: source, configurable: true })
   window.dispatchEvent(event)
 }
 
@@ -142,6 +158,8 @@ describe('PopupTransport', () => {
   beforeEach(() => {
     jest.useFakeTimers()
     mockPopup = makeMockPopup()
+    // dispatchResponse 의 기본 event.source — 실제로는 팝업이 보내므로 테스트도 그렇게 흉내낸다.
+    activeMockPopup = mockPopup
     openSpy = jest
       .spyOn(window, 'open')
       .mockImplementation(() => mockPopup as unknown as Window)
@@ -153,6 +171,7 @@ describe('PopupTransport', () => {
     jest.useRealTimers()
     openSpy.mockRestore()
     uninstallReadyAutoRespond()
+    activeMockPopup = null
   })
 
   // ===== T-U-01: send happy path =====
@@ -1500,6 +1519,86 @@ describe('PopupTransport', () => {
       // 진짜 응답이 와야 resolve 된다.
       dispatchResponse(DEFAULT_ORIGIN, { id: 'a', result: { ok: true } })
       await expect(p).resolves.toEqual({ id: 'a', result: { ok: true } })
+    })
+
+    // ===== PR #177 리뷰 반영 (2026-08-11) =====
+
+    it('T-U-DEVSTATE-09: 🔴 기기가 바뀌면(deviceId 변경) 같은 connected 라도 발행된다', async () => {
+      const h = await connected()
+      // (1) bridge 가 getDeviceInfo 실패로 **info 없이** connected 를 보낸 상태
+      dispatchResponse(DEFAULT_ORIGIN, { type: '_deviceState', device: 'connected' })
+      expect(h).toHaveBeenCalledTimes(1)
+      expect(h.mock.calls[0][1].deviceInfo).toBeUndefined()
+      h.mockClear()
+
+      // (2) 기기가 준비돼 실제 정보가 담긴 connected 가 다시 온다 — device 축은 그대로다.
+      //     deviceId 를 비교에 넣지 않으면 여기서 발행이 안 되고 dApp 은 빈 정보에 고정된다.
+      dispatchResponse(DEFAULT_ORIGIN, {
+        type: '_deviceState',
+        device: 'connected',
+        info: { deviceId: 'DEV-A', label: 'first' },
+      })
+      expect(h).toHaveBeenCalledTimes(1)
+      expect(h.mock.calls[0][1].deviceInfo.deviceId).toBe('DEV-A')
+      h.mockClear()
+
+      // (3) 다른 기기로 교체 — 축은 여전히 connected 지만 식별자가 다르므로 발행돼야 한다.
+      dispatchResponse(DEFAULT_ORIGIN, {
+        type: '_deviceState',
+        device: 'connected',
+        info: { deviceId: 'DEV-B', label: 'second' },
+      })
+      expect(h).toHaveBeenCalledTimes(1)
+      expect(h.mock.calls[0][1].deviceInfo.deviceId).toBe('DEV-B')
+    })
+
+    it('T-U-DEVSTATE-10: 대조군 — deviceId 가 같으면 표시 필드만 달라도 발행하지 않는다', async () => {
+      const h = await connected()
+      dispatchResponse(DEFAULT_ORIGIN, {
+        type: '_deviceState',
+        device: 'connected',
+        info: { deviceId: 'DEV-A', label: 'X', version: '1.0.0' },
+      })
+      h.mockClear()
+      // 같은 기기의 표시 필드만 변한 재통지 — dedupe 의 원래 목적(잡음 억제)은 유지돼야 한다.
+      // 이 단언이 없으면 T-U-DEVSTATE-09 를 "전부 발행" 으로 고쳐도 통과한다(판별력 확보).
+      dispatchResponse(DEFAULT_ORIGIN, {
+        type: '_deviceState',
+        device: 'connected',
+        info: { deviceId: 'DEV-A', label: 'Y', version: '2.0.0' },
+      })
+      expect(h).not.toHaveBeenCalled()
+    })
+
+    it('T-U-DEVSTATE-11: 🔴 현재 팝업이 아닌 창이 보낸 _deviceState 는 무시된다 (event.source 바인딩)', async () => {
+      const h = await connected()
+      dispatchResponse(DEFAULT_ORIGIN, {
+        type: '_deviceState',
+        device: 'connected',
+        info: { deviceId: 'DEV-A' },
+      })
+      h.mockClear()
+
+      // 같은 origin 의 **다른 창**(이전 lifecycle 의 잔존 팝업 / dApp 이 연 다른 창).
+      // origin 만 검사하면 이 메시지가 기기 축을 뒤집고 deviceId 를 심는다.
+      const otherWindow = makeMockPopup()
+      dispatchResponse(DEFAULT_ORIGIN, { type: '_deviceState', device: 'disconnected' }, otherWindow)
+      dispatchResponse(
+        DEFAULT_ORIGIN,
+        { type: '_deviceState', device: 'connected', info: { deviceId: 'EVIL' } },
+        otherWindow,
+      )
+      expect(h).not.toHaveBeenCalled()
+
+      // 그리고 내부 상태도 오염되지 않았어야 한다 — 현재 팝업이 축을 바꾸면 직전 값(DEV-A)
+      // 기준으로 판정된다. 남의 메시지가 currentDeviceInfo 를 EVIL 로 갈아뒀다면
+      // 이 재통지는 "달라졌다"로 잘못 판정되어 발행된다.
+      dispatchResponse(DEFAULT_ORIGIN, {
+        type: '_deviceState',
+        device: 'connected',
+        info: { deviceId: 'DEV-A' },
+      })
+      expect(h).not.toHaveBeenCalled()
     })
   })
 })

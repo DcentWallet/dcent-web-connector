@@ -395,6 +395,20 @@ export class PopupTransport implements MessageTransport {
       // 이 타입을 모르는 구버전 connector 도 "id 없는 메시지"로 보고 그냥 흘린다(조기 resolve 로
       // 실제 응답을 드롭하는 `_signProgress` 계열 하위호환 위험이 여기엔 없다).
       if ((data as { type?: unknown }).type === '_deviceState') {
+        // 🔴 **현재 팝업이 보낸 것인지 확인한다** (origin 만으로는 부족).
+        //
+        // 이 리스너의 세 신호 중 `_deviceState` 만 **지속 상태를 남긴다** — `_ready` 는 1회
+        // resolve 로 끝나고 `_signProgress` 는 그대로 전달만 하는데, 이 신호는
+        // `currentDeviceState` / `currentDeviceInfo` 를 갱신해 **이후 모든 state 발행**에
+        // 반영된다. 게다가 응답 분기와 달리 맞춰야 할 요청 `id` 도 없다. 그래서 같은 origin 의
+        // 다른 창(이전 lifecycle 에서 남은 팝업, dApp 이 같은 origin 으로 연 다른 창)이
+        // 기기 축을 뒤집고 `deviceId` 를 심을 수 있다.
+        //
+        // `_ready` / `_signProgress` 에는 아직 걸지 않았다 — `_ready` 는 handshake 타이밍상
+        // `this.popupWindow` 대입 시점과의 선후를 함께 검증해야 하고(잘못 걸면 handshake 가
+        // 영구 hang), 그 둘은 지속 상태를 남기지 않아 위험도가 다르다. 별도 판단 사항.
+        if (event.source !== this.popupWindow) return
+
         const device = (data as { device?: unknown }).device
         // boundary-validation: 알려진 값만 수용 — 모르는 문자열로 축을 오염시키지 않는다.
         if (device !== 'connected' && device !== 'disconnected') return
@@ -667,13 +681,25 @@ export class PopupTransport implements MessageTransport {
    * 열린 채로 기기가 빠져도 아무 신호가 안 나갔다(사용자 제보: "connected 하나만 찍히고 그 뒤로
    * 조용하다"). 기기 축을 추가하면서 이 비교도 함께 넓히지 않으면 새 축이 영원히 안 보인다.
    *
-   * `deviceInfo` 는 비교 대상에서 제외한다 — 상태가 같은데 정보 필드만 미세하게 다른 재통지로
-   * 리스너를 깨우지 않기 위해서다(기기가 붙어 있는 동안 bridge 가 같은 상태를 재전송할 수 있다).
+   * `deviceInfo` 의 **표시 필드**(label / version / deviceModel / coinCount 등)는 비교에서
+   * 제외한다 — 상태가 같은데 정보 필드만 미세하게 다른 재통지로 리스너를 깨우지 않기 위해서다
+   * (기기가 붙어 있는 동안 bridge 가 같은 상태를 재전송할 수 있다).
+   *
+   * 🔴 단 **`deviceId` 는 비교에 넣는다.** 그건 표시값이 아니라 **기기를 특정하는 식별자**라,
+   * 제외하면 `connected → connected` 로 **기기가 바뀌어도** `currentDeviceInfo` 만 조용히
+   * 갱신되고 dApp 은 옛 기기 정보에 고정된다 — 라벨 없는 기기를 구별하려고 `deviceId` 를 실은
+   * 목적이 그 경로에서 사라진다. 실제 경로: bridge 가 `getDeviceInfo` 실패로 **info 없이**
+   * connected 를 보낸 뒤(자동 재연결 resolver — bridge `main.tsx` 의 `catch` 후 dispatch),
+   * 기기가 준비돼 실값이 담긴 connected 가 다시 와도 device 축이 같아 **빈 정보에 고정**된다.
    */
   private applyState (next: { popup?: TransportState, device?: DeviceState, deviceInfo?: DeviceBriefInfo }): void {
     const popup = next.popup ?? this.currentState
     const device = next.device ?? this.currentDeviceState
-    const changed = popup !== this.currentState || device !== this.currentDeviceState
+    // `changed` 를 필드 대입보다 **먼저** 계산한다 — 이 시점의 this.currentDeviceInfo 는 직전 값이다.
+    const nextInfo = 'deviceInfo' in next ? next.deviceInfo : this.currentDeviceInfo
+    const changed = popup !== this.currentState ||
+      device !== this.currentDeviceState ||
+      (device === 'connected' && nextInfo?.deviceId !== this.currentDeviceInfo?.deviceId)
     this.currentState = popup
     this.currentDeviceState = device
     if ('deviceInfo' in next) this.currentDeviceInfo = next.deviceInfo

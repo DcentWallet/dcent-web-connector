@@ -2117,6 +2117,12 @@
     function setHint (msg, isErr) {
       if (hintEl) {
         hintEl.textContent = msg
+        // 🔴 2026-08-12 리뷰 정정 — 이 hintEl(sdResolveHint)의 부모 sdResolveRow는 인라인
+        // background:#f7f7f7(밝은 회색, §3/m15-02-04 이관 대상 — 다크 사이드바가 아니다).
+        // 이전 커밋이 "C2와 같은 클래스"라며 여기도 다크세이프 잉크로 바꿨는데, 그 판단은
+        // 삼항식의 "모양"만 보고 실제 배치 표면을 확인하지 않은 오류였다 — #c00/#888 조합은
+        // #f7f7f7 위에서 원래 문제가 없었고(에러 5.49 AA 통과), 바꾼 값(#fca5a5/--pg-muted)이
+        // 오히려 1.77/2.39로 대비를 악화시켰다. 원래 값으로 되돌린다.
         hintEl.style.color = isErr ? '#c00' : '#888'
       }
     }
@@ -2393,7 +2399,12 @@
       var btcMode = state.btxSignMode || 'json'
       var modeRow = document.createElement('div')
       modeRow.className = 'form-row'
-      modeRow.style.cssText = 'margin-bottom:10px;padding:6px;background:#eef;border-radius:4px;'
+      // 크로스 리뷰 발견(C1, 2026-08-12 4축 리뷰) — index-v2.html이 사이드바를 다크로 전환하며
+      // .form-row label{color:var(--pg-fg)}가 이 라디오 라벨에도 적용됐다. 원래는 밝은 인라인
+      // 배경 위였어서 문제없었지만(라이트 잉크·라이트 배경 조합), 이제 그 조합이 1.07(사실상
+      // 안 보임)로 붕괴한다 — Bitcoin 서명 모드(자동/JSON) 선택 라디오가 실사용 파손 대상이라
+      // 여기서 고친다. var(--pg-raised) 적용 후 11.36으로 회복.
+      modeRow.style.cssText = 'margin-bottom:10px;padding:6px;background:var(--pg-raised);border-radius:4px;'
       ;[['auto', '⚡ 자동 (UTXO fetch → build → sign)'], ['json', 'Transaction (JSON) 직접']].forEach(function (m) {
         var lb = document.createElement('label')
         lb.style.cssText = 'margin-right:14px;font-size:12px;cursor:pointer;'
@@ -3613,7 +3624,11 @@
     var el = document.getElementById('btc-fetch-status')
     if (el) {
       el.textContent = msg
-      el.style.color = isErr ? '#c00' : '#888'
+      // 크로스 리뷰 발견(C2, 2026-08-12 4축 리뷰) — 이 상태 엘리먼트는 다크 사이드바(--pg-panel)
+      // 위에 놓인다. 에러 잉크 #c00은 2.79로 AA 미달(전환 전 #fff 위 5.89) — 이 파일의
+      // .log-json.err-json이 이미 쓰는 dark-safe danger 값(#fca5a5, 8.64)으로 교체한다.
+      // 정상 상태 잉크 #888도 4.63으로 여유가 0.13뿐이라 함께 var(--pg-muted)(6.40)로 옮긴다.
+      el.style.color = isErr ? '#fca5a5' : 'var(--pg-muted)'
     }
   }
 

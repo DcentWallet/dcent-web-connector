@@ -2397,10 +2397,10 @@
       var modeRow = document.createElement('div')
       modeRow.className = 'form-row'
       // 크로스 리뷰 발견(C1, 2026-08-12 4축 리뷰) — index-v2.html이 사이드바를 다크로 전환하며
-      // .form-row label{color:var(--pg-fg)}가 이 라디오 라벨에도 적용됐다. 원래 밝은 인라인
-      // background:#eef 위에서는 문제없었지만(라이트 잉크·라이트 배경), 이제 그 조합이
-      // 1.07(사실상 안 보임)로 붕괴한다 — Bitcoin 서명 모드(자동/JSON) 선택 라디오가 실사용
-      // 파손 대상이라 여기서 고친다. var(--pg-raised) → 11.36.
+      // .form-row label{color:var(--pg-fg)}가 이 라디오 라벨에도 적용됐다. 원래는 밝은 인라인
+      // 배경 위였어서 문제없었지만(라이트 잉크·라이트 배경 조합), 이제 그 조합이 1.07(사실상
+      // 안 보임)로 붕괴한다 — Bitcoin 서명 모드(자동/JSON) 선택 라디오가 실사용 파손 대상이라
+      // 여기서 고친다. var(--pg-raised) 적용 후 11.36으로 회복.
       modeRow.style.cssText = 'margin-bottom:10px;padding:6px;background:var(--pg-raised);border-radius:4px;'
       ;[['auto', '⚡ 자동 (UTXO fetch → build → sign)'], ['json', 'Transaction (JSON) 직접']].forEach(function (m) {
         var lb = document.createElement('label')

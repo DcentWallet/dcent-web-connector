@@ -1,3 +1,4 @@
+/* eslint-disable no-unused-vars */
 function modeRowMake () {
   var modeRow = document.createElement('div')
   modeRow.style.cssText = 'background:#eef;'

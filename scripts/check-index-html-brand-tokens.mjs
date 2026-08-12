@@ -629,10 +629,12 @@ const REPO_G1_EXCEPTIONS = {
   },
 }
 const REPO_G1_CATALOG_EXEMPT = { 'docs/index.html': 6 } // Ethereum/Ravencoin/Solana/Cosmos/Stellar/Stacks
-// 🔴 m15-02-03 산출물만큼 상향(2026-08-12) — index-v2.html 이 첫 :root(--pg-* 7토큰)를 갖게 되며
-// rootBlocks +1(3→4) · customProps +7(27→34). 실측: docs 38 + index-v2 7 = 45(§ 참고,
-// 원래 27 floor 자체가 docs 실측 38 아래 여유를 이미 두고 있었다 — floor 는 하한이지 정확한 값이 아니다).
-const REPO_G1_FLOORS = { rootBlocks: 4, customProps: 34, accentUses: 21, accentSoftUses: 15, scannedFiles: 2 }
+// 🔴 m15-02-03 산출물만큼 상향(2026-08-12, 리뷰 정정) — index-v2.html 이 첫 :root(--pg-* 7토큰)를
+// 갖게 되며 rootBlocks +1(3→4) · customProps 실측 총합 45(docs 38 + index-v2 7)로 상향.
+// 최초 커밋은 27+7=34 로 "+7" 델타만 반영했는데, 원래 27 floor 자체가 이미 docs 실측 38 아래
+// 여유를 뒀던 터라 34 는 이 objective 가 신설한 --pg-* 7개를 전부 지워도 통과했다(크로스 리뷰
+// 실증) — floor 가 "신설분을 지키지 못하는" 상태였다. 실측치로 정확히 맞춘다.
+const REPO_G1_FLOORS = { rootBlocks: 4, customProps: 45, accentUses: 21, accentSoftUses: 15, scannedFiles: 2 }
 const REPO_DIRECTION_B_FLOOR = 3
 
 // 🔴 과거 세대 앵커 값 — 브랜드 색을 다시 교체할 때(다음 리브랜드) 이 배열에 "직전 세대 9값"을

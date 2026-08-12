@@ -2117,10 +2117,13 @@
     function setHint (msg, isErr) {
       if (hintEl) {
         hintEl.textContent = msg
-        // C2 와 같은 클래스(review-finding-class-closure) — 이 파일에 같은 에러잉크/보통잉크
-        // 삼항식이 정확히 2곳 있었다(grep 실측). 이 hint도 다크 사이드바 위에 놓여 같은 회귀가
-        // 있어 동일하게 고친다.
-        hintEl.style.color = isErr ? '#fca5a5' : 'var(--pg-muted)'
+        // 🔴 2026-08-12 리뷰 정정 — 이 hintEl(sdResolveHint)의 부모 sdResolveRow는 인라인
+        // background:#f7f7f7(밝은 회색, §3/m15-02-04 이관 대상 — 다크 사이드바가 아니다).
+        // 이전 커밋이 "C2와 같은 클래스"라며 여기도 다크세이프 잉크로 바꿨는데, 그 판단은
+        // 삼항식의 "모양"만 보고 실제 배치 표면을 확인하지 않은 오류였다 — #c00/#888 조합은
+        // #f7f7f7 위에서 원래 문제가 없었고(에러 5.49 AA 통과), 바꾼 값(#fca5a5/--pg-muted)이
+        // 오히려 1.77/2.39로 대비를 악화시켰다. 원래 값으로 되돌린다.
+        hintEl.style.color = isErr ? '#c00' : '#888'
       }
     }
     if (!state.connected) {

@@ -2,6 +2,9 @@
   "exceptions": {
     "index-v2.html": {
       "#fca5a5": { "count": 1, "resolvedBy": "test-fixture" }
+    },
+    "playground.js": {
+      "#fca5a5": { "count": 2, "resolvedBy": "test-fixture" }
     }
   },
   "allowedMap": {

@@ -24,9 +24,18 @@
  *   P2 토큰 맵      — --pg-* 7키를 키→값 맵으로 전건 일치(Set 아님 — 값 스왑 검출).
  *   P3 사용처 대비  — CSS 블록을 순회해 실제 잉크↔배경 조합을 유도해 전건 검사(텍스트 ≥4.5,
  *                     비텍스트 ≥3.0). 고정 쌍 목록 금지.
- *   P4 사용처 floor — var(--pg-*) 사용처 ≥ 13. 토큰 블록만 남기고 사용처를 되돌리는 우회를 막는다.
- *   P5 구조 floor   — 주석 제거 후 CSS 규칙 수 ≥ 실측 기준선. 문자열 `background` 카운트는
+ *   P4 사용처 floor — var(--pg-*) 사용처 ≥ 16(주석 제거 후 실측). 토큰 블록만 남기고 사용처를
+ *                     되돌리는 우회를 막는다.
+ *   P5 구조 floor   — 주석 제거 후 CSS 규칙 수 ≥ 56(실측). 문자열 `background` 카운트는
  *                     주석으로 패딩 가능하므로 폐기.
+ *
+ * 🔴 알려진 한계(2026-08-12 리뷰 확정, 의도적으로 스코프 밖에 둠) — P1 은 `#rgb`/`#rrggbb` hex
+ *    리터럴만 스캔한다. `rgb()`/`rgba()`/`hsl()`/8자리 hex/CSS 색 키워드(`white` 등)로 같은 값을
+ *    표기하면 P1 이 못 잡는다. 지금 이 두 파일에는 그런 표기가 0건이라(실측) 당장 악용 가능한
+ *    구멍은 아니지만, 원리적으로는 존재한다. 완전한 방어에는 CSS 색 파서(색 공간 전체 정규화)가
+ *    필요한데, 이 objective 의 스코프(hex 리터럴을 --pg-* 로 치환)를 넘는 투자라 지금은 hex 만
+ *    막는다 — `check-index-html-fw-models.mjs` 의 "실수를 막고 의도적 우회는 막지 않는다" 원칙과
+ *    같은 판단이다. 다음에 이 표기들이 실제로 쓰이면 그때 확장한다.
  *
  * 🔴 P3 설계 노트 — jsdom 의 CSS 커스텀 프로퍼티(var()) 해석은 이 리포 jsdom 버전에서 신뢰할 수
  *    없었다(실측: `#conn-dot`의 자체 `background: var(--pg-muted)`가 getComputedStyle에서
@@ -170,9 +179,20 @@ function parseDecls(decls) {
 
 const HEX_RE = /#[0-9a-fA-F]{6}\b|#[0-9a-fA-F]{3}\b/g
 
-/** 스캔 모수의 모든 hex 리터럴을 열거(파일 전체 — 프로퍼티 역할 무관). excludeRanges 안은 제외
- *  (--pg-* 선언 자체는 대상이 아니다 — P1이 막으려는 건 "선언 밖" 리터럴이다). */
-function scanAllHex(text, excludeRanges) {
+/** 블록/줄 주석 내용을 공백으로 지운다(문자 길이·인덱스는 보존 — excludeRanges 정렬을 깨지
+ *  않기 위함). 🔴 리뷰 발견 — 주석 안에 색 값을 설명 목적으로 적으면(이 세션에서 실제로 4번
+ *  반복된 실수) 그게 실제 코드 리터럴처럼 P1에 잡혀 오탐이 난다. 반대로 주석에 예외 hex 를
+ *  적어 "코드에 있는 척" 카운트를 부풀리는 것도 막는다. */
+function blankComments(text) {
+  return text
+    .replace(/\/\*[\s\S]*?\*\//g, (m) => m.replace(/[^\n]/g, ' '))
+    .replace(/\/\/[^\n]*/g, (m) => m.replace(/./g, ' '))
+}
+
+/** 스캔 모수의 모든 hex 리터럴을 열거(파일 전체 — 프로퍼티 역할 무관, 주석 제외). excludeRanges
+ *  안은 제외(--pg-* 선언 자체는 대상이 아니다 — P1이 막으려는 건 "선언 밖" 리터럴이다). */
+function scanAllHex(textRaw, excludeRanges) {
+  const text = blankComments(textRaw)
   const hits = []
   let m
   while ((m = HEX_RE.exec(text))) {
@@ -443,8 +463,11 @@ const REPO_P1_EXCEPTIONS = {
     '#ffeaa7': { count: 1, resolvedBy: 'm15-02-04' }, // banner 테두리(:1320, #fff3cd 와 같은 규칙)
     // 🔴 배너 텍스트 잉크는 여기 없다 — 실측 휘도 0.141로 P1(휘도>0.5) 판정 밖이라 애초에
     // 안 잡힌다(배너 배경은 밝지만 그 위 텍스트는 의도적으로 어두운 잉크라 정상).
-    '#fca5a5': { count: 3, resolvedBy: 'm15-02-03' }, // _btcSetStatus + setHint(C2) 다크세이프 danger 잉크
-    '#fff': { count: 1, resolvedBy: 'pre-existing' }, // 기존 버튼/뱃지 잉크
+    // 🔴 2026-08-12 리뷰 정정 — 원래 3건(_btcSetStatus + setHint 2곳)이라 적었으나 클래스
+    // 열거 축이 틀렸다: 판별자는 "삼항식 모양"이 아니라 "부모 표면"이었다. setHint(sdResolveHint)의
+    // 부모는 #f7f7f7(m15-02-04 이관 대상)라 이 objective의 다크 전환과 무관 — 원래 값(#c00/#888)으로
+    // 되돌렸다. 실사용처는 _btcSetStatus 1건뿐이다(주석 안 언급은 blankComments로 이제 제외됨).
+    '#fca5a5': { count: 1, resolvedBy: 'm15-02-03' }, // _btcSetStatus 다크세이프 danger 잉크
   },
 }
 
@@ -455,29 +478,48 @@ function loadFileWithExcludes(path) {
   return { text, excludeRanges: rootRange ? [rootRange] : [] }
 }
 
-/** C1/C2/.field-error 회귀 앵커 — var(--pg-*) 가 아니라 "재사용 리터럴"이라 P3 의 var() 스캔에
- *  안 걸린다. 색은 파일에서 실측으로 읽는다(하드코딩 금지) — 정규식으로 못 찾으면 null 반환해
- *  runP3 가 "값 해석 실패"로 findings 에 넣는다(삭제/rename 되돌리기 우회 방지). */
-function buildLiteralAnchors(indexHtml, pgText) {
+/** C1/.field-error/_btcSetStatus 회귀 앵커 — var(--pg-*) 가 아니라 "재사용 리터럴"이라 P3 의
+ *  var() 스캔에 안 걸린다. 잉크는 파일에서 실측으로 읽는다(하드코딩 금지) — 정규식으로 못
+ *  찾으면 null 반환해 runP3 가 "값 해석 실패"로 findings 에 넣는다(삭제/rename 되돌리기 우회
+ *  방지). 배경은 pgMap 파라미터에서 읽는다(fixture 의 manifest.allowedMap 이 다를 수 있어
+ *  모듈 상수 ALLOWED_PG_MAP 을 쓰면 fixture 에서 틀린 배경으로 측정된다 — 2026-08-12 리뷰 W2).
+ *
+ *  🔴 2026-08-12 리뷰 정정 — 원래 _btcSetStatus 와 함께 setHint(_signDataGetAddressClick 의
+ *  지역 함수)도 "같은 삼항식 모양"이라는 이유로 앵커에 넣고 다크세이프 값으로 고쳤었다.
+ *  실측하면 setHint 의 hintEl(sdResolveHint)의 부모는 --pg-panel 이 아니라 인라인
+ *  background:#f7f7f7(§3/m15-02-04 이관 대상, 다크 전환 밖)이었다 — "삼항식 모양"은 판별자가
+ *  아니었고 "부모 표면"이 판별자였다. 그 오적용은 playground.js 의 setHint 를 원래 값으로
+ *  되돌리며 함께 제거했다. 같은 클래스의 제3 인스턴스(_resolveSenderFromDeviceClick 의
+ *  setHint, `#c33`/`#0a7`)도 실측 확인함 — 그 부모도 #f7f7f7 이고 #c33 은 이미 AA 통과라
+ *  손댈 필요 없다(이 objective 스코프 밖, m15-02-04 후보). */
+function buildLiteralAnchors(indexHtml, pgText, pgMap) {
+  const panelBg = pgMap['pg-panel'] || null
   const anchors = []
   {
     // .field-error { color: #fca5a5 ... } 의 배경은 #form-panel → #sidebar(panel)
     const m = /\.field-error\s*\{[^}]*color:\s*(#[0-9a-fA-F]{3,6})/.exec(indexHtml)
-    anchors.push({ name: '.field-error color', ink: m ? normalizeHex(m[1]) : null, bg: ALLOWED_PG_MAP['pg-panel'], threshold: AA_TEXT })
+    anchors.push({ name: '.field-error color', ink: m ? normalizeHex(m[1]) : null, bg: panelBg, threshold: AA_TEXT })
   }
   if (pgText) {
-    // isErr ? '#hex' : ('#hex' | 'var(--pg-x)') — 두 함수(_btcSetStatus/setHint)에 정확히 2곳.
-    // 함수명과 실제 대입문 사이에 주석 블록이 끼어 있어 창을 넉넉히 둔다(500자).
+    // isErr ? '#hex' : ('#hex' | 'var(--pg-x)') — _btcSetStatus 1곳(실측, grep -n "isErr ?").
     const m1 = /_btcSetStatus[\s\S]{0,500}?isErr\s*\?\s*'(#[0-9a-fA-F]{3,6})'\s*:\s*'(?:#[0-9a-fA-F]{3,6}|var\(--pg-muted\))'/.exec(pgText)
-    anchors.push({ name: '_btcSetStatus isErr ink', ink: m1 ? normalizeHex(m1[1]) : null, bg: ALLOWED_PG_MAP['pg-panel'], threshold: AA_TEXT })
-    const m2 = /setHint[\s\S]{0,500}?isErr\s*\?\s*'(#[0-9a-fA-F]{3,6})'\s*:\s*'(?:#[0-9a-fA-F]{3,6}|var\(--pg-muted\))'/.exec(pgText)
-    anchors.push({ name: 'setHint isErr ink', ink: m2 ? normalizeHex(m2[1]) : null, bg: ALLOWED_PG_MAP['pg-panel'], threshold: AA_TEXT })
+    anchors.push({ name: '_btcSetStatus isErr ink', ink: m1 ? normalizeHex(m1[1]) : null, bg: panelBg, threshold: AA_TEXT })
   }
   return anchors
 }
 
-const REPO_P4_FLOOR = 13
-const REPO_P5_FLOOR = 13 // 실측 기준선(2026-08-12) — 아래 loadRepoSpec 근처 참고
+// 🔴 2026-08-12 리뷰 정정 (Lens1 C2/C3) — 두 floor 모두 실측치보다 크게 낮게 잡혀 있었다.
+// P4=13 은 실측 16(setHint 원복 후)보다 낮아 var(--pg-muted) 사용처를 최대 3건까지 동일 값의
+// 다크 리터럴로 되돌려도(P1 은 리터럴 자체가 어둡다면 못 잡는다 — 예: #94a3b8 자체는 휘도<0.5라
+// P1 대상이 아니다) 무료로 통과했다. P5=13 은 복붙 실수로 보인다(P4 상수를 그대로 옮긴 흔적) —
+// 실측 56과 4배 이상 차이가 나 로그 패널 CSS 43규칙을 통째로 지워도 안 걸렸다. 둘 다 실측치로
+// 맞춘다(sibling check-index-html-brand-tokens.mjs 의 REPO_G1_FLOORS.rootBlocks 처럼 floor를
+// 실측과 정확히 일치시키는 관례를 따름).
+const REPO_P4_FLOOR = 16
+const REPO_P5_FLOOR = 56 // 실측(2026-08-12, setHint 원복 후 재확인) — index-v2.html CSS 규칙 수
+// 🔴 P3 도 같은 이유로 floor 가 필요하다(Lens1 C2) — checked.length 는 지금까지 무방비였다.
+// 실측 8(field-error 앵커 1 + _btcSetStatus 앵커 1 + CSS 사용처 6).
+const REPO_P3_FLOOR = 8
 
 function loadRepoSpec() {
   const indexPath = resolve(REPO_ROOT, 'index-v2.html')
@@ -494,6 +536,7 @@ function loadRepoSpec() {
     pgText: pgEntry ? pgEntry.text : null,
     exceptions: REPO_P1_EXCEPTIONS,
     allowedMap: ALLOWED_PG_MAP,
+    p3Floor: REPO_P3_FLOOR,
     p4Floor: REPO_P4_FLOOR,
     p5Floor: REPO_P5_FLOOR,
   }
@@ -513,14 +556,15 @@ function runAll(spec) {
 
   const rootRange = findRootBlockRange(spec.indexText)
   if (!rootRange) return { exit: 2, lines: [], errors: ['index-v2.html: :root 블록을 찾지 못함'], findings: [] }
-  const rootContent = spec.indexText.slice(rootRange[0] + ':root{'.length - 1, rootRange[1])
   const pgMap = extractPgTokenMap(spec.indexText.slice(rootRange[0], rootRange[1]))
 
   findings.push(...runP2(pgMap, spec.allowedMap))
 
-  const literalAnchors = buildLiteralAnchors(spec.indexText, spec.pgText)
+  const literalAnchors = buildLiteralAnchors(spec.indexText, spec.pgText, pgMap)
   const p3 = runP3(spec.indexText, pgMap, literalAnchors)
   findings.push(...p3.findings)
+  const p3Floor = spec.p3Floor ?? 0
+  if (p3.checked.length < p3Floor) findings.push(`P3 floor: 사용처 대비 검사 건수 ${p3.checked.length} < ${p3Floor}`)
 
   const p4Count = countPgVarUsages(spec.indexText) + (spec.pgText ? countPgVarUsages(spec.pgText) : 0)
   if (p4Count < spec.p4Floor) findings.push(`P4 floor: var(--pg-*) 사용처 ${p4Count} < ${spec.p4Floor}`)
@@ -580,6 +624,7 @@ function runFixture(dir) {
     pgText: pgEntry ? pgEntry.text : null,
     exceptions: manifest.exceptions || {},
     allowedMap: manifest.allowedMap || ALLOWED_PG_MAP,
+    p3Floor: manifest.p3Floor ?? 0,
     p4Floor: manifest.p4Floor ?? 0,
     p5Floor: manifest.p5Floor ?? 0,
   }

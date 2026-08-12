@@ -7,9 +7,12 @@
   <style>
     /* index-v2.html <style> 상단 — playground 지역 표면 토큰(--pg-*, 다크 표면, m15-02-03)과
        브랜드 앵커 토큰(--brand-*, m15-02-02)이 별개 :root 블록으로 공존한다.
-       🔴 --pg-selected 는 브랜드 앵커 색과 hue 가 같아(둘 다 약 243도) G1(hue/chroma 밴드)이
-       하드코딩으로 잡는다. REPO_G1_EXCEPTIONS['index-v2.html']에 등록되어 있다(리터럴 유지 —
-       m15-02-02 가 color-mix 파생 대신 이 값을 그대로 남기기로 결정). */
+       🔴 --pg-selected 는 옛 퍼플 앵커(945b945 시점)와 hue 가 같아(둘 다 약 243도) 그때는
+       G1(hue/chroma 밴드)이 하드코딩으로 잡아 REPO_G1_EXCEPTIONS['index-v2.html']에 등록돼
+       있었다. m15-02-02 가 브랜드를 라임(hue ~60-100도)으로 옮기며 밴드 자체가 이동해
+       #312e63(hue ~243도)이 밴드 밖으로 빠졌다 — 등록이 필요 없어져 REPO_G1_EXCEPTIONS는
+       다시 빈 객체다(color-mix 파생 대신 리터럴을 그대로 남기기로 한 결정은 유지, 다만 그
+       결정이 예외 등록을 요구하지는 않게 됐다). */
     :root {
       --pg-bg:       #0f172a;  /* 기존 로그 패널 값 */
       --pg-panel:    #1e1e2e;  /* 기존 헤더 값 */

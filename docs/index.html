@@ -12,11 +12,17 @@
   --brand-100:#C7F08F; --brand-200:#B3EA66; --brand-400:#99E331;
   --brand:#90E01F;     --brand-600:#7EC11F; --brand-900:#45580E;
   --brand-ink:#67A216; --brand-ink-lite:#84CE1C; --on-brand:#171719;
-  /* --on-brand is wired to .flow .num .n / .net-ico ink (m15-02-02). The rest of
-     the 9 have no consumer in this document yet (measured 0 usages beyond --accent
-     alias below). Intentionally unused to keep parity with the sibling repo's
-     9-token anchor -- do not delete as dead code. All 9 values must stay distinct
-     from each other. */
+  /* --on-brand is wired to .flow .num .n (always brand background) and to the
+     single net-ico search-fallback branch where background truly resolves to
+     the brand accent alias (m15-02-02, revised: the .net-ico *class* default
+     stays its original white ink because ~30 catalog entries paint their own
+     arbitrary per-network color as background via inline style -- wiring the
+     class default to --on-brand collapsed contrast on dark network colors --
+     near-black ink on near-black background drops below 1.2:1, near-unreadable).
+     The rest of the 9 have no consumer in this document yet (measured 0 usages
+     beyond --accent alias below). Intentionally unused to keep parity with the
+     sibling repo's 9-token anchor -- do not delete as dead code. All 9 values
+     must stay distinct from each other. */
   /* BRAND-ANCHOR:END */
 
   --bg:#0f0f10; --bg-2:#0a0d12; --panel:#1b1c1e; --panel-2:#161c24;
@@ -98,7 +104,7 @@ code{font-family:var(--mono);font-size:.86em}
 .nav-link:hover{background:var(--panel);color:var(--text);text-decoration:none}
 .nav-link.active{background:var(--accent-soft);color:var(--head);font-weight:600}
 .nav-parent.net{align-items:center}
-.net-ico{display:inline-flex;align-items:center;justify-content:center;width:18px;height:18px;border-radius:5px;font-size:11px;font-weight:800;color:var(--on-brand);margin-right:8px;flex:0 0 auto;line-height:1;overflow:hidden}
+.net-ico{display:inline-flex;align-items:center;justify-content:center;width:18px;height:18px;border-radius:5px;font-size:11px;font-weight:800;color:#fff;margin-right:8px;flex:0 0 auto;line-height:1;overflow:hidden}
 .net-ico.net-img{background:transparent}
 .net-ico img{width:18px;height:18px;border-radius:5px;object-fit:contain;display:block}
 .nav-link.stub::after{content:"stub";font-size:9px;color:var(--text-faint);border:1px solid var(--border-2);
@@ -769,7 +775,11 @@ function enhanceSpecCard(root, id, ko){
     iconHtml='<span class="net-ico net-img sc-ico"><img src="'+ce.img+'" alt="" loading="lazy" onerror="this.remove();this.parentNode.style.background=\''+(ce.col||'#5b6270')+'\';this.parentNode.textContent=\''+(ce.ico||'?')+'\'"></span>';
   } else {
     var col=ce?ce.col:'var(--accent)', ic=ce?ce.ico:((ticker||name)+'').slice(0,2);
-    iconHtml='<span class="net-ico sc-ico" style="background:'+col+'">'+ic+'</span>';
+    /* m15-02-02: only the ce-falsy branch paints the true brand background --
+       ce.col is an arbitrary per-network hex and must keep the .net-ico class
+       default ink, not on-brand. */
+    var inkStyle=ce?'':';color:var(--on-brand)';
+    iconHtml='<span class="net-ico sc-ico" style="background:'+col+inkStyle+'">'+ic+'</span>';
   }
   var isEvm=/ethereum \/ evm|\bEVM\b/i.test(name);
   function esc(x){ return (x||'').replace(/&/g,'&amp;').replace(/"/g,'&quot;'); }

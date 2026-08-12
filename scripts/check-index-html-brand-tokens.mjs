@@ -563,10 +563,15 @@ function checkDirectionB(mainFileText, b2ScanTexts, mainRootProps, brandResolved
   if (/<span class="dot" style="background:var\(--accent\)">/.test(mainFileText)) {
     targets.push({ id: 'B-3a-dot', hasText: false })
   }
-  // B-3b: 티커 이니셜(:758 부근) — 텍스트 있음, 잉크는 .net-ico 의 color
-  const netIcoColor = extractDeclFromSelector(mainFileText, '.net-ico', 'color')
-  if (netIcoColor && /col\s*=\s*ce\s*\?\s*ce\.col\s*:\s*'var\(--accent\)'/.test(mainFileText.replace(/\s+/g, ' '))) {
-    targets.push({ id: 'B-3b-ticker', hasText: true, ink: resolveValue(netIcoColor, mainRootProps), bg: brandResolved })
+  // B-3b: 티커 이니셜(:758 부근) — 텍스트 있음. 브랜드 배경은 ce-falsy 폴백 분기 하나뿐이다
+  // (카탈로그의 ce.col 은 네트워크별 임의 hex 라 브랜드가 아니다). m15-02-02 재수정: 최초 구현은
+  // `.net-ico` 클래스 기본 잉크 자체를 on-brand 로 바꿔 카탈로그 30여 항목(임의 hex 배경)의 대비를
+  // 붕괴시켰다(로컬 크로스 리뷰가 잡음, 예: on-brand on 흑색 배경 ~1.2:1). 지금은 클래스 기본값이
+  // 다시 `#fff`이고, ce-falsy 분기만 인라인으로 on-brand 잉크를 덧씌운다 — 그래서 클래스 선언이
+  // 아니라 그 인라인 조건부 리터럴의 존재를 확인한다.
+  const netIcoInlineInkPresent = /ce\s*\?\s*''\s*:\s*';color:var\(--on-brand\)'/.test(mainFileText.replace(/\s+/g, ' '))
+  if (netIcoInlineInkPresent && /col\s*=\s*ce\s*\?\s*ce\.col\s*:\s*'var\(--accent\)'/.test(mainFileText.replace(/\s+/g, ' '))) {
+    targets.push({ id: 'B-3b-ticker', hasText: true, ink: resolveValue('var(--on-brand)', mainRootProps), bg: brandResolved })
   }
   // B-3c~e: playground(index-v2.html) 버튼 3규칙 — 각각 같은 규칙 안에 background:var(--brand|accent)
   // 와 color:var(--on-brand) 를 함께 선언한다(m15-02-02). B-2 가 안 잡는 이유: B-2 는 리터럴

@@ -15,10 +15,34 @@ function _btcSetStatus (msg, isErr) {
   }
 }
 
-function setHint (msg, isErr) {
-  var hintEl = document.getElementById('hint')
-  if (hintEl) {
-    hintEl.textContent = msg
+// m15-02-04 회귀 앵커 (a)~(d) 재현 — 다크로 이관된 섬(--pg-raised) 위 잉크. 이 넷은
+// index-v2.html 밖에 살아서 buildLiteralAnchors 를 통해서만 측정된다. fixture 가 이 패턴을
+// 들고 있지 않으면 앵커가 "값 해석 실패"로 떨어져, 정상 fixture 인데 exit 1 이 난다.
+function _signDataGetAddressClick (chainIdEl, keyPathEl, hintEl) {
+  function setHint (msg, isErr) {
     hintEl.style.color = isErr ? '#fca5a5' : 'var(--pg-muted)'
   }
+  return setHint
+}
+
+function _resolveSenderFromDeviceClick (family, hintEl) {
+  function setHint (msg, isError) {
+    hintEl.style.color = isError ? '#fca5a5' : 'var(--pg-muted)'
+  }
+  return setHint
+}
+
+function islandHintsMake () {
+  var sdResolveHint = document.createElement('span')
+  sdResolveHint.style.cssText = 'font-size:10px;color:var(--pg-muted);margin-left:8px;'
+  var resolveHint = document.createElement('span')
+  resolveHint.style.cssText = 'font-size:10px;color:var(--pg-muted);margin-left:8px;'
+  return [sdResolveHint, resolveHint]
+}
+
+// m15-02-04 회귀 앵커 (e)/(f) 재현 — 다크로 이관된 경고 배너의 잉크·테두리.
+function bannerMake () {
+  var banner = document.createElement('div')
+  banner.style.cssText = 'display:none;background:var(--pg-raised);color:var(--pg-fg);padding:8px 10px;border-radius:4px;border:1px solid var(--pg-border);'
+  return banner
 }

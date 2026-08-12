@@ -24,10 +24,12 @@
  *   P2 토큰 맵      — --pg-* 7키를 키→값 맵으로 전건 일치(Set 아님 — 값 스왑 검출).
  *   P3 사용처 대비  — CSS 블록을 순회해 실제 잉크↔배경 조합을 유도해 전건 검사(텍스트 ≥4.5,
  *                     비텍스트 ≥3.0). 고정 쌍 목록 금지.
- *   P4 사용처 floor — var(--pg-*) 사용처 ≥ 16(주석 제거 후 실측). 토큰 블록만 남기고 사용처를
- *                     되돌리는 우회를 막는다.
- *   P5 구조 floor   — 주석 제거 후 CSS 규칙 수 ≥ 56(실측). 문자열 `background` 카운트는
- *                     주석으로 패딩 가능하므로 폐기.
+ *   P4 사용처 floor — var(--pg-*) 사용처 ≥ REPO_P4_FLOOR(주석 제거 후 실측). 토큰 블록만 남기고
+ *                     사용처를 되돌리는 우회를 막는다.
+ *   P5 구조 floor   — 주석 제거 후 CSS 규칙 수 ≥ REPO_P5_FLOOR(실측). 문자열 `background`
+ *                     카운트는 주석으로 패딩 가능하므로 폐기.
+ *   (세 floor 의 현재 실측치와 근거는 아래 REPO_P3/P4/P5_FLOOR 선언부 주석 — 숫자를 두 곳에
+ *    적으면 한쪽이 반드시 stale 이 된다)
  *
  * 🔴 알려진 한계(2026-08-12 리뷰 확정, 의도적으로 스코프 밖에 둠) — P1 은 `#rgb`/`#rrggbb` hex
  *    리터럴만 스캔한다. `rgb()`/`rgba()`/`hsl()`/8자리 hex/CSS 색 키워드(`white` 등)로 같은 값을
@@ -294,10 +296,17 @@ const AA_NONTEXT = 3.0
  *  배경을 찾는다. */
 const CONTAINER_OF = {
   '.tree-group-label': '#sidebar', // treePanel(#tree-panel) 안 — #tree-panel 자체는 배경 미선언
+  '.tree-family-label': '#sidebar', // 🆕 m15-02-04 — 형제 .tree-group-label 과 같은 컨테이너
   '.tree-item': '#sidebar',
   '#form-panel h3': '#sidebar', // #form-panel 자체는 배경 미선언(→ 조상 #sidebar 로)
   '.form-row label': '#sidebar',
   '#conn-dot': '#header',
+  // 🆕 m15-02-04 — 헤더 안 텍스트 3종. #aaa 리터럴이 var(--pg-muted) 로 통일되면서 P3 의
+  // 측정 대상이 됐다. 맵에 없으면 배경 미해결로 조용히 스킵돼 "고쳤는데 안 재는" 상태가 된다.
+  // (index-v2.html :303~ 실제 마크업 — 셋 다 #header 의 자식/후손)
+  '#device-info': '#header',
+  '#transport-selector': '#header',
+  '#transport-selector label': '#transport-selector', // #transport-selector 는 배경 미선언 → 조상 #header 로 이어진다
 }
 
 /** 셀렉터의 "자기 배경"(같은 규칙에 background/background-color 선언이 있으면 그 var 또는 리터럴)
@@ -352,7 +361,11 @@ const BG_PROPS = new Set(['background', 'background-color'])
  *  실제로 통과하는 값이다), 이 objective 가 색을 새로 발명하지 않는다는 R2 와 상충하지 않게
  *  값을 바꾸지 않고 예외로 등록한다. selector+prop 로만 매칭 — 실제 비율은 매 실행 실측이라
  *  값이 바뀌면(예: --pg-border 나 --pg-panel 이 바뀌면) 여기 등록과 무관하게 다시 계산된다. */
-const P3_KNOWN_EXCEPTIONS = new Set(['#sidebar::border-right'])
+/** 🔴 m15-02-04 — 비어 있다. 유일한 등록이던 `#sidebar::border-right` 는 --pg-border 상향
+ *  (#334155 → raised 위 3.35 / panel 위 3.92 / bg 위 4.27)으로 **실제로 통과**하게 되어
+ *  예외가 필요 없어졌다. 등록을 남기면 그 지점만 영구 무측정이 되어, --pg-border 를 되돌리는
+ *  회귀를 #sidebar 에서는 못 잡는다. 메커니즘 자체는 남겨둔다(다음에 진짜 장식선이 생기면 사용). */
+const P3_KNOWN_EXCEPTIONS = new Set([])
 
 function runP3(styleTextRaw, pgMap, literalAnchors) {
   // 🔴 규칙 사이의 블록 주석(예: `/* ── Left sidebar ── */`)을 먼저 제거한다 — 안 그러면
@@ -457,7 +470,11 @@ const ALLOWED_PG_MAP = {
   'pg-bg': '#0f172a',
   'pg-panel': '#1e1e2e',
   'pg-raised': '#2a2a3e',
-  'pg-border': '#334155',
+  // m15-02-04 상향(구 #334155) — 구값은 --pg-raised 위 1.35 / --pg-panel 위 1.58 / --pg-bg 위
+  // 1.72 로 WCAG 1.4.11(비텍스트 3.0) 전건 미달이었다. 폼 컨트롤에 배경 선언이 생기면서 그
+  // 테두리가 "측정 불가"에서 "측정 대상"으로 바뀌어 P3 가 실제로 잡게 됐다.
+  // 🔴 임계(AA_NONTEXT=3.0)는 건드리지 않는다 — 값을 올려서 푼다.
+  'pg-border': '#6e7d94',
   'pg-fg': '#e2e8f0',
   'pg-muted': '#94a3b8',
   'pg-selected': '#312e63',
@@ -480,16 +497,16 @@ const REPO_P1_EXCEPTIONS = {
     '#fca5a5': { count: 2, resolvedBy: 'm15-02-03' }, // .field-error(크로스 리뷰 R1) + .log-json.err-json(기존) — 다크세이프 danger 잉크 재사용
   },
   'playground.js': {
-    '#fff3cd': { count: 1, resolvedBy: 'm15-02-04' }, // banner(:1320) 밝은 경고 배너 — §3 과 같은 부류, 후속 objective
-    '#f7f7f7': { count: 2, resolvedBy: 'm15-02-04' }, // sdResolveRow·resolveRow 배경 — 후속 objective
-    '#ffeaa7': { count: 1, resolvedBy: 'm15-02-04' }, // banner 테두리(:1320, #fff3cd 와 같은 규칙)
-    // 🔴 배너 텍스트 잉크는 여기 없다 — 실측 휘도 0.141로 P1(휘도>0.5) 판정 밖이라 애초에
-    // 안 잡힌다(배너 배경은 밝지만 그 위 텍스트는 의도적으로 어두운 잉크라 정상).
-    // 🔴 2026-08-12 리뷰 정정 — 원래 3건(_btcSetStatus + setHint 2곳)이라 적었으나 클래스
-    // 열거 축이 틀렸다: 판별자는 "삼항식 모양"이 아니라 "부모 표면"이었다. setHint(sdResolveHint)의
-    // 부모는 #f7f7f7(m15-02-04 이관 대상)라 이 objective의 다크 전환과 무관 — 원래 값(#c00/#888)으로
-    // 되돌렸다. 실사용처는 _btcSetStatus 1건뿐이다(주석 안 언급은 blankComments로 이제 제외됨).
-    '#fca5a5': { count: 1, resolvedBy: 'm15-02-03' }, // _btcSetStatus 다크세이프 danger 잉크
+    // 🔴 m15-02-04 — 밝은 섬 3규칙(경고 배너 배경·테두리 + sdResolveRow/resolveRow 배경)의
+    // 예외 등록을 **제거**했다. 예외를 지운 것이 아니라 대상 자체가 없어졌다: 셋 다
+    // var(--pg-raised)/var(--pg-border) 로 이관됐고, 같은 커밋에서 그 위 잉크 5종도 함께
+    // 옮겼다(배경을 옮기면 그 위 잉크가 깨지는 것이 이 epic 에서 반복된 실패 클래스다).
+    // 이 목록은 양방향 대조(실측==명시)라, 값만 바꾸고 등록을 남겼으면 즉시 FAIL 이었다.
+    //
+    // 🔴 다크세이프 danger 잉크는 3건으로 늘었다 — _btcSetStatus(기존) + 섬으로 옮겨간
+    // hint 2곳(_signDataGetAddressClick · _resolveSenderFromDeviceClick). 셋 다 --pg-raised
+    // 또는 --pg-panel 위 7.38/8.64 로 AA 통과하며, 아래 회귀 앵커가 매 실행 실측한다.
+    '#fca5a5': { count: 3, resolvedBy: 'dark-safe-danger-ink' },
   },
 }
 
@@ -520,6 +537,7 @@ function loadFileWithExcludes(path) {
  *  손댈 필요 없다(이 objective 스코프 밖, m15-02-04 후보). */
 function buildLiteralAnchors(indexHtml, pgText, pgMap) {
   const panelBg = pgMap['pg-panel'] || null
+  const raisedBg = pgMap['pg-raised'] || null
   const anchors = []
   {
     // .field-error { color: #fca5a5 ... } 의 배경은 #form-panel → #sidebar(panel)
@@ -530,6 +548,41 @@ function buildLiteralAnchors(indexHtml, pgText, pgMap) {
     // isErr ? '#hex' : ('#hex' | 'var(--pg-x)') — _btcSetStatus 1곳(실측, grep -n "isErr ?").
     const m1 = /_btcSetStatus[\s\S]{0,500}?isErr\s*\?\s*'(#[0-9a-fA-F]{3,6})'\s*:\s*'(?:#[0-9a-fA-F]{3,6}|var\(--pg-muted\))'/.exec(pgText)
     anchors.push({ name: '_btcSetStatus isErr ink', ink: m1 ? normalizeHex(m1[1]) : null, bg: panelBg, threshold: AA_TEXT })
+
+    // 🔴 m15-02-04 신설 앵커 (a)~(d) — P3 는 index-v2.html 의 <style> 만 파싱하므로(runP3(spec.indexText))
+    // playground.js 의 인라인 색은 **오직 이 앵커를 통해서만** 측정된다. m15-02-04 가 밝은 섬 2개
+    // (sdResolveRow · resolveRow)를 --pg-raised 로 옮기면서 그 위 잉크 4곳이 전부 --pg-raised 를
+    // 배경으로 갖게 됐다 — 앵커가 없으면 "배경만 옮기고 잉크를 방치"하는 이 epic 최다 실패 모드가
+    // 게이트에 전혀 안 잡힌다(격리 fixture 로 exit 0 실증됨).
+    // 🔴 삼항식은 **두 갈래 모두** 앵커로 만든다 — 에러 갈래만 보면 정상 갈래를 옛 회색으로
+    // 되돌려도(3.95, AA 미달) 통과한다. 값은 파일에서 실측하고, 패턴을 못 찾으면 ink=null 로
+    // "값 해석 실패" finding 이 되어 삭제/rename 우회가 막힌다.
+    for (const a of [
+      { name: '(a) _signDataGetAddressClick setHint', re: /_signDataGetAddressClick[\s\S]{0,1200}?hintEl\.style\.color\s*=\s*isErr\s*\?\s*'([^']+)'\s*:\s*'([^']+)'/ },
+      { name: '(b) _resolveSenderFromDeviceClick setHint', re: /_resolveSenderFromDeviceClick[\s\S]{0,1200}?hintEl\.style\.color\s*=\s*isError\s*\?\s*'([^']+)'\s*:\s*'([^']+)'/ },
+    ]) {
+      const m = a.re.exec(pgText)
+      anchors.push({ name: `${a.name} err`, ink: m ? resolveColorValue(m[1], pgMap) : null, bg: raisedBg, threshold: AA_TEXT })
+      anchors.push({ name: `${a.name} ok`, ink: m ? resolveColorValue(m[2], pgMap) : null, bg: raisedBg, threshold: AA_TEXT })
+    }
+    // (c)/(d) 섬 안 정적 hint 잉크. 🔴 resolveHint 는 sdResolveHint 의 부분문자열이 아니다
+    // (대문자 R — 정규식은 대소문자 구분) 이라 두 앵커가 서로 오염되지 않는다.
+    for (const a of [
+      { name: '(c) sdResolveHint 정적 잉크', re: /sdResolveHint\.style\.cssText\s*=\s*'[^']*color:\s*([^;']+)/ },
+      { name: '(d) resolveHint 정적 잉크', re: /(?:^|[^A-Za-z])resolveHint\.style\.cssText\s*=\s*'[^']*color:\s*([^;']+)/m },
+    ]) {
+      const m = a.re.exec(pgText)
+      anchors.push({ name: a.name, ink: m ? resolveColorValue(m[1].trim(), pgMap) : null, bg: raisedBg, threshold: AA_TEXT })
+    }
+    // (e)/(f) 경고 배너 — 섬 3규칙의 세 번째. 잉크/테두리 둘 다 앵커로 둔다. 🔴 (a)~(d) 만 두면
+    // 배너 잉크(옛 값은 --pg-raised 위 2.55)를 되돌려도 안 잡힌다: 그 값은 휘도 0.141 이라
+    // P1(휘도>0.5) 밖이고, 인라인이라 P3 의 CSS 순회에도 안 걸린다. 같은 클래스의 5번째 원소다.
+    {
+      const mInk = /banner\.style\.cssText\s*=\s*'[^']*;\s*color:\s*([^;']+)/.exec(pgText)
+      anchors.push({ name: '(e) #getaddress-banner 잉크', ink: mInk ? resolveColorValue(mInk[1].trim(), pgMap) : null, bg: raisedBg, threshold: AA_TEXT })
+      const mBorder = /banner\.style\.cssText\s*=\s*'[^']*border:\s*1px\s+solid\s+([^;']+)/.exec(pgText)
+      anchors.push({ name: '(f) #getaddress-banner 테두리', ink: mBorder ? resolveColorValue(mBorder[1].trim(), pgMap) : null, bg: raisedBg, threshold: AA_NONTEXT })
+    }
   }
   return anchors
 }
@@ -541,11 +594,17 @@ function buildLiteralAnchors(indexHtml, pgText, pgMap) {
 // 실측 56과 4배 이상 차이가 나 로그 패널 CSS 43규칙을 통째로 지워도 안 걸렸다. 둘 다 실측치로
 // 맞춘다(sibling check-index-html-brand-tokens.mjs 의 REPO_G1_FLOORS.rootBlocks 처럼 floor를
 // 실측과 정확히 일치시키는 관례를 따름).
-const REPO_P4_FLOOR = 16
-const REPO_P5_FLOOR = 56 // 실측(2026-08-12, setHint 원복 후 재확인) — index-v2.html CSS 규칙 수
+// 🔴 m15-02-04 재측정 — 세 floor 를 변경 후 실측치로 정확히 맞춘다(형제 관례). 안 올리면
+// 이 objective 가 새로 배선한 것을 지워도 게이트가 조용히 통과한다:
+//   P4 16 → 33 : 폼 컨트롤 background/color · 버튼 규칙 · muted 통일 · 섬/배너 이관으로 늘었다.
+//                16 에 두면 새로 넣은 var(--pg-*) 를 17건 지워도 통과한다.
+//   P5 56 → 58 : 공용 .form-row button 규칙 + read-only/.error 특정도 규칙 분화.
+//   P3  8 → 23 : CSS 사용처 13(기존 6 + 헤더 muted 3 + tree-family-label 1 + 폼 컨트롤 color/border 2
+//                + #header seam 1) + 앵커 10(.field-error · _btcSetStatus · 신설 (a)~(f) 8).
+const REPO_P4_FLOOR = 33
+const REPO_P5_FLOOR = 58 // 실측(2026-08-13) — index-v2.html CSS 규칙 수
 // 🔴 P3 도 같은 이유로 floor 가 필요하다(Lens1 C2) — checked.length 는 지금까지 무방비였다.
-// 실측 8(field-error 앵커 1 + _btcSetStatus 앵커 1 + CSS 사용처 6).
-const REPO_P3_FLOOR = 8
+const REPO_P3_FLOOR = 23
 
 function loadRepoSpec() {
   const indexPath = resolve(REPO_ROOT, 'index-v2.html')

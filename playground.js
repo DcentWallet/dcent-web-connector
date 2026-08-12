@@ -1317,7 +1317,10 @@
     // 상단 안내 배너 — 초기에는 hidden. sendAccountCall이 unknown_method 에러 감지 시 표시.
     var banner = document.createElement('div')
     banner.id = 'getaddress-banner'
-    banner.style.cssText = 'display:none;background:#fff3cd;color:#856404;padding:8px 10px;border-radius:4px;margin-bottom:8px;font-size:11px;border:1px solid #ffeaa7;'
+    // m15-02-04: 밝은 경고 배너를 다크로 이관(epic m15-02-00 §5 "전 표면 dark-only").
+    // 🔴 배경만 옮기면 그 위 잉크가 깨진다 — 배너 잉크는 원래 배경 위 4.96 이었지만 --pg-raised
+    // 위에서는 2.55 로 미달이라 --pg-fg(11.36)로 동반 전환한다.
+    banner.style.cssText = 'display:none;background:var(--pg-raised);color:var(--pg-fg);padding:8px 10px;border-radius:4px;margin-bottom:8px;font-size:11px;border:1px solid var(--pg-border);'
     banner.textContent = '⚠ sdk가 v2 payload(getAddress chainId)를 아직 처리하지 못합니다 (m11-02 미머지 상태). 임시로 v1 path (coinType)를 사용하거나 m11-02 SHIPPED를 기다리세요.'
     formFields.appendChild(banner)
 
@@ -2117,13 +2120,11 @@
     function setHint (msg, isErr) {
       if (hintEl) {
         hintEl.textContent = msg
-        // 🔴 2026-08-12 리뷰 정정 — 이 hintEl(sdResolveHint)의 부모 sdResolveRow는 인라인
-        // background:#f7f7f7(밝은 회색, §3/m15-02-04 이관 대상 — 다크 사이드바가 아니다).
-        // 이전 커밋이 "C2와 같은 클래스"라며 여기도 다크세이프 잉크로 바꿨는데, 그 판단은
-        // 삼항식의 "모양"만 보고 실제 배치 표면을 확인하지 않은 오류였다 — #c00/#888 조합은
-        // #f7f7f7 위에서 원래 문제가 없었고(에러 5.49 AA 통과), 바꾼 값(#fca5a5/--pg-muted)이
-        // 오히려 1.77/2.39로 대비를 악화시켰다. 원래 값으로 되돌린다.
-        hintEl.style.color = isErr ? '#c00' : '#888'
+        // m15-02-04: 이 hintEl(sdResolveHint)의 부모 sdResolveRow 가 이제 --pg-raised 다.
+        // 🔴 부모 표면이 판별자다 — 밝은 회색 위에서는 옛 조합(에러 5.49 / 보조 3.31)이었지만
+        // --pg-raised 위에서는 2.38 / 3.95 로 둘 다 미달이 된다. 배경 전환과 같은 커밋에서
+        // 다크세이프 danger 잉크(7.38, 이 리포가 이미 쓰는 값)와 --pg-muted(5.46)로 옮긴다.
+        hintEl.style.color = isErr ? '#fca5a5' : 'var(--pg-muted)'
       }
     }
     if (!state.connected) {
@@ -2194,7 +2195,7 @@
     // (signTransaction sender resolver와 동일 UX).
     var sdResolveRow = document.createElement('div')
     sdResolveRow.className = 'form-row'
-    sdResolveRow.style.cssText = 'margin-bottom:8px;padding:6px;background:#f7f7f7;border-radius:4px;'
+    sdResolveRow.style.cssText = 'margin-bottom:8px;padding:6px;background:var(--pg-raised);border-radius:4px;' // m15-02-04: 밝은 섬 → 다크
     var sdResolveBtn = document.createElement('button')
     sdResolveBtn.id = 'btn-signdata-getaddress'
     sdResolveBtn.type = 'button'
@@ -2202,7 +2203,7 @@
     sdResolveBtn.style.cssText = 'font-size:11px;padding:4px 8px;'
     var sdResolveHint = document.createElement('span')
     sdResolveHint.id = 'signdata-getaddress-hint'
-    sdResolveHint.style.cssText = 'font-size:10px;color:#888;margin-left:8px;'
+    sdResolveHint.style.cssText = 'font-size:10px;color:var(--pg-muted);margin-left:8px;' // m15-02-04: 섬 잉크 동반 전환(3.95 → 5.46)
     sdResolveHint.textContent = '연결된 디바이스의 payment 주소로 채움 (address는 디바이스 소유 필수)'
     sdResolveBtn.addEventListener('click', function () {
       _signDataGetAddressClick(sdChainIdEl, sdKeyPathEl, sdResolveHint)
@@ -2292,7 +2293,7 @@
   function _appendSenderResolveRow (family) {
     var resolveRow = document.createElement('div')
     resolveRow.className = 'form-row'
-    resolveRow.style.cssText = 'margin-bottom:8px;padding:6px;background:#f7f7f7;border-radius:4px;'
+    resolveRow.style.cssText = 'margin-bottom:8px;padding:6px;background:var(--pg-raised);border-radius:4px;' // m15-02-04: 밝은 섬 → 다크
     var resolveBtn = document.createElement('button')
     resolveBtn.id = 'btn-resolve-sender'
     resolveBtn.type = 'button'
@@ -2300,7 +2301,7 @@
     resolveBtn.style.cssText = 'font-size:11px;padding:4px 8px;'
     var resolveHint = document.createElement('span')
     resolveHint.id = 'resolve-sender-hint'
-    resolveHint.style.cssText = 'font-size:10px;color:#888;margin-left:8px;'
+    resolveHint.style.cssText = 'font-size:10px;color:var(--pg-muted);margin-left:8px;' // m15-02-04: 섬 잉크 동반 전환(3.95 → 5.46)
     resolveHint.textContent = SENDER_FIELD_LABELS[family] || '이 네트워크는 payload에 sender 필드가 없음 (signer=디바이스 계정) — 클릭해도 변화 없을 수 있음'
     resolveBtn.addEventListener('click', function () {
       _resolveSenderFromDeviceClick(family, resolveHint)
@@ -2545,7 +2546,10 @@
     function setHint (msg, isError) {
       if (!hintEl) return
       hintEl.textContent = msg
-      hintEl.style.color = isError ? '#c33' : '#0a7'
+      // m15-02-04: 부모 resolveRow 가 --pg-raised 로 바뀌면서 옛 조합(4.79 / 2.79)이
+      // 2.73 / 4.68 이 된다 — 에러 잉크는 미달, 정상 잉크는 통과하지만 형제 hint 2곳
+      // (_signDataGetAddressClick · _btcSetStatus)과 값이 갈린다. 같은 짝으로 통일한다.
+      hintEl.style.color = isError ? '#fca5a5' : 'var(--pg-muted)'
     }
 
     if (!state.connected) {

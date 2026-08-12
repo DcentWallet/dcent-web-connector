@@ -4,14 +4,14 @@
       "#fca5a5": { "count": 1, "resolvedBy": "test-fixture" }
     },
     "playground.js": {
-      "#fca5a5": { "count": 2, "resolvedBy": "test-fixture" }
+      "#fca5a5": { "count": 3, "resolvedBy": "test-fixture" }
     }
   },
   "allowedMap": {
     "pg-bg": "#0f172a",
     "pg-panel": "#1e1e2e",
     "pg-raised": "#2a2a3e",
-    "pg-border": "#334155",
+    "pg-border": "#6e7d94",
     "pg-fg": "#e2e8f0",
     "pg-muted": "#94a3b8",
     "pg-selected": "#312e63"

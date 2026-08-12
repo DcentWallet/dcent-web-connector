@@ -6,7 +6,10 @@
   <title>DCENT Connector v2 Playground</title>
   <style>
     /* index-v2.html <style> 상단 — 🔴 브랜드 앵커 블록(:root BRAND-ANCHOR)과 별개다.
-       playground 지역 표면 토큰이며 parity 대조 대상이 아니다(브랜드 색이 아니므로). */
+       playground 지역 표면 토큰이며 parity 대조 대상이 아니다(9키 앵커가 아니므로).
+       🔴 단 G1(scripts/check-index-html-brand-tokens.mjs)은 다르다 — G1은 hue/chroma로
+       판단하므로 --pg-selected는 브랜드 앵커 색과 hue가 같아(둘 다 약 243도) 하드코딩으로
+       잡힌다. REPO_G1_EXCEPTIONS['index-v2.html']에 등록되어 있다. */
     :root {
       --pg-bg:       #0f172a;  /* 기존 로그 패널 값 */
       --pg-panel:    #1e1e2e;  /* 기존 헤더 값 */

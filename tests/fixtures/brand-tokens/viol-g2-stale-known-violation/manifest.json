@@ -1,0 +1,40 @@
+{
+  "_comment": "G2 stale waiver 클래스 (Codex 리뷰 CRITICAL 3/3) — 라임 팔레트는 brand-bg 대비가 이미 AA 통과(11.74)인데 REPO_KNOWN_CONTRAST_VIOLATIONS 에 brand-bg 를 등록해두면(=대비를 고친 뒤 등록 해제를 깜빡한 상황), warn 모드가 영구히 유지되며 아무 신호 없이 통과해선 안 된다. 등록된 짝이 더 이상 failing 이 아니면 finding.",
+  "anchorFile": "index.html",
+  "files": [
+    {
+      "key": "index.html",
+      "path": "index.html"
+    }
+  ],
+  "exceptions": {},
+  "catalogExempt": {},
+  "floors": {
+    "rootBlocks": 3,
+    "customProps": 16,
+    "accentUses": 3,
+    "accentSoftUses": 1,
+    "scannedFiles": 1
+  },
+  "directionBFloor": 2,
+  "knownViolations": [
+    {
+      "pair": "brand-bg",
+      "resolvedBy": "m15-02-02"
+    }
+  ],
+  "snapshot": {
+    "brand-100": "#f3fbe0",
+    "brand-200": "#c7ee8a",
+    "brand-400": "#a9e355",
+    "brand": "#90e01f",
+    "brand-600": "#7ec11f",
+    "brand-900": "#3d5c0c",
+    "brand-ink": "#67a216",
+    "brand-ink-lite": "#84ce1c",
+    "on-brand": "#0b0e14",
+    "accent": "#90e01f",
+    "accent-soft": "#2f4314"
+  },
+  "accentSoftCheck": null
+}

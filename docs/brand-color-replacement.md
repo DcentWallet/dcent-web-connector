@@ -35,12 +35,23 @@
 4. `tests/fixtures/brand-tokens/resolved.snapshot.json`(G3 스냅샷)을 새 해석값으로 갱신한다.
    이 파일은 소비처가 없는 5개 토큰(`brand-100`/`400`/`900`/`brand-ink`/`brand-ink-lite`)의
    유일한 관측 수단이므로 갱신을 빠뜨리면 그 5개는 게이트를 통과하고도 실제로는 틀릴 수 있다.
+4-b. `scripts/check-index-html-brand-tokens.mjs`의 `REPO_G1_PAST_GENERATIONS` 상수에 **교체 전
+   9값**(방금 앵커에서 빠져나가는 세대)을 통째로 추가한다. 현재 앵커 값은 교체 순간 G1의
+   `exactSet`과 hue 밴드 양쪽에서 자동으로 빠져나가므로, 여기 등록하지 않으면 리포 어딘가에
+   남은 이전 세대 리터럴은 어떤 게이트에도 영원히 걸리지 않는다.
 5. `node scripts/check-index-html-brand-tokens.mjs --test`로 로컬 자기검증 → `yarn check:docs`.
-6. 부모 워크스페이스 루트에서
-   `bash .claude/scripts/check-brand-anchor-parity.sh --surfaces main-repos/dcent-web-connector/docs/index.html,main-repos/dcent-web-connector/index-v2.html --strict`
-   로 이 리포 2표면의 자체 일치를, 인자 없이 실행해 4표면 전체 parity를 확인한다.
+6. 부모 워크스페이스 루트에서 parity 게이트로 이 리포 몫을 확인한다.
+   - `index-v2.html`에 아직 `BRAND-ANCHOR` 블록이 없으면(`m15-02-03` 랜딩 전) **`docs/index.html`
+     단일 표면만** 검사한다 — 없는 표면에 `--strict`를 걸면 `✗ MISSING`으로 무조건 실패한다:
+     `bash .claude/scripts/check-brand-anchor-parity.sh --surfaces main-repos/dcent-web-connector/docs/index.html --strict`
+   - `index-v2.html`에 앵커가 이미 있으면(`m15-02-03` 랜딩 후 — 이 절차서를 실제 색 교체에 쓰는
+     시점은 대부분 여기 해당) 이 리포 2표면을 함께 검사한다:
+     `bash .claude/scripts/check-brand-anchor-parity.sh --surfaces main-repos/dcent-web-connector/docs/index.html,main-repos/dcent-web-connector/index-v2.html --strict`
+   - 인자 없이 실행하면(기본 4표면) `dcent-web-bridge` 쪽 2표면까지 포함한 전체 parity를 확인한다.
 7. G2(대비) 미달이 새로 생기면 `KNOWN_CONTRAST_VIOLATIONS`에 해소 objective ID와 함께 등록하거나
    (경고 모드 유지), 값 자체를 AA 기준을 만족하도록 조정한다 — 등록 없이 미달 상태로 방치하지 않는다.
+   기존에 등록돼 있던 항목이 이번 교체로 AA를 통과하게 됐다면 그 등록을 **반드시 제거**한다 —
+   더 이상 미달이 아닌 짝이 목록에 남아 있으면 G2가 "stale waiver"로 잡는다.
 
 ## 참고
 

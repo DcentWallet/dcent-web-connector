@@ -38,6 +38,14 @@ const here = dirname(fileURLToPath(import.meta.url))
 const REPO_ROOT = resolve(here, '..')
 const FIXTURES_ROOT = join(here, '..', 'tests', 'fixtures', 'brand-tokens')
 
+// 🔴 fixture/manifest/snapshot 파싱 중 예상치 못한 예외(손상된 JSON, 누락 키 등)가 uncaught 로
+//    새면 exit code 가 process 기본값(1) 이 되어 "findings"(1)와 "구조 오류"(2)가 구분 안 된다.
+//    이 스크립트의 exit 규약(0/1/2)을 어떤 경로에서도 지키기 위한 최후 안전망.
+process.on('uncaughtException', (e) => {
+  console.error(`ERROR: 예상치 못한 예외 — 구조 오류로 처리 (exit 2): ${e && e.stack ? e.stack : e}`)
+  process.exit(2)
+})
+
 // ════════════════════════════════════════════════════════════════════════
 // 색 연산 (순수 함수 — 어떤 파일 I/O 도 없다)
 // ════════════════════════════════════════════════════════════════════════
@@ -173,16 +181,36 @@ function analyzeFile(text) {
     }
   }
 
-  let markerLineRange = null
+  // 🔴 markerCharRange 는 "라인" 이 아니라 "문자 인덱스" 로 면제 범위를 정한다. 라인 기반이면
+  //    END 마커와 같은 줄 뒤에 붙인 하드코딩("/* ...END... */ .sneak{color:#xxxxxx}")이 면제된다
+  //    (같은 라인이므로 포함) — 문자 인덱스면 마커 텍스트 끝(endIdx + marker.length) 뒤의 문자는
+  //    전부 범위 밖이라 이 우회가 막힌다.
+  //    추가로 "마커가 앵커 9개 선언만 감싸는지"(다른 콘텐츠를 삼키도록 END 를 옮기는 우회 방지)를
+  //    범위 안 hex 리터럴 개수 == 9 로 검증하고, 마커가 앵커(--brand) :root 블록 밖으로 나가지
+  //    않았는지도 확인한다.
+  let markerCharRange = null
   const beginIdx = text.indexOf(ANCHOR_BEGIN_MARKER)
   const endIdx = text.indexOf(ANCHOR_END_MARKER)
   if (anchorBlock) {
+    const beginIdxLast = text.lastIndexOf(ANCHOR_BEGIN_MARKER)
+    const endIdxLast = text.lastIndexOf(ANCHOR_END_MARKER)
     if (beginIdx === -1 || endIdx === -1 || endIdx < beginIdx) {
       errors.push('BRAND-ANCHOR:BEGIN/END 마커 불일치')
+    } else if (beginIdx !== beginIdxLast || endIdx !== endIdxLast) {
+      errors.push('BRAND-ANCHOR:BEGIN/END 마커가 2쌍 이상 존재 — 어느 쪽이 유효 범위인지 모호함')
+    } else if (beginIdx < anchorBlock.bodyStart || endIdx > anchorBlock.bodyEnd) {
+      errors.push('BRAND-ANCHOR 마커가 앵커(--brand) :root 블록 밖에 있음')
     } else {
-      const beginLine = lineOf(text, beginIdx)
-      const endLine = lineOf(text, endIdx)
-      markerLineRange = [beginLine, endLine]
+      const range = [beginIdx, endIdx + ANCHOR_END_MARKER.length]
+      const regionHexCount = scanHexLiterals(text.slice(range[0], range[1])).length
+      if (regionHexCount !== ANCHOR_KEYS.length) {
+        errors.push(
+          `마커 범위 안 hex 리터럴 수 ${regionHexCount} != 앵커 키 수 ${ANCHOR_KEYS.length} ` +
+            '(마커가 9개 선언만 감싸지 않음 — END 를 옮겨 다른 콘텐츠를 삼켰거나 선언 일부가 범위 밖)',
+        )
+      } else {
+        markerCharRange = range
+      }
     }
     const anchorMap = Object.fromEntries(anchorProps)
     for (const key of ANCHOR_KEYS) {
@@ -194,7 +222,7 @@ function analyzeFile(text) {
     if (uniq.size !== values.length) errors.push('앵커 9키 중 값이 중복됨 — 서로 달라야 한다')
   }
 
-  return { rootBlocks, anchorBlock, anchorProps: anchorProps ? Object.fromEntries(anchorProps) : null, markerLineRange, structuralErrors: errors }
+  return { rootBlocks, anchorBlock, anchorProps: anchorProps ? Object.fromEntries(anchorProps) : null, markerCharRange, structuralErrors: errors }
 }
 
 function lineOf(text, index) {
@@ -202,6 +230,7 @@ function lineOf(text, index) {
 }
 
 function normalizeHex(v) {
+  if (typeof v !== 'string') return null
   const p = parseHex(v.trim())
   return p ? toHex(p) : null
 }
@@ -250,9 +279,9 @@ function scanHexLiterals(text) {
   return hits.filter((h) => h.hex)
 }
 
-/** 라인 범위(inclusive) 안에 있는지. range=null 이면 전부 밖(제외 없음). */
-function inRange(line, range) {
-  return !!range && line >= range[0] && line <= range[1]
+/** 문자 인덱스가 [start, end) 범위 안에 있는지. range=null 이면 전부 밖(제외 없음). */
+function inRange(index, range) {
+  return !!range && index >= range[0] && index < range[1]
 }
 
 /** `col:'#hex'` (체인 카탈로그 필드) 패턴 위치를 열거. 라인 범위 무관 — 구조적 필드명으로 식별한다.
@@ -315,7 +344,7 @@ function runG1(spec) {
   const perFileHexCount = {}
   for (const { key, text } of spec.files) {
     const a = analyses[key]
-    const excludeRange = key === spec.anchorFile ? a.markerLineRange : null
+    const excludeRange = key === spec.anchorFile ? a.markerCharRange : null
     const catalogHits = scanCatalogColFields(text)
     const catalogLines = new Set(catalogHits.map((h) => h.line))
     let catalogCount = 0
@@ -328,7 +357,7 @@ function runG1(spec) {
     const hits = scanHexLiterals(text)
     const hexCount = {}
     for (const h of hits) {
-      if (inRange(h.line, excludeRange)) continue
+      if (inRange(h.index, excludeRange)) continue
       if (catalogLines.has(h.line)) continue // col: 필드는 카탈로그 카운트로만 처리 (중복 집계 방지)
       const r = isBrandLiteral(h.hex, exactSet, brandBand)
       if (!r.match) continue
@@ -385,7 +414,9 @@ function runG1(spec) {
 
 const AA_THRESHOLD = 4.5
 
-/** 방향 A — 6개 고정 짝(brand vs bg/bg-2/panel/panel-2/code-bg/accent-soft). */
+/** 방향 A — 6개 고정 짝(brand vs bg/bg-2/panel/panel-2/code-bg/accent-soft).
+ *  반환의 `structuralErrors` 는 exit 2(구조 오류) 대상, `errors` 는 exit 1(콘텐츠 위반/findings) 대상 —
+ *  호출자가 각각 다른 누적 배열로 분리해 push 한다. */
 function checkDirectionA(mainRootProps, accentSoftResolved, knownViolations, forceHardFail) {
   const brand = mainRootProps.brand // alias for --accent resolved value
   const pairs = [
@@ -396,24 +427,51 @@ function checkDirectionA(mainRootProps, accentSoftResolved, knownViolations, for
     { key: 'brand-code-bg', bg: mainRootProps['code-bg'] },
     { key: 'brand-accent-soft', bg: accentSoftResolved },
   ]
-  const results = pairs.map((p) => ({ key: p.key, ratio: contrastRatio(brand, p.bg), pass: contrastRatio(brand, p.bg) >= AA_THRESHOLD }))
-  const failing = results.filter((r) => !r.pass)
+  const validKeys = new Set(pairs.map((p) => p.key))
+  // ratio 를 pair 당 한 번만 계산 — "해석 불가(null)" 와 "대비 미달(숫자<4.5)" 을 분리한다.
+  // 이전 구현은 null >= 4.5 가 false 이므로 두 사건이 같은 failing 목록에 섞여, 배경 토큰이
+  // 사라지거나 리네임돼도(해석 불가) known-violation 등록 뒤에 조용히 흡수되는 fail-open 이 있었다.
+  const results = pairs.map((p) => {
+    const ratio = contrastRatio(brand, p.bg)
+    return { key: p.key, ratio, resolved: ratio !== null, pass: ratio !== null && ratio >= AA_THRESHOLD }
+  })
+  const structuralErrors = []
+  for (const r of results) {
+    if (!r.resolved) structuralErrors.push(`${r.key}: 대비를 계산할 수 없음 — 배경 토큰 값 해석 실패(누락/리네임 가능성)`)
+  }
+  const failing = results.filter((r) => r.resolved && !r.pass)
+  const failingKeys = new Set(failing.map((f) => f.key))
 
-  const registeredKeys = new Set((knownViolations || []).map((v) => v.pair))
   const mode = forceHardFail ? 'hard-fail' : deriveMode(knownViolations || [])
   const errors = []
-  if (mode === 'warn') {
-    for (const v of knownViolations || []) {
-      if (!v.resolvedBy) errors.push(`known-violation ${v.pair}: 해소 objective ID 없음`)
+  const seenPairs = new Set()
+  for (const v of knownViolations || []) {
+    if (!validKeys.has(v.pair)) {
+      errors.push(`known-violation ${v.pair}: 방향 A 6쌍 밖의 알 수 없는 짝`)
+      continue
     }
+    if (seenPairs.has(v.pair)) {
+      errors.push(`known-violation ${v.pair}: 중복 등록`)
+      continue
+    }
+    seenPairs.add(v.pair)
+    if (!v.resolvedBy) errors.push(`known-violation ${v.pair}: 해소 objective ID 없음`)
+    // 🔴 stale waiver — 등록된 짝이 더 이상 실제로 미달이 아니면(=대비가 이미 고쳐졌으면) 등록을
+    //    방치하는 것 자체가 findings. 이 검사가 없으면 02 가 색을 바꿔 대비를 고친 뒤 등록 해제를
+    //    깜빡해도 영구히 warn 모드로 남아 hard-fail 전환(§4-8 "2단계 전환")이 침묵 속에 무산된다.
+    if (mode === 'warn' && !failingKeys.has(v.pair)) {
+      errors.push(`known-violation ${v.pair}: 더 이상 대비 미달이 아님 — 등록 해제 필요 (stale waiver)`)
+    }
+  }
+  if (mode === 'warn') {
     for (const f of failing) {
-      if (!registeredKeys.has(f.key)) errors.push(`미등록 대비 미달: ${f.key} (${f.ratio})`)
+      if (!seenPairs.has(f.key)) errors.push(`미등록 대비 미달: ${f.key} (${f.ratio})`)
     }
   } else {
     // hard-fail 모드: 등록 여부와 무관하게 미달 짝 전부가 findings
     for (const f of failing) errors.push(`대비 미달(hard-fail): ${f.key} (${f.ratio})`)
   }
-  return { mode, results, failing, errors, warnCount: mode === 'warn' ? failing.length : 0 }
+  return { mode, results, failing, structuralErrors, errors, warnCount: mode === 'warn' ? failing.length : 0 }
 }
 
 /** deriveMode — 순수 함수. 플래그가 아니라 등록 배열 길이에서 파생. */
@@ -503,7 +561,11 @@ function parseColorMixPercent(rawDecl) {
 function resolveSnapshot(anchorMap, mainRootProps) {
   const snapshot = {}
   for (const key of ANCHOR_KEYS) snapshot[key] = normalizeHex(anchorMap[key])
-  snapshot.accent = normalizeHex(anchorMap.brand)
+  // 🔴 --accent 는 anchorMap.brand 를 그대로 복사하지 않고 실제 선언(`mainRootProps.accent`,
+  //    보통 `var(--brand)`)을 resolveValue 로 해석한다. 전에는 별칭이 끊겨도(예: `--accent:#2e8bfd`
+  //    로 직접 하드코딩) 스냅샷이 항상 anchorMap.brand 값을 재계산해 tautological 하게 통과했다 —
+  //    거울상 짝 `--accent-soft`(바로 아래)는 이미 원본 선언을 파싱해서 가드되고 있었다.
+  snapshot.accent = normalizeHex(resolveValue(mainRootProps.accent, mainRootProps))
   const pct = parseColorMixPercent(mainRootProps['accent-soft'])
   snapshot['accent-soft'] = pct === null ? null : colorMixSrgb(anchorMap.brand, pct, mainRootProps.bg)
   return snapshot
@@ -558,6 +620,13 @@ const REPO_G1_CATALOG_EXEMPT = { 'docs/index.html': 6 } // Ethereum/Ravencoin/So
 const REPO_G1_FLOORS = { rootBlocks: 3, customProps: 27, accentUses: 21, accentSoftUses: 15, scannedFiles: 2 }
 const REPO_DIRECTION_B_FLOOR = 3
 
+// 🔴 과거 세대 앵커 값 — 브랜드 색을 다시 교체할 때(다음 리브랜드) 이 배열에 "직전 세대 9값"을
+//    통째로 추가해야 G1 이 그 세대의 잔여 리터럴을 계속 잡는다. 현재 앵커(9값)는 교체 순간
+//    exactSet 에서 자동으로 빠지고 새 hue 밴드 밖으로도 나가므로, 여기 등록하지 않으면 이전 세대
+//    리터럴은 어떤 게이트에도 영원히 안 걸린다. 01 시점엔 이전 세대가 없어 빈 배열.
+//    갱신 절차: docs/brand-color-replacement.md.
+const REPO_G1_PAST_GENERATIONS = []
+
 const REPO_KNOWN_CONTRAST_VIOLATIONS = [
   { pair: 'brand-bg', resolvedBy: 'm15-02-02' },
   { pair: 'brand-bg-2', resolvedBy: 'm15-02-02' },
@@ -568,10 +637,15 @@ const REPO_KNOWN_CONTRAST_VIOLATIONS = [
 ]
 
 function mainRootPropsOf(anchorFileAnalysis) {
-  // 앵커 블록 + 비앵커 블록을 합쳐 :root 전체 선언을 하나의 맵으로 (마지막 선언이 이긴다 — CSS cascade 와 동일)
+  // 파일 안의 모든 :root 블록을 문서 순서대로 병합해 하나의 맵으로 (마지막 선언이 이긴다 — CSS
+  // cascade 와 동일). 🔴 예전 구현은 anchorBlock.content 를 두 번(anchorProps 경유 + 직접 파싱)
+  // 합쳐 사실상 no-op 이었다 — 비앵커 :root 블록(`:root{--toc-w:0px}` 류)은 전혀 안 들어갔다.
+  // 지금은 우연히 `--bg`/`--panel` 등이 앵커와 같은 블록에 있어 통과했을 뿐, 다른 :root 블록에
+  // G2 가 참조하는 토큰이 생기면(예: m15-02-03 의 `--pg-*`) 조용히 누락됐을 것이다.
   const merged = {}
-  for (const [k, v] of Object.entries(anchorFileAnalysis.anchorProps)) merged[k] = v
-  for (const [k, v] of parseCustomProps(anchorFileAnalysis.anchorBlock.content)) merged[k] = v
+  for (const block of anchorFileAnalysis.rootBlocks) {
+    for (const [k, v] of parseCustomProps(block.content)) merged[k] = v
+  }
   return merged
 }
 
@@ -588,7 +662,7 @@ function loadRepoSpec() {
     exceptions: REPO_G1_EXCEPTIONS,
     catalogExempt: REPO_G1_CATALOG_EXEMPT,
     floors: REPO_G1_FLOORS,
-    pastGenerations: [],
+    pastGenerations: REPO_G1_PAST_GENERATIONS,
     docsText,
     pgText,
   }
@@ -620,7 +694,8 @@ function runReal({ forceHardFailA = false } = {}) {
 
   const accentSoftResolved = colorMixSrgb(mainRootProps.brand, 25, mainRootProps.bg)
   const dirA = checkDirectionA(mainRootProps, accentSoftResolved, REPO_KNOWN_CONTRAST_VIOLATIONS, forceHardFailA)
-  // 대비 미달은 구조 오류(exit 2)가 아니라 콘텐츠 위반(exit 1) — warn/hard-fail 모드 무관하게 findings 로.
+  // 배경 토큰 해석 실패는 구조 오류(exit 2), 대비 미달/등록 불일치는 콘텐츠 위반(exit 1).
+  errors.push(...dirA.structuralErrors)
   findings.push(...dirA.errors)
 
   const b2ScanTexts = [spec.docsText]
@@ -720,7 +795,8 @@ function runFixture(dir) {
 
     const knownViolations = manifest.knownViolations || []
     const dirA = checkDirectionA(mainRootProps, accentSoftResolved, knownViolations, !!manifest.forceHardFailA)
-    // 대비 미달은 구조 오류(exit 2)가 아니라 콘텐츠 위반(exit 1) — warn/hard-fail 모드 무관하게 findings 로.
+    // 배경 토큰 해석 실패는 구조 오류(exit 2), 대비 미달/등록 불일치는 콘텐츠 위반(exit 1).
+    errors.push(...dirA.structuralErrors)
     findings.push(...dirA.errors)
 
     const styleText = anchorFileEntry.text

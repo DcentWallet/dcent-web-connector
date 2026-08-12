@@ -286,13 +286,19 @@ function inRange(index, range) {
 
 /** `col:'#hex'` (체인 카탈로그 필드) 패턴 위치를 열거. 라인 범위 무관 — 구조적 필드명으로 식별한다.
  *  하드코딩된 라인 범위(:580~:610) 대신 이 방식을 쓰는 이유: 카탈로그 위에 줄이 삽입되면 라인 범위는
- *  즉시 깨지지만, `col:` 필드명은 카탈로그가 자라도 안정적으로 남는다. */
+ *  즉시 깨지지만, `col:` 필드명은 카탈로그가 자라도 안정적으로 남는다.
+ *  🔴 G7(2026-08-12 4축 크로스 리뷰) — `range`(문자 인덱스 [start,end))를 함께 반환한다. 예전엔
+ *  호출부가 `line`(줄 번호)만으로 제외해 "이 col: 필드가 있는 **줄 전체**"의 다른 hex 리터럴까지
+ *  모두 하드코딩 집계에서 빠졌다 — 같은 줄에 col: 데코이 주석(hex 값을 담은 짧은 인라인 주석)을
+ *  붙이면 미등록 브랜드 하드코딩이 G1 시야에서 통째로 사라졌다(대조군 실험 실증). 마커
+ *  범위(markerCharRange)와 같은 문자 인덱스 기법으로 바꿔 "이 col: 매치 자신의 hex 리터럴만"
+ *  제외하도록 좁힌다. */
 function scanCatalogColFields(text) {
   const re = /col:\s*'(#[0-9a-fA-F]{6})'/g
   const hits = []
   let m
   while ((m = re.exec(text))) {
-    hits.push({ hex: normalizeHex(m[1]), line: lineOf(text, m.index) })
+    hits.push({ hex: normalizeHex(m[1]), line: lineOf(text, m.index), range: [m.index, m.index + m[0].length] })
   }
   return hits
 }
@@ -346,7 +352,9 @@ function runG1(spec) {
     const a = analyses[key]
     const excludeRange = key === spec.anchorFile ? a.markerCharRange : null
     const catalogHits = scanCatalogColFields(text)
-    const catalogLines = new Set(catalogHits.map((h) => h.line))
+    // 🔴 G7 수정 — 예전엔 `catalogLines`(줄 번호 Set)로 "이 줄의 다른 hex 도 전부" 면제했다.
+    //    문자 인덱스 range 로 좁혀 "이 col: 매치 자신의 hex 만" 면제한다(마커 범위와 동일 기법).
+    const catalogRanges = catalogHits.map((h) => h.range)
     let catalogCount = 0
     for (const c of catalogHits) {
       const r = isBrandLiteral(c.hex, exactSet, brandBand)
@@ -358,7 +366,7 @@ function runG1(spec) {
     const hexCount = {}
     for (const h of hits) {
       if (inRange(h.index, excludeRange)) continue
-      if (catalogLines.has(h.line)) continue // col: 필드는 카탈로그 카운트로만 처리 (중복 집계 방지)
+      if (catalogRanges.some((range) => inRange(h.index, range))) continue // col: 필드 자신만 면제 (같은 줄 데코이는 안 면제)
       const r = isBrandLiteral(h.hex, exactSet, brandBand)
       if (!r.match) continue
       hexCount[h.hex] = (hexCount[h.hex] || 0) + 1
@@ -621,7 +629,10 @@ const REPO_G1_EXCEPTIONS = {
   },
 }
 const REPO_G1_CATALOG_EXEMPT = { 'docs/index.html': 6 } // Ethereum/Ravencoin/Solana/Cosmos/Stellar/Stacks
-const REPO_G1_FLOORS = { rootBlocks: 3, customProps: 27, accentUses: 21, accentSoftUses: 15, scannedFiles: 2 }
+// 🔴 m15-02-03 산출물만큼 상향(2026-08-12) — index-v2.html 이 첫 :root(--pg-* 7토큰)를 갖게 되며
+// rootBlocks +1(3→4) · customProps +7(27→34). 실측: docs 38 + index-v2 7 = 45(§ 참고,
+// 원래 27 floor 자체가 docs 실측 38 아래 여유를 이미 두고 있었다 — floor 는 하한이지 정확한 값이 아니다).
+const REPO_G1_FLOORS = { rootBlocks: 4, customProps: 34, accentUses: 21, accentSoftUses: 15, scannedFiles: 2 }
 const REPO_DIRECTION_B_FLOOR = 3
 
 // 🔴 과거 세대 앵커 값 — 브랜드 색을 다시 교체할 때(다음 리브랜드) 이 배열에 "직전 세대 9값"을

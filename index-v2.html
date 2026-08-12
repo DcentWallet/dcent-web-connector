@@ -5,12 +5,11 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>DCENT Connector v2 Playground</title>
   <style>
-    /* index-v2.html <style> 상단 — 🔴 `docs/index.html`의 브랜드 앵커 블록(:root BRAND-ANCHOR)과
-       별개다(이 파일에는 그 마커가 없다). playground 지역 표면 토큰이며 parity 대조 대상이
-       아니다(9키 앵커가 아니므로).
-       🔴 단 G1(scripts/check-index-html-brand-tokens.mjs)은 다르다 — G1은 hue/chroma로
-       판단하므로 --pg-selected는 브랜드 앵커 색과 hue가 같아(둘 다 약 243도) 하드코딩으로
-       잡힌다. REPO_G1_EXCEPTIONS['index-v2.html']에 등록되어 있다. */
+    /* index-v2.html <style> 상단 — playground 지역 표면 토큰(--pg-*, 다크 표면, m15-02-03)과
+       브랜드 앵커 토큰(--brand-*, m15-02-02)이 별개 :root 블록으로 공존한다.
+       🔴 --pg-selected 는 브랜드 앵커 색과 hue 가 같아(둘 다 약 243도) G1(hue/chroma 밴드)이
+       하드코딩으로 잡는다. REPO_G1_EXCEPTIONS['index-v2.html']에 등록되어 있다(리터럴 유지 —
+       m15-02-02 가 color-mix 파생 대신 이 값을 그대로 남기기로 결정). */
     :root {
       --pg-bg:       #0f172a;  /* 기존 로그 패널 값 */
       --pg-panel:    #1e1e2e;  /* 기존 헤더 값 */
@@ -23,8 +22,18 @@
                                    🔴 줄 번호 대신 셀렉터로 참조한다 — 이 :root 신설 자체가 줄
                                    번호를 밀어 원래 주석(:208 :217 :241 / :167)이 크로스 리뷰
                                    시점에 이미 stale이었다 */
-      --pg-selected: #312e63;  /* 🆕 유일한 신규 — 이전 선택 배경(연한 인디고)의 다크 대응.
-                                   indigo 계열 유지(02 가 hue 를 바꾼다) */
+      --pg-selected: #312e63;  /* 이전 선택 배경(연한 인디고)의 다크 대응. indigo 계열 유지 —
+                                   m15-02-02 가 hue 는 그대로 두고 전경만 브랜드로 바꿨다
+                                   (border-left-color/color 는 아래 var(--brand)) */
+    }
+    :root {
+      /* BRAND-ANCHOR:BEGIN -- docs/index.html 과 동일한 9토큰(parity 대조 표면, D1).
+         Source: 브랜드 가이드 v1 「웹 매체 운용」 10p/11p (2026-08-12 확정).
+         Replacement procedure: docs/brand-color-replacement.md (in this repo) */
+      --brand-100:#C7F08F; --brand-200:#B3EA66; --brand-400:#99E331;
+      --brand:#90E01F;     --brand-600:#7EC11F; --brand-900:#45580E;
+      --brand-ink:#67A216; --brand-ink-lite:#84CE1C; --on-brand:#171719;
+      /* BRAND-ANCHOR:END */
     }
     * { box-sizing: border-box; margin: 0; padding: 0; }
     body {
@@ -69,8 +78,8 @@
       font-size: 13px;
       font-weight: 500;
     }
-    #btn-connect { background: #4f46e5; color: #fff; }
-    #btn-connect:hover { background: #4338ca; }
+    #btn-connect { background: var(--brand); color: var(--on-brand); }
+    #btn-connect:hover { background: var(--brand-600); }
     #btn-connect:disabled { background: #666; cursor: not-allowed; }
     #btn-disconnect { background: #dc2626; color: #fff; display: none; }
     #btn-disconnect:hover { background: #b91c1c; }
@@ -93,7 +102,7 @@
       font-size: 12px;
       cursor: pointer;
     }
-    #transport-selector select:focus { outline: none; border-color: #4f46e5; }
+    #transport-selector select:focus { outline: none; border-color: var(--brand); }
 
     /* ── Main layout: sidebar + log panel ── */
     #main {
@@ -143,8 +152,8 @@
     .tree-item:hover { background: var(--pg-raised); }
     .tree-item.selected {
       background: var(--pg-selected);
-      border-left-color: #4f46e5;
-      color: #4f46e5;
+      border-left-color: var(--brand);
+      color: var(--brand);
       font-weight: 600;
     }
 
@@ -201,8 +210,8 @@
     #btn-send {
       width: 100%;
       padding: 8px;
-      background: #4f46e5;
-      color: #fff;
+      background: var(--brand);
+      color: var(--on-brand);
       border: none;
       border-radius: 4px;
       cursor: pointer;
@@ -210,7 +219,7 @@
       font-weight: 600;
       margin-top: 4px;
     }
-    #btn-send:hover { background: #4338ca; }
+    #btn-send:hover { background: var(--brand-600); }
     #btn-send:disabled { background: #9ca3af; cursor: not-allowed; }
 
     /* ── Right: Log panel ── */
@@ -246,7 +255,7 @@
       cursor: pointer;
     }
     #log-toolbar button:hover { background: #334155; color: #e2e8f0; }
-    #log-toolbar button.active { background: #4f46e5; color: #fff; border-color: #4f46e5; }
+    #log-toolbar button.active { background: var(--brand); color: var(--on-brand); border-color: var(--brand); }
     #log-scroll {
       flex: 1;
       overflow-y: auto;

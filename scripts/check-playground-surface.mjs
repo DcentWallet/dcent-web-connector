@@ -111,20 +111,37 @@ function contrastRatio(hexA, hexB) {
 // 구조 파서 — :root{...} 블록을 괄호 균형으로 찾는다(형제 check-index-html-brand-tokens.mjs 와 동일 기법)
 // ════════════════════════════════════════════════════════════════════════
 
-function findRootBlockRange(text) {
-  const re = /:root\s*\{/
-  const m = re.exec(text)
-  if (!m) return null
-  const bodyStart = m.index + m[0].length
-  let depth = 1
-  let i = bodyStart
-  while (i < text.length && depth > 0) {
-    if (text[i] === '{') depth++
-    else if (text[i] === '}') depth--
-    i++
+/** 모든 :root{...} 블록을 열거(괄호 균형, 형제 check-index-html-brand-tokens.mjs 의
+ *  findRootBlocks 와 동일 기법). index-v2.html 은 이제 --pg-* 토큰 블록과 BRAND-ANCHOR
+ *  블록(m15-02-02, --brand-*) 두 :root 를 가진다. */
+function findAllRootBlocks(text) {
+  const blocks = []
+  const re = /:root\s*\{/g
+  let m
+  while ((m = re.exec(text))) {
+    const bodyStart = m.index + m[0].length
+    let depth = 1
+    let i = bodyStart
+    while (i < text.length && depth > 0) {
+      if (text[i] === '{') depth++
+      else if (text[i] === '}') depth--
+      i++
+    }
+    if (depth !== 0) continue
+    blocks.push({ start: m.index, end: i, content: text.slice(bodyStart, i - 1) })
   }
-  if (depth !== 0) return null
-  return [m.index, i]
+  return blocks
+}
+
+/** --pg-bg 를 선언한 :root 블록의 [start,end) 범위(P2 토큰 맵 추출용). 🔴 "첫 번째 :root"가
+ *  아니라 **내용**으로 식별한다 — index-v2.html 이 이제 :root 블록을 두 개(pg 토큰 + m15-02-02
+ *  BRAND-ANCHOR) 갖는데, 위치 기반이면 어느 블록이 먼저 오는지에 pgMap 추출이 조용히 의존하게
+ *  된다(BRAND-ANCHOR 를 pg 블록보다 앞에 두는 순간 pgMap 이 전부 undefined 로 깨진다). */
+function findRootBlockRange(text) {
+  const blocks = findAllRootBlocks(text)
+  const pg = blocks.find((b) => /--pg-bg\s*:/.test(b.content))
+  if (pg) return [pg.start, pg.end]
+  return blocks.length ? [blocks[0].start, blocks[0].end] : null
 }
 
 function inRange(index, range) {
@@ -343,8 +360,10 @@ function runP3(styleTextRaw, pgMap, literalAnchors) {
   // `#sidebar` 셀렉터가 정확히 매칭되지 않고 조용히 스킵된다(실측: 이 버그로 #sidebar 규칙
   // 자체가 rules 배열에서 통째로 빠졌었다).
   const styleText = styleTextRaw.replace(/\/\*[\s\S]*?\*\//g, '')
-  const rootRange = findRootBlockRange(styleText)
-  const rules = findCssRules(styleText, rootRange ? [rootRange] : [])
+  // 🔴 :root 블록이 여러 개일 수 있다(pg 토큰 + m15-02-02 BRAND-ANCHOR) — 전부 제외해야
+  // BRAND-ANCHOR 블록이 findCssRules 에 "셀렉터 :root" 규칙으로 잘못 섞이지 않는다.
+  const rootRanges = findAllRootBlocks(styleText).map((b) => [b.start, b.end])
+  const rules = findCssRules(styleText, rootRanges)
 
   // 1차 패스 — 각 규칙의 자기 배경(있으면) 수집
   const bgBySelector = {}
@@ -450,7 +469,10 @@ const REPO_P1_EXCEPTIONS = {
     // 헤더/버튼/danger 잉크 — §4-1 이 "표면 아님"으로 이미 분류한 것과 같은 부류(밝은 텍스트
     // 잉크가 이미 다크인 배경 위에 있는 것 — #fff 헤더 잉크·브랜드 버튼 잉크는 이 objective
     // 착수 전부터 있었다). 이 표는 index-v2.html 실측(2026-08-12)을 그대로 옮긴 것이다.
-    '#fff': { count: 5, resolvedBy: 'pre-existing' }, // :44 헤더잉크·:72/:75 브랜드버튼·:205 danger버튼·:249 send버튼(5건, :88 사이드바 배경은 이미 var(--pg-panel)로 전환되어 여기 안 잡힘)
+    // 🔴 m15-02-02 — 5건 중 3건(브랜드버튼 color:#fff ×2 + log-toolbar button.active ×1)이
+    // var(--on-brand) 로 전환되어 실측이 2건으로 줄었다. 남은 2건: 헤더 잉크(#header h1) ·
+    // #btn-disconnect(빨간 danger 버튼, 브랜드와 무관 — 전환 대상 아님).
+    '#fff': { count: 2, resolvedBy: 'pre-existing' }, // 헤더잉크 · #btn-disconnect danger버튼(2건)
     '#e2e8f0': { count: 3, resolvedBy: 'pre-existing' }, // 로그 패널 전경(이미 다크였던 log-toolbar/log-scroll 영역) 리터럴 사용처 3건 — --pg-fg 와 같은 값이지만 로그 패널은 --pg-* 시스템 밖(m15-02-01 이전부터 다크)
     '#4ade80': { count: 2, resolvedBy: 'pre-existing' }, // #conn-dot.connected · 로그 레벨 뱃지 등 "연결됨" semantic 상태색 — 작은 상태 점/뱃지이며 D18 의 "표면"이 아니다
     '#c4b5fd': { count: 1, resolvedBy: 'pre-existing' }, // .log-method 잉크 — G1 예외목록에도 이미 등록된 로그 패널 텍스트
@@ -474,8 +496,12 @@ const REPO_P1_EXCEPTIONS = {
 function loadFileWithExcludes(path) {
   const text = existsSync(path) ? readFileSync(path, 'utf8') : null
   if (text === null) return null
-  const rootRange = findRootBlockRange(text)
-  return { text, excludeRanges: rootRange ? [rootRange] : [] }
+  // 🔴 P1(밝은 표면) 면제는 :root 블록 "전부" — index-v2.html 이 pg 토큰 블록과 m15-02-02
+  // BRAND-ANCHOR 블록 둘 다 가질 수 있다. 첫 블록만 면제하면 두 번째 블록의 선언 리터럴이
+  // (예: 라임 앵커 9값 중 밝은 4개) 그대로 "밝은 표면"으로 오탐된다 — 선언 자체는 이 게이트가
+  // 막으려는 "표면"이 아니라 토큰 정의다(§ P1 "선언 밖" 리터럴만 대상).
+  const rootRanges = findAllRootBlocks(text).map((b) => [b.start, b.end])
+  return { text, excludeRanges: rootRanges }
 }
 
 /** C1/.field-error/_btcSetStatus 회귀 앵커 — var(--pg-*) 가 아니라 "재사용 리터럴"이라 P3 의

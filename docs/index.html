@@ -7,14 +7,16 @@
 <style>
 :root{
   /* BRAND-ANCHOR:BEGIN -- brand color source of truth. Change values ONLY here.
+     Source: 브랜드 가이드 v1 「웹 매체 운용」 10p/11p (2026-08-12 확정).
      Replacement procedure: docs/brand-color-replacement.md (in this repo) */
-  --brand-100:#E2E1FD; --brand-200:#927DFF; --brand-400:#C7C3FB;
-  --brand:#7231ff;     --brand-600:#6422E6; --brand-900:#22003C;
-  --brand-ink:#4F46E5; --brand-ink-lite:#ABA2FE; --on-brand:#0B0E14;
-  /* Most of these 9 have no consumer in this document yet (measured 0 usages).
-     Intentionally unused to keep parity with the sibling repo's 9-token anchor --
-     do not delete as dead code. --on-brand is wired to .flow .num .n / .net-ico
-     ink by m15-02-02. All 9 values must stay distinct from each other. */
+  --brand-100:#C7F08F; --brand-200:#B3EA66; --brand-400:#99E331;
+  --brand:#90E01F;     --brand-600:#7EC11F; --brand-900:#45580E;
+  --brand-ink:#67A216; --brand-ink-lite:#84CE1C; --on-brand:#171719;
+  /* --on-brand is wired to .flow .num .n / .net-ico ink (m15-02-02). The rest of
+     the 9 have no consumer in this document yet (measured 0 usages beyond --accent
+     alias below). Intentionally unused to keep parity with the sibling repo's
+     9-token anchor -- do not delete as dead code. All 9 values must stay distinct
+     from each other. */
   /* BRAND-ANCHOR:END */
 
   --bg:#0f0f10; --bg-2:#0a0d12; --panel:#1b1c1e; --panel-2:#161c24;
@@ -96,7 +98,7 @@ code{font-family:var(--mono);font-size:.86em}
 .nav-link:hover{background:var(--panel);color:var(--text);text-decoration:none}
 .nav-link.active{background:var(--accent-soft);color:var(--head);font-weight:600}
 .nav-parent.net{align-items:center}
-.net-ico{display:inline-flex;align-items:center;justify-content:center;width:18px;height:18px;border-radius:5px;font-size:11px;font-weight:800;color:#fff;margin-right:8px;flex:0 0 auto;line-height:1;overflow:hidden}
+.net-ico{display:inline-flex;align-items:center;justify-content:center;width:18px;height:18px;border-radius:5px;font-size:11px;font-weight:800;color:var(--on-brand);margin-right:8px;flex:0 0 auto;line-height:1;overflow:hidden}
 .net-ico.net-img{background:transparent}
 .net-ico img{width:18px;height:18px;border-radius:5px;object-fit:contain;display:block}
 .nav-link.stub::after{content:"stub";font-size:9px;color:var(--text-faint);border:1px solid var(--border-2);
@@ -261,7 +263,7 @@ table.matrix tr:hover td{background:var(--panel)}
 .flow tbody tr:last-child td{border-bottom:none}
 .flow tbody tr:hover td{background:var(--bg-2)}
 .flow .num{width:54px}
-.flow .num .n{display:inline-flex;align-items:center;justify-content:center;width:27px;height:27px;border-radius:50%;font-weight:700;font-size:12.5px;color:#fff}
+.flow .num .n{display:inline-flex;align-items:center;justify-content:center;width:27px;height:27px;border-radius:50%;font-weight:700;font-size:12.5px;color:var(--on-brand)}
 .flow .num .n.c{background:var(--accent)}
 .flow .num .n.a{background:var(--amber)}
 .flow .step{display:flex;align-items:center;gap:12px}

@@ -12,9 +12,6 @@
        판단하므로 --pg-selected는 브랜드 앵커 색과 hue가 같아(둘 다 약 243도) 하드코딩으로
        잡힌다. REPO_G1_EXCEPTIONS['index-v2.html']에 등록되어 있다. */
     :root {
-      color-scheme: dark;      /* 폼 컨트롤/스크롤바 UA 기본 위젯도 다크 팔레트를 쓰게 한다
-                                   (크로스 리뷰 NIT — 남기는 밝은 표면 3건(§3)과 별개로, 이건
-                                   새 규칙 선언이 아니라 브라우저 기본 렌더링 힌트라 스코프 안) */
       --pg-bg:       #0f172a;  /* 기존 로그 패널 값 */
       --pg-panel:    #1e1e2e;  /* 기존 헤더 값 */
       --pg-raised:   #2a2a3e;  /* 기존 셀렉트 값 */
@@ -192,12 +189,13 @@
     .form-row input.error { border-color: #dc2626; }
     .field-error {
       font-size: 11px;
-      color: #fca5a5;  /* 크로스 리뷰 발견(Codex WARNING) — 이 사이드바가 다크로 바뀌면서
-                          #dc2626(4.83 on #fff)가 #1e1e2e 위에서 3.40으로 AA 미달이 됐다.
-                          새 색을 만들지 않고 이 파일의 로그 패널이 이미 쓰는 다크세이프
-                          danger 텍스트 잉크(.log-json.err-json과 동일 값, 8.64 on --pg-panel)를
-                          재사용한다. border-color: #dc2626(:192)는 비텍스트라 3:1 기준(3.40)을
-                          이미 통과해 그대로 둔다. */
+      color: #fca5a5;  /* 크로스 리뷰 발견(Codex WARNING) — 원래 danger 잉크는 사이드바가
+                          하얀 배경일 때는 AA를 통과했지만, 이 사이드바가 다크(--pg-panel)로
+                          바뀌면서 그 위에서 AA 미달이 됐다. 새 색을 만들지 않고 이 파일의
+                          로그 패널이 이미 쓰는 다크세이프 danger 텍스트 잉크(.log-json.err-json과
+                          동일 값)를 재사용한다. `.form-row input.error`의 border-color는 이
+                          objective가 건드리지 않은 기존 선언이라 별개(입력 요소 자신의
+                          배경 위에 놓이며, 이 파일의 색 전환 대상이 아니다). */
       margin-top: 2px;
     }
     #btn-send {

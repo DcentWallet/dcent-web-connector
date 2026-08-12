@@ -1,0 +1,35 @@
+{
+  "anchorFile": "index.html",
+  "files": [
+    {
+      "key": "index.html",
+      "path": "index.html"
+    }
+  ],
+  "exceptions": {},
+  "catalogExempt": {},
+  "floors": {
+    "rootBlocks": 3,
+    "customProps": 16,
+    "accentUses": 3,
+    "accentSoftUses": 1,
+    "scannedFiles": 1
+  },
+  "directionBFloor": 2,
+  "knownViolations": [],
+  "snapshot": {
+    "brand-100": "#f3fbe1",
+    "brand-200": "#c7ee8a",
+    "brand-400": "#a9e355",
+    "brand": "#90e01f",
+    "brand-600": "#7ec11f",
+    "brand-900": "#3d5c0c",
+    "brand-ink": "#67a216",
+    "brand-ink-lite": "#84ce1c",
+    "on-brand": "#0b0e14",
+    "accent": "#90e01f",
+    "accent-soft": "#2f4314"
+  },
+  "accentSoftCheck": null,
+  "_comment": "T-G-03d \uc6d0\uc18c \u2014 \uc18c\ube44\ucc98 0\uc778 5\uac1c \ud0a4 \uc911 --brand-100 \ub2e8\ub3c5 1\uae00\uc790 \ubcc0\uc870(#f3fbe0 -> #f3fbe1). \uc774 \ud0a4\ub294 G1/G2 \uc5b4\ub514\uc5d0\ub3c4 \uc548 \uac78\ub9ac\ubbc0\ub85c G3 \uc2a4\ub0c5\uc0f7\uc774 \uc720\uc77c\ud55c \uad00\uce21\uba74\uc784\uc744 \uc99d\uba85\ud55c\ub2e4."
+}

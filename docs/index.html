@@ -6,10 +6,21 @@
 <link rel="icon" href="data:image/svg+xml,%3Csvg xmlns=%27http://www.w3.org/2000/svg%27 viewBox=%270 0 32 32%27%3E%3Crect width=%2732%27 height=%2732%27 rx=%277%27 fill=%27%236c2ef3%27/%3E%3Crect x=%279%27 y=%279%27 width=%2714%27 height=%2714%27 rx=%273%27 fill=%27none%27 stroke=%27%23fff%27 stroke-width=%273.2%27/%3E%3C/svg%3E" /><title>DCENT Web Connector v2 — Developer Documentation</title>
 <style>
 :root{
+  /* BRAND-ANCHOR:BEGIN -- brand color source of truth. Change values ONLY here.
+     Replacement procedure: docs/brand-color-replacement.md (in this repo) */
+  --brand-100:#E2E1FD; --brand-200:#927DFF; --brand-400:#C7C3FB;
+  --brand:#7231ff;     --brand-600:#6422E6; --brand-900:#22003C;
+  --brand-ink:#4F46E5; --brand-ink-lite:#ABA2FE; --on-brand:#0B0E14;
+  /* Most of these 9 have no consumer in this document yet (measured 0 usages).
+     Intentionally unused to keep parity with the sibling repo's 9-token anchor --
+     do not delete as dead code. --on-brand is wired to .flow .num .n / .net-ico
+     ink by m15-02-02. All 9 values must stay distinct from each other. */
+  /* BRAND-ANCHOR:END */
+
   --bg:#0f0f10; --bg-2:#0a0d12; --panel:#1b1c1e; --panel-2:#161c24;
   --border:#37383c; --border-2:#2d3744;
   --text:#cacaca; --text-dim:#878a93; --text-faint:#6e7681;
-  --head:#f0f6fc; --accent:#7231ff; --accent-2:#388bfd; --accent-soft:#251b4d;
+  --head:#f0f6fc; --accent:var(--brand); --accent-2:#388bfd; --accent-soft:color-mix(in srgb,var(--brand) 25%,var(--bg));
   --green:#3fb950; --green-soft:#11241a; --amber:#d29922; --amber-soft:#241c0d;
   --red:#f85149; --red-soft:#2a1416; --purple:#967cff; --cyan:#39c5cf;
   --code-bg:#050506; --mono:"SF Mono",ui-monospace,"JetBrains Mono",Menlo,Consolas,monospace;

@@ -1,0 +1,48 @@
+{
+  "_comment": "G1 past-generation 클래스 (Codex 리뷰 CRITICAL 1/3) — 앵커가 라임(현재 세대)으로 이미 교체된 뒤, 이전 세대(보라) 리터럴이 앵커 밖에 남아 있으면 exactSet(현재 9값)과 hue 밴드(라임 근방) 어디에도 안 걸려 무검출이 된다. pastGenerations 에 이전 세대 9값을 등록해야만 exactSet 에 합류해 다시 잡힌다 — 이 fixture 는 그 메커니즘 자체(REPO_G1_PAST_GENERATIONS 배선)가 동작함을 증명한다.",
+  "anchorFile": "index.html",
+  "files": [
+    {
+      "key": "index.html",
+      "path": "index.html"
+    }
+  ],
+  "exceptions": {},
+  "catalogExempt": {},
+  "floors": {
+    "rootBlocks": 3,
+    "customProps": 17,
+    "accentUses": 3,
+    "accentSoftUses": 1,
+    "scannedFiles": 1
+  },
+  "directionBFloor": 2,
+  "knownViolations": [],
+  "pastGenerations": [
+    {
+      "brand-100": "#E2E1FD",
+      "brand-200": "#927DFF",
+      "brand-400": "#C7C3FB",
+      "brand": "#7231ff",
+      "brand-600": "#6422E6",
+      "brand-900": "#22003C",
+      "brand-ink": "#4F46E5",
+      "brand-ink-lite": "#ABA2FE",
+      "on-brand": "#0B0E14"
+    }
+  ],
+  "snapshot": {
+    "brand-100": "#f3fbe0",
+    "brand-200": "#c7ee8a",
+    "brand-400": "#a9e355",
+    "brand": "#90e01f",
+    "brand-600": "#7ec11f",
+    "brand-900": "#3d5c0c",
+    "brand-ink": "#67a216",
+    "brand-ink-lite": "#84ce1c",
+    "on-brand": "#0b0e14",
+    "accent": "#90e01f",
+    "accent-soft": "#2f4314"
+  },
+  "accentSoftCheck": null
+}

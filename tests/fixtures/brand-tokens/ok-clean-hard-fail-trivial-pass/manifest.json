@@ -1,0 +1,34 @@
+{
+  "anchorFile": "index.html",
+  "files": [
+    {
+      "key": "index.html",
+      "path": "index.html"
+    }
+  ],
+  "exceptions": {},
+  "catalogExempt": {},
+  "floors": {
+    "rootBlocks": 3,
+    "customProps": 16,
+    "accentUses": 3,
+    "accentSoftUses": 1,
+    "scannedFiles": 1
+  },
+  "directionBFloor": 2,
+  "knownViolations": [],
+  "snapshot": {
+    "brand-100": "#f0efff",
+    "brand-200": "#d8d5ff",
+    "brand-400": "#b0a8ff",
+    "brand": "#fafaff",
+    "brand-600": "#e5e0ff",
+    "brand-900": "#c8c0ff",
+    "brand-ink": "#8880ff",
+    "brand-ink-lite": "#a8a0ff",
+    "on-brand": "#1a1030",
+    "accent": "#fafaff",
+    "accent-soft": "#3f3f40"
+  },
+  "accentSoftCheck": null
+}

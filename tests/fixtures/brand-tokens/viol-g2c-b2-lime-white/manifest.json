@@ -1,0 +1,22 @@
+{
+  "anchorFile": "index.html",
+  "files": [
+    {
+      "key": "index.html",
+      "path": "index.html"
+    }
+  ],
+  "exceptions": {},
+  "catalogExempt": {},
+  "floors": {
+    "rootBlocks": 3,
+    "customProps": 16,
+    "accentUses": 3,
+    "accentSoftUses": 1,
+    "scannedFiles": 1
+  },
+  "directionBFloor": 2,
+  "knownViolations": [],
+  "snapshot": null,
+  "accentSoftCheck": null
+}

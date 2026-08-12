@@ -588,9 +588,30 @@ function checkDirectionB(mainFileText, b2ScanTexts, mainRootProps, brandResolved
     }
   }
 
+  // G2-C: `.net-ico` 클래스 기본 잉크 회귀 가드 (2026-08-13, 로컬 크로스 리뷰 렌즈2 실결함).
+  // 카탈로그 ~30개 항목은 배경이 브랜드가 아니라 카탈로그가 주입하는 임의 hex(JS 조립)라, 클래스
+  // 기본 색이 브랜드 잉크(--on-brand)로 승격되면 즉시 대비가 붕괴한다(예: on-brand on 흑색 배경
+  // ~1.2:1). 브랜드 배경이 확정되는 곳은 B-3b 의 인라인 분기 하나뿐이므로, 클래스 선언 자체는
+  // 브랜드 잉크를 전제할 수 없다는 것이 인바리언트다.
+  // 🔴 targets 에는 넣지 않는다 — B-1~B-3 은 "짝이 있으면 그 짝의 대비를 잰다"지만 이건 "이 짝을
+  // 만들면 안 된다"는 구조 규칙이라 형식이 다르고, targets.length 는 REPO_DIRECTION_B_FLOOR(==6,
+  // T-R-11)가 그대로 참조하므로 여기 얹으면 그 카운트가 흔들린다.
+  const classGuardViolations = []
+  const netIcoClassColor = extractDeclFromSelector(mainFileText, '.net-ico', 'color')
+  if (netIcoClassColor) {
+    const resolvedClassColor = normalizeHex(resolveValue(netIcoClassColor, mainRootProps))
+    const resolvedOnBrand = normalizeHex(resolveValue('var(--on-brand)', mainRootProps))
+    if (resolvedClassColor && resolvedOnBrand && resolvedClassColor === resolvedOnBrand) {
+      classGuardViolations.push(
+        'G2-C 위반: .net-ico 클래스 기본 color 가 --on-brand — 카탈로그가 주입하는 임의 배경 위에서 ' +
+          '대비 붕괴 위험(브랜드 배경은 B-3b 인라인 분기에서만 확정된다)'
+      )
+    }
+  }
+
   const judged = targets.filter((t) => t.hasText)
   const failing = judged.filter((t) => contrastRatio(t.ink, t.bg) < AA_THRESHOLD)
-  return { targets, judged, failing }
+  return { targets, judged, failing, classGuardViolations }
 }
 
 /** styleText 안에서 `SELECTOR{...}` (정확 문자열 매치) 블록의 특정 선언값을 추출. */
@@ -780,6 +801,7 @@ function runReal({ forceHardFailA = false } = {}) {
     findings.push(`방향 B 검사 대상 수 ${dirB.targets.length} != 기대 ${REPO_DIRECTION_B_FLOOR} (02 시점)`)
   }
   findings.push(...dirB.failing.map((f) => `방향 B 대비 미달: ${f.id}`))
+  findings.push(...dirB.classGuardViolations)
 
   const committedSnapshot = loadCommittedSnapshot()
   const g3 = runG3(mainRootProps, mainRootProps, committedSnapshot, { target: ACCENT_SOFT_TARGET, maxDelta: ACCENT_SOFT_MAX_DELTA })
@@ -880,6 +902,7 @@ function runFixture(dir) {
     const dbFloor = manifest.directionBFloor ?? 0
     if (dirB.targets.length < dbFloor) errors.push(`방향 B 대상 수 ${dirB.targets.length} < floor ${dbFloor}`)
     findings.push(...dirB.failing.map((f) => `방향 B 대비 미달: ${f.id}`))
+    findings.push(...dirB.classGuardViolations)
 
     if (manifest.snapshot) {
       const g3 = runG3(mainRootProps, mainRootProps, manifest.snapshot, manifest.accentSoftCheck || null)

@@ -30,7 +30,8 @@
    드리프트를 exit 1로 잡지만, 그 전에 리뷰어가 먼저 보게 하는 편이 싸다.
 2. `docs/index.html`의 `BRAND-ANCHOR:BEGIN`~`END` 사이 9값을 새 팔레트로 치환한다.
    **BEGIN/END 마커 자체는 지우거나 이동하지 않는다** — `check-index-html-brand-tokens.mjs`(G1)가
-   이 라인 범위를 앵커 예외 판정의 유일한 기준으로 쓴다.
+   두 마커 사이의 문자 범위(라인이 아니라 문자 인덱스 기준)를 앵커 예외 판정의 유일한 기준으로
+   쓰고, 그 범위 안 hex 리터럴 수가 9(앵커 키 수)와 다르면 구조 오류로 막는다.
 3. `--accent`/`--accent-soft` 별칭·파생 선언은 건드리지 않는다 — 앵커 값만 바뀌면 자동으로 따라간다.
 4. `tests/fixtures/brand-tokens/resolved.snapshot.json`(G3 스냅샷)을 새 해석값으로 갱신한다.
    이 파일은 소비처가 없는 5개 토큰(`brand-100`/`400`/`900`/`brand-ink`/`brand-ink-lite`)의

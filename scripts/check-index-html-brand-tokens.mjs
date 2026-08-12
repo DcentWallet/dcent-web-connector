@@ -441,6 +441,7 @@ function checkDirectionA(mainRootProps, accentSoftResolved, knownViolations, for
   }
   const failing = results.filter((r) => r.resolved && !r.pass)
   const failingKeys = new Set(failing.map((f) => f.key))
+  const unresolvedKeys = new Set(results.filter((r) => !r.resolved).map((r) => r.key))
 
   const mode = forceHardFail ? 'hard-fail' : deriveMode(knownViolations || [])
   const errors = []
@@ -459,7 +460,10 @@ function checkDirectionA(mainRootProps, accentSoftResolved, knownViolations, for
     // 🔴 stale waiver — 등록된 짝이 더 이상 실제로 미달이 아니면(=대비가 이미 고쳐졌으면) 등록을
     //    방치하는 것 자체가 findings. 이 검사가 없으면 02 가 색을 바꿔 대비를 고친 뒤 등록 해제를
     //    깜빡해도 영구히 warn 모드로 남아 hard-fail 전환(§4-8 "2단계 전환")이 침묵 속에 무산된다.
-    if (mode === 'warn' && !failingKeys.has(v.pair)) {
+    //    unresolvedKeys(배경 토큰 해석 실패)는 제외 — 그 경우는 이미 위 structuralErrors 에
+    //    "대비를 계산할 수 없음"으로 잡힌다. 여기서도 중복으로 잡으면 "해석 불가"와 "고쳐서 통과"가
+    //    같은 메시지로 뭉뚱그려져 원인 파악이 흐려진다(라운드 2 크로스 리뷰 WARNING).
+    if (mode === 'warn' && !failingKeys.has(v.pair) && !unresolvedKeys.has(v.pair)) {
       errors.push(`known-violation ${v.pair}: 더 이상 대비 미달이 아님 — 등록 해제 필요 (stale waiver)`)
     }
   }

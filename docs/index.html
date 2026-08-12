@@ -7,14 +7,22 @@
 <style>
 :root{
   /* BRAND-ANCHOR:BEGIN -- brand color source of truth. Change values ONLY here.
+     Source: 브랜드 가이드 v1 「웹 매체 운용」 10p/11p (2026-08-12 확정).
      Replacement procedure: docs/brand-color-replacement.md (in this repo) */
-  --brand-100:#E2E1FD; --brand-200:#927DFF; --brand-400:#C7C3FB;
-  --brand:#7231ff;     --brand-600:#6422E6; --brand-900:#22003C;
-  --brand-ink:#4F46E5; --brand-ink-lite:#ABA2FE; --on-brand:#0B0E14;
-  /* Most of these 9 have no consumer in this document yet (measured 0 usages).
-     Intentionally unused to keep parity with the sibling repo's 9-token anchor --
-     do not delete as dead code. --on-brand is wired to .flow .num .n / .net-ico
-     ink by m15-02-02. All 9 values must stay distinct from each other. */
+  --brand-100:#C7F08F; --brand-200:#B3EA66; --brand-400:#99E331;
+  --brand:#90E01F;     --brand-600:#7EC11F; --brand-900:#45580E;
+  --brand-ink:#67A216; --brand-ink-lite:#84CE1C; --on-brand:#171719;
+  /* --on-brand is wired to .flow .num .n (always brand background) and to the
+     single net-ico search-fallback branch where background truly resolves to
+     the brand accent alias (m15-02-02, revised: the .net-ico *class* default
+     stays its original white ink because ~30 catalog entries paint their own
+     arbitrary per-network color as background via inline style -- wiring the
+     class default to --on-brand collapsed contrast on dark network colors --
+     near-black ink on near-black background drops below 1.2:1, near-unreadable).
+     The rest of the 9 have no consumer in this document yet (measured 0 usages
+     beyond --accent alias below). Intentionally unused to keep parity with the
+     sibling repo's 9-token anchor -- do not delete as dead code. All 9 values
+     must stay distinct from each other. */
   /* BRAND-ANCHOR:END */
 
   --bg:#0f0f10; --bg-2:#0a0d12; --panel:#1b1c1e; --panel-2:#161c24;
@@ -261,7 +269,7 @@ table.matrix tr:hover td{background:var(--panel)}
 .flow tbody tr:last-child td{border-bottom:none}
 .flow tbody tr:hover td{background:var(--bg-2)}
 .flow .num{width:54px}
-.flow .num .n{display:inline-flex;align-items:center;justify-content:center;width:27px;height:27px;border-radius:50%;font-weight:700;font-size:12.5px;color:#fff}
+.flow .num .n{display:inline-flex;align-items:center;justify-content:center;width:27px;height:27px;border-radius:50%;font-weight:700;font-size:12.5px;color:var(--on-brand)}
 .flow .num .n.c{background:var(--accent)}
 .flow .num .n.a{background:var(--amber)}
 .flow .step{display:flex;align-items:center;gap:12px}
@@ -767,7 +775,11 @@ function enhanceSpecCard(root, id, ko){
     iconHtml='<span class="net-ico net-img sc-ico"><img src="'+ce.img+'" alt="" loading="lazy" onerror="this.remove();this.parentNode.style.background=\''+(ce.col||'#5b6270')+'\';this.parentNode.textContent=\''+(ce.ico||'?')+'\'"></span>';
   } else {
     var col=ce?ce.col:'var(--accent)', ic=ce?ce.ico:((ticker||name)+'').slice(0,2);
-    iconHtml='<span class="net-ico sc-ico" style="background:'+col+'">'+ic+'</span>';
+    /* m15-02-02: only the ce-falsy branch paints the true brand background --
+       ce.col is an arbitrary per-network hex and must keep the .net-ico class
+       default ink, not on-brand. */
+    var inkStyle=ce?'':';color:var(--on-brand)';
+    iconHtml='<span class="net-ico sc-ico" style="background:'+col+inkStyle+'">'+ic+'</span>';
   }
   var isEvm=/ethereum \/ evm|\bEVM\b/i.test(name);
   function esc(x){ return (x||'').replace(/&/g,'&amp;').replace(/"/g,'&quot;'); }

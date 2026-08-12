@@ -328,8 +328,13 @@ function runG1(spec) {
         errors.push(`${key}: 앵커(--brand) :root 블록을 찾지 못함`)
       } else {
         anchorMap = a.anchorProps
-        errors.push(...a.structuralErrors)
       }
+    }
+    // 🔴 anchorFile 전용이 아니다 — 다른 파일도 자체 BRAND-ANCHOR 블록을 가질 수 있다
+    // (index-v2.html, D1 parity 표면). 그 블록의 구조 오류(마커 불일치/9키 누락/중복값 등)도
+    // 똑같이 잡아야 한다 — "전역 유일 --brand 전제 금지" (01 의 T-U-02).
+    if (a.anchorBlock) {
+      errors.push(...a.structuralErrors)
     }
   }
 
@@ -345,12 +350,33 @@ function runG1(spec) {
   }
   brandBand = computeBrandBand(anchorMap)
 
+  // 🔴 앵커 parity — anchorFile 이 아닌 파일도 자기 앵커 블록을 가지면(index-v2.html) 9값이
+  // anchorFile 과 정확히 같아야 한다. G1은 지금까지 이걸 "하드코딩 스캔"으로만 간접 검사했는데
+  // (마커 안이라 excludeRange 로 면제되므로 하드코딩 스캔이 아예 못 봄), 값이 서로 다르면
+  // 아무 게이트도 못 잡는 구멍이 생긴다(T-R-10 — "index-v2.html 앵커 값이 docs/index.html 과
+  // 다름 → G1 이 FAIL"). 명시로 비교한다.
+  for (const { key } of spec.files) {
+    if (key === spec.anchorFile) continue
+    const a = analyses[key]
+    if (!a.anchorBlock) continue
+    for (const k of ANCHOR_KEYS) {
+      const mainVal = normalizeHex(anchorMap[k])
+      const otherVal = normalizeHex(a.anchorProps[k])
+      if (mainVal !== otherVal) {
+        findings.push(`${key}: 앵커 값 불일치 --${k} ${spec.anchorFile}=${mainVal} vs ${key}=${otherVal}`)
+      }
+    }
+  }
+
   // 스캔: 파일별 하드코딩 탐지
   const perFileCatalogCount = {}
   const perFileHexCount = {}
   for (const { key, text } of spec.files) {
     const a = analyses[key]
-    const excludeRange = key === spec.anchorFile ? a.markerCharRange : null
+    // 🔴 anchorFile 단일 파일 전제를 깬다 — 앵커(--brand) 블록을 가진 어떤 파일이든 자신의
+    // markerCharRange 로 자기 리터럴을 면제한다. 예전엔 anchorFile 이 아닌 파일의 BRAND-ANCHOR
+    // 블록 안 리터럴이 그대로 하드코딩 스캔에 걸렸다(index-v2.html 9값이 매번 FAIL).
+    const excludeRange = a.markerCharRange
     const catalogHits = scanCatalogColFields(text)
     // 🔴 G7 수정 — 예전엔 `catalogLines`(줄 번호 Set)로 "이 줄의 다른 hex 도 전부" 면제했다.
     //    문자 인덱스 range 로 좁혀 "이 col: 매치 자신의 hex 만" 면제한다(마커 범위와 동일 기법).
@@ -503,8 +529,10 @@ function resolveValue(raw, mainRootProps, depth = 0) {
 
 /** 방향 B — 브랜드가 배경일 때의 잉크 심사. B-1(캐스케이드 쌍)·B-2(같은 블록, 파일 전체 스캔)·B-3(명시 열거).
  *  `mainFileText` = docs/index.html 역할(B-1/B-3 가 정의되는 곳). `b2ScanTexts` = B-2 구조 스캔 대상
- *  전체(anchor 유무 무관 — 카탈로그 col: 와 같은 이유로 line-range 가 아니라 필드 패턴으로 식별한다). */
-function checkDirectionB(mainFileText, b2ScanTexts, mainRootProps, brandResolved) {
+ *  전체(anchor 유무 무관 — 카탈로그 col: 와 같은 이유로 line-range 가 아니라 필드 패턴으로 식별한다).
+ *  `pgText` = index-v2.html 역할(B-3c~e, playground 버튼 3규칙이 정의되는 곳) — 없으면(undefined)
+ *  해당 target 은 스킵한다(픽스처가 playground 파일을 안 줄 수 있음). */
+function checkDirectionB(mainFileText, b2ScanTexts, mainRootProps, brandResolved, pgText) {
   const targets = []
 
   // B-1: 명시된 셀렉터 쌍(.flow .num .n 의 color × .flow .num .n.c 의 background)
@@ -535,15 +563,55 @@ function checkDirectionB(mainFileText, b2ScanTexts, mainRootProps, brandResolved
   if (/<span class="dot" style="background:var\(--accent\)">/.test(mainFileText)) {
     targets.push({ id: 'B-3a-dot', hasText: false })
   }
-  // B-3b: 티커 이니셜(:758 부근) — 텍스트 있음, 잉크는 .net-ico 의 color
-  const netIcoColor = extractDeclFromSelector(mainFileText, '.net-ico', 'color')
-  if (netIcoColor && /col\s*=\s*ce\s*\?\s*ce\.col\s*:\s*'var\(--accent\)'/.test(mainFileText.replace(/\s+/g, ' '))) {
-    targets.push({ id: 'B-3b-ticker', hasText: true, ink: resolveValue(netIcoColor, mainRootProps), bg: brandResolved })
+  // B-3b: 티커 이니셜(:758 부근) — 텍스트 있음. 브랜드 배경은 ce-falsy 폴백 분기 하나뿐이다
+  // (카탈로그의 ce.col 은 네트워크별 임의 hex 라 브랜드가 아니다). m15-02-02 재수정: 최초 구현은
+  // `.net-ico` 클래스 기본 잉크 자체를 on-brand 로 바꿔 카탈로그 30여 항목(임의 hex 배경)의 대비를
+  // 붕괴시켰다(로컬 크로스 리뷰가 잡음, 예: on-brand on 흑색 배경 ~1.2:1). 지금은 클래스 기본값이
+  // 다시 `#fff`이고, ce-falsy 분기만 인라인으로 on-brand 잉크를 덧씌운다 — 그래서 클래스 선언이
+  // 아니라 그 인라인 조건부 리터럴의 존재를 확인한다.
+  const netIcoInlineInkPresent = /ce\s*\?\s*''\s*:\s*';color:var\(--on-brand\)'/.test(mainFileText.replace(/\s+/g, ' '))
+  if (netIcoInlineInkPresent && /col\s*=\s*ce\s*\?\s*ce\.col\s*:\s*'var\(--accent\)'/.test(mainFileText.replace(/\s+/g, ' '))) {
+    targets.push({ id: 'B-3b-ticker', hasText: true, ink: resolveValue('var(--on-brand)', mainRootProps), bg: brandResolved })
+  }
+  // B-3c~e: playground(index-v2.html) 버튼 3규칙 — 각각 같은 규칙 안에 background:var(--brand|accent)
+  // 와 color:var(--on-brand) 를 함께 선언한다(m15-02-02). B-2 가 안 잡는 이유: B-2 는 리터럴
+  // hex ink 만 구조 스캔한다(하드코딩 금지 원칙상 여기 ink 는 var() 다 — B-2 의 정규식이 원천적으로
+  // var() 를 대상으로 안 한다). 그래서 B-1/B-3b 와 같은 명시 열거로 다룬다.
+  if (pgText) {
+    const pgButtonSelectors = ['#btn-connect', '#btn-send', '#log-toolbar button.active']
+    for (const sel of pgButtonSelectors) {
+      const bg = extractDeclFromSelector(pgText, sel, 'background')
+      const ink = extractDeclFromSelector(pgText, sel, 'color')
+      if (ink && bg && /var\(--(?:accent|brand)\)/.test(bg)) {
+        targets.push({ id: `B-3-pg:${sel}`, hasText: true, ink: resolveValue(ink, mainRootProps), bg: brandResolved })
+      }
+    }
+  }
+
+  // G2-C: `.net-ico` 클래스 기본 잉크 회귀 가드 (2026-08-13, 로컬 크로스 리뷰 렌즈2 실결함).
+  // 카탈로그 ~30개 항목은 배경이 브랜드가 아니라 카탈로그가 주입하는 임의 hex(JS 조립)라, 클래스
+  // 기본 색이 브랜드 잉크(--on-brand)로 승격되면 즉시 대비가 붕괴한다(예: on-brand on 흑색 배경
+  // ~1.2:1). 브랜드 배경이 확정되는 곳은 B-3b 의 인라인 분기 하나뿐이므로, 클래스 선언 자체는
+  // 브랜드 잉크를 전제할 수 없다는 것이 인바리언트다.
+  // 🔴 targets 에는 넣지 않는다 — B-1~B-3 은 "짝이 있으면 그 짝의 대비를 잰다"지만 이건 "이 짝을
+  // 만들면 안 된다"는 구조 규칙이라 형식이 다르고, targets.length 는 REPO_DIRECTION_B_FLOOR(==6,
+  // T-R-11)가 그대로 참조하므로 여기 얹으면 그 카운트가 흔들린다.
+  const classGuardViolations = []
+  const netIcoClassColor = extractDeclFromSelector(mainFileText, '.net-ico', 'color')
+  if (netIcoClassColor) {
+    const resolvedClassColor = normalizeHex(resolveValue(netIcoClassColor, mainRootProps))
+    const resolvedOnBrand = normalizeHex(resolveValue('var(--on-brand)', mainRootProps))
+    if (resolvedClassColor && resolvedOnBrand && resolvedClassColor === resolvedOnBrand) {
+      classGuardViolations.push(
+        'G2-C 위반: .net-ico 클래스 기본 color 가 --on-brand — 카탈로그가 주입하는 임의 배경 위에서 ' +
+          '대비 붕괴 위험(브랜드 배경은 B-3b 인라인 분기에서만 확정된다)'
+      )
+    }
   }
 
   const judged = targets.filter((t) => t.hasText)
   const failing = judged.filter((t) => contrastRatio(t.ink, t.bg) < AA_THRESHOLD)
-  return { targets, judged, failing }
+  return { targets, judged, failing, classGuardViolations }
 }
 
 /** styleText 안에서 `SELECTOR{...}` (정확 문자열 매치) 블록의 특정 선언값을 추출. */
@@ -583,7 +651,11 @@ function resolveSnapshot(anchorMap, mainRootProps) {
   return snapshot
 }
 
-const ACCENT_SOFT_TARGET = '#251b4d'
+// 🔴 m15-02-02 — 라임 전환으로 이 기준값을 다시 베이스라인한다. 리브랜드 자체가 --accent-soft
+// 파생값을 바꾸는 게 목적이므로 옛 퍼플 기준(#251b4d)을 그대로 두면 이 불변식이 매번 FAIL한다
+// (이 축의 목적은 "브랜드가 고정" 이라는 전제가 아니라 "color-mix 공식/비율이 조용히 안 깨진다"
+// 는 것 — 리브랜드 시 새 브랜드의 실측값으로 재기준한다).
+const ACCENT_SOFT_TARGET = '#2f4314'
 const ACCENT_SOFT_MAX_DELTA = 3
 
 function withinDelta(hexA, hexB, maxDelta) {
@@ -619,39 +691,43 @@ function runG3(anchorMap, mainRootProps, committedSnapshot, accentSoftCheck) {
 // 실제 리포 상수 (기본 실행 모드)
 // ════════════════════════════════════════════════════════════════════════
 
-const REPO_G1_EXCEPTIONS = {
-  'docs/index.html': {
-    '#967cff': 1, '#d2a8ff': 1, '#1d1430': 2, '#3a2a55': 2, '#6c2ef3': 1,
-    '#221a3a': 1, '#473a78': 1, '#c4a8ff': 1, '#1b1738': 1, '#5044a0': 1, '#7c5bff': 1,
-  },
-  'index-v2.html': {
-    '#4f46e5': 7, '#4338ca': 2, '#c4b5fd': 1, '#312e63': 1,
-  },
-}
-const REPO_G1_CATALOG_EXEMPT = { 'docs/index.html': 6 } // Ethereum/Ravencoin/Solana/Cosmos/Stellar/Stacks
-// 🔴 m15-02-03 산출물만큼 상향(2026-08-12, 리뷰 정정) — index-v2.html 이 첫 :root(--pg-* 7토큰)를
-// 갖게 되며 rootBlocks +1(3→4) · customProps 실측 총합 45(docs 38 + index-v2 7)로 상향.
-// 최초 커밋은 27+7=34 로 "+7" 델타만 반영했는데, 원래 27 floor 자체가 이미 docs 실측 38 아래
-// 여유를 뒀던 터라 34 는 이 objective 가 신설한 --pg-* 7개를 전부 지워도 통과했다(크로스 리뷰
-// 실증) — floor 가 "신설분을 지키지 못하는" 상태였다. 실측치로 정확히 맞춘다.
-const REPO_G1_FLOORS = { rootBlocks: 4, customProps: 45, accentUses: 21, accentSoftUses: 15, scannedFiles: 2 }
-const REPO_DIRECTION_B_FLOOR = 3
+// 🔴 m15-02-02 — 이전(docs 11건 + index-v2.html 4건)은 전부 옛 퍼플 hue 밴드에 우연히 걸려
+// 등록됐던 값이다: docs 11건은 SVG 다이어그램/로고 장식색(§3 비스코프 · m15-02-01 §4-4),
+// index-v2.html 의 `#c4b5fd`(로그 패널 텍스트)·`#312e63`(--pg-selected)도 옛 인디고/퍼플 hue가
+// 우연히 밴드 안이었을 뿐이다. `#4f46e5`/`#4338ca`는 이 커밋에서 var(--brand)/var(--brand-600)
+// 로 실제 전환되어 리터럴 자체가 사라졌다. 라임으로 밴드가 옮겨가며(hue ~80-90도) 전부 밴드
+// 밖으로 나가 실측이 0으로 떨어졌다 — 등록을 전부 지운다(REPO_G1_PAST_GENERATIONS 가 옛 9값
+// 리터럴 자체의 잔여는 별도로 계속 잡는다). 현재 두 파일 모두 등록이 필요한 항목이 없다.
+const REPO_G1_EXCEPTIONS = {}
+// 🔴 옛 퍼플 밴드에 우연히 걸렸던 카탈로그 col: 항목(Ethereum/Ravencoin/Solana/Cosmos/Stellar/
+// Stacks)도 라임 밴드 밖으로 나가 실측 0 — 6 을 그대로 두면 즉시 불일치.
+const REPO_G1_CATALOG_EXEMPT = { 'docs/index.html': 0 }
+// 🔴 m15-02-02 — index-v2.html 이 자체 BRAND-ANCHOR :root 블록(9토큰)을 신설하며 rootBlocks
+// +1(4→5) · customProps 는 docs 38 + index-v2(pg 7 + brand 9)=16 → 총 54 로 상향. 실측치로
+// 정확히 맞춘다(관례: REPO_G1_FLOORS 는 항상 실측과 일치, "신설분을 지키지 못하는" 여유를 안 둔다).
+const REPO_G1_FLOORS = { rootBlocks: 5, customProps: 54, accentUses: 21, accentSoftUses: 15, scannedFiles: 2 }
+// 🔴 m15-02-02 — 01 의 3(docs: B-1 쌍 · B-3a-dot · B-3b-ticker) + playground 버튼 3규칙
+// (#btn-connect/#btn-send/#log-toolbar button.active, index-v2.html) = 6.
+const REPO_DIRECTION_B_FLOOR = 6
 
 // 🔴 과거 세대 앵커 값 — 브랜드 색을 다시 교체할 때(다음 리브랜드) 이 배열에 "직전 세대 9값"을
 //    통째로 추가해야 G1 이 그 세대의 잔여 리터럴을 계속 잡는다. 현재 앵커(9값)는 교체 순간
 //    exactSet 에서 자동으로 빠지고 새 hue 밴드 밖으로도 나가므로, 여기 등록하지 않으면 이전 세대
-//    리터럴은 어떤 게이트에도 영원히 안 걸린다. 01 시점엔 이전 세대가 없어 빈 배열.
+//    리터럴은 어떤 게이트에도 영원히 안 걸린다. 01 시점엔 이전 세대가 없어 빈 배열이었다.
+//    m15-02-02(라임 전환)가 첫 리브랜드라 여기서 옛 퍼플 9값을 채운다.
 //    갱신 절차: docs/brand-color-replacement.md.
-const REPO_G1_PAST_GENERATIONS = []
-
-const REPO_KNOWN_CONTRAST_VIOLATIONS = [
-  { pair: 'brand-bg', resolvedBy: 'm15-02-02' },
-  { pair: 'brand-bg-2', resolvedBy: 'm15-02-02' },
-  { pair: 'brand-panel', resolvedBy: 'm15-02-02' },
-  { pair: 'brand-panel-2', resolvedBy: 'm15-02-02' },
-  { pair: 'brand-code-bg', resolvedBy: 'm15-02-02' },
-  { pair: 'brand-accent-soft', resolvedBy: 'm15-02-02' },
+const REPO_G1_PAST_GENERATIONS = [
+  {
+    'brand-100': '#E2E1FD', 'brand-200': '#927DFF', 'brand-400': '#C7C3FB',
+    brand: '#7231ff', 'brand-600': '#6422E6', 'brand-900': '#22003C',
+    'brand-ink': '#4F46E5', 'brand-ink-lite': '#ABA2FE', 'on-brand': '#0B0E14',
+  },
 ]
+
+// 🔴 m15-02-02 — 등록 0건 ⇒ deriveMode([]) 가 'hard-fail' 로 자동 전환(플래그 조작 없음, §4-8).
+// 01 이 등록했던 6쌍(brand-bg/brand-bg-2/brand-panel/brand-panel-2/brand-code-bg/
+// brand-accent-soft)은 라임 전환으로 전부 해소되어(§4 "대비" 표) 등록을 지운다.
+const REPO_KNOWN_CONTRAST_VIOLATIONS = []
 
 function mainRootPropsOf(anchorFileAnalysis) {
   // 파일 안의 모든 :root 블록을 문서 순서대로 병합해 하나의 맵으로 (마지막 선언이 이긴다 — CSS
@@ -717,14 +793,15 @@ function runReal({ forceHardFailA = false } = {}) {
 
   const b2ScanTexts = [spec.docsText]
   if (spec.pgText !== null) b2ScanTexts.push(spec.pgText)
-  const dirB = checkDirectionB(spec.docsText, b2ScanTexts, mainRootProps, mainRootProps.brand)
+  const dirB = checkDirectionB(spec.docsText, b2ScanTexts, mainRootProps, mainRootProps.brand, spec.pgText)
   if (dirB.targets.length < REPO_DIRECTION_B_FLOOR) {
     errors.push(`방향 B 검사 대상 수 ${dirB.targets.length} < floor ${REPO_DIRECTION_B_FLOOR}`)
   }
   if (dirB.targets.length !== REPO_DIRECTION_B_FLOOR) {
-    findings.push(`방향 B 검사 대상 수 ${dirB.targets.length} != 기대 ${REPO_DIRECTION_B_FLOOR} (01 시점)`)
+    findings.push(`방향 B 검사 대상 수 ${dirB.targets.length} != 기대 ${REPO_DIRECTION_B_FLOOR} (02 시점)`)
   }
   findings.push(...dirB.failing.map((f) => `방향 B 대비 미달: ${f.id}`))
+  findings.push(...dirB.classGuardViolations)
 
   const committedSnapshot = loadCommittedSnapshot()
   const g3 = runG3(mainRootProps, mainRootProps, committedSnapshot, { target: ACCENT_SOFT_TARGET, maxDelta: ACCENT_SOFT_MAX_DELTA })
@@ -818,10 +895,14 @@ function runFixture(dir) {
 
     const styleText = anchorFileEntry.text
     const b2ScanTexts = files.map((f) => f.text)
-    const dirB = checkDirectionB(styleText, b2ScanTexts, mainRootProps, mainRootProps.brand)
+    // playground 역할 파일 = anchorFile 이 아닌 첫 파일(픽스처는 최대 2파일 관례 — index.html +
+    // playground.html/index-v2.html). 없으면 undefined — checkDirectionB 가 B-3c~e 를 스킵한다.
+    const pgEntry = files.find((f) => f.key !== manifest.anchorFile)
+    const dirB = checkDirectionB(styleText, b2ScanTexts, mainRootProps, mainRootProps.brand, pgEntry ? pgEntry.text : undefined)
     const dbFloor = manifest.directionBFloor ?? 0
     if (dirB.targets.length < dbFloor) errors.push(`방향 B 대상 수 ${dirB.targets.length} < floor ${dbFloor}`)
     findings.push(...dirB.failing.map((f) => `방향 B 대비 미달: ${f.id}`))
+    findings.push(...dirB.classGuardViolations)
 
     if (manifest.snapshot) {
       const g3 = runG3(mainRootProps, mainRootProps, manifest.snapshot, manifest.accentSoftCheck || null)
@@ -911,36 +992,41 @@ function runAllFixtures() {
     }
   }
 
-  // ── deriveMode 순수 함수 자기검증 (T-G-04는 실제 docs/index.html 위에서 별도 실행) ──
+  // ── deriveMode 순수 함수 자기검증 (m15-02-02 — REPO_KNOWN_CONTRAST_VIOLATIONS 는 이제 항상
+  //    빈 배열이라 "등록 있음" 케이스는 그 상수에 기대지 않고 리터럴로 준다. 순수 함수 검증을
+  //    리포 상수의 값(0건)에 결합하면 상수가 항상 []인 지금은 "6건일 때" 분기를 영원히 실행
+  //    못 한다) ──
   const modeEmpty = deriveMode([])
-  const modeSix = deriveMode(REPO_KNOWN_CONTRAST_VIOLATIONS)
-  if (modeEmpty !== 'hard-fail' || modeSix !== 'warn') {
-    console.error(`deriveMode 자기검증 실패: deriveMode([])=${modeEmpty}, deriveMode(6건)=${modeSix}`)
+  const modeWithViolations = deriveMode([{ pair: 'brand-bg', resolvedBy: 'test' }])
+  if (modeEmpty !== 'hard-fail' || modeWithViolations !== 'warn') {
+    console.error(`deriveMode 자기검증 실패: deriveMode([])=${modeEmpty}, deriveMode(1건)=${modeWithViolations}`)
     fail = 1
   } else {
-    console.log(`deriveMode self-test OK: deriveMode([])=hard-fail, deriveMode(6)=warn`)
+    console.log('deriveMode self-test OK: deriveMode([])=hard-fail, deriveMode(1건)=warn')
   }
 
-  // ── T-G-04: deriveMode([]) 를 실제 docs/index.html 입력으로 hard-fail 실행 ──
+  // ── T-G-04: 실제 docs/index.html 을 hard-fail 모드로 강제 실행해도 방향 A 6쌍이 전부
+  //    통과(0건 미달)하는지 확인 (m15-02-02 — 라임 전환으로 6쌍 모두 AA 통과, 등록 0건이라
+  //    실제 모드도 이미 hard-fail 이지만 강제 플래그로 한 번 더 고정한다) ──
   const real = runReal({ forceHardFailA: true })
   const hardFailFindings = (real.findings || []).filter((f) => f.includes('hard-fail'))
-  if (real.exit !== 1 || hardFailFindings.length !== 6) {
-    console.error(`T-G-04 실패: 실제 docs/index.html 을 hard-fail 모드로 돌렸는데 방향 A 6쌍 미달이 검출되지 않음 (검출 ${hardFailFindings.length}건, exit ${real.exit})`)
+  if (real.exit !== 0 || hardFailFindings.length !== 0) {
+    console.error(`T-G-04 실패: 실제 docs/index.html 을 hard-fail 모드로 돌렸는데 방향 A 미달이 남아있음 (검출 ${hardFailFindings.length}건, exit ${real.exit})`)
     console.error(JSON.stringify(real, null, 2))
     fail = 1
   } else {
-    console.log(`T-G-04 OK: hard-fail 모드에서 실제 docs/index.html 의 방향 A 미달 ${hardFailFindings.length}건 검출 (exit 1)`)
+    console.log('T-G-04 OK: hard-fail 모드에서 실제 docs/index.html 의 방향 A 6쌍 전부 통과 (exit 0)')
   }
 
-  // ── 실제 리포 스캔 (warn 모드) — 기계 판독 라인 출력 형식 자기검증 ──
+  // ── 실제 리포 스캔 (hard-fail 모드, 등록 0건으로 자동 전환) — 기계 판독 라인 출력 형식 자기검증 ──
   const realWarn = runReal()
   if (realWarn.exit !== 0) {
-    console.error('실제 리포 스캔(warn 모드)이 exit 0 이 아님')
+    console.error('실제 리포 스캔(hard-fail 모드)이 exit 0 이 아님')
     console.error(JSON.stringify(realWarn, null, 2))
     fail = 1
   } else {
     for (const line of realWarn.lines) console.log(line)
-    const required = [/^scanned-files: \d+$/, /^accent-uses: 21$/, /^accent-soft-uses: 15$/, /^known-violations: 6$/, /^contrast-warnings: 6$/, /^mode: warn$/]
+    const required = [/^scanned-files: \d+$/, /^accent-uses: 21$/, /^accent-soft-uses: 15$/, /^known-violations: 0$/, /^contrast-warnings: 0$/, /^mode: hard-fail$/]
     for (const re of required) {
       if (!realWarn.lines.some((l) => re.test(l))) {
         console.error(`기계 판독 출력 형식 불일치: ${re} 매칭 라인 없음`)

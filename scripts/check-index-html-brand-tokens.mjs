@@ -617,7 +617,7 @@ const REPO_G1_EXCEPTIONS = {
     '#221a3a': 1, '#473a78': 1, '#c4a8ff': 1, '#1b1738': 1, '#5044a0': 1, '#7c5bff': 1,
   },
   'index-v2.html': {
-    '#4f46e5': 7, '#4338ca': 2, '#c4b5fd': 1,
+    '#4f46e5': 7, '#4338ca': 2, '#c4b5fd': 1, '#312e63': 1,
   },
 }
 const REPO_G1_CATALOG_EXEMPT = { 'docs/index.html': 6 } // Ethereum/Ravencoin/Solana/Cosmos/Stellar/Stacks

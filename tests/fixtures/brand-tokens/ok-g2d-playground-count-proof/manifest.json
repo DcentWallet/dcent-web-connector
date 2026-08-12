@@ -1,0 +1,42 @@
+{
+  "anchorFile": "index.html",
+  "files": [
+    {
+      "key": "index.html",
+      "path": "index.html"
+    },
+    {
+      "key": "playground.html",
+      "path": "playground.html"
+    }
+  ],
+  "exceptions": {
+    "playground.html": {
+      "#0b0e14": 3
+    }
+  },
+  "catalogExempt": {},
+  "floors": {
+    "rootBlocks": 3,
+    "customProps": 16,
+    "accentUses": 3,
+    "accentSoftUses": 1,
+    "scannedFiles": 2
+  },
+  "directionBFloor": 5,
+  "knownViolations": [],
+  "snapshot": {
+    "brand-100": "#f3fbe0",
+    "brand-200": "#c7ee8a",
+    "brand-400": "#a9e355",
+    "brand": "#90e01f",
+    "brand-600": "#7ec11f",
+    "brand-900": "#3d5c0c",
+    "brand-ink": "#67a216",
+    "brand-ink-lite": "#84ce1c",
+    "on-brand": "#0b0e14",
+    "accent": "#90e01f",
+    "accent-soft": "#2f4314"
+  },
+  "accentSoftCheck": null
+}

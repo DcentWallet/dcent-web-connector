@@ -1,0 +1,14 @@
+{
+  "_comment": "G3 해석 스냅샷 (m15-02-01). docs/index.html BRAND-ANCHOR 9키 + --accent/--accent-soft 파생 2키 = 11 엔트리. brand-100/brand-400/brand-900/brand-ink/brand-ink-lite 는 현재 소비처가 0건이라 이 스냅샷이 유일한 관측 수단이다. 브랜드 색 교체 시(m15-02-02) 이 파일을 함께 갱신할 것 — docs/brand-color-replacement.md 참조.",
+  "brand-100": "#e2e1fd",
+  "brand-200": "#927dff",
+  "brand-400": "#c7c3fb",
+  "brand": "#7231ff",
+  "brand-600": "#6422e6",
+  "brand-900": "#22003c",
+  "brand-ink": "#4f46e5",
+  "brand-ink-lite": "#aba2fe",
+  "on-brand": "#0b0e14",
+  "accent": "#7231ff",
+  "accent-soft": "#28184c"
+}

@@ -5,12 +5,26 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>DCENT Connector v2 Playground</title>
   <style>
+    /* index-v2.html <style> 상단 — 🔴 브랜드 앵커 블록(:root BRAND-ANCHOR)과 별개다.
+       playground 지역 표면 토큰이며 parity 대조 대상이 아니다(브랜드 색이 아니므로). */
+    :root {
+      --pg-bg:       #0f172a;  /* 기존 로그 패널 값 */
+      --pg-panel:    #1e1e2e;  /* 기존 헤더 값 */
+      --pg-raised:   #2a2a3e;  /* 기존 셀렉트 값 */
+      --pg-border:   #334155;  /* 기존 경계 값 */
+      --pg-fg:       #e2e8f0;  /* 기존 전경 값 */
+      --pg-muted:    #94a3b8;  /* 기존 로그 패널 muted 값(:208 :217 :241) — 재사용.
+                                   이전 회색 잉크는 --pg-bg 위 5.04 로 통과하지만
+                                   --pg-raised(:167 read-only) 위에서 3.95 로 떨어진다(§4-3) */
+      --pg-selected: #312e63;  /* 🆕 유일한 신규 — 이전 선택 배경(연한 인디고)의 다크 대응.
+                                   indigo 계열 유지(02 가 hue 를 바꾼다) */
+    }
     * { box-sizing: border-box; margin: 0; padding: 0; }
     body {
       font-family: 'Segoe UI', system-ui, sans-serif;
       font-size: 14px;
-      background: #f5f5f5;
-      color: #333;
+      background: var(--pg-bg);
+      color: var(--pg-fg);
       height: 100vh;
       display: flex;
       flex-direction: column;
@@ -34,7 +48,7 @@
     #conn-dot {
       width: 12px; height: 12px;
       border-radius: 50%;
-      background: #555;
+      background: var(--pg-muted);
       flex-shrink: 0;
     }
     #conn-dot.connected { background: #4ade80; }
@@ -85,8 +99,8 @@
     #sidebar {
       flex: 3;
       min-width: 360px;
-      background: #fff;
-      border-right: 1px solid #e5e5e5;
+      background: var(--pg-panel);
+      border-right: 1px solid var(--pg-border);
       display: flex;
       flex-direction: column;
       overflow: hidden;
@@ -104,7 +118,7 @@
       font-weight: 700;
       text-transform: uppercase;
       letter-spacing: 0.05em;
-      color: #888;
+      color: var(--pg-muted);
     }
     .tree-family-label {
       padding: 4px 16px 2px;
@@ -119,9 +133,9 @@
       transition: background 0.1s;
       font-size: 13px;
     }
-    .tree-item:hover { background: #f5f5f5; }
+    .tree-item:hover { background: var(--pg-raised); }
     .tree-item.selected {
-      background: #eef2ff;
+      background: var(--pg-selected);
       border-left-color: #4f46e5;
       color: #4f46e5;
       font-weight: 600;
@@ -129,7 +143,7 @@
 
     /* Form (bottom of sidebar) */
     #form-panel {
-      border-top: 1px solid #e5e5e5;
+      border-top: 1px solid var(--pg-border);
       padding: 12px;
       flex-shrink: 0;
       max-height: 340px;
@@ -140,7 +154,7 @@
       font-weight: 700;
       text-transform: uppercase;
       letter-spacing: 0.05em;
-      color: #888;
+      color: var(--pg-muted);
       margin-bottom: 10px;
     }
     .form-row {
@@ -151,20 +165,20 @@
     .form-row label {
       font-size: 11px;
       font-weight: 600;
-      color: #555;
+      color: var(--pg-fg);
       margin-bottom: 3px;
     }
     .form-row input,
     .form-row select,
     .form-row textarea {
       padding: 5px 8px;
-      border: 1px solid #ddd;
+      border: 1px solid var(--pg-border);
       border-radius: 4px;
       font-size: 12px;
       font-family: 'Courier New', monospace;
     }
     .form-row textarea { resize: vertical; min-height: 60px; }
-    .form-row input:read-only { background: #f5f5f5; color: #888; }
+    .form-row input:read-only { background: var(--pg-raised); color: var(--pg-muted); }
     .form-row input.error { border-color: #dc2626; }
     .field-error {
       font-size: 11px;

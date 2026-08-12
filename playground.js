@@ -1,10 +1,10 @@
 /**
- * playground.js — D'CENT Connector v2 Playground
+ * playground.js — DCENT Connector v2 Playground
  *
  * 외부 라이브러리 0, 표준 DOM API만 사용.
  * dist/v2/dcent-web-connector.min.js 로드 후 index-v2.html에서 alias:
  *   <script>window.dcent = (window.dcent && window.dcent.default) || window.dcent;</script>
- * 결과: window.dcent === facade default export object (v0.16.0 dApp이 require()로 받는 것과 동일 shape)
+ * 결과: window.dcent === facade default export object (v0.16.0 App이 require()로 받는 것과 동일 shape)
  *
  * m08-01-05 (D-04 B finality): playground이 PopupTransport / SerialRequestQueue / _genId 직접 사용 패턴을
  * 모두 제거하고 facade의 `dcent.<method>()` 호출로 단순화. transport/queue는 facade singleton이 내부 관리.
@@ -39,7 +39,7 @@
   'use strict'
 
   // ── Solana placeholder substitution helper ──
-  // dApp이 보내는 Solana transaction의 feePayer + signer pubkey가 실제 wallet 주소가 아닌
+  // App이 보내는 Solana transaction의 feePayer + signer pubkey가 실제 wallet 주소가 아닌
   // placeholder("11111111111111111111111111111111" = SystemProgram address)면, @solana/web3.js의
   // VersionedTransaction.addSignature(walletPubkey, sig)에서 "signer가 message의 signer 자리에
   // 없다"며 reject한다.
@@ -55,7 +55,7 @@
   //   ⚠ txObj.instructions[*].programId 는 절대 치환하지 않음 (SystemProgram address가 정상)
   //
   // Case 1 (base58 serialized full transaction string) 은 opaque — substitute 불가.
-  // dApp이 직접 wallet 주소로 transaction을 construct해야 한다.
+  // App이 직접 wallet 주소로 transaction을 construct해야 한다.
   //
   // 반환: 새 객체 (deep clone via JSON, 원본 보존). string 또는 substitute 불가 케이스는 그대로 반환.
   function _substituteSolanaSigner (txObj, walletAddress) {
@@ -92,7 +92,7 @@
 
   // ── Algorand placeholder substitution helper ──
   // Algorand 표준 tx({type:'pay', from, to, amount, fee, firstRound, lastRound, ...})는
-  // `from` 필드가 sender. dApp이 placeholder("ALGORAND7XVFXWDX5..." 등)를 보내면 device
+  // `from` 필드가 sender. App이 placeholder("ALGORAND7XVFXWDX5..." 등)를 보내면 device
   // 서명 후 algosdk의 signTransaction이 reject한다 — sender pubkey 와 derived address 가
   // 일치해야 함.
   //
@@ -119,7 +119,7 @@
 
   // ── Tezos placeholder substitution helper ──
   // taquito 표준 tx({kind:'transaction', source, fee, counter, gasLimit, storageLimit, amount, destination})
-  // 의 `source` 필드가 sender. dApp이 placeholder("tz1burnburn..." 또는 wm-internal `sender`)를
+  // 의 `source` 필드가 sender. App이 placeholder("tz1burnburn..." 또는 wm-internal `sender`)를
   // 보내면 device 서명 후 taquito가 reject — counter / reveal / signer pubkey 매칭 실패.
   //
   // 적용 대상: txObj.source (Tezos 표준), txObj.sender (wm-internal)
@@ -145,14 +145,14 @@
 
   // ── Hedera placeholder substitution helper ──
   // Hedera TransferTransaction({type:'CryptoTransfer', transfers:[{accountId, amount}, ...]})의
-  // transfers 배열에서 **amount<0 인 entry가 sender** (HBAR 출금). dApp이 placeholder("0.0.2"
+  // transfers 배열에서 **amount<0 인 entry가 sender** (HBAR 출금). App이 placeholder("0.0.2"
   // 등)를 보내면 device 서명 후 Hedera SDK가 reject — signer publicKey와 sender accountId 매칭 실패.
   //
   // 적용 대상: transfers[].accountId where amount < 0 (sender 측), txObj.sender (wm-internal)
   // 보존: amount > 0 entry (recipient), memo, maxTransactionFee 등
   //
   // 권고 (별도 작업): Hedera는 pubkey raw hex → DER format 변환이 추가로 필요. 본 helper는
-  // accountId 치환만 처리하며 pubkey format 변환은 dApp 또는 wm 단에서 별도 처리.
+  // accountId 치환만 처리하며 pubkey format 변환은 App 또는 wm 단에서 별도 처리.
   function _substituteHederaSender (txObj, walletAddress) {
     if (typeof txObj === 'string') return txObj
     if (!txObj || typeof txObj !== 'object') return txObj
@@ -183,7 +183,7 @@
 
   // ── XRP / Xahau placeholder substitution helper ──
   // XRPL Payment({TransactionType, Account, Destination, Amount, Fee, Sequence, ...}) 의 `Account`
-  // 필드가 sender. dApp 이 placeholder("rHb9...") 를 보내면 device 서명 시 firmware 가 Account ↔
+  // 필드가 sender. App 이 placeholder("rHb9...") 를 보내면 device 서명 시 firmware 가 Account ↔
   // derived pubkey 불일치로 'Invalid Unsigned'(firmware code='invalid_format') reject 한다.
   // Xahau 는 XRPL 사이드체인으로 동일 shape(ripple 로직 공유) → 같은 helper 적용.
   //
@@ -210,7 +210,7 @@
 
   // ── Constellation (DAG) placeholder substitution helper ──
   // Constellation transfer({type:'transfer', source, destination, amount, fee}) 의 `source` 필드가
-  // sender. dApp 이 placeholder("DAG000...0000") 를 보내면 wm 이 source 주소의 last transaction
+  // sender. App 이 placeholder("DAG000...0000") 를 보내면 wm 이 source 주소의 last transaction
   // reference 를 live L1 API 로 조회하는데, 존재하지 않는 주소라 404 →
   // "constellation: failed to fetch last transaction reference — Not found".
   // 실 wallet DAG 주소(on-chain 이력 보유)로 치환하면 lastRef 조회가 성공한다.
@@ -254,7 +254,7 @@
 
   // ── Tron placeholder substitution helper ──
   // Tron tx 는 nested 봉투: raw_data.contract[].parameter.value.owner_address 가 sender.
-  // dApp 이 placeholder owner_address 를 보내면 device 서명 후 TronWeb 이 owner_address ↔
+  // App 이 placeholder owner_address 를 보내면 device 서명 후 TronWeb 이 owner_address ↔
   // derived address 불일치로 reject. flattened form(top-level owner_address) + wm-internal
   // sender 도 함께 치환. 보존: to_address(recipient), contract_address, amount, data 등.
   function _substituteTronOwner (txObj, walletAddress) {
@@ -638,14 +638,14 @@
       ],
     },
     {
-      // m10-01-11 / m10-01-14: dApp 전용 sign 메서드 — signMessage와 별개 intent.
+      // m10-01-11 / m10-01-14: App 전용 sign 메서드 — signMessage와 별개 intent.
       //   - signData (Cardano CIP-8/CIP-95): { keyPath, address, payload } → { signature, key }
       //   - signAuthEntry (Stellar Soroban): { keyPath, authEntry } → { signedAuthEntry, signerAddress }
       // SDK 핸들러는 머지됨 (DcentSdkClient signData ~1087 / signAuthEntry ~1044).
       // connector는 chain-agnostic pass-through — method 문자열만 forward
       // (connector-chain-addition-isolation: chain enum/매핑 부재).
       kind: 'group',
-      label: 'Sign Data / Auth Entry (dApp)',
+      label: 'Sign Data / Auth Entry (App)',
       items: [
         {
           kind: 'family',
@@ -718,7 +718,7 @@
     'signMessage:eth:personal': [
       {
         label: 'Hello World',
-        message: 'Hello, D\'CENT!',
+        message: 'Hello, DCENT!',
       },
     ],
     'signMessage:eth:eip712-v3': [
@@ -790,7 +790,7 @@
     ],
     // m09-04-22-fix: 유효한 SorobanAuthorizationEntry XDR 샘플 (@stellar/stellar-sdk 오프라인 생성,
     // roundtrip 검증). 더미 컨트랙트/nonce — 온체인 실제 auth는 아니지만 shape 유효 →
-    // 디바이스가 파싱+서명 가능. 진짜 통합 테스트는 실제 dApp의 authEntry로 교체.
+    // 디바이스가 파싱+서명 가능. 진짜 통합 테스트는 실제 App의 authEntry로 교체.
     'signAuthEntry:xlm:soroban': [
       {
         label: 'Stellar Soroban auth entry (유효 샘플 XDR — 디바이스 파싱/서명용)',
@@ -1185,7 +1185,7 @@
       var note = document.createElement('p')
       note.style.cssText = 'font-size:11px;color:#888;margin-bottom:8px;'
       if (name === 'info') {
-        note.textContent = 'Fetches D\'CENT Bridge daemon status.'
+        note.textContent = 'Fetches DCENT Bridge daemon status.'
       } else if (name === 'getDeviceInfo') {
         note.textContent = 'Fetches device firmware, model, and address info.'
       } else {
@@ -2420,7 +2420,7 @@
     }
 
     // ── Sender resolver button (전 family 일관 노출 — _appendSenderResolveRow) ──
-    // dApp transaction 의 sender 필드가 placeholder 면 device 서명 후 family 라이브러리가
+    // App transaction 의 sender 필드가 placeholder 면 device 서명 후 family 라이브러리가
     // reject 한다. 이 버튼이 device 의 실제 wallet 주소로 치환. sender 필드가 없는
     // family(bitcoin/stellar/polkadot 등)는 no-op — 클릭 핸들러가 안내한다.
     _appendSenderResolveRow(methodDef.family)
@@ -2566,8 +2566,8 @@
 
     if (isStringPayload) {
       var opaqueMsg = family === 'solana'
-        ? '⚠ base58 serialized 는 opaque — dApp 측에서 wallet pubkey 로 직접 construct 해야 함'
-        : '⚠ serialized raw bytes 는 opaque — dApp 측에서 wallet address 로 직접 construct 해야 함'
+        ? '⚠ base58 serialized 는 opaque — App 측에서 wallet pubkey 로 직접 construct 해야 함'
+        : '⚠ serialized raw bytes 는 opaque — App 측에서 wallet address 로 직접 construct 해야 함'
       setHint(opaqueMsg, true)
       return
     }
@@ -3339,7 +3339,7 @@
     })
   }
 
-  // ── sendSignData (m10-01-14) — Cardano CIP-8/95 dApp message signing ──
+  // ── sendSignData (m10-01-14) — Cardano CIP-8/95 App message signing ──
   // wire: { method: 'signData', chainId, payload: { keyPath, address, payload } }
   // SDK는 address(non-empty) + payload(string, empty 허용)를 검증 후 wm로 forward → { signature, key }.
   // boundary-validation: keyPath / address 필수. payload는 빈 문자열 허용(CIP-8 opaque).

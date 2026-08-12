@@ -12,7 +12,7 @@ v2는 **breaking change**다. v0.16.x에서 chain별로 나뉘어 있던 `get*Si
 |---|---|---|
 | 서명 API | chain별 `get*Signed*` wrapper 21개 | 단일 `dcent.sign({ method, chainId, payload })` |
 | chain 식별 | 함수명 + `coinType` enum | `chainId` (CAIP-19 문자열) |
-| 트랜스포트 | D'CENT Bridge 네이티브 앱 설치 필요 | 브라우저 네이티브 `setTransport('hid' \| 'ble')` — 앱 설치 불필요 |
+| 트랜스포트 | 디센트 Bridge 네이티브 앱 설치 필요 | 브라우저 네이티브 `setTransport('hid' \| 'ble')` — 앱 설치 불필요 |
 | read-only API (`getAddress` 등) | — | 동일 유지 |
 | enum / `unitConverter` | — | 동일 유지 |
 | 응답 envelope | `{ header, body }` | 동일 |
@@ -41,8 +41,8 @@ v2에서 다음 21개 v1 sign wrapper가 **제거**됐다. 호출하면 `undefin
   - ⚠️ `getAccountInfo` 는 이름은 같으나 **응답 shape 가 v2 로 바뀌었다** (`V1Response<AccountListV2Payload>` — `src/sign/types.ts:124`).
   - ⚠️ `syncAccount` 는 **입력이 breaking** 이다: v1 `{coin_group, coin_name, label}` → v2 `{chainId, keyPath, label, token?, meta?}` (`src/sign/configure.ts`). v1 shape 는 거부된다.
 
-    v1 은 dApp 이 **기기 wire 형식을 직접** 보냈다(`coin_group`/`coin_name`). v2 는 그 변환을
-    지갑이 한다 — dApp 은 체인과 식별자만 준다.
+    v1 은 App 이 **기기 wire 형식을 직접** 보냈다(`coin_group`/`coin_name`). v2 는 그 변환을
+    지갑이 한다 — App 은 체인과 식별자만 준다.
 
     | v1 | v2 | 비고 |
     |---|---|---|
@@ -80,7 +80,7 @@ v2에서 다음 21개 v1 sign wrapper가 **제거**됐다. 호출하면 `undefin
 
 ### 브라우저 네이티브 트랜스포트
 
-`dcent.setTransport('hid' | 'ble')` — WebHID(USB) / Web Bluetooth. **D'CENT Bridge 앱 설치 불필요** (Chromium 브라우저 전용).
+`dcent.setTransport('hid' | 'ble')` — WebHID(USB) / Web Bluetooth. **디센트 Bridge 앱 설치 불필요** (Chromium 브라우저 전용).
 
 ### 🆕 기기 축 — `setConnectionListener` 2번째 인자
 
@@ -157,7 +157,7 @@ dcent.setConnectionListener((state) => {
 
 기기 축의 `'unknown'` 은 "기기가 없다"가 아니라 **"아직 모른다 / 관측할 수 없다"** 이다.
 팝업이 열리기 전과 팝업이 닫힌 뒤가 여기 해당한다. `'disconnected'` 로 접으면 "기기가 빠졌다"는
-거짓 단정이 dApp 에 나가므로 그렇게 하지 않는다. 초기값은 팝업 `'disconnected'` · 기기 `'unknown'`.
+거짓 단정이 App 에 나가므로 그렇게 하지 않는다. 초기값은 팝업 `'disconnected'` · 기기 `'unknown'`.
 
 #### 필드 이름은 `getDeviceInfo()` 와 같다
 
@@ -172,7 +172,7 @@ dcent.setConnectionListener((state) => {
 
 #### `deviceId` 는 싣고, 나머지 식별자는 싣지 않는다
 
-`deviceId` 는 **기기를 특정하는 값**이다. 이 신호는 dApp 이 요청하지 않아도 자동으로 나가므로,
+`deviceId` 는 **기기를 특정하는 값**이다. 이 신호는 App 이 요청하지 않아도 자동으로 나가므로,
 구독만 해도 재방문한 기기를 알아볼 수 있다 — 트레이드오프를 알고 써야 한다. 그럼에도 싣는
 이유는 **같은 모델의 두 기기를 구별하는 유일한 필드**이기 때문이다.
 

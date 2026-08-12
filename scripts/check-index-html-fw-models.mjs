@@ -2,7 +2,7 @@
 /**
  * docs/index.html 의 **펌웨어 표 모델 축(bio / x) 전수 검사** (m09-04-28).
  *
- * 왜 필요한가 — DCENT X 는 펌웨어 `1.x` 라인이고 D'CENT Biometric Wallet 은 `1.x~2.x` 라인이다.
+ * 왜 필요한가 — DCENT X 는 펌웨어 `1.x` 라인이고 DCENT Biometric Wallet 은 `1.x~2.x` 라인이다.
  * 두 값을 **한 컬럼**에 합치면 X 사용자에게 "내 펌웨어 1.0.0 < 2.35.0 → 미지원"으로 읽혀,
  * 실제로는 지원되는 기능을 안 쓰게 된다. 그래서 표의 값은 `{bio, x}` **두 키가 항상 함께**여야 하고,
  * 한쪽만 채운 상태는 사람 눈에 안 띈다(120셀 + 27행 규모). 이 게이트가 그 누락을 대신 본다.
@@ -68,7 +68,7 @@ const here = dirname(fileURLToPath(import.meta.url))
 const INDEX = resolve(here, '../docs/index.html')
 
 /** 모델 라벨 — 문서 전체에서 이 표기를 정본으로 쓴다 (dcentx-model-id-naming 과 짝). */
-const BIO = "D'CENT Biometric Wallet"
+const BIO = "DCENT Biometric Wallet"
 const X = 'DCENT X'
 
 const html = readFileSync(INDEX, 'utf8')

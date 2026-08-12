@@ -1,12 +1,12 @@
 # dcent-web-connector
 
-npm connector for integrating the **D'CENT hardware wallet** into web dApps. It opens a popup served from `https://v2bridge.dcentwallet.com/` and talks to the device over **WebHID (USB)** or **Web Bluetooth** — no native bridge app to install.
+npm connector for integrating the **DCENT hardware wallet** into web Apps. It opens a popup served from `https://v2bridge.dcentwallet.com/` and talks to the device over **WebHID (USB)** or **Web Bluetooth** — no native bridge app to install.
 
 - 📘 **v2 Developer Guide** (EN / KO — full API + per-chain reference): [**GitHub Pages**](https://dcentwallet.github.io/dcent-web-connector/) — or download [`docs/index.html`](docs/index.html) and open it in a browser (self-contained, works offline)
 - [Per-family payload contract](docs/v2-payload-contract.md)
 - **v0.16.x (v1) → v2 migration:** [MIGRATION-v1-to-v2.md](./MIGRATION-v1-to-v2.md)
 
-> **v2 is a breaking change from v0.16.x.** The v1 `get*Signed*Transaction/Message` wrappers are replaced by a single `dcent.sign({ method, chainId, payload })`. Existing v0.16.x dApps keep working — see [v0.16.x users](#v016x-v1-users) below.
+> **v2 is a breaking change from v0.16.x.** The v1 `get*Signed*Transaction/Message` wrappers are replaced by a single `dcent.sign({ method, chainId, payload })`. Existing v0.16.x Apps keep working — see [v0.16.x users](#v016x-v1-users) below.
 
 ## Install
 
@@ -51,7 +51,7 @@ Every method takes a `chainId` and a payload and returns the same `{ header, bod
 
 ## Transport
 
-`dcent.setTransport('hid' | 'ble')` selects the browser-native transport — **no D'CENT Bridge app to install**. Each call opens the D'CENT popup where the user approves the action on the device. `dcent.getDeviceInfo()` and `dcent.popupWindowClose()` remain available.
+`dcent.setTransport('hid' | 'ble')` selects the browser-native transport — **no DCENT Bridge app to install**. Each call opens the DCENT popup where the user approves the action on the device. `dcent.getDeviceInfo()` and `dcent.popupWindowClose()` remain available.
 
 ## Common methods
 
@@ -68,7 +68,7 @@ See the [Developer Guide](https://dcentwallet.github.io/dcent-web-connector/) fo
 
 ## v0.16.x (v1) users
 
-v0.16.x is **frozen** (security fixes only). Existing dApps keep working:
+v0.16.x is **frozen** (security fixes only). Existing Apps keep working:
 
 ```bash
 npm i dcent-web-connector@0.16.x

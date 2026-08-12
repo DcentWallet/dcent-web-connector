@@ -1,4 +1,4 @@
-> **⚠️ Archived — v0.16.x (v1) Integration Guide.** Documents the legacy v1 API (`get*Signed*` wrappers + native D'CENT Bridge app). These were removed in v2.
+> **⚠️ Archived — v0.16.x (v1) Integration Guide.** Documents the legacy v1 API (`get*Signed*` wrappers + native DCENT Bridge app). These were removed in v2.
 > For **v2** see the [Developer Guide](https://dcentwallet.github.io/dcent-web-connector/) and the [root README](../README.md). Migration: [MIGRATION-v1-to-v2.md](../MIGRATION-v1-to-v2.md).
 
 ---
@@ -12,7 +12,7 @@
 
 | version     | date         | modification                                               |
 | ----------- | ------------ | ---------------------------------------------------------- |
-| v0.6.2-beta | 2019. 04. 07 | First version of D'CENT Web SDK connector release          |
+| v0.6.2-beta | 2019. 04. 07 | First version of DCENT Web SDK connector release          |
 | v0.7.0-beta | 2019. 05. 07 | add KLAYTN transaction function                            |
 | v0.8.0      | 2020. 06. 05 | add 'getSignedMessage' function                            |
 | v0.9.0      | 2020. 06. 22 | add interface for BITCOIN transaction                      |
@@ -34,21 +34,21 @@
 
 ## 1. INTRODUCTION
 
-D'CENT Web SDK allows your web application to quickly create an wallet application using D'CENT dongle.
+DCENT Web SDK allows your web application to quickly create an wallet application using DCENT dongle.
 This guide explains how to install DCENT Web SDK and use the SDK for your web wallet application.
 
 ## 2. Architecture
 
-The figure below is a D'CENT Web SDK structure.
+The figure below is a DCENT Web SDK structure.
 
 <div><img src="./image/dcent-web-sdk-arch.png"</img></div>
 <br>
 
-When the functions is called, if the D'CENT Bridge Service is not running as a popup, the popup window is automatically opened internally and a request to process the function is transmitted.
+When the functions is called, if the DCENT Bridge Service is not running as a popup, the popup window is automatically opened internally and a request to process the function is transmitted.
 
 ## 3. PACKAGES
 
-D'CENT Web SDK includes:
+DCENT Web SDK includes:
 
 - doc : Integration guide and API documentation of DCENT Web SDK.
 - src : DCENT Web SDK library file.
@@ -65,9 +65,9 @@ Developer can access api through `window.DcentWebConnector` object or `DcentWebC
 
 ### Requirement
 
-- Must have a `D'CENT Biometric wallet`. You can get "Order Now" page of D'CENT homepage. (http://dcentwallet.com)
-- You need to install the lastest `D'CENT Bridge`. (http://bridge.dcentwallet.com/download)
-- D'CENT Biometric will be connected with your PC or Labtop using USB Cable(Micro USB 5-pin type).
+- Must have a `DCENT Biometric wallet`. You can get "Order Now" page of DCENT homepage. (http://dcentwallet.com)
+- You need to install the lastest `DCENT Bridge`. (http://bridge.dcentwallet.com/download)
+- DCENT Biometric will be connected with your PC or Labtop using USB Cable(Micro USB 5-pin type).
 
 ## 5. DEVELOPMENT
 
@@ -97,7 +97,7 @@ In either case, respond with a JSON object.
 
 ### Common Errors
 
-If D'CENT wallet isn't connected via USB, you'll get the following error:
+If DCENT wallet isn't connected via USB, you'll get the following error:
 
 ```js
 {
@@ -109,7 +109,7 @@ If D'CENT wallet isn't connected via USB, you'll get the following error:
     "body": {
         "error": {
             "code": "no_device",
-            "message": "D'CENT Biometric Wallet is not connected"
+            "message": "DCENT Biometric Wallet is not connected"
         }
     }
 }
@@ -155,7 +155,7 @@ The following shows the user cancel error in the Ethereum signed Transaction.
 
 ### DcentWebConnector initialize
 
-`dcent-web-connector` provides functions for using D'CENT Biometric Wallet.
+`dcent-web-connector` provides functions for using DCENT Biometric Wallet.
 
 ```js
 var result
@@ -185,7 +185,7 @@ try{
 }
 ```
 
-When the function is called from your web application, if D'CENT Bridge Service is not running as a pop-up, `dcent-web-connector` will automatically open a pop-up window and send a function request
+When the function is called from your web application, if DCENT Bridge Service is not running as a pop-up, `dcent-web-connector` will automatically open a pop-up window and send a function request
 
 ### Set TimeOut Time
 
@@ -233,7 +233,7 @@ try{
 }catch(e){
     result = e
 }
-// close pop-up window of D'CENT Bridge Service
+// close pop-up window of DCENT Bridge Service
 DcentWebConnector.popupWindowClose()
 ```
 
@@ -321,7 +321,7 @@ try{
                 "max": 2,
                 "enrolled": 1
             },
-            "label": "My D'CENT"
+            "label": "My DCENT"
         }
     }
 }
@@ -351,7 +351,7 @@ After execute above code, you can see the modified label on your device when reb
 
 ### Add & Sync Account
 
-> As of firmware version 2.9.2 or later, the D'CENT biometric wallet device does not support updating the balance.
+> As of firmware version 2.9.2 or later, the DCENT biometric wallet device does not support updating the balance.
 
 You can add account using `syncAccount()` function. You can create an account by specifying the coin type and key path of the account you want to add.
 If you want to add token type coin account, you must specify the coin name as the first 14 digits of contract address.
@@ -785,7 +785,7 @@ Returned response object has:
 
 ### Sign Transaction
 
-The D'CENT Web SDK provides functions for signing transaction of coins.
+The DCENT Web SDK provides functions for signing transaction of coins.
 
 **getEthereumSignedTransaction()**
 
@@ -990,8 +990,8 @@ Klaytn provides 'caver-js' library. You can make raw transaction for broadcastin
   - key: key path, wallet sign with that private key with a given key path (BIP32 ex) "m/44'/144'/0'/0/0").
 - Requirements:
 
-  - `D'CENT Bridge` version 1.1.4 or higher is required.
-  - D'CENT Biometric Wallet version 2.4.0. or higher is required.
+  - `DCENT Bridge` version 1.1.4 or higher is required.
+  - DCENT Biometric Wallet version 2.4.0. or higher is required.
 - Useage:
 
   ```js
@@ -1086,8 +1086,8 @@ For broadcast the sign transaction, you must reconstruct transaction include `Tx
   - decimals: hedera or hts token's decimals.
 - Requirements:
 
-  - `D'CENT Bridge` version 1.2.1 or higher is required.
-  - D'CENT Biometric Wallet version 2.19.3. or higher is required.
+  - `DCENT Bridge` version 1.2.1 or higher is required.
+  - DCENT Biometric Wallet version 2.19.3. or higher is required.
 - Useage:
 
   ```js
@@ -1162,8 +1162,8 @@ You can get a signature value to sign a user message with that private key With 
   - unsignedMsg: the UTF-8 encoded message with a prefix appended to it.
   - path: key path, wallet sign with that private key with a given key path (BIP32 ex) "m/44'/3030'/0'").
 - Requirements:
-  - `D'CENT Bridge` version 1.5.5 or higher is required.
-  - D'CENT Biometric Wallet version 2.30.3. or higher is required.
+  - `DCENT Bridge` version 1.5.5 or higher is required.
+  - DCENT Biometric Wallet version 2.30.3. or higher is required.
 - Useage:
 
   ```js
@@ -1217,8 +1217,8 @@ You can get a signature value to sign a user message with that private key With 
   - transactionJson: this value conforms JSON format of Transaction Types in [Stellar Docs](https://developers.stellar.org/docs/tutorials/send-and-receive-payments)
 - Requirements:
 
-  - `D'CENT Bridge` version 1.4.0 or higher is required.
-  - D'CENT Biometric Wallet version 2.20.0. or higher is required.
+  - `DCENT Bridge` version 1.4.0 or higher is required.
+  - DCENT Biometric Wallet version 2.20.0. or higher is required.
 - Useage:
 
   ```js
@@ -1289,8 +1289,8 @@ You can get a signature value to sign a user message with that private key With 
   - transactionJson: this value conforms JSON format of Transaction Types in [Tron Docs](https://github.com/tronscan/tronscan-node-client)
 - Requirements:
 
-  - `D'CENT Bridge` version 1.4.0 or higher is required.
-  - D'CENT Biometric Wallet version 2.3.0. or higher is required.
+  - `DCENT Bridge` version 1.4.0 or higher is required.
+  - DCENT Biometric Wallet version 2.3.0. or higher is required.
 - Useage:
 
   ```js
@@ -1392,8 +1392,8 @@ You can get a signature value to sign a user message with that private key With 
   - decimals: tezos or tezos token's decimals.
 - Requirements:
 
-  - `D'CENT Bridge` version 1.5.0 or higher is required.
-  - D'CENT Biometric Wallet version 2.23.1 or higher is required.
+  - `DCENT Bridge` version 1.5.0 or higher is required.
+  - DCENT Biometric Wallet version 2.23.1 or higher is required.
     - testnet: version 2.24.1 or higher is required.
 - Useage:
 
@@ -1486,8 +1486,8 @@ You can get a signature value to sign a user message with that private key With 
   - decimals: vechain or vechain token's decimals.
 - Requirements:
 
-  - `D'CENT Bridge` version 1.5.0 or higher is required.
-  - D'CENT Biometric Wallet version 2.23.2. or higher is required.
+  - `DCENT Bridge` version 1.5.0 or higher is required.
+  - DCENT Biometric Wallet version 2.23.2. or higher is required.
 - Useage:
 
   ```js
@@ -1597,9 +1597,9 @@ You can get a signature value to sign a user message with that private key With 
     - ~~'08' : Delegate~~ (**The method will be supported later)**
 - Requirements:
 
-  - `D'CENT Bridge` version 1.5.0 or higher is required.
+  - `DCENT Bridge` version 1.5.0 or higher is required.
     - near token: version 1.5.1 or higher is required.
-  - D'CENT Biometric Wallet version 2.24.0. or higher is required.
+  - DCENT Biometric Wallet version 2.24.0. or higher is required.
     - near token: version 2.27.1 or higher is required.
 - Useage:
 
@@ -1698,8 +1698,8 @@ You can get a signature value to sign a user message with that private key With 
     - ~~'04': Token Deploy~~ (**The method will be supported later)**
 - Requirements:
 
-  - `D'CENT Bridge` version 1.5.0 or higher is required.
-  - D'CENT Biometric Wallet version 2.26.0. or higher is required.
+  - `DCENT Bridge` version 1.5.0 or higher is required.
+  - DCENT Biometric Wallet version 2.26.0. or higher is required.
 - Useage:
 
   ```js
@@ -1788,8 +1788,8 @@ You can get a signature value to sign a user message with that private key With 
   - decimals: polkadot's decimals.
 - Requirements:
 
-  - `D'CENT Bridge` version 1.5.0 or higher is required.
-  - D'CENT Biometric Wallet version 2.19.1 or higher is required.
+  - `DCENT Bridge` version 1.5.0 or higher is required.
+  - DCENT Biometric Wallet version 2.19.1 or higher is required.
 - Useage:
 
   ```js
@@ -1870,8 +1870,8 @@ You can get a signature value to sign a user message with that private key With 
   - decimals: cosmos or coreum's decimals.
 - Requirements:
 
-  - `D'CENT Bridge` version 1.5.0 or higher is required.
-  - D'CENT Biometric Wallet version 2.21.0 or higher is required.
+  - `DCENT Bridge` version 1.5.0 or higher is required.
+  - DCENT Biometric Wallet version 2.21.0 or higher is required.
     - COREUM: 2.25.0 or higher is required.
 - Useage:
 
@@ -1982,8 +1982,8 @@ You can get a signature value to sign a user message with that private key With 
     - '06' : ALGORAND ASSET NFT Create
 - Requirements:
 
-  - `D'CENT Bridge` version 1.5.0 or higher is required.
-  - D'CENT Biometric Wallet version 2.29.1. or higher is required.
+  - `DCENT Bridge` version 1.5.0 or higher is required.
+  - DCENT Biometric Wallet version 2.29.1. or higher is required.
 - Useage:
 
   ```js
@@ -2066,8 +2066,8 @@ You can get a signature value to sign a user message with that private key With 
   - fee decimals: fee's decimals.
 - Requirements:
 
-  - `D'CENT Bridge` version 1.5.3 or higher is required.
-  - D'CENT Biometric Wallet version 2.30.1 or higher is required.
+  - `DCENT Bridge` version 1.5.3 or higher is required.
+  - DCENT Biometric Wallet version 2.30.1 or higher is required.
 - Useage:
 
   ```js

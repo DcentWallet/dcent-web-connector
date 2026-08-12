@@ -1,12 +1,12 @@
-> **⚠️ Archived — v0.16.x (v1) README.** Describes the legacy v1 API (native D'CENT Bridge app + `get*Signed*` wrappers).
+> **⚠️ Archived — v0.16.x (v1) README.** Describes the legacy v1 API (native DCENT Bridge app + `get*Signed*` wrappers).
 > For the current **v2** API see the [root README](../README.md) and the [Developer Guide](https://dcentwallet.github.io/dcent-web-connector/).
 > Migration: [MIGRATION-v1-to-v2.md](../MIGRATION-v1-to-v2.md).
 
 ---
 
 # dcent-web-connector
-This is package for connecting WEB and D'CENT biometric wallet.<br>
-`dcent-web-connector` is modules for easy integration of D'CENT into 3rd party services.<br>
+This is package for connecting WEB and DCENT biometric wallet.<br>
+`dcent-web-connector` is modules for easy integration of DCENT into 3rd party services.<br>
 User interface is presented in a popup window served from `https://bridge.dcentwallet.com/v2`.
 
 - 📘 **v2 Developer Guide** (EN / KO — full API + per-chain reference): https://dcentwallet.github.io/dcent-web-connector/
@@ -38,18 +38,18 @@ try{
 
 ## Preparence
 
-- install `D'CENT Bridge`
+- install `DCENT Bridge`
 
     https://bridge.dcentwallet.com/v2/download
 
-- connect D'CENT device using USB cable
+- connect DCENT device using USB cable
 
 
 ## Test 
 
 - `tests/unit/0_mock_test` is mockup test.
 
-- `tests/unit/1_bridge_test` is test for real D'CENT Device.
+- `tests/unit/1_bridge_test` is test for real DCENT Device.
 
 ### Preparence
 If you want to test `tests/unit/1_bridge_test`,
@@ -59,11 +59,11 @@ If you want to test `tests/unit/1_bridge_test`,
 npm run dev
 ```
 
-- install `D'CENT Bridge` 
+- install `DCENT Bridge` 
 
     http://bridge.dcentwallet.com/v2/download
 
-- connect D'CENT device using USB cable
+- connect DCENT device using USB cable
 
 
 

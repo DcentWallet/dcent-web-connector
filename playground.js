@@ -2117,7 +2117,10 @@
     function setHint (msg, isErr) {
       if (hintEl) {
         hintEl.textContent = msg
-        hintEl.style.color = isErr ? '#c00' : '#888'
+        // C2 와 같은 클래스(review-finding-class-closure) — 이 파일에 같은 에러잉크/보통잉크
+        // 삼항식이 정확히 2곳 있었다(grep 실측). 이 hint도 다크 사이드바 위에 놓여 같은 회귀가
+        // 있어 동일하게 고친다.
+        hintEl.style.color = isErr ? '#fca5a5' : 'var(--pg-muted)'
       }
     }
     if (!state.connected) {
@@ -2393,7 +2396,12 @@
       var btcMode = state.btxSignMode || 'json'
       var modeRow = document.createElement('div')
       modeRow.className = 'form-row'
-      modeRow.style.cssText = 'margin-bottom:10px;padding:6px;background:#eef;border-radius:4px;'
+      // 크로스 리뷰 발견(C1, 2026-08-12 4축 리뷰) — index-v2.html이 사이드바를 다크로 전환하며
+      // .form-row label{color:var(--pg-fg)}가 이 라디오 라벨에도 적용됐다. 원래 밝은 인라인
+      // background:#eef 위에서는 문제없었지만(라이트 잉크·라이트 배경), 이제 그 조합이
+      // 1.07(사실상 안 보임)로 붕괴한다 — Bitcoin 서명 모드(자동/JSON) 선택 라디오가 실사용
+      // 파손 대상이라 여기서 고친다. var(--pg-raised) → 11.36.
+      modeRow.style.cssText = 'margin-bottom:10px;padding:6px;background:var(--pg-raised);border-radius:4px;'
       ;[['auto', '⚡ 자동 (UTXO fetch → build → sign)'], ['json', 'Transaction (JSON) 직접']].forEach(function (m) {
         var lb = document.createElement('label')
         lb.style.cssText = 'margin-right:14px;font-size:12px;cursor:pointer;'
@@ -3613,7 +3621,11 @@
     var el = document.getElementById('btc-fetch-status')
     if (el) {
       el.textContent = msg
-      el.style.color = isErr ? '#c00' : '#888'
+      // 크로스 리뷰 발견(C2, 2026-08-12 4축 리뷰) — 이 상태 엘리먼트는 다크 사이드바(--pg-panel)
+      // 위에 놓인다. 에러 잉크 #c00은 2.79로 AA 미달(전환 전 #fff 위 5.89) — 이 파일의
+      // .log-json.err-json이 이미 쓰는 dark-safe danger 값(#fca5a5, 8.64)으로 교체한다.
+      // 정상 상태 잉크 #888도 4.63으로 여유가 0.13뿐이라 함께 var(--pg-muted)(6.40)로 옮긴다.
+      el.style.color = isErr ? '#fca5a5' : 'var(--pg-muted)'
     }
   }
 

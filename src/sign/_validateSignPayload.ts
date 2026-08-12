@@ -1,12 +1,12 @@
 /**
  * v2 sign — `payload` 인자 family-agnostic light validation (m09-04-05)
  *
- * dApp이 `sign({method, chainId, payload})`로 전달하는 payload가 sdk handleRequest에 도달하기 전,
+ * App이 `sign({method, chainId, payload})`로 전달하는 payload가 sdk handleRequest에 도달하기 전,
  * connector facade에서 **family-agnostic shape** 만 검증한다.
  *
  * 적용 룰:
- *   - dapp-input-sanitization: dApp 입력 객체 직접 pass-through 금지. 프로토타입 키 차단 + DoS 가드
- *   - provider-security-checklist C3: dApp-controllable payload를 known-fields whitelist로 추출하지는 않지만
+ *   - dapp-input-sanitization: App 입력 객체 직접 pass-through 금지. 프로토타입 키 차단 + DoS 가드
+ *   - provider-security-checklist C3: App-controllable payload를 known-fields whitelist로 추출하지는 않지만
  *     (family-specific 필드는 sdk가 처리), connector 경계의 universal shape contract를 강제한다
  *   - connector-chain-addition-isolation: payload 검증에 chain enum / family-specific 분기 절대 부재.
  *     chainId 문자열은 helpful error 메시지의 echo 용도로만 사용 (분기 로직 X)
@@ -34,7 +34,7 @@ const FORBIDDEN_PROTO_KEYS = ['__proto__', 'constructor', 'prototype'] as const
  * v2 sign API payload shape validation (family-agnostic).
  *
  * @param chainId CAIP-19 chain identifier — 에러 메시지의 echo 용도만 (분기 로직 부재)
- * @param payload dApp이 보낸 payload 후보 — 검증 후 sdk로 forward
+ * @param payload App이 보낸 payload 후보 — 검증 후 sdk로 forward
  * @throws ProviderError(INVALID_PARAMS) — 검증 실패 시
  */
 export function _validateSignPayload (chainId: string, payload: unknown): void {
@@ -107,13 +107,13 @@ export function _validateSignPayload (chainId: string, payload: unknown): void {
 }
 
 /**
- * v2 sign API payload contract — family-agnostic 필수 필드 + dApp-controllable extras.
+ * v2 sign API payload contract — family-agnostic 필수 필드 + App-controllable extras.
  *
  * connector 경계에서 보장되는 contract:
  *   - keyPath: non-empty string (BIP44 path) — `_validateSignPayload`가 강제
  *
  * sdk가 chainId 기반으로 family-specific 필드를 별도 검증한다 (예: EVM personal_sign의 address).
- * 본 인터페이스는 documentation 용도이며 dApp에 export된다 (`src/index.ts` 참조).
+ * 본 인터페이스는 documentation 용도이며 App에 export된다 (`src/index.ts` 참조).
  */
 export interface SignPayload {
   /** BIP44 derivation path — sdk가 wallet-models proxy에 forward. */

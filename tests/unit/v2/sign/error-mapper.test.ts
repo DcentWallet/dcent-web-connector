@@ -111,7 +111,7 @@ describe('v1CodeToErrorCode — v1 string → v2 ErrorCode 역매핑', () => {
     expect(v1CodeToErrorCode('chain_disconnected')).toBe(ErrorCode.CHAIN_DISCONNECTED) // 4901
   })
 
-  test("D'CENT 5xxx 매핑", () => {
+  test("디센트 5xxx 매핑", () => {
     expect(v1CodeToErrorCode('device_not_connected')).toBe(ErrorCode.DEVICE_NOT_CONNECTED)
     expect(v1CodeToErrorCode('device_locked')).toBe(ErrorCode.DEVICE_LOCKED)
     expect(v1CodeToErrorCode('device_timeout')).toBe(ErrorCode.DEVICE_TIMEOUT)

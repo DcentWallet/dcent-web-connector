@@ -52,7 +52,7 @@ export interface SdkInvariantHelpers {
    * SYNC: m09-03-05 _injectDappParamsAddress
    *
    * `_addressArgPosition.ts` 화이트리스트 lookup으로 personal_sign / eth_sign /
-   * eth_signTransaction / signTypedData_v4 의 dApp methodParams address 자리에
+   * eth_signTransaction / signTypedData_v4 의 App methodParams address 자리에
    * sdk가 keyPath-derive한 address를 silent overwrite (Layer 4 (c) silent ignore 정책).
    */
   _injectDappParamsAddress: (method: string, params: unknown[], derivedAddress: string) => unknown[]

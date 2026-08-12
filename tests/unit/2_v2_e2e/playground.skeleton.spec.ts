@@ -40,7 +40,7 @@ describe('[v2 e2e] playground skeleton', () => {
 
     // 타이틀 확인
     const title = await page.title()
-    expect(title).toContain("D'CENT")
+    expect(title).toContain("DCENT")
 
     // countMethodNodes: EVM 체인 로드 후 placeholder 제외 노드가 5 이상
     // (chains.evm.json 로드 성공 시 5 + 64 = 69, 실패 시 5)

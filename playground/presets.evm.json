@@ -92,8 +92,8 @@
   {
     "id": "evm-erc20-approve",
     "scenarioCode": "004",
-    "label": "EVM ERC-20 approve (dApp request)",
-    "note": "댑 요청 — ERC-20 approve(spender,uint256). 스왑/브리지 등 dApp이 토큰 사용 권한을 요청할 때 보내는 트랜잭션. 예시: Ethereum mainnet USDT(to=0xdAC17...)를 Uniswap V2 Router(spender=0x7a250d56...)에 max(uint256) 승인. ⚠️ 다른 체인은 to(토큰)·spender(컨트랙트)를 교체. unlimited approval(0xff..ff)은 편의용 — 보안상 필요 금액만 승인 권장. value=0x0. wm opaque pass-through(selector 0x095ea7b3), 기기에서 approve로 표시.",
+    "label": "EVM ERC-20 approve (App request)",
+    "note": "댑 요청 — ERC-20 approve(spender,uint256). 스왑/브리지 등 App이 토큰 사용 권한을 요청할 때 보내는 트랜잭션. 예시: Ethereum mainnet USDT(to=0xdAC17...)를 Uniswap V2 Router(spender=0x7a250d56...)에 max(uint256) 승인. ⚠️ 다른 체인은 to(토큰)·spender(컨트랙트)를 교체. unlimited approval(0xff..ff)은 편의용 — 보안상 필요 금액만 승인 권장. value=0x0. wm opaque pass-through(selector 0x095ea7b3), 기기에서 approve로 표시.",
     "sourceUrl": "https://eips.ethereum.org/EIPS/eip-20",
     "applicableChainIds": [
       "eip155:1/slip44:60", "eip155:30/slip44:60", "eip155:8217/slip44:60", "eip155:61/slip44:60",
@@ -184,7 +184,7 @@
     "scenarioCode": "007",
     "label": "Kaia fee-delegated value transfer — sender 서명(senderTxHashRLP)",
     "family": "klaytn",
-    "note": "외부 dApp Kaia fee-delegation(FeeDelegatedValueTransfer, 외부 서비스가 fee payer) — 사용자가 sender로 서명. wm m02-05-84: convertKlaytnTransaction이 typeInt(0x09=9)을 kaiaTransaction.txType으로 보존 → signTransaction의 isFeeDelegated(=mode:'sponsor' || ALL_FEE_DELEGATED_TYPES.has(txType))가 true → senderTxHashRLP()(fee payer가 완성할 부분 RLP) 반환. 84 이전엔 mode:'sponsor' 없으면 txHashRLP()(full)로 떨어져 외부 fee payer가 자기 서명을 붙일 수 없었다. **typeInt(정수) 필수** — 9=FeeDelegatedValueTransfer(base). WithRatio(0x0a=10 등)는 feeRatio(1~99) 동반. AccountUpdate(0x21/0x22)/SmartContractDeploy(0x29/0x2a)는 value-transfer shape로 조립 불가라 -32602 fail-closed. from은 생략(디바이스 계정=sender 자동 사용) — 임의 from을 넣으면 sender RLP 불일치. to는 예시 placeholder(0x0)라 본인/실 수신자로 교체, value=송금 wei(현재 0.01 KAIA). Kaia는 legacy gas만 사용 — maxFeePerGas가 gas_price fallback. nonce/fee 송금 전 수정. ★fee payer(외부 서비스)가 senderTxHashRLP에 자기 서명을 append해야 완성 → 이 preset 단독으로는 broadcast 불가(§9 byte-proof: verify-wire-sign(KLAYTN)로 senderTxHashRLP 형식 + signer=device 확인). fee payer 측 서명(kaia_signTransactionAsFeePayer)은 별도 미구현(비스코프). 내부 Gas Pass(mode:'sponsor')는 kaia-kip7-transfer와 별개 경로.",
+    "note": "외부 App Kaia fee-delegation(FeeDelegatedValueTransfer, 외부 서비스가 fee payer) — 사용자가 sender로 서명. wm m02-05-84: convertKlaytnTransaction이 typeInt(0x09=9)을 kaiaTransaction.txType으로 보존 → signTransaction의 isFeeDelegated(=mode:'sponsor' || ALL_FEE_DELEGATED_TYPES.has(txType))가 true → senderTxHashRLP()(fee payer가 완성할 부분 RLP) 반환. 84 이전엔 mode:'sponsor' 없으면 txHashRLP()(full)로 떨어져 외부 fee payer가 자기 서명을 붙일 수 없었다. **typeInt(정수) 필수** — 9=FeeDelegatedValueTransfer(base). WithRatio(0x0a=10 등)는 feeRatio(1~99) 동반. AccountUpdate(0x21/0x22)/SmartContractDeploy(0x29/0x2a)는 value-transfer shape로 조립 불가라 -32602 fail-closed. from은 생략(디바이스 계정=sender 자동 사용) — 임의 from을 넣으면 sender RLP 불일치. to는 예시 placeholder(0x0)라 본인/실 수신자로 교체, value=송금 wei(현재 0.01 KAIA). Kaia는 legacy gas만 사용 — maxFeePerGas가 gas_price fallback. nonce/fee 송금 전 수정. ★fee payer(외부 서비스)가 senderTxHashRLP에 자기 서명을 append해야 완성 → 이 preset 단독으로는 broadcast 불가(§9 byte-proof: verify-wire-sign(KLAYTN)로 senderTxHashRLP 형식 + signer=device 확인). fee payer 측 서명(kaia_signTransactionAsFeePayer)은 별도 미구현(비스코프). 내부 Gas Pass(mode:'sponsor')는 kaia-kip7-transfer와 별개 경로.",
     "sourceUrl": "https://docs.kaia.io/references/transaction-types/tx-type-fee-delegated-value-transfer/",
     "applicableChainIds": [
       "eip155:8217/slip44:60"

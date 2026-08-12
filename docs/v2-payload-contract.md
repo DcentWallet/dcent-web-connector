@@ -432,7 +432,7 @@ Bitcoin은 `dcent.sign({ method: 'signTransaction', chainId, payload })`로 서�
 }
 ```
 
-> ⚠️ 위 `specVersion` / `transactionVersion` / `blockHash` / `genesisHash` 의 `0` · all-zero 는 **playground preset 의 placeholder** 다. playground 하네스가 서명 직전에 체인 조회값으로 치환한다. **실제 dApp 은 이 자리에 체인에서 조회한 실값을 넣어야 한다** — placeholder 를 그대로 보내면 노드가 거부한다. preset 에 실값을 박아두지 않는 이유는, 시간이 지나면 stale 값으로 서명하게 되기 때문이다.
+> ⚠️ 위 `specVersion` / `transactionVersion` / `blockHash` / `genesisHash` 의 `0` · all-zero 는 **playground preset 의 placeholder** 다. playground 하네스가 서명 직전에 체인 조회값으로 치환한다. **실제 App 은 이 자리에 체인에서 조회한 실값을 넣어야 한다** — placeholder 를 그대로 보내면 노드가 거부한다. preset 에 실값을 박아두지 않는 이유는, 시간이 지나면 stale 값으로 서명하게 되기 때문이다.
 
 ---
 
@@ -591,7 +591,7 @@ form-D 는 `type` 을 **앱이 적지 않는다** — 지갑이 descriptor 를 `
 }
 ```
 
-> ⚠️ 위 `sequenceNumber: '0'` 과 `timeBounds` 의 `'0'` 은 **playground preset 의 placeholder** 다(fresh state 라 실값을 박아두면 stale 로 서명된다). playground 하네스가 서명 직전에 치환한다 — **실제 dApp 은 계정의 현재 sequence 와 의도한 timeBounds 를 넣어야 한다.**
+> ⚠️ 위 `sequenceNumber: '0'` 과 `timeBounds` 의 `'0'` 은 **playground preset 의 placeholder** 다(fresh state 라 실값을 박아두면 stale 로 서명된다). playground 하네스가 서명 직전에 치환한다 — **실제 App 은 계정의 현재 sequence 와 의도한 timeBounds 를 넣어야 한다.**
 >
 > issued asset 전송은 **수신처에 해당 토큰의 trustline 이 선행**돼야 한다(없으면 `op_no_trust`).
 

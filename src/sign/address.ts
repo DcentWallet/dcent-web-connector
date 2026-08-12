@@ -66,7 +66,7 @@ import type { V1Response } from './types'
  * BTC family 주소 형식 enum (m09-04-09).
  *
  * 같은 chainId 내 여러 주소 encoding variant가 있는 chain(BTC family)에서
- * dApp이 어느 variant를 원하는지 명시하는 generic 필드.
+ * App이 어느 variant를 원하는지 명시하는 generic 필드.
  * sdk가 본 값을 wallet-models resolver에 전달하고 firmware `request_to`를 결정.
  *
  * 값 정합: m02-05-09 wm addressFormat resolver의 AddressFormat enum과 동일.
@@ -172,7 +172,7 @@ async function _getAddressV2 (input: GetAddressV2Input): Promise<V1Response> {
     safeChainId = _sanitizeChainId(input.chainId)
   } catch {
     // _sanitizeChainId는 string이 아니거나 빈 문자열 / disallowed char이면 ProviderError를 던진다.
-    // v1 dApp이 .catch(err => err.body?.error?.code) 패턴을 쓰므로 dcentException으로 통일.
+    // v1 App이 .catch(err => err.body?.error?.code) 패턴을 쓰므로 dcentException으로 통일.
     throw dcentException('param_error', 'chainId required')
   }
 

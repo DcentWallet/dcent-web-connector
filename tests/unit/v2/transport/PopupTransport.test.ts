@@ -1331,7 +1331,7 @@ describe('PopupTransport', () => {
   // close()는 (a) resetSingleton()이 인스턴스를 통째로 버리는 경로와 (b) 팝업을 X로 닫거나
   // handshake가 실패해 같은 인스턴스로 재오픈을 전제하는 내부 self-close 경로 둘 다에서 호출된다.
   // (b) 경로에서 handler Set을 비우면 singleton의 재등록 루프(`_transport === null`일 때만 동작)가
-  // 돌지 않아 dApp 리스너가 그 페이지 세션 내내 침묵한다 — close()는 handler Set을 건드리지 않는다.
+  // 돌지 않아 App 리스너가 그 페이지 세션 내내 침묵한다 — close()는 handler Set을 건드리지 않는다.
   describe('T-U-SIGNPROGRESS-CONN-10: close() 후에도 리스너가 생존한다', () => {
     interface HandlerSets {
       stateHandlers: Set<unknown>
@@ -1407,7 +1407,7 @@ describe('PopupTransport', () => {
   // ===== 2026-08-10: 기기 축(_deviceState) =====
   //
   // 그때까지 `state` 이벤트는 **팝업 창의 생사**만 알렸다. 팝업이 열린 채로 USB 를 뽑아도
-  // 아무 신호가 안 나가서, dApp 은 "connected 하나 찍히고 그 뒤로 조용"한 것만 봤다.
+  // 아무 신호가 안 나가서, App 은 "connected 하나 찍히고 그 뒤로 조용"한 것만 봤다.
   // bridge 가 `_deviceState` 를 push 하고 여기서 기기 축을 더해 **두 축 중 하나라도 바뀌면**
   // 발행한다. 1번째 인자의 의미(팝업 축)는 v1 호환 때문에 바꾸지 않는다.
   describe('T-U-DEVSTATE-01~07: 기기 축 통합 (2026-08-10)', () => {
@@ -1426,7 +1426,7 @@ describe('PopupTransport', () => {
       dispatchResponse(DEFAULT_ORIGIN, {
         type: '_deviceState',
         device: 'connected',
-        info: { deviceId: 'DEADBEEF0123', label: "D'CENT X", version: '2.35.1', deviceModel: 'DCENT-X', connectType: 'usb', coinCount: 42 },
+        info: { deviceId: 'DEADBEEF0123', label: "DCENT X", version: '2.35.1', deviceModel: 'DCENT-X', connectType: 'usb', coinCount: 42 },
       })
       expect(h).toHaveBeenCalledTimes(1)
       // 1번째 인자는 팝업 축 — 여전히 connected (의미 불변)
@@ -1434,7 +1434,7 @@ describe('PopupTransport', () => {
       expect(h.mock.calls[0][1]).toEqual({
         popup: 'connected',
         device: 'connected',
-        deviceInfo: { deviceId: 'DEADBEEF0123', label: "D'CENT X", version: '2.35.1', deviceModel: 'DCENT-X', connectType: 'usb', coinCount: 42 },
+        deviceInfo: { deviceId: 'DEADBEEF0123', label: "DCENT X", version: '2.35.1', deviceModel: 'DCENT-X', connectType: 'usb', coinCount: 42 },
       })
     })
 
@@ -1484,7 +1484,7 @@ describe('PopupTransport', () => {
         info: { label: 'X', evil: 'DROP', ksm_version: 'SHOULD-NOT-PASS', state: 'initialised', connectType: 'nope', coinCount: -1 },
       })
       const detail = h.mock.calls[0][1]
-      // 🔴 이름은 `getDeviceInfo()` 응답과 같아야 한다 — 두 API 를 같이 쓰는 dApp 이 어휘를 두 벌
+      // 🔴 이름은 `getDeviceInfo()` 응답과 같아야 한다 — 두 API 를 같이 쓰는 App 이 어휘를 두 벌
       //    배우지 않게 하려는 것이 이 계약의 목적이라, 키 이름 자체가 회귀 대상이다.
       expect(Object.keys(detail.deviceInfo)).toEqual(['deviceId', 'label', 'version', 'deviceModel', 'connectType', 'coinCount'])
       expect(detail.deviceInfo.label).toBe('X')
@@ -1498,7 +1498,7 @@ describe('PopupTransport', () => {
       expect(detail.deviceInfo.coinCount).toBeUndefined()
     })
 
-    it('T-U-DEVSTATE-07: detail 은 freeze 되어 dApp 이 내부 상태를 오염시킬 수 없다 (mutation-isolation)', async () => {
+    it('T-U-DEVSTATE-07: detail 은 freeze 되어 App 이 내부 상태를 오염시킬 수 없다 (mutation-isolation)', async () => {
       const h = await connected()
       dispatchResponse(DEFAULT_ORIGIN, { type: '_deviceState', device: 'connected', info: { label: 'X' } })
       const detail = h.mock.calls[0][1]
@@ -1532,7 +1532,7 @@ describe('PopupTransport', () => {
       h.mockClear()
 
       // (2) 기기가 준비돼 실제 정보가 담긴 connected 가 다시 온다 — device 축은 그대로다.
-      //     deviceId 를 비교에 넣지 않으면 여기서 발행이 안 되고 dApp 은 빈 정보에 고정된다.
+      //     deviceId 를 비교에 넣지 않으면 여기서 발행이 안 되고 App 은 빈 정보에 고정된다.
       dispatchResponse(DEFAULT_ORIGIN, {
         type: '_deviceState',
         device: 'connected',
@@ -1579,7 +1579,7 @@ describe('PopupTransport', () => {
       })
       h.mockClear()
 
-      // 같은 origin 의 **다른 창**(이전 lifecycle 의 잔존 팝업 / dApp 이 연 다른 창).
+      // 같은 origin 의 **다른 창**(이전 lifecycle 의 잔존 팝업 / App 이 연 다른 창).
       // origin 만 검사하면 이 메시지가 기기 축을 뒤집고 deviceId 를 심는다.
       const otherWindow = makeMockPopup()
       dispatchResponse(DEFAULT_ORIGIN, { type: '_deviceState', device: 'disconnected' }, otherWindow)
@@ -1614,7 +1614,7 @@ describe('PopupTransport', () => {
       // — 이 창이 이 결함의 무대다.
       mockPopup.closed = true
 
-      // 그 사이 dApp 이 send() 를 부르면 ensurePopup 이 close() 를 거치지 않고 새 팝업을 연다.
+      // 그 사이 App 이 send() 를 부르면 ensurePopup 이 close() 를 거치지 않고 새 팝업을 연다.
       const nextPopup = makeMockPopup()
       activeMockPopup = nextPopup
       openSpy.mockImplementation(() => nextPopup as unknown as Window)
@@ -1625,14 +1625,14 @@ describe('PopupTransport', () => {
       // 🔴 팝업 축은 'connected' 그대로라 **쌍 dedupe 에 걸려 발행이 0 이 되는 것**이 결함이었다.
       //    새 팝업은 아직 기기를 관측하지 못했으므로 'unknown' 이어야 하고, 그 변화로 발행된다.
       const deviceEmits = h.mock.calls.filter((c) => c[1].device === 'unknown')
-      // 팝업 교체가 dApp 에 전혀 안 보이면 안 된다 (결함 시 0건)
+      // 팝업 교체가 App 에 전혀 안 보이면 안 된다 (결함 시 0건)
       expect(deviceEmits.length).toBeGreaterThanOrEqual(1)
       const [, detail] = deviceEmits[0]
       // 팝업 축은 여전히 connected — 새 창이 열렸으므로
       expect(detail.popup).toBe('connected')
-      // 기기가 빠진 게 아니라 '관측 불가' — disconnected 로 단정하면 dApp 에 거짓말이 나간다
+      // 기기가 빠진 게 아니라 '관측 불가' — disconnected 로 단정하면 App 에 거짓말이 나간다
       expect(detail.device).toBe('unknown')
-      // 옛 기기 정보가 남으면 dApp 이 없는 기기를 표시한다
+      // 옛 기기 정보가 남으면 App 이 없는 기기를 표시한다
       expect(detail.deviceInfo).toBeUndefined()
 
       // 새 팝업이 실제 기기를 보고하면 그때 채워진다 (교체 후에도 축이 살아있는지).

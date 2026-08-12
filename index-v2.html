@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>D'CENT Connector v2 Playground</title>
+  <title>DCENT Connector v2 Playground</title>
   <style>
     * { box-sizing: border-box; margin: 0; padding: 0; }
     body {
@@ -263,7 +263,7 @@
 <!-- Sticky Header: Device Indicator -->
 <div id="header">
   <div id="conn-dot"></div>
-  <h1>D'CENT Connector v2 Playground</h1>
+  <h1>DCENT Connector v2 Playground</h1>
   <span id="device-info">Not connected</span>
   <!-- m09-04-03: transport option demo — per-call transport hint sent in _handshake -->
   <div id="transport-selector">
@@ -313,7 +313,7 @@
 <script src="/dist/v2/dcent-web-connector.min.js"></script>
 <!-- m08-01-05 (D-04 B align): default export object 별칭 — window.dcent = facade default
      이로써 playground이 dcent.getDeviceInfo() / dcent.sign(...) / dcent.getEthereumSignedTransaction(...)을
-     v0.16.0 dApp이 require()로 받는 것과 동일한 shape으로 호출 -->
+     v0.16.0 App이 require()로 받는 것과 동일한 shape으로 호출 -->
 <script>window.dcent = (window.dcent && window.dcent.default) || window.dcent;</script>
 <script src="/playground.js"></script>
 </body>

@@ -98,7 +98,7 @@ export async function getPublicKey (input: GetPublicKeyV2Input): Promise<V1Respo
   }
 
   // chainId sanitize는 ProviderError로 throw — v1 호환을 위해 catch + dcentException re-throw.
-  // (getAddress _getAddressV2와 동일 패턴 — dApp의 .catch(err => err.body?.error?.code) 호환)
+  // (getAddress _getAddressV2와 동일 패턴 — App의 .catch(err => err.body?.error?.code) 호환)
   let safeChainId: string
   try {
     safeChainId = _sanitizeChainId(input.chainId)

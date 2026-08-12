@@ -398,12 +398,12 @@
   {
     "id": "trx-trc20-approve",
     "scenarioCode": "072",
-    "label": "TRON TRC20 approve (dApp request)",
+    "label": "TRON TRC20 approve (App request)",
     "family": "tron",
     "applicableChainIds": [
       "tron:0x2b6653dc/slip44:195"
     ],
-    "note": "댑 요청 — TRC20 approve(spender,uint256). TRON dApp(JustLend/SunSwap 등)이 토큰 사용 권한을 요청할 때 보내는 TriggerSmartContract(selector 095ea7b3). 예시: USDT-TRC20를 임의 spender에 max 승인. ⚠️ spender(data 1번째 32바이트, 현재 0 placeholder)를 실제 컨트랙트 주소 hex로 교체, unlimited(0xff..ff) 대신 필요 금액만 승인 권장. contract_address/owner_address 교체. fee_limit 100 TRX.",
+    "note": "댑 요청 — TRC20 approve(spender,uint256). TRON App(JustLend/SunSwap 등)이 토큰 사용 권한을 요청할 때 보내는 TriggerSmartContract(selector 095ea7b3). 예시: USDT-TRC20를 임의 spender에 max 승인. ⚠️ spender(data 1번째 32바이트, 현재 0 placeholder)를 실제 컨트랙트 주소 hex로 교체, unlimited(0xff..ff) 대신 필요 금액만 승인 권장. contract_address/owner_address 교체. fee_limit 100 TRX.",
     "sourceUrl": "https://developers.tron.network/docs/trc20-contract-interaction",
     "transaction": {
       "raw_data": {

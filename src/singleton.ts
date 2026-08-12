@@ -1,19 +1,19 @@
 /**
  * v2 facade — module-level lazy singleton (m08-01-01)
  *
- * dApp이 PopupTransport / SerialRequestQueue를 직접 다루지 않도록, 두 인스턴스를
+ * App이 PopupTransport / SerialRequestQueue를 직접 다루지 않도록, 두 인스턴스를
  * 모듈 스코프 변수로 보유하고 lazy-init한다. lifecycle.ts와 후속 child의
  * sign / read-only 메서드는 모두 이 singleton을 통해 transport / queue에 접근한다.
  *
  * 책임 분리:
  *   - lazy 생성: 첫 호출 시점에 PopupTransport({}) + SerialRequestQueue 생성
  *   - 인스턴스 재사용: 동일 호출 식별성 보장 (T-U-02)
- *   - reset 후 listener / pendingTimeout 보존: dApp이 reset 후에도 setConnectionListener를
+ *   - reset 후 listener / pendingTimeout 보존: App이 reset 후에도 setConnectionListener를
  *     재등록할 필요 없도록 cached 상태를 다음 ensureSingleton에서 자동 적용
  *
  * 룰 준수:
  *   - error-handling-consistency: PopupTransport 생성자가 throw하면 그대로 propagate.
- *     호출자(dApp)가 catch. silent failure 금지.
+ *     호출자(App)가 catch. silent failure 금지.
  *   - mutation-isolation: 외부에 객체 자체를 노출하지 않고 항상 ensureSingleton()을
  *     통해 가져가게 함 — 외부에서 _transport = null 같은 직접 변경 불가.
  *   - reuse-shared-utils: PopupTransport / SerialRequestQueue는 src/transport/, src/queue/의
@@ -28,7 +28,7 @@ import type { SignProgressInfo, StateHandler } from './transport/MessageTranspor
  * state listener 시그니처. lifecycle.ts의 ConnectionListener와 동일 형태.
  *
  * (2026-08-10) 2번째 인자 `detail` 추가 — 팝업 축과 기기 축을 함께 전달한다. 1번째 인자는
- * v1 그대로(팝업 축)라 `function (state) {...}` 형태의 기존 dApp 코드가 그대로 동작한다.
+ * v1 그대로(팝업 축)라 `function (state) {...}` 형태의 기존 App 코드가 그대로 동작한다.
  * 자세한 계약은 `transport/MessageTransport.ts` 의 `StateHandler` 참조.
  */
 export type StateListener = StateHandler

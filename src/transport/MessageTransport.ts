@@ -52,20 +52,20 @@ export type DeviceState = 'connected' | 'disconnected' | 'unknown'
  * (2026-08-10) 기기 연결 시 함께 오는 표시용 정보.
  *
  * 🔴 **필드 이름은 `getDeviceInfo()` 응답과 동일하다** — `label` / `version` / `deviceModel` /
- * `connectType`. 두 API 를 같이 쓰는 dApp 이 같은 값을 두 어휘로 배우지 않게 하기 위해서다
+ * `connectType`. 두 API 를 같이 쓰는 App 이 같은 값을 두 어휘로 배우지 않게 하기 위해서다
  * (2026-08-10 사용자 결정). 이름이 갈리면 `detail.deviceInfo.version` 을 쓸 자리에
  * `firmwareVersion` 을 써 조용히 `undefined` 를 읽는 사고가 난다.
  *
- * dApp 이 `getDeviceInfo()` 로 직접 받을 수 있는 값의 부분집합이다.
+ * App 이 `getDeviceInfo()` 로 직접 받을 수 있는 값의 부분집합이다.
  *
  * ## `deviceId` 를 싣는다 (2026-08-10 결정 변경)
  *
  * 처음에는 **뺐다** — 요청 없이 자동으로 나가는 신호에 하드웨어 지문을 태우지 않는다는 이유였다.
  * 그런데 실사용에서 그 결정이 화면을 못 쓰게 만들었다: 사용자 라벨(`label`)을 설정하지 않은
- * 기기는 표시할 이름이 없어 `label` 자리가 통째로 비고, dApp 이 **어느 기기인지 구별할 수단이
+ * 기기는 표시할 이름이 없어 `label` 자리가 통째로 비고, App 이 **어느 기기인지 구별할 수단이
  * 아예 없다**(모델명은 같은 모델이면 전부 같다). 그래서 사용자 결정으로 다시 싣는다.
  *
- * 🔴 **트레이드오프를 알고 쓰는 값이다.** `deviceId` 는 기기를 특정하므로, dApp 이 요청하지
+ * 🔴 **트레이드오프를 알고 쓰는 값이다.** `deviceId` 는 기기를 특정하므로, App 이 요청하지
  * 않아도 이 신호를 구독하는 것만으로 재방문을 추적할 수 있다. 그래도 `ksm_version`(보안칩
  * 펌웨어)과 기기 `state` 는 **여전히 싣지 않는다** — 식별에 필요하지 않고, 기기 내부 상태를
  * 노출할 이유가 없다.
@@ -112,7 +112,7 @@ export interface ConnectionStateDetail {
  * `state` 이벤트 핸들러.
  *
  * 🔴 **1번째 인자의 의미는 v1 과 동일하다**(팝업 축) — v1 `setConnectionListener(listener)` 로
- * 등록한 `function (state) {...}` 형태의 기존 dApp 코드가 그대로 동작해야 하기 때문이다.
+ * 등록한 `function (state) {...}` 형태의 기존 App 코드가 그대로 동작해야 하기 때문이다.
  * 두 축이 필요하면 2번째 인자를 받는다. JS 는 남는 인자를 무시하므로 추가는 하위호환이다.
  *
  * 단 **호출 빈도는 늘어난다** — 기기 축만 바뀌어도 호출되며, 그때 1번째 인자는 직전과 같은
@@ -127,7 +127,7 @@ export type StateHandler = (state: TransportState, detail: ConnectionStateDetail
  *
  * 모든 필드 readonly — 런타임에서 `Object.freeze`로 실제 방출되는 인스턴스도 불변이다
  * (mutation-isolation 룰, PopupTransport.ts 참조). 타입 레벨에서 미리 신호해 strict-mode
- * dApp의 in-place 수정 시도를 컴파일 타임에 잡는다.
+ * App의 in-place 수정 시도를 컴파일 타임에 잡는다.
  */
 export interface SignProgressInfo {
   readonly requestId: string

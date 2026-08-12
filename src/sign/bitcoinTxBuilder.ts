@@ -3,7 +3,7 @@
  *
  * `getBitcoinTransactionObject` / `addBitcoinTransactionInput` / `addBitcoinTransactionOutput`는
  * wm v2 wire가 기대하는 **flat `BitcoinWireTransaction`**(`{ inputs[], outputs[] }`)을 직접 누적한다.
- * dApp은 별도 변환 없이 builder 산출물을 그대로 송신한다:
+ * App은 별도 변환 없이 builder 산출물을 그대로 송신한다:
  *
  *   const tx = dcent.getBitcoinTransactionObject()
  *   dcent.addBitcoinTransactionInput(tx, prevTxHex, utxoIdx, 'p2wpkh', keyPath)

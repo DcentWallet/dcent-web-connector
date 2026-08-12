@@ -27,10 +27,10 @@ export function info (): Promise<V1Response> {
 }
 
 /**
- * v1 dcent.getDeviceInfo — D'CENT Biometric Wallet 디바이스 정보 조회.
+ * v1 dcent.getDeviceInfo — DCENT Biometric Wallet 디바이스 정보 조회.
  *
  * **m12-03 Layer A**: 반환 타입을 `V1Response<DeviceInfoPayload>`로 narrow.
- * dApp이 `resp.body.parameter?.label` 등 typed field를 직접 접근 가능.
+ * App이 `resp.body.parameter?.label` 등 typed field를 직접 접근 가능.
  * options arg는 비스코프 (first-call / device-discovery 성격).
  */
 export function getDeviceInfo (): Promise<V1Response<DeviceInfoPayload>> {
@@ -42,7 +42,7 @@ export function getDeviceInfo (): Promise<V1Response<DeviceInfoPayload>> {
  *
  * **m09-04-12**: 반환 타입을 `V1Response<AccountListV2Payload>`로 narrow.
  * connector는 sdk(m09-03-21)가 enrich한 응답을 그대로 forward — 변환 로직 없음.
- * dApp이 `resp.body.parameter?.account` 배열을 typed으로 접근 가능.
+ * App이 `resp.body.parameter?.account` 배열을 typed으로 접근 가능.
  */
 export function getAccountInfo (): Promise<V1Response<AccountListV2Payload>> {
   return _call({ method: 'getAccountInfo' }) as unknown as Promise<V1Response<AccountListV2Payload>>

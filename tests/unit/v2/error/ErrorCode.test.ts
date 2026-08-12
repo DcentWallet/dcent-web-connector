@@ -1,7 +1,7 @@
 /**
  * T-U-03, T-U-04, T-U-05: ErrorCode enum 값 검증
  *
- * JSON-RPC 2.0 표준 5개 + EIP-1193 표준 5개 + D'CENT 디바이스 5개 = 총 15개
+ * JSON-RPC 2.0 표준 5개 + EIP-1193 표준 5개 + 디센트 디바이스 5개 = 총 15개
  */
 import { ErrorCode } from '../../../../src/error/ErrorCode'
 
@@ -50,7 +50,7 @@ describe('ErrorCode', () => {
     })
   })
 
-  describe("D'CENT 디바이스 전용 코드 (T-U-05)", () => {
+  describe("디센트 디바이스 전용 코드 (T-U-05)", () => {
     it('DEVICE_NOT_CONNECTED === 5001', () => {
       expect(ErrorCode.DEVICE_NOT_CONNECTED).toBe(5001)
     })

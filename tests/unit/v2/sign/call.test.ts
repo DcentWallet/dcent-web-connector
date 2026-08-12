@@ -183,7 +183,7 @@ describe('_call — mutation 격리 (T-MUT-RESP)', () => {
     })
 
     const a = await _call({ method: 'info' })
-    // dApp이 반환된 parameter를 in-place 변경
+    // App이 반환된 parameter를 in-place 변경
     if (a.body.parameter) {
       a.body.parameter.label = 'mutated'
     }

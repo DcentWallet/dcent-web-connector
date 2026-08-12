@@ -27,7 +27,7 @@ import type { V1Response, V2SyncAccountInfo } from './types'
 /**
  * v1 dcent.setLabel (src-v1/index.js#l705-716) 1:1 port.
  *
- * @param label D'CENT biometric Wallet에 설정할 label (regex `/^[a-zA-Z\d.!#$%&\+\-_]{2,14}$/`)
+ * @param label 디센트 biometric Wallet에 설정할 label (regex `/^[a-zA-Z\d.!#$%&\+\-_]{2,14}$/`)
  * @throws dcentException('param_error') label regex unmatch 시
  */
 export function setLabel (label: string): Promise<V1Response> {

@@ -1,8 +1,8 @@
 /**
  * v2 에러 코드 enum
  *
- * JSON-RPC 2.0 표준 (-32700 ~ -32603) + EIP-1193 표준 (4xxx) + D'CENT 디바이스 전용 (5xxx)
- * 총 17개 코드(JSON-RPC 5 + EIP-1193 5 + D'CENT 7)를 정확한 값으로 export한다.
+ * JSON-RPC 2.0 표준 (-32700 ~ -32603) + EIP-1193 표준 (4xxx) + 디센트 디바이스 전용 (5xxx)
+ * 총 17개 코드(JSON-RPC 5 + EIP-1193 5 + 디센트 7)를 정확한 값으로 export한다.
  */
 export enum ErrorCode {
   // JSON-RPC 2.0 표준 (-32700 ~ -32603)
@@ -19,7 +19,7 @@ export enum ErrorCode {
   DISCONNECTED = 4900,
   CHAIN_DISCONNECTED = 4901,
 
-  // D'CENT 디바이스 전용 (5xxx) — EIP-1193 4xxx / JSON-RPC -32xxx와 충돌 없음
+  // 디센트 디바이스 전용 (5xxx) — EIP-1193 4xxx / JSON-RPC -32xxx와 충돌 없음
   DEVICE_NOT_CONNECTED = 5001,
   DEVICE_LOCKED = 5002,
   // DEVICE_TIMEOUT(5003)은 하드웨어(디바이스) 응답 timeout, TIMEOUT(5006)은 transport layer

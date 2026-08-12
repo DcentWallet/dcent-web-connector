@@ -1,7 +1,7 @@
 {
   "name": "dcent-web-connector",
   "version": "0.16.0",
-  "description": "D'CENT Web SDK Connector",
+  "description": "DCENT Web SDK Connector",
   "main": "dist/v2/dcent-web-connector.min.js",
   "module": "dist/v2/dcent-web-connector.min.js",
   "types": "dist/v2/index.d.ts",
@@ -59,11 +59,11 @@
     "url": "git+https://github.com/DcentWallet/dcent-web-connector.git"
   },
   "keywords": [
-    "D'CENT",
+    "DCENT",
     "dcent",
     "hardware wallet",
     "wallet sdk",
-    "D'CENT biometric wallet",
+    "DCENT biometric wallet",
     "dcent sdk",
     "dcent web sdk",
     "dcentwallet",

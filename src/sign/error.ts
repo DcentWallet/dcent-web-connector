@@ -39,7 +39,7 @@ const V2_TO_V1_CODE: Readonly<Record<number, string>> = Object.freeze({
   [ErrorCode.METHOD_NOT_FOUND]: 'method_not_found', // -32601
   [ErrorCode.INVALID_PARAMS]: 'param_error', // -32602 (v1 'param_error' 호환)
   [ErrorCode.INTERNAL_ERROR]: 'internal_error', // -32603
-  // D'CENT 5xxx
+  // DCENT 5xxx
   [ErrorCode.DEVICE_NOT_CONNECTED]: 'device_not_connected', // 5001
   [ErrorCode.DEVICE_LOCKED]: 'device_locked', // 5002
   [ErrorCode.DEVICE_TIMEOUT]: 'device_timeout', // 5003
@@ -53,7 +53,7 @@ const V2_TO_V1_CODE: Readonly<Record<number, string>> = Object.freeze({
  * v1 string code → v2 ErrorCode 역매핑.
  *
  * V2_TO_V1_CODE의 역방향. `'user_cancel'`은 USER_REJECTED(4001)/DEVICE_USER_CANCELLED(5004)
- * 두 v2 코드에 매핑되지만, dApp이 보는 v2 의미로는 EIP-1193 표준인 USER_REJECTED(4001)가
+ * 두 v2 코드에 매핑되지만, App이 보는 v2 의미로는 EIP-1193 표준인 USER_REJECTED(4001)가
  * canonical — 디바이스 측 cancel을 외부에서 별도 분기할 필요가 적기 때문.
  *
  * 매핑 안 되는 v1 code는 INTERNAL_ERROR(-32603)로 fallback. data.v1Code로 원본 보존.
@@ -71,7 +71,7 @@ const V1_TO_V2_CODE: Readonly<Record<string, ErrorCode>> = Object.freeze({
   method_not_found: ErrorCode.METHOD_NOT_FOUND, // -32601
   param_error: ErrorCode.INVALID_PARAMS, // -32602
   internal_error: ErrorCode.INTERNAL_ERROR, // -32603
-  // D'CENT 5xxx
+  // DCENT 5xxx
   device_not_connected: ErrorCode.DEVICE_NOT_CONNECTED, // 5001
   device_locked: ErrorCode.DEVICE_LOCKED, // 5002
   device_timeout: ErrorCode.DEVICE_TIMEOUT, // 5003

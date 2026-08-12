@@ -1,8 +1,8 @@
 /**
  * v2 sign 응답 타입 — v1 호환 형태 (m08-01-02)
  *
- * v1의 `messageReceive` 핸들러가 dApp에 돌려주던 payload(`{header, body}`) 구조와 1:1 호환.
- * dApp이 v2 통합 sign API를 호출할 때 받는 응답이 v1 시절과 동일한 shape을 갖도록 보장한다.
+ * v1의 `messageReceive` 핸들러가 App에 돌려주던 payload(`{header, body}`) 구조와 1:1 호환.
+ * App이 v2 통합 sign API를 호출할 때 받는 응답이 v1 시절과 동일한 shape을 갖도록 보장한다.
  *
  * **m12-03**: V1Response를 generic으로 확장해 `body.parameter`에 typed narrow를 지원.
  * 기존 호출자는 default `TParam = Record<string, unknown>`으로 backward-compat.
@@ -51,9 +51,9 @@ export interface V1ResponseBody<TParam = Record<string, unknown>> {
 /**
  * v1 호환 응답 — v2 통합 sign API의 반환 shape.
  *
- * v1 시절 dApp이 받던 `{header, body}` 구조와 1:1 동등.
+ * v1 시절 App이 받던 `{header, body}` 구조와 1:1 동등.
  * v2에서는 underlying transport가 JSON-RPC 2.0 envelope을 사용하지만,
- * connector facade가 이 envelope을 V1Response로 매핑하여 dApp 호환성을 유지한다.
+ * connector facade가 이 envelope을 V1Response로 매핑하여 App 호환성을 유지한다.
  *
  * **m12-03**: Generic `TParam` 지원 — `getDeviceInfo()`의 반환 타입을
  * `V1Response<DeviceInfoPayload>`로 narrow 가능. 기존 호출자는 default로 동작.
@@ -78,14 +78,14 @@ export interface V2SyncAccountInfo {
   chainId: string
   /** BIP44 key path (예: "m/44'/60'/0'/0/0"). */
   keyPath: string
-  /** D'CENT 지갑 표시 레이블. */
+  /** 디센트 지갑 표시 레이블. */
   label: string
   /**
    * 토큰 계정일 때만. native coin은 생략 (m13-02-08).
    *
    * NOTE(decision-anchor: m13-02-08-token-descriptor-parity):
    *   필드 이름·의미를 **서명 경로의 토큰 descriptor(wm `WireTokenDescriptor`)와 일치**시킨다.
-   *   dApp이 이미 서명에서 쓰는 형식이라 새로 배울 것이 없고, 체인별 예외가 한쪽에만 반영되는
+   *   App이 이미 서명에서 쓰는 형식이라 새로 배울 것이 없고, 체인별 예외가 한쪽에만 반영되는
    *   drift가 생기지 않는다. `to`/`amount`는 전송 전용이라 제외한다. `tokenId`(Tezos FA2 /
    *   ERC-1155)도 제외한다 — 기기 wire(`WamiSyncAccountV2`)에 **담을 필드가 없고**
    *   wm 해석기도 읽지 않아 효과가 0이다(토큰 구분은 컨트랙트 주소로 성립).
@@ -100,7 +100,7 @@ export interface V2SyncAccountInfo {
      * 토큰 컨트랙트/asset 식별자 — **체인이 실제로 쓰는 온체인 형식** 그대로.
      * (예: EVM `0x…` / SPL base58 mint / Hedera `0.0.333611` / NEAR `token.sweat` /
      *  Stellar `CODE-ISSUER` / Stacks `principal.contractName::assetName`)
-     * 지갑 내부 4-part 표기가 필요한 체인은 **지갑이 변환**한다 — dApp이 만들지 않는다.
+     * 지갑 내부 4-part 표기가 필요한 체인은 **지갑이 변환**한다 — App이 만들지 않는다.
      */
     contract: string
     /**
@@ -125,7 +125,7 @@ export interface V2SyncAccountInfo {
  * 진화하는 account-info 부가 메타데이터 (forward-compat 확장점).
  * SYNC: sdk accountV2 `V2AccountMeta` (정본 shape B) ↔ 짝 m09-03-27(sdk, addressFormat 도출) / m09-04-20(connector).
  *
- * **connector 변경 최소화 목적**: connector는 dApp이 npm으로 가져가는 패키지라 재배포가 어렵다.
+ * **connector 변경 최소화 목적**: connector는 App이 npm으로 가져가는 패키지라 재배포가 어렵다.
  * sdk(웹 배포)가 account-info에 추가하는 device-파생/진화 값들을 이 bag에 모아두면, sdk가 새 키를
  * 추가해도 index signature가 이미 수용하므로 connector 타입을 다시 수정·재배포할 필요가 없다.
  * (known 키는 문서화 목적의 optional 필드.) connector는 forward만 하므로 의미 해석 불필요.
@@ -139,7 +139,7 @@ export interface V2AccountMeta {
   /** 주소 인코딩 variant 힌트 (3축 disambiguation의 encoding 축). sdk가 도출(m09-03-27), connector는
    *  forward만. 'segwit-native'=BIP-84 bech32 / 'legacy'=같은 chainId에 segwit 형제가 실재하는
    *  bitcoin-family base(BITCOIN/DIGIBYTE 등)에만 부여. 그 외(customAddressPathFor/legacyFor 변형)는
-   *  인코딩이 같아 keyPath로 구분(미부여). dApp은 BTC legacy/segwit 구분에 사용. */
+   *  인코딩이 같아 keyPath로 구분(미부여). App은 BTC legacy/segwit 구분에 사용. */
   addressFormat?: AddressFormat
   /** forward-compat: 추후 sdk가 추가하는 account-info 부가값. connector 재배포 없이 확장.
    *  (addressFormat은 known 키로 승격되기 전부터 이 index signature로 이미 통과되어 왔다.) */
@@ -167,7 +167,7 @@ export type V2AccountInfo =
       contractAddress?: string
       /** 디바이스 address_path */
       keyPath: string
-      /** D'CENT 레이블 */
+      /** 디센트 레이블 */
       label: string
       /** 진화하는 부가 메타데이터(customToken 등). sdk가 새 키를 넣어도 connector 수정 불필요. */
       meta?: V2AccountMeta
@@ -191,7 +191,7 @@ export interface AccountListV2Payload {
 
 /* eslint-disable camelcase */
 /**
- * D'CENT 디바이스 정보 응답 payload (m12-03).
+ * 디센트 디바이스 정보 응답 payload (m12-03).
  *
  * `getDeviceInfo()` 응답의 `body.parameter` shape.
  * 모든 필드는 optional — b11-02(sdk)가 미SHIPPED이면 새 필드가 wire에 없어도 graceful.
@@ -206,7 +206,7 @@ export interface DeviceInfoPayload {
    *
    * ⚠️ (문서↔코드 감사 C3, 2026-07-21) **v1 의 `device_id` 가 아니라 `deviceId` 다.**
    * bridge 가 wire 로 내보내는 실제 키는 `deviceId`/`version` 인데(`DeviceInfoResult.ts`),
-   * 이 타입이 v1 이름(`device_id`/`fw_version`)을 선언하고 있어 dApp 이 타입을 믿고 읽으면
+   * 이 타입이 v1 이름(`device_id`/`fw_version`)을 선언하고 있어 App 이 타입을 믿고 읽으면
    * 항상 `undefined` 였다. v2 는 wire 키로 통일한다(사용자 결정 2026-07-21).
    */
   deviceId?: string
@@ -230,7 +230,7 @@ export interface DeviceInfoPayload {
    * 연결된 하드웨어 모델 식별자 (m09-04-28).
    *
    * - `'DCENT-X'` — DCENT X (펌웨어 1.x 라인)
-   * - `undefined` — D'CENT Biometric Wallet(V1, 펌웨어 1.x~2.x 라인) 또는 모델을 보고하지 않는 옛 bridge
+   * - `undefined` — DCENT Biometric Wallet(V1, 펌웨어 1.x~2.x 라인) 또는 모델을 보고하지 않는 옛 bridge
    *
    * NOTE(decision-anchor: dcentx-model-id-naming): 값 표기를 wm(`BleDeviceModel`,
    * `hw/ble-device-configs.ts`)의 `'DCENT-X'`(하이픈)에 맞춘다 — 모바일 앱의

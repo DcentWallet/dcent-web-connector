@@ -26,7 +26,7 @@ export interface PopupTransportOptions {
    * 60s(v1 동일)에서 상향: CIP-95(Cardano governance/DRep) 등 디바이스 서명을
    * 2회 받아야 하는 흐름은 사용자 confirm × 2 + 화면 확인 시간으로 60s를 넘겨
    * connector layer(TIMEOUT 5006)가 먼저 끊는 사례가 있었다. interactive 서명은
-   * 사람을 기다리므로 넉넉한 backstop이 필요. dApp이 더 짧게/길게 원하면
+   * 사람을 기다리므로 넉넉한 backstop이 필요. App이 더 짧게/길게 원하면
    * `setTimeOutMs` / 생성자 `timeoutMs`로 override 가능.
    */
   timeoutMs?: number
@@ -45,7 +45,7 @@ export interface PopupTransportOptions {
    * ⚠️ `timeoutMs`(request/response, 180s)와 **분리**한다. handshake ack는
    * 사람이 개입하지 않는 기계-대-기계 popup-load 확인 신호라, interactive 서명용
    * 180s backstop을 상속하면 dead/blocked/wrong-URL popup이 최대 190s(readyTimeout
-   * 10s + handshake 180s) 동안 dApp promise를 붙잡는 실패경로 latency 회귀가 생긴다.
+   * 10s + handshake 180s) 동안 App promise를 붙잡는 실패경로 latency 회귀가 생긴다.
    * handshake는 popup 로드 직후 즉시 응답되므로 60s로 충분하다 (PR #175 이전 동작 유지).
    */
   handshakeTimeoutMs?: number
@@ -309,7 +309,7 @@ export class PopupTransport implements MessageTransport {
     // 5. state → disconnected
     //    (2026-08-10) 기기 축은 'disconnected' 가 아니라 'unknown' 으로 되돌린다 — 팝업이
     //    닫히면 기기 상태를 **관측할 수 없게** 되는 것이지 기기가 빠진 게 아니다. 여기서
-    //    'disconnected' 로 적으면 dApp 에 거짓 단정이 나간다(MessageTransport.ts DeviceState 참조).
+    //    'disconnected' 로 적으면 App 에 거짓 단정이 나간다(MessageTransport.ts DeviceState 참조).
     //    두 축을 한 번에 넘겨 발행도 1회로 묶는다(applyState 의 쌍 dedupe).
     this.applyState({ popup: 'disconnected', device: 'unknown', deviceInfo: undefined })
 
@@ -364,15 +364,15 @@ export class PopupTransport implements MessageTransport {
     }
     // 🔴 **팝업이 새로 열리면 기기 축도 함께 되돌린다** (2026-08-11, PR #177 리뷰 P2).
     //
-    // 팝업 축만 갱신하면, 사용자가 팝업을 직접 닫고 **500ms 폴링이 돌기 전에** dApp 이
+    // 팝업 축만 갱신하면, 사용자가 팝업을 직접 닫고 **500ms 폴링이 돌기 전에** App 이
     // `send()` 를 부른 경우 `close()` 를 거치지 않고 여기서 새 팝업이 열린다. 그러면 이전
     // 팝업의 `device:'connected'` + 옛 `deviceId` 가 그대로 이어지고, 폴링은 이후 살아있는
     // 새 팝업을 보므로 다시 발동하지 않는다. 게다가 `currentState` 가 이미 'connected' 라
-    // 쌍 dedupe 에 걸려 **리스너가 한 번도 불리지 않는다** — dApp 은 팝업이 바뀐 사실도,
+    // 쌍 dedupe 에 걸려 **리스너가 한 번도 불리지 않는다** — App 은 팝업이 바뀐 사실도,
     // 기기 축이 미상이 된 사실도 알 수 없다.
     //
     // 'unknown' 인 이유는 `close()` 와 같다 — 새 팝업은 아직 기기를 **관측하지 못한** 것이지
-    // 기기가 빠진 게 아니다. 'disconnected' 로 적으면 dApp 에 거짓 단정이 나간다.
+    // 기기가 빠진 게 아니다. 'disconnected' 로 적으면 App 에 거짓 단정이 나간다.
     // 새 팝업이 handshake 후 `_deviceState` 를 보내면 그때 실제 값으로 채워진다.
     //
     // 첫 오픈(이전 팝업 없음)에서는 device 가 이미 'unknown' 이라 이 항은 no-op 이고,
@@ -416,7 +416,7 @@ export class PopupTransport implements MessageTransport {
         // resolve 로 끝나고 `_signProgress` 는 그대로 전달만 하는데, 이 신호는
         // `currentDeviceState` / `currentDeviceInfo` 를 갱신해 **이후 모든 state 발행**에
         // 반영된다. 게다가 응답 분기와 달리 맞춰야 할 요청 `id` 도 없다. 그래서 같은 origin 의
-        // 다른 창(이전 lifecycle 에서 남은 팝업, dApp 이 같은 origin 으로 연 다른 창)이
+        // 다른 창(이전 lifecycle 에서 남은 팝업, App 이 같은 origin 으로 연 다른 창)이
         // 기기 축을 뒤집고 `deviceId` 를 심을 수 있다.
         //
         // `_ready` / `_signProgress` 에는 아직 걸지 않았다 — `_ready` 는 handshake 타이밍상
@@ -434,7 +434,7 @@ export class PopupTransport implements MessageTransport {
           if (typeof raw === 'object' && raw !== null) {
             const r = raw as Record<string, unknown>
             // dapp-input-sanitization: known-fields whitelist 로만 추출한다. bridge 가 보낸
-            // 객체를 그대로 spread 하면 프로토타입 오염/미지 필드가 dApp 까지 그대로 흘러간다.
+            // 객체를 그대로 spread 하면 프로토타입 오염/미지 필드가 App 까지 그대로 흘러간다.
             const str = (v: unknown): string | undefined => (typeof v === 'string' && v.length > 0 ? v : undefined)
             // 필드 이름은 `getDeviceInfo()` 응답과 동일하다(MessageTransport.ts DeviceBriefInfo 참조).
             const connectType = r.connectType === 'usb' || r.connectType === 'ble' ? r.connectType : undefined
@@ -461,7 +461,7 @@ export class PopupTransport implements MessageTransport {
       if ((data as { type?: unknown }).type === '_signProgress') {
         const id = (data as { id?: unknown }).id
         if (typeof id !== 'string') return
-        // boundary-validation: `_handshake_*`는 내부 기계 요청 id — dApp progress 콜백에 노출 금지
+        // boundary-validation: `_handshake_*`는 내부 기계 요청 id — App progress 콜백에 노출 금지
         if (id.startsWith('_handshake_')) return
         // boundary-validation: 이미 resolve/timeout된 요청의 stale progress는 무시
         if (!this.pending.has(id)) return
@@ -703,7 +703,7 @@ export class PopupTransport implements MessageTransport {
    *
    * 🔴 단 **`deviceId` 는 비교에 넣는다.** 그건 표시값이 아니라 **기기를 특정하는 식별자**라,
    * 제외하면 `connected → connected` 로 **기기가 바뀌어도** `currentDeviceInfo` 만 조용히
-   * 갱신되고 dApp 은 옛 기기 정보에 고정된다 — 라벨 없는 기기를 구별하려고 `deviceId` 를 실은
+   * 갱신되고 App 은 옛 기기 정보에 고정된다 — 라벨 없는 기기를 구별하려고 `deviceId` 를 실은
    * 목적이 그 경로에서 사라진다. 실제 경로: bridge 가 `getDeviceInfo` 실패로 **info 없이**
    * connected 를 보낸 뒤(자동 재연결 resolver — bridge `main.tsx` 의 `catch` 후 dispatch),
    * 기기가 준비돼 실값이 담긴 connected 가 다시 와도 device 축이 같아 **빈 정보에 고정**된다.
@@ -721,7 +721,7 @@ export class PopupTransport implements MessageTransport {
     if ('deviceInfo' in next) this.currentDeviceInfo = next.deviceInfo
     if (!changed) return
 
-    // mutation-isolation: 방출 객체를 freeze — dApp 이 in-place 로 고쳐도 내부 상태가 오염되지
+    // mutation-isolation: 방출 객체를 freeze — App 이 in-place 로 고쳐도 내부 상태가 오염되지
     // 않는다(`SignProgressInfo` 와 동일 원칙). deviceInfo 는 수신 시점에 이미 freeze 돼 있다.
     const detail: ConnectionStateDetail = Object.freeze({
       popup,

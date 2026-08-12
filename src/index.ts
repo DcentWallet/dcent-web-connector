@@ -10,7 +10,7 @@
 // czon decimal lookup) 및 wrapper-only type 8개(EvmTokenContract / KlaytnContract /
 // EthereumTypeOptions / XrpTxObject / HederaTxParams / HederaMsgParams /
 // StellarTxParams / TronTxParams) 모두 제거. 단일 v2 wire `dcent.sign({chain, payload})`만
-// 외부 dApp 진입점으로 남는다 (connector-chain-addition-isolation 룰의 비전).
+// 외부 App 진입점으로 남는다 (connector-chain-addition-isolation 룰의 비전).
 //
 // 보존: v1 enum (coinType / coinGroup / coinName / bitcoinTxType / klaytnTxType / xrpTxType /
 // state / coinDecimals) + utility (unitConverter) + sign / read-only / configure / bitcoin tx
@@ -158,7 +158,7 @@ export type { GetAddressV2Input } from './sign'
 export type { AddressFormat } from './sign'
 // m09-04-21: v2 getPublicKey verb input type (chain-agnostic — Cardano payment/stake/drep)
 export type { GetPublicKeyV2Input } from './sign'
-// v1 validator helpers — dApp 표면 1:1 보존 (v1 typo `getCzonePrifix` 포함)
+// v1 validator helpers — App 표면 1:1 보존 (v1 typo `getCzonePrifix` 포함)
 export {
   isAvaliableCoinType,
   isCzoneCoinType,
@@ -173,7 +173,7 @@ export {
 
 // === default export object (v1 호환 패턴) ===
 //
-// dApp이 `import dcent from 'dcent-web-connector'` 또는 `const dcent = require(...)`로
+// App이 `import dcent from 'dcent-web-connector'` 또는 `const dcent = require(...)`로
 // 받았을 때 v1과 동등한 멤버 접근 (`dcent.coinType`, `dcent.setTimeOutMs(...)`)이 가능.
 const dcent = {
   // lifecycle
@@ -210,7 +210,7 @@ const dcent = {
   getBitcoinTransactionObject,
   addBitcoinTransactionInput,
   addBitcoinTransactionOutput,
-  // m08-01-02.5: v1 validator helpers (dApp 표면 1:1 보존 — v1 typo 포함)
+  // m08-01-02.5: v1 validator helpers (App 표면 1:1 보존 — v1 typo 포함)
   isAvaliableCoinType,
   isCzoneCoinType,
   isParachainCoinType,

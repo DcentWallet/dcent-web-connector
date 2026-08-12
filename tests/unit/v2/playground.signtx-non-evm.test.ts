@@ -383,7 +383,7 @@ it('T-U-NEVM-04: presets.non-evm.json — wm 등록 family preset 모두 valid J
 // ─────────────────────────────────────────────────────────────────────────────
 // T-U-NEVM-SOL-SUB-01~06: _substituteSolanaSigner helper — placeholder feePayer/signer
 // pubkey 를 wallet address 로 치환. programId / non-signer 키 / recipient 는 보존.
-// dApp 이 placeholder 만 보낼 때 device 서명 후 @solana/web3.js addSignature reject 되는
+// App 이 placeholder 만 보낼 때 device 서명 후 @solana/web3.js addSignature reject 되는
 // 버그를 playground 단에서 미리 차단.
 // ─────────────────────────────────────────────────────────────────────────────
 describe('_substituteSolanaSigner: placeholder → wallet address', () => {
@@ -726,7 +726,7 @@ describe('_substituteAlgorandSender: placeholder → wallet address', () => {
 
 // ─────────────────────────────────────────────────────────────────────────────
 // T-U-NEVM-XRP-SUB-*: _substituteXrpAccount — XRPL/Xahau Payment 의 Account 필드 치환.
-// dApp 이 placeholder Account 를 보내면 firmware 가 Account ↔ derived pubkey 불일치로
+// App 이 placeholder Account 를 보내면 firmware 가 Account ↔ derived pubkey 불일치로
 // 'Invalid Unsigned'(invalid_format) reject — getAddress 선행 후 Account 치환으로 해소.
 // ─────────────────────────────────────────────────────────────────────────────
 describe('_substituteXrpAccount: placeholder → wallet r-address', () => {
@@ -1021,7 +1021,7 @@ describe('_substituteHederaSender: placeholder → wallet 0.0.X', () => {
 // T-U-NEVM-06: Solana multi-format presets — Case 1 (base58 serialized) + Case 2 (plain
 // JSON with 4 data variants) + Case 3 (wm-internal TransactionCommon) 모두 존재 + shape 가드.
 // connector 는 chain-agnostic opaque pass-through이므로 connector 자체의 변환 책임은 없지만,
-// playground 의 preset이 모든 입력 형태를 dApp 개발자에게 제공해야 한다.
+// playground 의 preset이 모든 입력 형태를 App 개발자에게 제공해야 한다.
 // ─────────────────────────────────────────────────────────────────────────────
 it('T-U-NEVM-06: Solana multi-format presets — Case 1/2a-d/3 모두 존재 + shape 가드', () => {
   const presetsPath = path.resolve(__dirname, '../../../playground/presets.non-evm.json')
@@ -1326,7 +1326,7 @@ describe('누락보강 5 family — signTx/getAddress 도달성', () => {
 
 // ─────────────────────────────────────────────────────────────────────────────
 // T-U-CARDANO-01: ada-transfer preset 제거 가드 (wire-sign 미지원)
-// dApp-wire Shape 1 (senderAddress/receiverAddress/lovelaceToSend) transfer-build 는
+// App-wire Shape 1 (senderAddress/receiverAddress/lovelaceToSend) transfer-build 는
 // SDK wire-sign 경로에서 본질적으로 미지원 — synthesizeAccount 가 UTXO 를 채우지 않아
 // wm cardano/transaction.ts:169 (commonAccountInfo.extra.utxoList) 에서 크래시한다.
 // (signTransaction [cip34:1-...] -> "Cannot read properties of undefined (reading 'extra')")
@@ -1623,7 +1623,7 @@ describe('T-BLOB-SHAPE-01 / T-BLOB-REMOVE-01: blob preset 완성 + 미지원 for
     //
     // ⚠️ **Tezos 도 2026-07-21 제외** — 단, Solana 와 사유가 다르다. Solana 는 wm 이 이미 열려서
     //   빠졌지만, Tezos 는 **아직 안 열렸는데도** form-D 를 정식 경로로 채택했다:
-    //     · form-E(`parameters` Michelson)는 wm registry 등록 토큰에서만 동작 → dApp 에 비공개
+    //     · form-E(`parameters` Michelson)는 wm registry 등록 토큰에서만 동작 → App 에 비공개
     //       allowlist 를 강요한다. form-D 는 앱이 `decimals` 를 실어 미등록 토큰도 동일하게 동작.
     //       → registry 는 서명 전제조건이 아니라 **표시 보강**이어야 한다는 정책 결정.
     //     · 실측(2026-07-21, 실기기 Shadownet): form-D 로 토큰 해석은 **통과**했고
@@ -1654,7 +1654,7 @@ describe('T-BLOB-SHAPE-01 / T-BLOB-REMOVE-01: blob preset 완성 + 미지원 for
   })
 
   // 2026-07-21 — Solana form-D 재도입. wm 이 no-network 에서 요구하는 **완성 3필드**를 preset 이
-  //   갖고 있지 않으면 dApp 이 그대로 보냈을 때 `-32602` 가 난다(wm signTransactionFromWire §5.2c).
+  //   갖고 있지 않으면 App 이 그대로 보냈을 때 `-32602` 가 난다(wm signTransactionFromWire §5.2c).
   //   또한 수신 ATA 를 preset 에 실으면 "앱이 목적지를 정한다"는 잘못된 관례가 생긴다 —
   //   wm 은 owner+mint 로 오프라인 파생하므로 실어봐야 무시되고 오해만 남는다.
   it('T-SOL-FORMD-01: Solana form-D descriptor preset — no-network 완성 3필드 + ATA 미포함', () => {

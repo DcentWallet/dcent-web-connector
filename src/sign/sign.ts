@@ -1,7 +1,7 @@
 /**
  * v2 sign — public 통합 sign API (m09-04-01 NEW schema, m09-04-05 payload contract)
  *
- * dApp이 호출하는 단일 진입점.
+ * App이 호출하는 단일 진입점.
  *
  * Schema (2026-05-21 사용자 결정):
  *   기존: sign({chain, payload})  — chain 문자열이 곧 method
@@ -19,7 +19,7 @@
  * 룰 준수:
  *   - dapp-input-sanitization: method / chainId / payload 검증 (C3). family-specific 필드는 bridge sdk 책임
  *   - error-handling-consistency: V1Response를 그대로 반환 (throw는 sanitize / validatePayload에서만)
- *   - provider-security-checklist C3: method / chainId / payload는 dApp-controllable.
+ *   - provider-security-checklist C3: method / chainId / payload는 App-controllable.
  *     connector 경계에서 universal shape contract를 강제하고, family-specific 필드는 sdk가 처리.
  *   - connector-chain-addition-isolation: chain enum / 정적 매핑 부재. _validateSignPayload는 family-agnostic.
  */
@@ -78,7 +78,7 @@ export interface SignInput {
 }
 
 /**
- * 통합 sign API — dApp이 method + chainId + payload만 알면 호출 가능.
+ * 통합 sign API — App이 method + chainId + payload만 알면 호출 가능.
  *
  * @example EVM personal_sign (signMessage)
  *   await dcent.sign({
@@ -88,7 +88,7 @@ export interface SignInput {
  *       keyPath: "m/44'/60'/0'/0/0",
  *       message: '0x48656c6c6f',
  *       // EVM family는 sdk가 wallet-models proxy에 address를 자동 inject (m09-03-05).
- *       // dApp이 address를 보내도 sdk가 무시 (family-specific은 sdk 책임).
+ *       // App이 address를 보내도 sdk가 무시 (family-specific은 sdk 책임).
  *     },
  *   })
  *

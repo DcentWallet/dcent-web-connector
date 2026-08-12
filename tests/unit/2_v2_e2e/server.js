@@ -1,6 +1,6 @@
 /**
  * v2 e2e 정적 server — 두 정적 server를 한 process에서 launch
- * - harness server (port 9091): connector tests/dist/v2 serve. dApp 가짜 페이지 호스팅.
+ * - harness server (port 9091): connector tests/dist/v2 serve. App 가짜 페이지 호스팅.
  * - sdk static server (port 5174): main-repos/dcent-web-sdk/dist/ serve. m02-03 vite build 산출물.
  *   sdk SPA fallback 처리(unmatched route → /index.html).
  *

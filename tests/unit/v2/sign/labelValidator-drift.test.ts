@@ -17,7 +17,7 @@ describe('labelValidator drift — m08-01-02.5 (v1 regex 1:1)', () => {
       'AAAAAAAAAAAAAA', // 길이 14 (최대)
       '.!#$%&+_-', // 모든 허용 특수문자
       'mywallet',
-      'D-CENT_001',
+      'DCENT_001',
     ])('valid "%s" → true', (label) => {
       expect(isAvaliableLabel(label)).toBe(true)
     })

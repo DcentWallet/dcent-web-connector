@@ -3,7 +3,7 @@
  *
  * T-U-GAI-01: getAccountInfo() 반환 타입이 V1Response<AccountListV2Payload>로 narrowed.
  *   connector는 sdk(m09-03-21)가 enrich한 응답을 그대로 forward — 변환 로직 없음.
- *   dApp이 `resp.body.parameter?.account` 배열을 typed으로 접근 가능.
+ *   App이 `resp.body.parameter?.account` 배열을 typed으로 접근 가능.
  *
  * connector-chain-addition-isolation: getAccountInfo는 응답 forward만.
  * 실제 enrich(chainId 주입, unresolved 마킹)는 sdk(m09-03-21) 담당.
@@ -133,7 +133,7 @@ describe('getAccountInfo v2 — m09-04-12', () => {
 
   // T-U-AF-RT-01: sdk(m09-03-27)가 도출한 meta.addressFormat이 connector를 그대로 통과(passthrough).
   // connector는 forward만 — meta 값을 해석/검증하지 않음 (connector-chain-addition-isolation).
-  test('T-U-AF-RT-01: meta.addressFormat:"segwit-native" account → getAccountInfo passthrough → dApp이 meta.addressFormat 접근', async () => {
+  test('T-U-AF-RT-01: meta.addressFormat:"segwit-native" account → getAccountInfo passthrough → App이 meta.addressFormat 접근', async () => {
     const { transport } = ensureSingleton()
 
     // 컴파일 타임 검증 — V2AccountMeta가 addressFormat known key를 수용 (T-TSC-01 대상)
@@ -157,7 +157,7 @@ describe('getAccountInfo v2 — m09-04-12', () => {
       // 컴파일 타임 가드 — meta.addressFormat이 known key(AddressFormat)로 타입됨을 강제.
       // addressFormat이 index signature(unknown)로 회귀하면 이 binding이 컴파일 실패한다.
       const fmt: AddressFormat | undefined = acc.meta?.addressFormat
-      // passthrough — dApp이 BTC legacy/segwit 구분에 사용
+      // passthrough — App이 BTC legacy/segwit 구분에 사용
       expect(fmt).toBe('segwit-native')
       expect(acc.chainId).toBe('bip122:000000000019d6689c085ae165831e93/slip44:0')
     }

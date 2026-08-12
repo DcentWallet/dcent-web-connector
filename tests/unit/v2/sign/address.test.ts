@@ -231,14 +231,14 @@ describe('getAddress v2 chainId facade — m11-01-02', () => {
 
   test('T-U-02.b: v2 path chainId가 string이 아님 → param_error reject', async () => {
     await expect(
-      // 런타임에 dApp이 typescript 우회해서 잘못된 타입을 보낼 수 있는 케이스 가드
+      // 런타임에 App이 typescript 우회해서 잘못된 타입을 보낼 수 있는 케이스 가드
       getAddress({ chainId: 123 as unknown as string, keyPath: "m/44'/60'/0'/0/0" }),
     ).rejects.toEqual(expectV1Error('param_error', 'chainId required'))
   })
 
   test('T-U-03: v2 path keyPath 누락 → param_error reject (keyPath required)', async () => {
     await expect(
-      // dApp이 keyPath 빠뜨린 케이스
+      // App이 keyPath 빠뜨린 케이스
       getAddress({ chainId: 'eip155:1/slip44:60' } as unknown as GetAddressV2Input),
     ).rejects.toEqual(expectV1Error('param_error', 'keyPath required'))
   })
@@ -316,7 +316,7 @@ describe('getAddress v2 chainId facade — m11-01-02', () => {
 
   test('T-U-08: array 입력 → param_error reject (typeof [] === object 함정 명시 거부)', async () => {
     await expect(
-      // dApp이 실수로 array를 보낼 경우 (TypeScript 우회 시 catch 가능해야 함)
+      // App이 실수로 array를 보낼 경우 (TypeScript 우회 시 catch 가능해야 함)
       getAddress(['ETHEREUM', "m/44'/60'/0'/0/0"] as any),
     ).rejects.toEqual(
       expectV1Error(

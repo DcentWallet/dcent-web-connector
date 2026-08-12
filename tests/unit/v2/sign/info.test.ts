@@ -162,7 +162,7 @@ describe('T-U-DEVMODEL-* — DeviceInfoPayload.deviceModel relay 계약', () => 
     expect(src).toContain('NOTE(decision-anchor: dcentx-model-id-naming)')
   })
 
-  test('T-U-DEVMODEL-02: bridge 가 deviceModel 을 보내면 dApp payload 에 그대로 실린다', async () => {
+  test('T-U-DEVMODEL-02: bridge 가 deviceModel 을 보내면 App payload 에 그대로 실린다', async () => {
     const { transport } = ensureSingleton()
     jest.spyOn(transport, 'send').mockResolvedValue({
       id: 'r-model',
@@ -171,7 +171,7 @@ describe('T-U-DEVMODEL-* — DeviceInfoPayload.deviceModel relay 계약', () => 
 
     const resp = await getDeviceInfo()
 
-    // 재매핑 금지 — wm 표기('DCENT-X', 하이픈)가 그대로 dApp 까지 간다
+    // 재매핑 금지 — wm 표기('DCENT-X', 하이픈)가 그대로 App 까지 간다
     expect(resp.body.parameter?.deviceModel).toBe('DCENT-X')
     expect(resp.body.parameter?.version).toBe('1.0.0')
   })

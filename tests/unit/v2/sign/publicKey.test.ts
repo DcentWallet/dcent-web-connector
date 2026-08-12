@@ -259,7 +259,7 @@ describe('getPublicKey v2 facade — mutation 격리 (nested payload, cross-revi
     jest.spyOn(transport, 'send').mockResolvedValue({ id: 'gp-mut', result: sharedResult })
 
     const a = await getPublicKey({ chainId: 'cip34:1-764824073', keyPath: "m/1852'/1815'/0'/0/0" })
-    // dApp이 반환된 nested role 객체를 in-place 변경
+    // App이 반환된 nested role 객체를 in-place 변경
     ;(a.body.parameter as any).payment.publicKey = 'ffff'
 
     const b = await getPublicKey({ chainId: 'cip34:1-764824073', keyPath: "m/1852'/1815'/0'/0/0" })

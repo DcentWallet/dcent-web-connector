@@ -2,7 +2,7 @@
  * v2 sign — barrel export (m09-04-01: v1 wrapper paths 제거 후)
  *
  * sign 디렉토리의 public surface를 한 곳에서 export.
- * src/index.ts (v2 facade entry)가 본 모듈을 import하여 dApp에 노출한다.
+ * src/index.ts (v2 facade entry)가 본 모듈을 import하여 App에 노출한다.
  *
  * m09-04-01 변경: v1 wrapper 21개 + chain → method 정적 매핑 + 전용 helper 3개
  * (typeOptions sanitize / checkParameter / czon decimal lookup) export 제거.
@@ -51,7 +51,7 @@ export type {
   BitcoinWireTxType,
 } from './bitcoinTxBuilder'
 
-// v1 validator helpers — 보존. dApp 표면 1:1 유지.
+// v1 validator helpers — 보존. App 표면 1:1 유지.
 export {
   isAvaliableCoinType,
   isCzoneCoinType,

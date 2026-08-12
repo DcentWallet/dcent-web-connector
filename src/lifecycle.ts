@@ -11,7 +11,7 @@
  *
  * 룰 준수:
  *   - error-handling-consistency: setTimeOutMs의 invalid 입력은 PopupTransport.setTimeoutMs가 throw.
- *     dApp이 catch. silent fail 금지.
+ *     App이 catch. silent fail 금지.
  *   - boundary-validation: ms / listener 인자 검증은 PopupTransport.setTimeoutMs / .on이 수행
  *     (lifecycle은 pass-through).
  */
@@ -50,7 +50,7 @@ export function setTimeOutMs (timeOutMs: number): void {
  * transport가 이미 있으면 즉시 transport.on('state', listener) 호출.
  *
  * 동일 listener를 여러 번 호출하면 그만큼 중복 등록된다 (caller 책임).
- * v1에서도 동일 동작이며, dApp의 일반 사용 패턴은 1회 호출.
+ * v1에서도 동일 동작이며, App의 일반 사용 패턴은 1회 호출.
  */
 export function setConnectionListener (listener: ConnectionListener): void {
   _registerStateListener(listener)

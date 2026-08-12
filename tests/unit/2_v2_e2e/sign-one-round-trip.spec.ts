@@ -11,10 +11,10 @@
  * 범위 (objective 4-1 + Pre-Plan 4-2 scope 조정):
  *
  * 본 spec은 **Pre-popup connector facade boundary**를 검증한다.
- * Real D'CENT 디바이스 또는 mock-sdk popup 인프라가 부재한 CI 환경에서는
+ * Real 디센트 디바이스 또는 mock-sdk popup 인프라가 부재한 CI 환경에서는
  * 실 sdk popup으로의 round-trip이 디바이스 응답 대기로 hang된다 (30s timeout).
  * 따라서 본 spec은 다음만 자동 검증:
- *   - dApp이 `dcent.sign({method, chainId, payload})`를 호출했을 때 connector facade가
+ *   - App이 `dcent.sign({method, chainId, payload})`를 호출했을 때 connector facade가
  *     수행하는 input validation / sanitize / chain-passthrough 동작
  *   - m09-04-05 _validateSignPayload contract 회귀 가드
  *   - m09-04-01 NEW schema {method, chainId, payload} entry point 동작 확인
@@ -22,8 +22,8 @@
  *   - m09-03-05 sdk helper SYNC drift 검사 (fixture와 sdk 양쪽 grep)
  *
  * Full envelope round-trip + Layer 4 silent override + 실 디바이스 sign 성공은
- * **manual UAT 영역** (objective DoD §9 마지막 항목). 실 D'CENT 디바이스 +
- * v2bridge.dcentwallet.com + connector v2 + dApp(playground)에서 사용자가 수행.
+ * **manual UAT 영역** (objective DoD §9 마지막 항목). 실 디센트 디바이스 +
+ * v2bridge.dcentwallet.com + connector v2 + App(playground)에서 사용자가 수행.
  *
  * SYNC: m09-03-05 _assertValidAccount / _assertWmRegistrable / _injectDappParamsAddress
  *
@@ -228,7 +228,7 @@ describe('[v2 e2e] m09-04-07 sign one-round-trip — connector facade boundary',
   // T-E2E-OTRT-01 / 02 / 03 / 06 — Manual UAT 영역
   // ──────────────────────────────────────────────────────────────────────────
   //
-  // 다음 시나리오는 real D'CENT 디바이스 또는 mock-sdk popup 인프라가 필요하며
+  // 다음 시나리오는 real 디센트 디바이스 또는 mock-sdk popup 인프라가 필요하며
   // 본 PR 범위 밖이다. objective 비스코프 (4-1) + DoD §9 마지막 항목 (manual UAT) 참조.
   //
   //   T-E2E-OTRT-01: v1 path-only (address 없음) round-trip success
@@ -237,7 +237,7 @@ describe('[v2 e2e] m09-04-07 sign one-round-trip — connector facade boundary',
   //   T-E2E-OTRT-06: signTransaction (from 누락) → sdk Layer 4 inject
   //
   // 사용자 manual UAT (objective DoD §9):
-  //   실 D'CENT 디바이스 + v2bridge.dcentwallet.com + connector v2 + dApp(playground)에서
+  //   실 디센트 디바이스 + v2bridge.dcentwallet.com + connector v2 + App(playground)에서
   //   sign 한바퀴 (v1 path-only 패턴 + WC 표준 모두) 성공 — m09-03-03 UAT 회귀 종료 확인
 
   it.todo('T-E2E-OTRT-01: v1 path-only round-trip success — manual UAT 영역')

@@ -4,7 +4,7 @@
  * v1의 `dcent.call(params)` (src-v1/index.js#L172-L222)와 1:1 호환되는 internal helper.
  * - PopupTransport.send를 통해 popup으로 메시지 송신
  * - SerialRequestQueue로 요청 직렬화 (v1과 동등한 단일 inflight 보장)
- * - 응답을 V1Response 형태로 변환하여 dApp 호환성 유지
+ * - 응답을 V1Response 형태로 변환하여 App 호환성 유지
  *
  * 응답 envelope 매핑 정책 (R3):
  *   - PopupTransport.send 응답 = ResponseEnvelope<T> = { id, result?, error? }
@@ -63,7 +63,7 @@ function isV1ResponseShape (result: unknown): result is V1Response {
  *
  * shallow spread(`{ ...parameter }`)는 top-level 키만 분리하므로, parameter가
  * **중첩 객체/배열**을 담으면(예: getPublicKey의 `{payment,stake,drep}` role 객체,
- * getAccountInfo의 account 배열) dApp이 `parameter.payment.publicKey`를 in-place 변경할 때
+ * getAccountInfo의 account 배열) App이 `parameter.payment.publicKey`를 in-place 변경할 때
  * popup이 보낸 원본(또는 같은 객체를 재사용하는 다음 응답)에 leak된다.
  * deep-clone으로 반환 시점에 완전히 분리한다.
  *
@@ -114,7 +114,7 @@ function wrapV1Success (result: unknown, method: string): V1Response {
  * v1 형식 응답을 매 호출마다 새 객체로 복사 (mutation-isolation T-MUT-RESP-01/02).
  *
  * 두 번 _call 호출 시 두 V1Response가 서로 다른 reference여야 하며,
- * dApp이 한쪽 parameter를 변경해도 다른 호출 결과 또는 popup이 보낸 원본에 영향을 주지 않아야 한다.
+ * App이 한쪽 parameter를 변경해도 다른 호출 결과 또는 popup이 보낸 원본에 영향을 주지 않아야 한다.
  */
 function cloneV1Response (response: V1Response): V1Response {
   const cloned: V1Response = {
@@ -163,7 +163,7 @@ export async function _call (input: CallInput): Promise<V1Response> {
     if (envelope && envelope.error) {
       // popup(sdk PopupListener)이 envelope.error로 실패를 보낸 경우. sdk는 ProviderRpcError의
       // number code (예: -32601 method_not_found, -32603 internal_error, -32602 invalid_params)를
-      // 그대로 envelope.error.code에 보존해 송신한다. dApp이 보는 v1 string code 의미를
+      // 그대로 envelope.error.code에 보존해 송신한다. App이 보는 v1 string code 의미를
       // 보존하려면 ProviderError 인스턴스로 wrap해 V2_TO_V1_CODE 테이블을 거쳐야 한다 —
       // plain Error로 넘기면 'internal_error'로 평탄화되어 -32601 등 JSON-RPC 표준 의미가 유실됨.
       // 매핑 테이블에 없는 code는 여전히 'internal_error' fallback (V2_TO_V1_CODE 정의 기준).

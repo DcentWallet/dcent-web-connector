@@ -1,11 +1,11 @@
 /**
  * transport 옵션 sanitize + wire 변환 (m09-04-03)
  *
- * dApp이 dcent.sign() 옵션으로 넘긴 transport 값을 sanitize한다.
+ * App이 dcent.sign() 옵션으로 넘긴 transport 값을 sanitize한다.
  *
  * 적용 룰:
  *   - dapp-input-sanitization: known whitelist ('hid' | 'ble' | undefined)만 허용, 나머지 throw
- *   - provider-security-checklist C3: transport는 dApp-controllable — connector facade에서 검증
+ *   - provider-security-checklist C3: transport는 App-controllable — connector facade에서 검증
  *   - provider-security-checklist C6: invalid 값 → ProviderError(INVALID_PARAMS) 래핑
  *   - error-handling-consistency: invalid 값은 throw로 통일 (silent return 금지)
  *   - boundary-validation: "throw 우선" 원칙 — null / '' / 그 외 string / object 모두 throw
@@ -21,13 +21,13 @@ import { ProviderError } from '../error/ProviderError'
 import { ErrorCode } from '../error/ErrorCode'
 
 /**
- * dApp이 dcent.sign 옵션으로 넘긴 transport 값을 sanitize.
+ * App이 dcent.sign 옵션으로 넘긴 transport 값을 sanitize.
  *
  * - 정상: 'hid' | 'ble' → 그대로 반환
  * - 미사용: undefined → undefined (toWireTransport에서 'hid'로 변환 — DC-2701)
  * - invalid: null / '' / 그 외 string / object → throw ProviderError(INVALID_PARAMS)
  *
- * @param transport dApp이 넘긴 transport 값 (unknown)
+ * @param transport App이 넘긴 transport 값 (unknown)
  * @returns 'hid' | 'ble' | undefined
  * @throws ProviderError(INVALID_PARAMS) — invalid 값
  */
@@ -46,7 +46,7 @@ export function _sanitizeTransportOption (
  * sanitize 결과를 wire 값으로 변환.
  * handshake message body params.transport 동봉 시점에 호출.
  *
- * (DC-2701) 'auto' 제거 + 3-state wire — dApp이 명시한 transport를 그대로 sdk로 전달한다.
+ * (DC-2701) 'auto' 제거 + 3-state wire — App이 명시한 transport를 그대로 sdk로 전달한다.
  * sdk가 3가지를 분기한다:
  *   - 'hid'      → USB 전용 picker + HID 자동연결 (Case A/B)
  *   - 'ble'      → BLE 전용 picker, 자동연결 안 함 (Case B)

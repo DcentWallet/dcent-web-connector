@@ -432,7 +432,7 @@ const checkParameter = (type, param) => {
 }
 
 /**
- * Returns D'CENT Bridge (Tray Daemon) status infomation.
+ * Returns DCENT Bridge (Tray Daemon) status infomation.
  * 
  * @returns {Object} that Bridge Status Infomation.  
  */
@@ -457,7 +457,7 @@ dcent.setTimeOutMs = function (timeOutMs) {
 }
 
 /**
- * Returns D'CENT Biometric Wallet status infomation.
+ * Returns DCENT Biometric Wallet status infomation.
  * 
  * @returns {Object} that Wallet device information.
  */
@@ -697,9 +697,9 @@ function getCzonDecimal (coinType) {
 }
 
 /**
- * Set your label name to the D'CENT biometric Wallet. If you reboot your D'CENT, you can see the label name.
+ * Set your label name to the DCENT biometric Wallet. If you reboot your DCENT, you can see the label name.
  * 
- * @param {string} label the label name of D'CENT biometric Wallet.
+ * @param {string} label the label name of DCENT biometric Wallet.
  * @returns {Object} set result. true, if you set completely otherwise false.
  */
 dcent.setLabel = async function (label) {
@@ -832,7 +832,7 @@ dcent.getXPUB = async function (key, bip32name) {
 /**
  * Returns a JSON Object for Bitcoin transaction.
  * @param {string} coinType coin type
- * @returns {Object} that D'CENT Bitcoin Transaction JSON Object.
+ * @returns {Object} that DCENT Bitcoin Transaction JSON Object.
  */
 dcent.getBitcoinTransactionObject = function (coinType) {
   if (!isBitcoinTxCoinType(coinType)) {

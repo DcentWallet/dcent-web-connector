@@ -192,8 +192,8 @@ export function isParachainCoinType (coinType: string): boolean {
 /**
  * v1 getCzonePrifix (src-v1/index.js#l681-688) 1:1 port.
  *
- * **v1 typo `getCzonePrifix` 그대로 보존** — dApp이 v1에서 import한 이름과 동일해야 함.
- * 의미상으로는 `getCzonePrefix`가 맞으나 v2에서 오타 수정 시 dApp이 호출 표면 깨짐.
+ * **v1 typo `getCzonePrifix` 그대로 보존** — App이 v1에서 import한 이름과 동일해야 함.
+ * 의미상으로는 `getCzonePrefix`가 맞으나 v2에서 오타 수정 시 App이 호출 표면 깨짐.
  *
  * COREUM → `Buffer.from('core', 'utf8').toString('hex')` ('636f7265' = "core" hex 인코딩).
  * 그 외 → undefined.

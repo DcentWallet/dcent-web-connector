@@ -1,11 +1,11 @@
 /**
  * v2 sign — `method` + `chainId` 인자 sanitize (m09-04-01 NEW schema)
  *
- * dApp이 sign({method, chainId, payload})에서 전달하는 `method` / `chainId` 값을 사용 전에 검증한다.
+ * App이 sign({method, chainId, payload})에서 전달하는 `method` / `chainId` 값을 사용 전에 검증한다.
  *
  * 적용 룰:
- *   - dapp-input-sanitization: dApp 입력 객체 직접 pass-through 금지. type / 길이 / whitelist 검증
- *   - provider-security-checklist C3: method / chainId는 origin-fixed가 아니라 dApp-controllable.
+ *   - dapp-input-sanitization: App 입력 객체 직접 pass-through 금지. type / 길이 / whitelist 검증
+ *   - provider-security-checklist C3: method / chainId는 origin-fixed가 아니라 App-controllable.
  *     EIP-1193 / SIWS 처럼 spec이 강제하는 형식이 아니므로 connector facade에서 자체 검증.
  *
  * 검증 단계 (method, chainId 공통):
@@ -91,7 +91,7 @@ function _sanitizeString (value: unknown, fieldName: string): string {
  * method 인자를 검증하고 valid string을 반환한다.
  *
  * connector-chain-addition-isolation 룰에 따라 method enum 매핑은 두지 않는다.
- * intent literal 2개(signMessage / signTransaction)는 dApp이 자유롭게 사용하지만,
+ * intent literal 2개(signMessage / signTransaction)는 App이 자유롭게 사용하지만,
  * connector는 whitelist 통과한 임의 method 문자열을 sdk로 그대로 forward한다.
  *
  * @throws ProviderError(INVALID_PARAMS) — 검증 실패 시. v1 호환 throw 패턴.

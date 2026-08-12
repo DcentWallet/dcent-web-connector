@@ -1,5 +1,5 @@
 /**
- * playground.signdata-authentry.test.ts — dApp 전용 sign 메서드 UI 노드 회귀 테스트
+ * playground.signdata-authentry.test.ts — App 전용 sign 메서드 UI 노드 회귀 테스트
  *
  * m10-01-11/12/14로 SDK 핸들러(signData / signAuthEntry / Stellar signMessage)는 머지됐으나
  * connector playground에 invoke할 트리 노드/폼/dispatcher가 없던 갭을 메운 변경의 회귀 방지.

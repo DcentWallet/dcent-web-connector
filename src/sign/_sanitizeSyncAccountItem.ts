@@ -1,7 +1,7 @@
 /**
  * v2 syncAccount per-item sanitize (m09-04-12)
  *
- * dApp이 syncAccount(accountInfos) 로 전달하는 각 항목을 사용 전에 검증한다.
+ * App이 syncAccount(accountInfos) 로 전달하는 각 항목을 사용 전에 검증한다.
  *
  * 적용 룰:
  *   - dapp-input-sanitization: known-fields({chainId, keyPath, label, token?, meta?})만 추출.
@@ -63,7 +63,7 @@ const FORBIDDEN_KEYS = new Set(['__proto__', 'constructor', 'prototype'])
  * boundary-validation: 비배열 입력 가드는 caller(syncAccount)가 담당.
  * 본 함수는 배열의 각 항목 객체 검증만 담당.
  *
- * @param raw dApp이 전달한 account 항목 (unknown)
+ * @param raw App이 전달한 account 항목 (unknown)
  * @returns 검증·sanitize된 V2SyncAccountInfo
  * @throws dcentException('param_error') — 형식 위반 시
  */
@@ -128,7 +128,7 @@ export function _sanitizeSyncAccountItem (raw: unknown): V2SyncAccountInfo {
   //   (contract/symbol/decimals)만 추출한다 — unknown 키는 silent drop.
   //   (m13-02-08) 종전 top-level `contractAddress`는 제거됐다. 그 키를 그대로 보내면 unknown
   //   필드로 drop되어 **코인 계정으로 처리**되는데, 이는 의도된 동작이다 — v2는 published된
-  //   적이 없어 그 키를 쓰던 dApp이 존재하지 않고, 그 경로 자체가 한 번도 성공한 적이 없다.
+  //   적이 없어 그 키를 쓰던 App이 존재하지 않고, 그 경로 자체가 한 번도 성공한 적이 없다.
   if (Object.prototype.hasOwnProperty.call(o, 'token') &&
       o.token !== undefined && o.token !== null) {
     if (typeof o.token !== 'object' || Array.isArray(o.token)) {
@@ -150,7 +150,7 @@ export function _sanitizeSyncAccountItem (raw: unknown): V2SyncAccountInfo {
 
     // contract — **string 강제**. `String(x)` 로 coerce하지 않는다:
     //   Polkadot asset id 는 `340282366920938463463374607431768211455`(39자리)까지 가고,
-    //   dApp 이 이를 number 로 보내면 JS 배정밀도에서 **이미 값이 뭉개진 뒤** 도착한다.
+    //   App 이 이를 number 로 보내면 JS 배정밀도에서 **이미 값이 뭉개진 뒤** 도착한다.
     //   coerce하면 그 손상을 조용히 통과시키게 되므로 타입 단계에서 막는다.
     const rawContract = rawToken.contract
     if (rawContract === undefined || rawContract === null || rawContract === '') {
@@ -178,7 +178,7 @@ export function _sanitizeSyncAccountItem (raw: unknown): V2SyncAccountInfo {
         throw dcentException('param_error', 'invalid token.symbol: must be a non-empty string')
       }
       // 길이 cap + 제어문자 차단. `contract` 는 128자 상한이 있는데 symbol 만 무제한이면
-      //   같은 블록 안에서 정책이 갈린다 — dApp 이 메가바이트 문자열이나 개행/NUL 을 실어도
+      //   같은 블록 안에서 정책이 갈린다 — App 이 메가바이트 문자열이나 개행/NUL 을 실어도
       //   postMessage 와 에러 메시지를 그대로 타고 흐른다.
       //   상한 32자는 실측(레지스트리 전 토큰 최장 심볼 13자 — 'BABYDOGEZILLA')의 여유값이다.
       //   charset 전면 whitelist 는 두지 않는다 — 실 레지스트리에 non-ASCII 심볼이 존재해
@@ -195,7 +195,7 @@ export function _sanitizeSyncAccountItem (raw: unknown): V2SyncAccountInfo {
     }
 
     // decimals — 지갑의 descriptor 해석 진입 조건. String() 강제 변환을 하지 않는다:
-    //   '6' 같은 문자열을 조용히 6으로 바꾸면 dApp의 타입 실수가 표시 금액 오류로 이어진다.
+    //   '6' 같은 문자열을 조용히 6으로 바꾸면 App의 타입 실수가 표시 금액 오류로 이어진다.
     //   범위는 wm과 동일한 u8 [0,255] (TOKEN_DECIMALS_MAX 주석 참조).
     if (rawToken.decimals !== undefined && rawToken.decimals !== null) {
       const decimals = rawToken.decimals

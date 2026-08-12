@@ -75,7 +75,7 @@ test('T-U-EXTRACT-03: chainIdentifier cip34 → family = cardano, CIP-1852 deriv
   expect(ada).toBeDefined()
   expect(ada.family).toBe('cardano')
   expect(ada.displayName).toBe('Cardano')
-  // D'CENT firmware는 BIP-44 (m/44'/1815'/0'/0/0) 사용 — CIP-1852 미지원.
+  // 디센트 firmware는 BIP-44 (m/44'/1815'/0'/0/0) 사용 — CIP-1852 미지원.
   // wm CARDANO entry에 derivationFormat 부재 → 디바이스 컨벤션 우선.
   expect(ada.defaultKeyPath).toBe("m/44'/1815'/0'/0/0")
   expect(ada.isTestnet).toBeUndefined()

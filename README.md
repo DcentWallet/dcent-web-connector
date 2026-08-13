@@ -55,21 +55,21 @@ Every method takes a `chainId` and a payload and returns the same `{ header, bod
 
 ## Using in a Chrome extension
 
-The connector runs **unmodified** inside a Chrome MV3 extension — verified end to end on a real device over USB (extension tab → bridge handshake → `getDeviceInfo` success). Import and call it exactly as you would on a web page.
+The connector runs **unmodified** inside a Chrome MV3 extension — measured end to end on a real device over USB (extension page → handshake with the DCENT popup → `getDeviceInfo` success), against a locally hosted build of the popup. Import and call it exactly as you would on a web page.
 
 Where it works, and where it does not:
 
 | Extension surface | Supported | Why |
 |---|---|---|
-| Extension **tab** (`chrome-extension://<id>/page.html`) | ✅ | Verified with a real device over USB |
-| **Side panel** | ✅ | The bridge opens as a tab rather than a sized window (`width` / `height` are ignored) — UX difference only |
-| **Toolbar popup** (browser action) | ❌ | The toolbar popup closes on blur, and the bridge window it opened loses its `opener` with it — the response never arrives |
-| **Background service worker** | ❌ | The connector needs `window.open` / `window.opener` / `postMessage`; a service worker has no `window`, so it cannot run there |
+| Extension **tab** (`chrome-extension://<id>/page.html`) | ✅ | Measured with a real device over USB |
+| **Side panel** | ✅ | Measured. The DCENT popup opens as a tab rather than a separate window — a UX difference only; the reply channel is unaffected |
+| **Toolbar popup** (browser action) | ❌ | Not measured — structurally unsuitable: a toolbar popup closes as soon as it loses focus, taking with it the page the DCENT popup replies to |
+| **Background service worker** | ❌ | The connector calls `window.open` and `postMessage`, and the DCENT popup replies through `window.opener`; a service worker has no `window` at all |
 
 Two more things to know:
 
-- **MV3 CSP (`script-src 'self'`)** — extension pages cannot load remote scripts, so ship the connector inside your extension bundle. The bundle contains no `eval(`, so it passes the default MV3 policy.
-- **The user sees which extension is asking** — the bridge shows `chrome-extension://<id>` as the requesting origin in its connection info.
+- **MV3 CSP (`script-src 'self'`)** — extension pages cannot load remote scripts, so ship the connector inside your extension bundle. The published bundle is `eval`-free; keep your own bundler that way too (webpack's `eval-source-map` devtool would break the policy).
+- **The user sees which extension is asking** — the DCENT popup shows `chrome-extension://<id>` as the requesting origin in its connection info.
 
 ## Common methods
 

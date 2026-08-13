@@ -30,7 +30,7 @@
   --text:#cacaca; --text-dim:#878a93; --text-faint:#6e7681;
   --head:#f0f6fc; --accent:var(--brand); --accent-2:#388bfd; --accent-soft:color-mix(in srgb,var(--brand) 25%,var(--bg));
   --green:#3fb950; --green-soft:#11241a; --amber:#d29922; --amber-soft:#241c0d;
-  --red:#f85149; --red-soft:#2a1416; --purple:#967cff; --cyan:#39c5cf;
+  --red:#f85149; --red-soft:#2a1416; --cyan:#39c5cf;
   --code-bg:#050506; --mono:"SF Mono",ui-monospace,"JetBrains Mono",Menlo,Consolas,monospace;
   --sans:"Pretendard","Pretendard Variable",-apple-system,BlinkMacSystemFont,"Apple SD Gothic Neo","Segoe UI","Malgun Gothic",Roboto,Helvetica,Arial,sans-serif;
   --sidebar-w:280px; --toc-w:220px; --header-h:56px;
@@ -136,11 +136,11 @@ hr.sep{border:none;border-top:1px solid var(--border);margin:30px 0}
 .b-real{color:#ff9d96;background:var(--red-soft);border-color:#5a2126}
 .b-auto{color:#e3b341;background:var(--amber-soft);border-color:#5a4711}
 .b-opt{color:var(--green);background:var(--green-soft);border-color:#1d4427}
-.b-fixed{color:#79c0ff;background:var(--accent-soft);border-color:#274472}
+.b-fixed{color:var(--brand-100);background:var(--accent-soft);border-color:var(--brand-ink)}
 .b-rpc{color:#e3b341;background:var(--amber-soft);border-color:#5a4711}
 .b-wallet{color:#ff9d96;background:var(--red-soft);border-color:#5a2126}
-.b-dapp{color:#79c0ff;background:var(--accent-soft);border-color:#274472}
-.b-sdk{color:var(--purple);background:#1d1430;border-color:#3a2a55}
+.b-dapp{color:var(--brand-100);background:var(--accent-soft);border-color:var(--brand-ink)}
+.b-sdk{color:var(--accent-2);background:#0d1b2e;border-color:#1f3a5f}
 .b-std{color:var(--cyan);background:#0c2429;border-color:#164b52}
 .b-tech{color:var(--text-dim);background:var(--panel-2);border-color:var(--border-2)}
 .b-dep{color:var(--text-faint);background:var(--panel);border-color:var(--border-2);text-decoration:line-through}
@@ -177,7 +177,7 @@ hr.sep{border:none;border-top:1px solid var(--border);margin:30px 0}
 .copy.done{color:var(--green);border-color:var(--green)}
 /* token coloring */
 .tok-k{color:#ff7b72}.tok-s{color:#a5d6ff}.tok-n{color:#79c0ff}.tok-c{color:#8b949e;font-style:italic}
-.tok-p{color:#d2a8ff}.tok-key{color:#7ee787}.tok-b{color:#ffa657}
+.tok-p{color:#39c5cf}/* ⚠️ .tok-k/s/n/c/p/key/b 는 현재 사용처 0 (죽은 CSS) — tok-acc 만 쓰인다 */.tok-key{color:#7ee787}.tok-b{color:#ffa657}
 
 .io-pair{border-left:2px solid var(--border-2);padding-left:14px;margin:14px 0}
 .io-pair .io-label{font-size:11px;text-transform:uppercase;letter-spacing:.05em;color:var(--text-faint);font-weight:700;margin-top:8px}
@@ -187,7 +187,7 @@ table.params{width:100%;border-collapse:collapse;margin:14px 0;font-size:13px}
 table.params th{text-align:left;font-size:11px;text-transform:uppercase;letter-spacing:.04em;color:var(--text-faint);
   font-weight:600;padding:12px 12px;border-bottom:1px solid var(--border-2);white-space:nowrap}
 table.params td{padding:13px 12px;border-bottom:1px solid var(--border);vertical-align:top}
-table.params td code{color:var(--purple);font-size:12.5px}
+table.params td code{color:var(--head);font-size:12.5px}
 table.params tr:hover td{background:var(--panel)}
 table.params td.type{color:var(--cyan);font-family:var(--mono);font-size:12px}
 
@@ -201,7 +201,7 @@ table.matrix{width:100%;border-collapse:collapse;margin:8px 0;font-size:12.8px}
 table.matrix th{position:sticky;top:0;text-align:left;font-size:11px;text-transform:uppercase;color:var(--text-faint);
   font-weight:700;padding:9px 10px;border-bottom:1px solid var(--border-2);background:var(--bg);z-index:1}
 table.matrix td{padding:8px 10px;border-bottom:1px solid var(--border);vertical-align:top}
-table.matrix td code{color:var(--purple);font-size:11.5px}
+table.matrix td code{color:var(--head);font-size:11.5px}
 table.matrix tr:hover td{background:var(--panel)}
 .m-yes{color:var(--green);font-weight:700}.m-no{color:var(--text-faint)}
 .m-link{font-size:12px}
@@ -212,8 +212,8 @@ table.matrix tr:hover td{background:var(--panel)}
 .note.tip{background:var(--green-soft);border-color:#1d4427}
 .note.warn{background:var(--amber-soft);border-color:#5a4711}
 .note.danger{background:var(--red-soft);border-color:#5a2126}
-.note.info{background:var(--accent-soft);border-color:#274472}
-.note.delta{background:#1d1430;border-color:#3a2a55}
+.note.info{background:var(--accent-soft);border-color:var(--brand-ink)}
+.note.delta{background:#0d1b2e;border-color:#1f3a5f}
 .note strong{color:var(--head)}
 .note p{margin:4px 0}
 
@@ -238,7 +238,7 @@ table.matrix tr:hover td{background:var(--panel)}
 .reqs .rq .k .ico{display:inline-flex;align-items:center;justify-content:center;width:30px;height:30px;border-radius:8px;background:var(--accent-soft);color:var(--accent);flex:0 0 auto}
 .reqs .rq .v{font-size:13.5px;color:var(--text);line-height:1.6}
 .reqs .rq .v strong{color:var(--head)}
-.reqs .rq .v code{color:var(--purple)}
+.reqs .rq .v code{color:var(--head)}
 @media(max-width:560px){.reqs .rq{grid-template-columns:1fr;gap:9px;align-items:start}}
 
 /* ---------- TOC ---------- */
@@ -282,7 +282,7 @@ table.matrix tr:hover td{background:var(--panel)}
 .flow .step .ss.a{color:var(--amber)}
 .flow .desc{color:var(--text-dim);line-height:1.5}
 .flow .own{display:inline-flex;align-items:center;gap:6px;padding:4px 11px;border-radius:7px;font-size:11.5px;font-weight:700;white-space:nowrap}
-.flow .own.c{background:var(--accent-soft);color:#9ec1ff;border:1px solid #2a3a5c}
+.flow .own.c{background:var(--accent-soft);color:var(--brand-100);border:1px solid var(--brand-ink)}
 .flow .own.a{background:var(--amber-soft);color:#e3b341;border:1px solid #4d3f1a}
 .flow-legend{display:flex;gap:18px;flex-wrap:wrap;margin:11px 2px 0;font-size:12px;color:var(--text-dim)}
 .flow-legend .li{display:flex;align-items:center;gap:7px}
@@ -352,7 +352,7 @@ table.matrix tr:hover td{background:var(--panel)}
 <body>
 <div class="topbar">
   <button class="menu-btn" id="menuBtn" aria-label="menu">☰</button>
-  <div class="brand"><span class="logo"><svg viewBox="0 0 32 32" width="26" height="26" fill="none" aria-hidden="true"><rect width="32" height="32" rx="7" fill="#6c2ef3"/><rect x="9" y="9" width="14" height="14" rx="3" fill="none" stroke="#fff" stroke-width="3.2"/></svg></span> <span class="brand-name">Web Connector</span> <span class="v">v2</span></div>
+  <div class="brand"><span class="logo"><svg viewBox="0 0 32 32" width="26" height="26" fill="none" aria-hidden="true"><rect x="4" y="4" width="24" height="24" rx="6" fill="none" stroke="var(--brand)" stroke-width="3.6"/></svg></span> <span class="brand-name">Web Connector</span> <span class="v">v2</span></div>
   <div class="search-wrap">
     <span class="si">⌕</span>
     <input id="search" type="text" placeholder="Search APIs, networks, chainId, ERC20, nonce…" autocomplete="off" />
@@ -436,7 +436,7 @@ function diagramArch(lang){
     <text x="${W/2}" y="${y+(sub?h/2-3:h/2+5)}" text-anchor="middle" fill="#f0f6fc" font-size="15" font-weight="700" font-family="ui-sans-serif,system-ui">${title}</text>
     ${sub?`<text x="${W/2}" y="${y+h/2+15}" text-anchor="middle" fill="#93a0b0" font-size="12" font-family="ui-sans-serif,system-ui">${sub}</text>`:''}
     ${extra||''}`;
-  const npm=(y)=>`<rect x="${X+BW-50}" y="${y+12}" width="38" height="18" rx="6" fill="#221a3a" stroke="#473a78"/><text x="${X+BW-31}" y="${y+24.5}" text-anchor="middle" fill="#c4a8ff" font-size="10" font-weight="700" font-family="ui-sans-serif,system-ui">npm</text>`;
+  const npm=(y)=>`<rect x="${X+BW-50}" y="${y+12}" width="38" height="18" rx="6" fill="var(--bg)" stroke="var(--brand-ink)"/><text x="${X+BW-31}" y="${y+24.5}" text-anchor="middle" fill="var(--brand-100)" font-size="10" font-weight="700" font-family="ui-sans-serif,system-ui">npm</text>`;
   // port badge: a rounded box with the USB / Bluetooth glyph centered inside it
   const portBox=(bx,by)=>`<rect x="${bx}" y="${by}" width="30" height="30" rx="8" fill="#10151c" stroke="#2c3a4d" stroke-width="1.2"/>`;
   const portUsb=(bx,by,c)=>portBox(bx,by)+`
@@ -466,11 +466,11 @@ function diagramArch(lang){
     <defs><filter id="archShadow" x="-6%" y="-20%" width="112%" height="150%"><feDropShadow dx="0" dy="2" stdDeviation="3.5" flood-color="#05070b" flood-opacity="0.55"/></filter></defs>
     ${band(12,56,'#15203a','#2c4067',1.2,t.app,t.appSub)}
     ${chev(75)}
-    ${band(82,60,'#1b1738','#5044a0',1.8,t.con,t.conSub,npm(82))}
+    ${band(82,60,'var(--accent-soft)','var(--brand-ink)',1.8,t.con,t.conSub,npm(82))}
     ${chev(149)}
     ${band(156,56,'#102a2d','#1f5a64',1.2,t.bridge,t.bridgeSub)}
     ${chev(219)}
-    ${tcard(X,portUsb,'#7c5bff',t.t1,t.t1s)}
+    ${tcard(X,portUsb,'var(--brand)',t.t1,t.t1s)}
     ${tcard(X+cw+gap,portBle,'#39c5cf',t.t2,t.t2s)}
     ${chev(289)}
     ${band(296,56,'#1a1f28','#39434f',1.2,t.hw,t.hwSub)}

@@ -705,7 +705,7 @@ const REPO_G1_CATALOG_EXEMPT = { 'docs/index.html': 0 }
 // 🔴 m15-02-02 — index-v2.html 이 자체 BRAND-ANCHOR :root 블록(9토큰)을 신설하며 rootBlocks
 // +1(4→5) · customProps 는 docs 38 + index-v2(pg 7 + brand 9)=16 → 총 54 로 상향. 실측치로
 // 정확히 맞춘다(관례: REPO_G1_FLOORS 는 항상 실측과 일치, "신설분을 지키지 못하는" 여유를 안 둔다).
-const REPO_G1_FLOORS = { rootBlocks: 5, customProps: 54, accentUses: 21, accentSoftUses: 15, scannedFiles: 2 }
+const REPO_G1_FLOORS = { rootBlocks: 5, customProps: 53, accentUses: 21, accentSoftUses: 16, scannedFiles: 2 }
 // 🔴 m15-02-02 — 01 의 3(docs: B-1 쌍 · B-3a-dot · B-3b-ticker) + playground 버튼 3규칙
 // (#btn-connect/#btn-send/#log-toolbar button.active, index-v2.html) = 6.
 const REPO_DIRECTION_B_FLOOR = 6
@@ -1026,7 +1026,7 @@ function runAllFixtures() {
     fail = 1
   } else {
     for (const line of realWarn.lines) console.log(line)
-    const required = [/^scanned-files: \d+$/, /^accent-uses: 21$/, /^accent-soft-uses: 15$/, /^known-violations: 0$/, /^contrast-warnings: 0$/, /^mode: hard-fail$/]
+    const required = [/^scanned-files: \d+$/, /^accent-uses: 21$/, /^accent-soft-uses: 16$/, /^known-violations: 0$/, /^contrast-warnings: 0$/, /^mode: hard-fail$/]
     for (const re of required) {
       if (!realWarn.lines.some((l) => re.test(l))) {
         console.error(`기계 판독 출력 형식 불일치: ${re} 매칭 라인 없음`)

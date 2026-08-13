@@ -52,8 +52,13 @@
  *    이걸 막으려면 **실제 캐스케이드 승자 계산**(특정도 비교 + 선언 순서)이 필요한데, 그건 이 파일이
  *    쓰는 텍스트 파서의 범위를 넘고 P3 설계 노트가 밝힌 대로 jsdom 경로는 이 리포에서 신뢰할 수
  *    없었다. **이 한계는 P3 전반에 pre-existing** 이며 이 objective 가 새로 만든 것이 아니다.
- *    ⚠️ 그래서 이 게이트의 보장은 **"추적 대상의 배경을 정하는 단일 경로를 지킨다"** 이지
- *    "화면이 어둡다" 가 아니다. 새 규칙으로 덮는 것은 막지 못한다.
+ *
+ *    ✅ **폼 컨트롤 축만 닫았다** (2026-08-13, 사용자 지시로 한 라운드 추가) — `runFormControlCascade`
+ *    가 폼 컨트롤을 매칭하는 규칙 중 `background` 선언 개수를 알려진 집합(기본 + `:read-only`)으로
+ *    고정한다. 이 objective 의 간판 산출물이고 실제로 뚫렸던 자리라 여기만 우선 막았다.
+ *    ⚠️ **나머지 셀렉터(섬·배너·배지 등)는 여전히 이 한계 아래 있다.** 그래서 이 게이트의 보장은
+ *    **"추적 대상의 배경을 정하는 단일 경로를 지킨다 + 폼 컨트롤은 승자까지 본다"** 이지
+ *    "화면이 어둡다" 가 아니다.
  *
  * 🔴 알려진 한계 5 — `blankComments` 가 문자열 안의 `//` 를 줄 주석으로 오인한다 (R3 WARNING-3).
  *    `'https://…'` 가 있는 줄은 뒤가 통째로 blank 되어 같은 줄의 밝은 리터럴을 P1 이 못 본다
@@ -338,7 +343,34 @@ function runFormControlInvariant(indexText) {
   if (!/::placeholder\s*(?:,\s*[^{]*)?\{[^}]*color:\s*var\(--pg-[a-z-]+\)/.test(text)) {
     findings.push('폼 컨트롤 인바리언트: ::placeholder 잉크가 var(--pg-*) 로 선언돼 있지 않다 — UA 기본 회색은 다크 배경 위 3.87 로 AA 미달이며 게이트의 다른 축은 이 잉크를 원리적으로 못 본다')
   }
+  findings.push(...runFormControlCascade(text))
   return findings
+}
+
+/** 폼 컨트롤 **최종 승자** 단언 (2026-08-13 R3 CRITICAL-3, 입력창 축 한정).
+ *
+ *  🔴 존재 단언만으로는 부족하다. P3 는 규칙을 **셀렉터 문자열 키**로 모으므로, 같은 엘리먼트를
+ *  **더 높은 특정도**로 덮는 다른 규칙(`#form-fields .form-row input { background: … }` = (1,1,1)
+ *  > (0,3,1))은 별도 키로 들어가 아무와도 짝지어지지 않는다. 그 결과 입력창이 실제로는 거의 흰
+ *  표면이 되는데(jsdom 실증) 원래 규칙은 계속 자기 배경으로 측정돼 **exit 0** 였다.
+ *
+ *  일반 해법(특정도 비교 + 선언 순서로 캐스케이드 승자 계산)은 텍스트 파서의 범위를 넘는다
+ *  (알려진 한계 4). 여기서는 **폼 컨트롤 축만** 닫는다 — 이 objective 의 간판 산출물이고
+ *  실제로 뚫린 자리이기 때문이다:
+ *    ① 폼 컨트롤을 매칭하는 규칙을 전부 열거하고
+ *    ② 그중 `background` 를 **선언한** 규칙이 알려진 집합(기본 + :read-only)뿐인지 단언한다.
+ *  세 번째 규칙이 생기면 그게 정당한 변경이든 우회든 **일단 멈추고 사람이 보게** 한다. */
+const FORM_CONTROL_BG_RULES = 2 // 기본 규칙 + :read-only (둘 다 background 선언). 늘리려면 근거를 남길 것
+function runFormControlCascade(text) {
+  const rules = [...text.matchAll(/([^{}]+)\{([^}]*)\}/g)]
+    .filter((m) => /\.form-row\s+(?:input|select|textarea)/.test(m[1]) && !m[1].trim().startsWith('/*'))
+  const withBg = rules.filter((m) => /(?:^|[^-])background(?:-color)?\s*:/.test(m[2]))
+  if (withBg.length === FORM_CONTROL_BG_RULES) return []
+  const sels = withBg.map((m) => m[1].trim().replace(/\s+/g, ' ').slice(0, 70))
+  return [
+    `폼 컨트롤 캐스케이드: background 를 선언하는 폼 컨트롤 규칙이 ${withBg.length}개 (기대 ${FORM_CONTROL_BG_RULES}: 기본 + :read-only) — ` +
+      `더 높은 특정도의 규칙이 입력창 배경을 덮으면 P3 는 원래 규칙을 계속 자기 배경으로 측정해 통과시킨다. 실측 셀렉터: ${sels.join(' | ')}`,
+  ]
 }
 
 /** 인라인 `.style.background = …` 대입 경로 (2026-08-13 크로스 리뷰 R2 WARNING-1).

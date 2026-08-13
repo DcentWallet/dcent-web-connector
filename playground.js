@@ -3712,7 +3712,10 @@
     fetchBtn.addEventListener('click', _btcFetchUtxoClick)
     var status = document.createElement('span')
     status.id = 'btc-fetch-status'
-    status.style.cssText = 'font-size:11px;color:#888;margin-left:10px;'
+    // m15-02-04 크로스 리뷰 NIT-4 — 같은 엘리먼트(#btc-fetch-status)의 동적 setter 는 이미
+    // var(--pg-muted) 인데 이 초기값만 #888 로 남아 첫 렌더에서만 다른 잉크가 됐다. :3634 주석이
+    // "정상 상태 잉크 #888도 함께 옮긴다" 라고 쓰는데 실제로는 setter 쪽만 옮겨져 있었다.
+    status.style.cssText = 'font-size:11px;color:var(--pg-muted);margin-left:10px;'
     status.textContent = ex ? 'getAddress → Fetch UTXO' : '이 코인은 explorer 자동 fetch 미지원 — prev_tx/vout 직접 입력'
     btnRow.appendChild(gaBtn)
     btnRow.appendChild(fetchBtn)

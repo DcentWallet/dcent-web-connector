@@ -40,6 +40,17 @@ function islandHintsMake () {
   return [sdResolveHint, resolveHint]
 }
 
+// 🔴 섬 배경 선언 — 앵커 (a)~(d) 의 bg 실측 대상(2026-08-13 CRITICAL-1). 이게 없으면 앵커가
+// "값 해석 실패"로 떨어져 **아래 밝은 섬을 지워도 exit 1** 이 되어 이 fixture 가 판별력을 잃는다
+// (파일 상단 주석이 2026-08-12 에 이미 같은 이유로 _btcSetStatus 를 넣은 것과 동일한 축).
+function islandRowsMake () {
+  var sdResolveRow = document.createElement('div')
+  sdResolveRow.style.cssText = 'margin-bottom:8px;padding:6px;background:var(--pg-raised);border-radius:4px;'
+  var resolveRow = document.createElement('div')
+  resolveRow.style.cssText = 'margin-bottom:8px;padding:6px;background:var(--pg-raised);border-radius:4px;'
+  return [sdResolveRow, resolveRow]
+}
+
 // 🆕 밝은 섬 — 이 한 줄만 ok-with-playground-js 와 다르다.
 function newBrightIslandMake () {
   var row = document.createElement('div')

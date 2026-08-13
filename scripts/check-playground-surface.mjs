@@ -39,6 +39,21 @@
  *    막는다 — `check-index-html-fw-models.mjs` 의 "실수를 막고 의도적 우회는 막지 않는다" 원칙과
  *    같은 판단이다. 다음에 이 표기들이 실제로 쓰이면 그때 확장한다.
  *
+ * 🔴 알려진 한계 2 (2026-08-13 크로스 리뷰 WARNING-2) — P2 의 토큰 맵은 `findRootBlockRange` 가
+ *    찾은 **`:root` 블록 안에서만** 파싱된다. 런타임에는 `body { --pg-border: … }` 같은 후속
+ *    선언이 문서 전체를 덮는데 이 게이트는 그걸 못 본다(실측: `:root` 를 그대로 두고 `body` 에
+ *    옛 값을 재선언하면 exit 0, P3 는 계속 새 값 기준으로 측정한다). 지금 이 파일에는 `:root`
+ *    밖 `--pg-*` 선언이 0건이며(실측), 이 경로는 "실수" 보다 "의도적 우회" 에 가깝다 — 위 한계 1
+ *    과 같은 원칙으로 스코프 밖에 둔다. 막으려면 <style> 전체에서 `--pg-*:` 출현 위치를 스캔해
+ *    인식된 :root 범위 밖이면 finding 을 내면 된다(약 3줄).
+ *
+ * 🔴 알려진 한계 3 (2026-08-13 크로스 리뷰 WARNING-3) — P4/P5 floor 는 **하한**이라, 검사 대상을
+ *    지우면서 동시에 같은 수의 **실선언**을 더하면 총량이 유지돼 통과한다(실측: 폼 컨트롤의
+ *    background/color 를 지우고 더미 규칙 2개를 넣으면 p4 35 · p5 60 으로 오히려 늘어 exit 0).
+ *    P5 주석이 말하는 "주석 패딩" 은 막았지만 **실규칙 패딩** 은 남아 있다. floor 는 "되돌리기"
+ *    를 막는 장치이지 "총량 위장" 을 막는 장치가 아니다 — 후자는 개별 앵커/사용처 유도(P3)가
+ *    담당한다. 의도적 우회 축이라 위 두 한계와 같은 판단으로 스코프 밖에 둔다.
+ *
  * 🔴 P3 설계 노트 — jsdom 의 CSS 커스텀 프로퍼티(var()) 해석은 이 리포 jsdom 버전에서 신뢰할 수
  *    없었다(실측: `#conn-dot`의 자체 `background: var(--pg-muted)`가 getComputedStyle에서
  *    빈 문자열로 나오고 조상 리터럴 배경으로 새버림). 게다가 `.field-error`/`.tree-item.selected`
@@ -537,7 +552,9 @@ function loadFileWithExcludes(path) {
  *  손댈 필요 없다(이 objective 스코프 밖, m15-02-04 후보). */
 function buildLiteralAnchors(indexHtml, pgText, pgMap) {
   const panelBg = pgMap['pg-panel'] || null
-  const raisedBg = pgMap['pg-raised'] || null
+  // 🔴 raisedBg 상수는 2026-08-13 크로스 리뷰 CRITICAL-1 로 제거됐다 — 섬/배너 앵커의 배경은
+  // 토큰맵에서 가정하지 않고 playground.js 에서 실측한다(아래 bgOf). 이 상수가 남아 있으면
+  // 다음 앵커를 추가하는 사람이 무심코 다시 하드코딩하게 된다.
   const anchors = []
   {
     // .field-error { color: #fca5a5 ... } 의 배경은 #form-panel → #sidebar(panel)
@@ -557,31 +574,45 @@ function buildLiteralAnchors(indexHtml, pgText, pgMap) {
     // 🔴 삼항식은 **두 갈래 모두** 앵커로 만든다 — 에러 갈래만 보면 정상 갈래를 옛 회색으로
     // 되돌려도(3.95, AA 미달) 통과한다. 값은 파일에서 실측하고, 패턴을 못 찾으면 ink=null 로
     // "값 해석 실패" finding 이 되어 삭제/rename 우회가 막힌다.
+    //
+    // 🔴 **배경도 파일에서 실측한다** (2026-08-13 크로스 리뷰 CRITICAL-1).
+    // 초판은 bg 를 raisedBg 로 **하드코딩**했다 — 잉크는 실측하면서 배경은 가정한 것이다.
+    // 그러면 이 게이트가 닫으려던 실패 클래스의 **거울상**(잉크를 지키고 배경을 방치)이 통과한다.
+    // 실증: 섬/배너 배경만 var(--pg-muted) 나 var(--pg-fg) 로 바꾸면 실제 대비는 1.00(글자가
+    // 안 보인다)인데, 게이트는 계속 raised 를 기준으로 5.46/11.36 을 "측정" 해 exit 0 였다.
+    // 🔴 이건 m15-02-04 가 **새로 연** 표면이다 — 그전엔 이 배경들이 #f7f7f7/#fff3cd 리터럴이라
+    // P1 의 양방향 count 대조 안에 있었는데, var() 로 옮기면서 그 창에서 빠져나갔다.
+    // bg 가 null 이면 ink 와 동일하게 "값 해석 실패" 로 fail-closed 된다(P3 3차 루프).
+    const bgOf = (re) => { const m = re.exec(pgText); return m ? resolveColorValue(m[1].trim(), pgMap) : null }
+    // 🔴 resolveRow 는 sdResolveRow 의 부분문자열이라 앞에 비영문 경계를 둔다((d) 와 같은 이유).
+    const sdRowBg = bgOf(/sdResolveRow\.style\.cssText\s*=\s*'[^']*background:\s*([^;']+)/)
+    const rsRowBg = bgOf(/(?:^|[^A-Za-z])resolveRow\.style\.cssText\s*=\s*'[^']*background:\s*([^;']+)/m)
+    const bannerBg = bgOf(/banner\.style\.cssText\s*=\s*'[^']*background:\s*([^;']+)/)
     for (const a of [
-      { name: '(a) _signDataGetAddressClick setHint', re: /_signDataGetAddressClick[\s\S]{0,1200}?hintEl\.style\.color\s*=\s*isErr\s*\?\s*'([^']+)'\s*:\s*'([^']+)'/ },
-      { name: '(b) _resolveSenderFromDeviceClick setHint', re: /_resolveSenderFromDeviceClick[\s\S]{0,1200}?hintEl\.style\.color\s*=\s*isError\s*\?\s*'([^']+)'\s*:\s*'([^']+)'/ },
+      { name: '(a) _signDataGetAddressClick setHint', bg: sdRowBg, re: /_signDataGetAddressClick[\s\S]{0,1200}?hintEl\.style\.color\s*=\s*isErr\s*\?\s*'([^']+)'\s*:\s*'([^']+)'/ },
+      { name: '(b) _resolveSenderFromDeviceClick setHint', bg: rsRowBg, re: /_resolveSenderFromDeviceClick[\s\S]{0,1200}?hintEl\.style\.color\s*=\s*isError\s*\?\s*'([^']+)'\s*:\s*'([^']+)'/ },
     ]) {
       const m = a.re.exec(pgText)
-      anchors.push({ name: `${a.name} err`, ink: m ? resolveColorValue(m[1], pgMap) : null, bg: raisedBg, threshold: AA_TEXT })
-      anchors.push({ name: `${a.name} ok`, ink: m ? resolveColorValue(m[2], pgMap) : null, bg: raisedBg, threshold: AA_TEXT })
+      anchors.push({ name: `${a.name} err`, ink: m ? resolveColorValue(m[1], pgMap) : null, bg: a.bg, threshold: AA_TEXT })
+      anchors.push({ name: `${a.name} ok`, ink: m ? resolveColorValue(m[2], pgMap) : null, bg: a.bg, threshold: AA_TEXT })
     }
     // (c)/(d) 섬 안 정적 hint 잉크. 🔴 resolveHint 는 sdResolveHint 의 부분문자열이 아니다
     // (대문자 R — 정규식은 대소문자 구분) 이라 두 앵커가 서로 오염되지 않는다.
     for (const a of [
-      { name: '(c) sdResolveHint 정적 잉크', re: /sdResolveHint\.style\.cssText\s*=\s*'[^']*color:\s*([^;']+)/ },
-      { name: '(d) resolveHint 정적 잉크', re: /(?:^|[^A-Za-z])resolveHint\.style\.cssText\s*=\s*'[^']*color:\s*([^;']+)/m },
+      { name: '(c) sdResolveHint 정적 잉크', bg: sdRowBg, re: /sdResolveHint\.style\.cssText\s*=\s*'[^']*color:\s*([^;']+)/ },
+      { name: '(d) resolveHint 정적 잉크', bg: rsRowBg, re: /(?:^|[^A-Za-z])resolveHint\.style\.cssText\s*=\s*'[^']*color:\s*([^;']+)/m },
     ]) {
       const m = a.re.exec(pgText)
-      anchors.push({ name: a.name, ink: m ? resolveColorValue(m[1].trim(), pgMap) : null, bg: raisedBg, threshold: AA_TEXT })
+      anchors.push({ name: a.name, ink: m ? resolveColorValue(m[1].trim(), pgMap) : null, bg: a.bg, threshold: AA_TEXT })
     }
     // (e)/(f) 경고 배너 — 섬 3규칙의 세 번째. 잉크/테두리 둘 다 앵커로 둔다. 🔴 (a)~(d) 만 두면
     // 배너 잉크(옛 값은 --pg-raised 위 2.55)를 되돌려도 안 잡힌다: 그 값은 휘도 0.141 이라
     // P1(휘도>0.5) 밖이고, 인라인이라 P3 의 CSS 순회에도 안 걸린다. 같은 클래스의 5번째 원소다.
     {
       const mInk = /banner\.style\.cssText\s*=\s*'[^']*;\s*color:\s*([^;']+)/.exec(pgText)
-      anchors.push({ name: '(e) #getaddress-banner 잉크', ink: mInk ? resolveColorValue(mInk[1].trim(), pgMap) : null, bg: raisedBg, threshold: AA_TEXT })
+      anchors.push({ name: '(e) #getaddress-banner 잉크', ink: mInk ? resolveColorValue(mInk[1].trim(), pgMap) : null, bg: bannerBg, threshold: AA_TEXT })
       const mBorder = /banner\.style\.cssText\s*=\s*'[^']*border:\s*1px\s+solid\s+([^;']+)/.exec(pgText)
-      anchors.push({ name: '(f) #getaddress-banner 테두리', ink: mBorder ? resolveColorValue(mBorder[1].trim(), pgMap) : null, bg: raisedBg, threshold: AA_NONTEXT })
+      anchors.push({ name: '(f) #getaddress-banner 테두리', ink: mBorder ? resolveColorValue(mBorder[1].trim(), pgMap) : null, bg: bannerBg, threshold: AA_NONTEXT })
     }
   }
   return anchors
@@ -596,12 +627,14 @@ function buildLiteralAnchors(indexHtml, pgText, pgMap) {
 // 실측과 정확히 일치시키는 관례를 따름).
 // 🔴 m15-02-04 재측정 — 세 floor 를 변경 후 실측치로 정확히 맞춘다(형제 관례). 안 올리면
 // 이 objective 가 새로 배선한 것을 지워도 게이트가 조용히 통과한다:
-//   P4 16 → 33 : 폼 컨트롤 background/color · 버튼 규칙 · muted 통일 · 섬/배너 이관으로 늘었다.
-//                16 에 두면 새로 넣은 var(--pg-*) 를 17건 지워도 통과한다.
+//   P4 16 → 34 : 폼 컨트롤 background/color · 버튼 규칙 · muted 통일 · 섬/배너 이관으로 늘었다.
+//                16 에 두면 새로 넣은 var(--pg-*) 를 18건 지워도 통과한다.
+//                (33 → 34 는 2026-08-13 크로스 리뷰 NIT-4 — #btc-fetch-status 초기값 #888 을
+//                 var(--pg-muted) 로 옮기면서 사용처가 1건 늘었다)
 //   P5 56 → 58 : 공용 .form-row button 규칙 + read-only/.error 특정도 규칙 분화.
 //   P3  8 → 23 : CSS 사용처 13(기존 6 + 헤더 muted 3 + tree-family-label 1 + 폼 컨트롤 color/border 2
 //                + #header seam 1) + 앵커 10(.field-error · _btcSetStatus · 신설 (a)~(f) 8).
-const REPO_P4_FLOOR = 33
+const REPO_P4_FLOOR = 34
 const REPO_P5_FLOOR = 58 // 실측(2026-08-13) — index-v2.html CSS 규칙 수
 // 🔴 P3 도 같은 이유로 floor 가 필요하다(Lens1 C2) — checked.length 는 지금까지 무방비였다.
 const REPO_P3_FLOOR = 23

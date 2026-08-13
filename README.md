@@ -63,7 +63,7 @@ Where it works, and where it does not:
 |---|---|---|
 | Extension **tab** (`chrome-extension://<id>/page.html`) | ✅ | Measured with a real device over USB |
 | **Side panel** | ✅ | Measured. The DCENT popup opens as a tab rather than a separate window — a UX difference only; the reply channel is unaffected |
-| **Toolbar popup** (browser action) | ❌ | Not measured — structurally unsuitable: a toolbar popup closes as soon as it loses focus, taking with it the page the DCENT popup replies to |
+| **Toolbar popup** (browser action) | ❌ | Measured: `window.open` returns `null` there — the page opens with no `opener` and the popup itself is destroyed within 100 ms. The connector rejects with *"window.open returned null — popup blocked by browser?"*, which points at a popup blocker; the real cause is the surface |
 | **Background service worker** | ❌ | The connector calls `window.open` and `postMessage`, and the DCENT popup replies through `window.opener`; a service worker has no `window` at all |
 
 Two more things to know:

@@ -117,7 +117,7 @@
     }
     #transport-selector label { color: var(--pg-muted); font-size: 11px; font-weight: 600; text-transform: uppercase; letter-spacing: 0.04em; }
     /* m15-02-04 R2(W-C): --pg-border 상향의 **형제 원소**. 이 select 는 조작 가능한 컨트롤인데
-       테두리가 #444(자기 배경 위 1.42)로 WCAG 1.4.11 비텍스트 3.0 미달이었다. 배경·잉크도
+       테두리가 #444(자기 배경 #2a2a3e 위 **1.44**)로 WCAG 1.4.11 비텍스트 3.0 미달이었다. 배경·잉크도
        --pg-raised/--pg-fg 의 리터럴 복제라 토큰으로 합친다(값이 두 벌이면 다음 색 변경이 비싸진다). */
     #transport-selector select {
       background: var(--pg-raised);
@@ -233,6 +233,15 @@
       background: var(--pg-bg);
       color: var(--pg-fg);
     }
+    /* 🔴 m15-02-04 R3(C-1): 배경을 다크로 옮기면 **UA 가 주는 placeholder 잉크**도 같이 깨진다.
+       Chrome 의 placeholder 는 currentColor 파생이 아니라 고정 rgb(117,117,117) 이라, 흰 배경에서
+       4.61(통과)이던 것이 --pg-bg 위 3.87 · --pg-raised(read-only) 위 3.04 로 **AA 미달**이 된다
+       (픽셀 샘플로 base/head 실측). 이 PR 이 만든 회귀이고, placeholder 는 payload·주소 입력의
+       유일한 안내문이라 실제로 읽어야 하는 텍스트다(playground.js 에 87건).
+       🔴 이 축은 게이트가 원리적으로 못 본다 — 선언이 없어 P3 가 순회할 규칙이 없고 리터럴이
+       없어 P1 밖이다. 그래서 아래 runFormControlInvariant 에 존재 단언을 함께 걸었다. */
+    .form-row input:not([type=radio]):not([type=checkbox])::placeholder,
+    .form-row textarea::placeholder { color: var(--pg-muted); }  /* --pg-bg 위 6.96 · --pg-raised 위 5.46 */
     .form-row textarea { resize: vertical; min-height: 60px; }
     /* read-only 어포던스 — 배경만으로는 구분이 안 된다(이 팔레트의 세 표면은 서로 1.09~1.27).
        진짜 판별자는 잉크다: 편집가능 14.48(--pg-fg on --pg-bg) vs read-only 5.46(--pg-muted). */

@@ -44,6 +44,22 @@
  *    문서화만 했는데 **축 판정이 틀렸다** — 실제 도달 경로는 **두 번째 `:root`** 이고 이 파일은
  *    이미 그걸 갖고 있다(BRAND-ANCHOR, m15-02-02). 상세는 `runP2Shadow` docstring.
  *
+ * 🔴 알려진 한계 4 — **CSS 캐스케이드 특정도 모델이 없다** (2026-08-13 R3 CRITICAL-3).
+ *    P3 는 규칙을 **셀렉터 문자열 키**로 수집한다. 그래서 같은 엘리먼트를 **더 높은 특정도로 덮는
+ *    다른 규칙**(`#form-fields .form-row input { background: … }` = (1,1,1) > (0,3,1))은 별도 키로
+ *    들어가 아무와도 짝지어지지 않고, 원래 규칙은 계속 자기 배경으로 측정된다 — 실화면은 입력창이
+ *    거의 흰색이 되는데 exit 0(jsdom 실측으로 확인). `!important` 판도 동일.
+ *    이걸 막으려면 **실제 캐스케이드 승자 계산**(특정도 비교 + 선언 순서)이 필요한데, 그건 이 파일이
+ *    쓰는 텍스트 파서의 범위를 넘고 P3 설계 노트가 밝힌 대로 jsdom 경로는 이 리포에서 신뢰할 수
+ *    없었다. **이 한계는 P3 전반에 pre-existing** 이며 이 objective 가 새로 만든 것이 아니다.
+ *    ⚠️ 그래서 이 게이트의 보장은 **"추적 대상의 배경을 정하는 단일 경로를 지킨다"** 이지
+ *    "화면이 어둡다" 가 아니다. 새 규칙으로 덮는 것은 막지 못한다.
+ *
+ * 🔴 알려진 한계 5 — `blankComments` 가 문자열 안의 `//` 를 줄 주석으로 오인한다 (R3 WARNING-3).
+ *    `'https://…'` 가 있는 줄은 뒤가 통째로 blank 되어 같은 줄의 밝은 리터럴을 P1 이 못 본다
+ *    (실측: URL 있는 줄에 `background:#ffffff` 를 두면 exit 0, URL 없으면 exit 1).
+ *    pre-existing 이지만 R2 에서 앵커를 이 위에 올렸으므로 함께 적어 둔다.
+ *
  * ✅ (구 알려진 한계 3 — **인바리언트로 보강**) floor 는 총량이라 "지우고 같은 수만큼 더하기" 로
  *    위장할 수 있다(실측 재현됨). floor 는 되돌리기를 막는 장치이지 총량 위장을 막는 장치가
  *    아니라는 진단 자체는 맞다 — 그래서 이 objective 의 **간판 산출물**(폼 컨트롤 UA 흰 배경
@@ -309,10 +325,19 @@ function runFormControlInvariant(indexText) {
   const text = blankComments(indexText)
   const re = /\.form-row\s+input:not\(\[type=radio\]\):not\(\[type=checkbox\]\)\s*,\s*\.form-row\s+select\s*,\s*\.form-row\s+textarea\s*\{([^}]*)\}/
   const m = re.exec(text)
-  if (!m) return ['폼 컨트롤 인바리언트: 라디오/체크박스를 제외한 .form-row input/select/textarea 규칙을 찾지 못함 — 선언이 삭제되었거나 셀렉터가 바뀜(UA 기본 흰 배경 복귀 위험)']
+  // ⚠️ fail-closed 다 — 이 정규식은 표기에 민감해서 `[type="radio"]`(따옴표)나 선언 순서·줄바꿈
+  //    변형에도 "못 찾음" 으로 떨어진다. 안전한 방향이지만 메시지가 원인을 오도하지 않도록
+  //    **표기 변형**도 함께 언급한다(R3 NIT).
+  if (!m) return ['폼 컨트롤 인바리언트: 라디오/체크박스를 제외한 .form-row input/select/textarea 규칙을 찾지 못함 — 선언 삭제 · 셀렉터 변경 · **표기 변형**(따옴표 있는 [type="radio"], 줄바꿈/순서 변경) 중 하나다. UA 기본 흰 배경 복귀 위험이라 fail-closed 로 막는다']
   const findings = []
   if (!/background:\s*var\(--pg-[a-z-]+\)/.test(m[1])) findings.push('폼 컨트롤 인바리언트: background 가 var(--pg-*) 로 선언돼 있지 않다 (UA 기본 흰 배경 복귀)')
   if (!/(^|[^-])color:\s*var\(--pg-[a-z-]+\)/.test(m[1])) findings.push('폼 컨트롤 인바리언트: color 가 var(--pg-*) 로 선언돼 있지 않다')
+  // 🔴 ::placeholder 잉크 (R3 C-1) — 배경을 다크로 옮기면 UA 기본 placeholder(Chrome 고정
+  //    rgb(117,117,117))가 흰 배경 위 4.61 → --pg-bg 위 3.87 로 **AA 미달**이 된다. 선언이 없으면
+  //    P3 가 순회할 규칙이 없고 리터럴이 없어 P1 도 못 본다 — 이 존재 단언이 유일한 방어다.
+  if (!/::placeholder\s*(?:,\s*[^{]*)?\{[^}]*color:\s*var\(--pg-[a-z-]+\)/.test(text)) {
+    findings.push('폼 컨트롤 인바리언트: ::placeholder 잉크가 var(--pg-*) 로 선언돼 있지 않다 — UA 기본 회색은 다크 배경 위 3.87 로 AA 미달이며 게이트의 다른 축은 이 잉크를 원리적으로 못 본다')
+  }
   return findings
 }
 
@@ -323,15 +348,34 @@ function runFormControlInvariant(indexText) {
  *  게이트는 아무것도 못 본다(실측 exit 0). 이 파일은 이미 `.style.display = …` 관용구를 쓰고
  *  있어 도달 가능한 형태다. 리터럴이면 P1 이 잡지만 `var()` 면 어떤 검사에도 안 닿는다.
  *  추적 대상(섬 2개·배너)에 한해 이 형태 자체를 금지한다 — 배경은 cssText 한 곳에서만 정한다. */
-const BG_ASSIGN_TRACKED = ['sdResolveRow', 'resolveRow', 'banner']
+// 🔴 잉크 엘리먼트(…Hint)도 포함한다 — R3 실증: `sdResolveHint.style.cssText` 에 자기 `background`
+//    를 넣으면 앵커 (c) 가 **바로 그 문자열에서 color 만 뽑고** background 는 무시한 채 부모 행의
+//    --pg-raised 를 배경으로 계속 쓴다(실화면 2.08 인데 exit 0). 답이 읽는 창 안에 있는데 안 봤다.
+const BG_ASSIGN_TRACKED = ['sdResolveRow', 'resolveRow', 'banner', 'sdResolveHint', 'resolveHint']
 function runInlineBgAssign(pgTextRaw) {
   if (!pgTextRaw) return []
   const text = blankComments(pgTextRaw)
   const findings = []
   for (const name of BG_ASSIGN_TRACKED) {
-    const re = new RegExp(`(?:^|[^A-Za-z])${name}\\.style\\.(background|backgroundColor)\\s*=`, 'gm')
-    const hits = text.match(re)
-    if (hits) findings.push(`인라인 배경 대입: ${name}.style.${hits[0].includes('backgroundColor') ? 'backgroundColor' : 'background'} = … ${hits.length}건 — 앵커는 cssText 만 읽으므로 이 경로는 측정되지 않는다. 배경은 cssText 한 곳에서만 정할 것`)
+    // 🔴 allowlist — 허용은 `X.style.cssText = …` **평문 대입 하나뿐**이고 나머지는 전부 금지한다.
+    //    (R3 지적: 초판은 `.style.background =` 만 금지했는데 그 형태는 이 파일에 **0건**이고,
+    //     실제로 24건 쓰이는 `cssText =` 의 변형들 — `+=` · setAttribute('style') ·
+    //     style.setProperty('background') — 이 전부 열려 있었다. 0건짜리를 막고 24건짜리의
+    //     변형을 방치한 셈이라, 열거(denylist)를 뒤집어 allowlist 로 바꾼다.)
+    for (const [label, re] of [
+      ['style.cssText +=', new RegExp(`(?:^|[^A-Za-z])${name}\\.style\\.cssText\\s*\\+=`, 'gm')],
+      ['style.background(-Color) =', new RegExp(`(?:^|[^A-Za-z])${name}\\.style\\.(?:background|backgroundColor)\\s*=`, 'gm')],
+      ["setAttribute('style', …)", new RegExp(`(?:^|[^A-Za-z])${name}\\.setAttribute\\s*\\(\\s*['"\`]style`, 'gm')],
+      ["style.setProperty('background', …)", new RegExp(`(?:^|[^A-Za-z])${name}\\.style\\.setProperty\\s*\\(\\s*['"\`]background`, 'gm')],
+      // ⚠️ `classList.add` 는 **일부러 넣지 않았다.** 배경을 CSS 클래스로 옮기는 것 자체는 정당한
+      //    리팩터이고, 선언이 사라지면 `bgOf` 가 null → "값 해석 실패" 로 이미 fail-closed 된다.
+      //    게다가 넣어보니 `viol-anchor-comment-shadow` fixture 를 이 가드가 대신 잡아
+      //    **blankComments 의 load-bearing 증명을 가려버렸다**(가드 상호 은폐 — 무력화해도 fixture 가
+      //    계속 빨개져 판별력이 0이 된다). 잉여 가드는 커버리지를 늘리는 게 아니라 증거를 지운다.
+    ]) {
+      const hits = text.match(re)
+      if (hits) findings.push(`인라인 배경 경로: ${name}.${label} ${hits.length}건 — 앵커는 \`${name}.style.cssText = …\` 평문 대입만 읽는다. 이 경로로 배경을 바꾸면 게이트가 측정하지 못하므로, 배경은 그 한 곳에서만 정할 것`)
+    }
   }
   return findings
 }
@@ -350,12 +394,32 @@ function runInlineBgAssign(pgTextRaw) {
  *  `@media (prefers-color-scheme)` / 테마 토글로 토큰을 재선언하는 것이 가장 자연스러운 다음
  *  편집이다. 비용도 한계 1(=CSS 색 파서 전체)과 달리 몇 줄이라 "같은 원칙" 이 성립하지 않았다.
  *
- *  범위는 `:root` 밖이 아니라 **인식된 pg-root 범위 밖 전부**다(두 번째 :root · body · @media · 클래스). */
-function runP2Shadow(indexText, rootRange) {
+ *  범위는 `:root` 밖이 아니라 **인식된 pg-root 범위 밖 전부**다 — CSS 컨텍스트(두 번째 :root ·
+ *  body · @media · 클래스)뿐 아니라 **JS 컨텍스트**(`playground.js` 의 `setProperty('--pg-*', …)`)
+ *  도 포함한다. 🔴 R3 지적: 초판은 `index-v2.html` 만 스캔해, 같은 재선언을 JS 한 줄로 하면
+ *  그대로 통과했다(`document.documentElement.style.setProperty('--pg-panel','var(--pg-fg)')`
+ *  → 사이드바 전체가 거의 흰색이 되고 그 위 잉크 1.00 인데 exit 0). playground.js 는 이미 P1
+ *  스캔 모수이자 앵커의 원천인데 이 검사만 안 보고 있었다. */
+function runP2Shadow(indexText, rootRange, pgTextRaw) {
   const findings = []
-  const text = blankComments(indexText)
+  // 🔴 HTML 주석도 지운다 (R3 NIT-5). blankComments 는 `/* */`·`//` 만 지우므로, 이 검사가
+  //    HTML 을 스캔하는 유일한 축인데 `<!-- 예전 값: --pg-border: #334155; -->` 를 "재선언" 으로
+  //    오탐했다(실측 exit 1). 인덱스가 밀리지 않게 길이를 보존하며 공백으로 치환한다 —
+  //    blankComments 와 같은 방식(excludeRanges 정렬 보존).
+  const text = blankComments(indexText.replace(/<!--[\s\S]*?-->/g, (m) => m.replace(/[^\n]/g, ' ')))
   const re = /--(pg-[a-z-]+)\s*:/g
   let m
+  // JS 축 — setProperty('--pg-*', …) / 문자열 안의 --pg-*: 선언 (pg-root 개념이 없으므로 전건 금지)
+  if (pgTextRaw) {
+    const js = blankComments(pgTextRaw)
+    for (const jsRe of [/setProperty\(\s*['"`](--pg-[a-z-]+)/g, /['"`][^'"`]*?(--pg-[a-z-]+)\s*:/g]) {
+      let j
+      while ((j = jsRe.exec(js))) {
+        const line = js.slice(0, j.index).split('\n').length
+        findings.push(`토큰 맵: --${j[1].replace(/^--/, '')} 이 playground.js 에서 재선언됨 (playground.js:${line}) — 토큰은 index-v2.html 의 pg-root 한 곳에서만 정한다`)
+      }
+    }
+  }
   while ((m = re.exec(text))) {
     if (inRange(m.index, rootRange)) continue
     const line = text.slice(0, m.index).split('\n').length
@@ -371,7 +435,7 @@ function runP2Shadow(indexText, rootRange) {
 const AA_TEXT = 4.5
 const AA_NONTEXT = 3.0
 
-/** 구조적 포함관계(색과 무관 — DOM 중첩 사실). index-v2.html 실제 마크업(:288~ body 태그) +
+/** 구조적 포함관계(색과 무관 — DOM 중첩 사실). index-v2.html 실제 마크업(<body> 이하 — 🔴 줄 번호를 적지 않는다, 이 PR 이 두 번 밀었다) +
  *  playground.js 의 appendChild 대상(treePanel=#tree-panel, formFields=#form-panel #form-fields)을
  *  근거로 작성했다. 셀렉터가 자기 배경을 선언하면 그게 우선이고, 없으면 이 맵을 따라 조상의
  *  배경을 찾는다. */
@@ -384,7 +448,7 @@ const CONTAINER_OF = {
   '#conn-dot': '#header',
   // 🆕 m15-02-04 — 헤더 안 텍스트 3종. #aaa 리터럴이 var(--pg-muted) 로 통일되면서 P3 의
   // 측정 대상이 됐다. 맵에 없으면 배경 미해결로 조용히 스킵돼 "고쳤는데 안 재는" 상태가 된다.
-  // (index-v2.html :303~ 실제 마크업 — 셋 다 #header 의 자식/후손)
+  // (index-v2.html 의 #header 블록 — 셋 다 #header 의 자식/후손. 줄 번호 대신 셀렉터로 참조)
   '#device-info': '#header',
   '#transport-selector': '#header',
   '#transport-selector label': '#transport-selector', // #transport-selector 는 배경 미선언 → 조상 #header 로 이어진다
@@ -608,14 +672,15 @@ function loadFileWithExcludes(path) {
  *  방지). 배경은 pgMap 파라미터에서 읽는다(fixture 의 manifest.allowedMap 이 다를 수 있어
  *  모듈 상수 ALLOWED_PG_MAP 을 쓰면 fixture 에서 틀린 배경으로 측정된다 — 2026-08-12 리뷰 W2).
  *
- *  🔴 2026-08-12 리뷰 정정 — 원래 _btcSetStatus 와 함께 setHint(_signDataGetAddressClick 의
- *  지역 함수)도 "같은 삼항식 모양"이라는 이유로 앵커에 넣고 다크세이프 값으로 고쳤었다.
- *  실측하면 setHint 의 hintEl(sdResolveHint)의 부모는 --pg-panel 이 아니라 인라인
- *  background:#f7f7f7(§3/m15-02-04 이관 대상, 다크 전환 밖)이었다 — "삼항식 모양"은 판별자가
- *  아니었고 "부모 표면"이 판별자였다. 그 오적용은 playground.js 의 setHint 를 원래 값으로
- *  되돌리며 함께 제거했다. 같은 클래스의 제3 인스턴스(_resolveSenderFromDeviceClick 의
- *  setHint, `#c33`/`#0a7`)도 실측 확인함 — 그 부모도 #f7f7f7 이고 #c33 은 이미 AA 통과라
- *  손댈 필요 없다(이 objective 스코프 밖, m15-02-04 후보). */
+ *  🔴 2026-08-12 리뷰의 교훈(문구는 m15-02-04 에서 갱신) — 한때 setHint 를 "같은 삼항식 모양"
+ *  이라는 이유로 앵커에 넣었다가 되돌린 적이 있다. 당시 그 hintEl 의 부모는 인라인
+ *  `background:#f7f7f7`(밝은 섬)이어서, **판별자는 "삼항식 모양"이 아니라 "부모 표면"** 이라는
+ *  것이 그때 얻은 결론이다. 이 원칙은 지금도 유효하고, 아래 (a)~(f) 가 배경을 **파일에서 실측**
+ *  하는 이유이기도 하다.
+ *  ⚠️ 다만 **그 시점의 사실 서술은 이제 전부 낡았다** (2026-08-13 R3 W-3): m15-02-04 가 그 섬들을
+ *  `var(--pg-raised)` 로 이관했고, setHint 잉크를 다크세이프 값으로 다시 넣었으며, "스코프 밖 ·
+ *  m15-02-04 후보" 라던 제3 인스턴스도 이 objective 가 처리했다. 옛 문장을 그대로 두면 자기가
+ *  설명하는 앵커 배열과 정면으로 모순되므로 사실 부분은 제거하고 **원칙만** 남긴다. */
 function buildLiteralAnchors(indexHtml, pgTextRaw, pgMap) {
   // 🔴 앵커는 **주석을 지운 본문**을 매칭한다 (2026-08-13 크로스 리뷰 R2 CRITICAL-2 / E1).
   //    P1 은 blankComments, P4 는 stripComments 를 쓰는데 **앵커만 원문**을 봤다. 그래서 실 선언을
@@ -716,16 +781,22 @@ function buildLiteralAnchors(indexHtml, pgTextRaw, pgMap) {
 // 맞춘다(sibling check-index-html-brand-tokens.mjs 의 REPO_G1_FLOORS.rootBlocks 처럼 floor를
 // 실측과 정확히 일치시키는 관례를 따름).
 // 🔴 m15-02-04 재측정 — 세 floor 를 변경 후 실측치로 정확히 맞춘다(형제 관례). 안 올리면
-// 이 objective 가 새로 배선한 것을 지워도 게이트가 조용히 통과한다:
-//   P4 16 → 34 : 폼 컨트롤 background/color · 버튼 규칙 · muted 통일 · 섬/배너 이관으로 늘었다.
-//                16 에 두면 새로 넣은 var(--pg-*) 를 18건 지워도 통과한다.
-//                (33 → 34 는 2026-08-13 크로스 리뷰 NIT-4 — #btc-fetch-status 초기값 #888 을
-//                 var(--pg-muted) 로 옮기면서 사용처가 1건 늘었다)
-//   P5 56 → 58 : 공용 .form-row button 규칙 + read-only/.error 특정도 규칙 분화.
-//   P3  8 → 23 : CSS 사용처 13(기존 6 + 헤더 muted 3 + tree-family-label 1 + 폼 컨트롤 color/border 2
-//                + #header seam 1) + 앵커 10(.field-error · _btcSetStatus · 신설 (a)~(f) 8).
-const REPO_P4_FLOOR = 39
-const REPO_P5_FLOOR = 60 // 실측(2026-08-13) — index-v2.html CSS 규칙 수
+// 이 objective 가 새로 배선한 것을 지워도 게이트가 조용히 통과한다.
+//
+// 🔴 **숫자는 아래 상수만이 출처다** (2026-08-13 R3 W-2). 초판은 여기에 "P4 16 → 34" 처럼
+//    도착값을 함께 적었는데, 이후 라운드에서 상수가 39·40 으로 움직이는 동안 이 주석은 34 에
+//    멈춰 stale 이 됐다 — 헤더 docstring 이 "숫자를 두 곳에 적으면 한쪽이 반드시 stale 이 된다"
+//    고 경고한 바로 그 일이 이 주석에서 일어났다. 🔴 floor 를 **낮추는** 방향은 fixture 스위트가
+//    전혀 못 잡으므로(각 fixture 는 자기 manifest floor 를 쓴다), 다음 사람이 stale 한 숫자로
+//    재유도하면 게이트가 조용히 약해진다. ⇒ 여기엔 **무엇이 늘었는지(산문)만** 적고 도착값은
+//    적지 않는다. 실측 확인은 `node scripts/check-playground-surface.mjs` 출력의 p3/p4/p5 로 한다.
+//   P4 : 폼 컨트롤 background/color·placeholder · 버튼 규칙(base/hover/disabled) · muted 통일 ·
+//        섬/배너 이관 · #transport-selector select 토큰화로 늘었다.
+//   P5 : 공용 .form-row button 3규칙 + read-only/.error 특정도 규칙 분화 + placeholder 규칙.
+//   P3 : CSS 사용처(기존 + 헤더 muted 3 + tree-family-label + 폼 컨트롤 color/border + #header seam)
+//        + 앵커 10(.field-error · _btcSetStatus · 신설 (a)~(f) 8).
+const REPO_P4_FLOOR = 40
+const REPO_P5_FLOOR = 61 // 실측(2026-08-13) — index-v2.html CSS 규칙 수
 // 🔴 P3 도 같은 이유로 floor 가 필요하다(Lens1 C2) — checked.length 는 지금까지 무방비였다.
 const REPO_P3_FLOOR = 25
 
@@ -767,7 +838,7 @@ function runAll(spec) {
   const pgMap = extractPgTokenMap(spec.indexText.slice(rootRange[0], rootRange[1]))
 
   findings.push(...runP2(pgMap, spec.allowedMap))
-  findings.push(...runP2Shadow(spec.indexText, rootRange))
+  findings.push(...runP2Shadow(spec.indexText, rootRange, spec.pgText))
   findings.push(...runFormControlInvariant(spec.indexText))
   findings.push(...runInlineBgAssign(spec.pgText))
 

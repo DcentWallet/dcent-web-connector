@@ -53,6 +53,24 @@ Every method takes a `chainId` and a payload and returns the same `{ header, bod
 
 `dcent.setTransport('hid' | 'ble')` selects the browser-native transport — **no DCENT Bridge app to install**. Each call opens the DCENT popup where the user approves the action on the device. `dcent.getDeviceInfo()` and `dcent.popupWindowClose()` remain available.
 
+## Using in a Chrome extension
+
+The connector runs **unmodified** inside a Chrome MV3 extension — verified end to end on a real device over USB (extension tab → bridge handshake → `getDeviceInfo` success). Import and call it exactly as you would on a web page.
+
+Where it works, and where it does not:
+
+| Extension surface | Supported | Why |
+|---|---|---|
+| Extension **tab** (`chrome-extension://<id>/page.html`) | ✅ | Verified with a real device over USB |
+| **Side panel** | ✅ | The bridge opens as a tab rather than a sized window (`width` / `height` are ignored) — UX difference only |
+| **Toolbar popup** (browser action) | ❌ | The toolbar popup closes on blur, and the bridge window it opened loses its `opener` with it — the response never arrives |
+| **Background service worker** | ❌ | The connector needs `window.open` / `window.opener` / `postMessage`; a service worker has no `window`, so it cannot run there |
+
+Two more things to know:
+
+- **MV3 CSP (`script-src 'self'`)** — extension pages cannot load remote scripts, so ship the connector inside your extension bundle. The bundle contains no `eval(`, so it passes the default MV3 policy.
+- **The user sees which extension is asking** — the bridge shows `chrome-extension://<id>` as the requesting origin in its connection info.
+
 ## Common methods
 
 | Method | Purpose |

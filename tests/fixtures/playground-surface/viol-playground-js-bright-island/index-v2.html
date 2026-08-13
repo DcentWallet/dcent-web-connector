@@ -6,7 +6,7 @@
     --pg-bg: #0f172a;
     --pg-panel: #1e1e2e;
     --pg-raised: #2a2a3e;
-    --pg-border: #334155;
+    --pg-border: #6e7d94;
     --pg-fg: #e2e8f0;
     --pg-muted: #94a3b8;
     --pg-selected: #312e63;
@@ -15,6 +15,8 @@
   #sidebar { background: var(--pg-panel); }
   .tree-group-label { color: var(--pg-muted); }
   .form-row label { color: var(--pg-fg); }
+  .form-row input:not([type=radio]):not([type=checkbox]), .form-row select, .form-row textarea { background: var(--pg-bg); color: var(--pg-fg); }
+  .form-row input:not([type=radio]):not([type=checkbox])::placeholder, .form-row textarea::placeholder { color: var(--pg-muted); }
   .form-row input:read-only { background: var(--pg-raised); color: var(--pg-muted); }
   .field-error { color: #fca5a5; }
 </style>

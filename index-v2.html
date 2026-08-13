@@ -17,11 +17,19 @@
       --pg-bg:       #0f172a;  /* 기존 로그 패널 값 */
       --pg-panel:    #1e1e2e;  /* 기존 헤더 값 */
       --pg-raised:   #2a2a3e;  /* 기존 셀렉트 값 */
-      --pg-border:   #334155;  /* 기존 경계 값 */
+      --pg-border:   #6e7d94;  /* m15-02-04 상향(구 slate-700) — 경계선이 실제로 "측정 대상"이 되면서
+                                   구값은 --pg-raised 위 1.35 / --pg-panel 위 1.58 / --pg-bg 위 1.72 로
+                                   WCAG 1.4.11(비텍스트 3.0) 전건 미달이었다. 구속 표면은 --pg-raised
+                                   (셋 중 가장 밝다) — 이 값은 raised 3.35 / panel 3.92 / bg 4.27.
+                                   🔴 브랜드 가이드는 다크 grey 램프를 규정하지 않는다(무채색 4색뿐,
+                                   "웹은 자체 팔레트 운용" · 접근성 판정은 WCAG 등급) ⇒ 웹 자체 팔레트
+                                   소관이며 기준은 WCAG. slate-500 은 raised 위 2.94 로 미달이라 규격
+                                   step 이 이 구간에 없어 slate-500→400 의 20% 보간값을 쓴다.
+                                   🔴 이 토큰은 border 로만 쓰인다(color: 사용 0건) — 텍스트 축 무영향 */
       --pg-fg:       #e2e8f0;  /* 기존 전경 값 */
       --pg-muted:    #94a3b8;  /* 기존 로그 패널 muted 값(#log-toolbar span, .log-latency) — 재사용.
                                    이전 회색 잉크는 --pg-bg 위 5.04 로 통과하지만
-                                   --pg-raised(.form-row input:read-only) 위에서 3.95 로 떨어진다(§4-3).
+                                   --pg-raised(폼 컨트롤의 :read-only 상태) 위에서 3.95 로 떨어진다(§4-3).
                                    🔴 줄 번호 대신 셀렉터로 참조한다 — 이 :root 신설 자체가 줄
                                    번호를 밀어 원래 주석(:208 :217 :241 / :167)이 크로스 리뷰
                                    시점에 이미 stale이었다 */
@@ -62,6 +70,10 @@
       position: sticky;
       top: 0;
       z-index: 100;
+      /* m15-02-04: seam 복원 — #header 와 #sidebar 가 같은 값(#1e1e2e)이라 대비가 1.00 이었다.
+         sticky 헤더가 스크롤 시 콘텐츠와 시각적으로 합쳐지는 것을 막는다(이 파일의 기존
+         seam 관용구 — #sidebar{border-right} · #form-panel{border-top} 와 동일). */
+      border-bottom: 1px solid var(--pg-border);
     }
     #header h1 { font-size: 16px; font-weight: 600; flex: 1; }
     #conn-dot {
@@ -72,7 +84,7 @@
     }
     #conn-dot.connected { background: #4ade80; }
     #conn-dot.error { background: #f87171; }
-    #device-info { font-size: 12px; color: #aaa; flex: 1; }
+    #device-info { font-size: 12px; color: var(--pg-muted); flex: 1; }
     #btn-connect, #btn-disconnect {
       padding: 6px 14px;
       border: none;
@@ -83,7 +95,15 @@
     }
     #btn-connect { background: var(--brand); color: var(--on-brand); }
     #btn-connect:hover { background: var(--brand-600); }
-    #btn-connect:disabled { background: #666; cursor: not-allowed; }
+    /* m15-02-04 R2(W-D): #666 은 상속 잉크(--on-brand) 위 **3.12 로 AA 미달**이었고
+       btnConnect.disabled=true 로 실제 도달한다. #btn-send:disabled 와 같은 계약으로 통일
+       (--pg-muted 배경, 잉크 대비 6.98).
+       🔴 이 세 규칙의 셀렉터를 .form-row button 과 콤마로 합치지 말 것 — 형제 게이트
+       check-index-html-brand-tokens.mjs 의 방향 B 가 '#btn-connect' 를 **정확 셀렉터**로 찾으므로
+       합치면 대상이 6→5 로 줄어 게이트가 눈이 먼다(실측: 합쳤다가 floor 위반으로 잡혔다).
+       중복처럼 보이지만 **단일 출처는 셀렉터가 아니라 토큰**이다 — 아래 .form-row button 도
+       같은 var(--brand)/var(--on-brand) 를 참조하므로 다음 색 변경 비용은 늘지 않는다. */
+    #btn-connect:disabled { background: var(--pg-muted); cursor: not-allowed; }
     #btn-disconnect { background: #dc2626; color: #fff; display: none; }
     #btn-disconnect:hover { background: #b91c1c; }
 
@@ -93,13 +113,16 @@
       align-items: center;
       gap: 6px;
       font-size: 12px;
-      color: #aaa;
+      color: var(--pg-muted);
     }
-    #transport-selector label { color: #aaa; font-size: 11px; font-weight: 600; text-transform: uppercase; letter-spacing: 0.04em; }
+    #transport-selector label { color: var(--pg-muted); font-size: 11px; font-weight: 600; text-transform: uppercase; letter-spacing: 0.04em; }
+    /* m15-02-04 R2(W-C): --pg-border 상향의 **형제 원소**. 이 select 는 조작 가능한 컨트롤인데
+       테두리가 #444(자기 배경 #2a2a3e 위 **1.44**)로 WCAG 1.4.11 비텍스트 3.0 미달이었다. 배경·잉크도
+       --pg-raised/--pg-fg 의 리터럴 복제라 토큰으로 합친다(값이 두 벌이면 다음 색 변경이 비싸진다). */
     #transport-selector select {
-      background: #2a2a3e;
-      color: #e2e8f0;
-      border: 1px solid #444;
+      background: var(--pg-raised);
+      color: var(--pg-fg);
+      border: 1px solid var(--pg-border);
       border-radius: 4px;
       padding: 4px 6px;
       font-size: 12px;
@@ -142,7 +165,7 @@
     .tree-family-label {
       padding: 4px 16px 2px;
       font-size: 11px;
-      color: #aaa;
+      color: var(--pg-muted);  /* m15-02-04: muted 값 통일 — 형제 .tree-group-label 과 동일 토큰 */
       font-style: italic;
     }
     .tree-item {
@@ -187,7 +210,19 @@
       color: var(--pg-fg);
       margin-bottom: 3px;
     }
-    .form-row input,
+    /* m15-02-04: 폼 컨트롤 배경/잉크 "선언 신설" — 지금까지 background/color 선언이 아예 없어
+       UA 기본(흰 배경)으로 남아 있었다(리터럴이 없어 어떤 리터럴 검사로도 안 잡히던 부류).
+       🔴 라디오/체크박스 제외 — 같은 배경을 주면 컨트롤이 배경에 묻힌다(modeRow 는 이미
+          --pg-raised 라 특히). 실측 라디오 3개소(playground.js 의 v1Radio · v2Radio · btx-sign-mode
+          루프 → 런타임 4개. 🔴 줄 번호를 적지 않는다 — 초판이 적은 :1337 :1347 :2412 는 이 PR 의
+          편집으로 이미 3줄씩 밀려 stale 이었다. 셀렉터·식별자로 참조한다),
+          체크박스 0개지만 방어적으로 함께 제외한다.
+       🔴 color-scheme: dark 미사용 — 브라우저 의존값이 되어 m15-02-03 이 되돌린 전례.
+       🔴 appearance: none 미사용 — select 화살표를 지우면 커스텀 아트가 필요해져 "선언 신설"
+          경계를 넘는다. UA 화살표는 color 를 따라간다.
+       ⚠️ :not() 은 인자의 특정도를 더한다 — 이 셀렉터는 (0,3,1) 이라 아래 :read-only/.error
+          규칙이 그대로면 특정도로 역전된다. 두 규칙에 같은 :not() 짝을 붙여 위계를 보존한다. */
+    .form-row input:not([type=radio]):not([type=checkbox]),
     .form-row select,
     .form-row textarea {
       padding: 5px 8px;
@@ -195,10 +230,23 @@
       border-radius: 4px;
       font-size: 12px;
       font-family: 'Courier New', monospace;
+      background: var(--pg-bg);
+      color: var(--pg-fg);
     }
+    /* 🔴 m15-02-04 R3(C-1): 배경을 다크로 옮기면 **UA 가 주는 placeholder 잉크**도 같이 깨진다.
+       Chrome 의 placeholder 는 currentColor 파생이 아니라 고정 rgb(117,117,117) 이라, 흰 배경에서
+       4.61(통과)이던 것이 --pg-bg 위 3.87 · --pg-raised(read-only) 위 3.04 로 **AA 미달**이 된다
+       (픽셀 샘플로 base/head 실측). 이 PR 이 만든 회귀이고, placeholder 는 payload·주소 입력의
+       유일한 안내문이라 실제로 읽어야 하는 텍스트다(playground.js 에 87건).
+       🔴 이 축은 게이트가 원리적으로 못 본다 — 선언이 없어 P3 가 순회할 규칙이 없고 리터럴이
+       없어 P1 밖이다. 그래서 아래 runFormControlInvariant 에 존재 단언을 함께 걸었다. */
+    .form-row input:not([type=radio]):not([type=checkbox])::placeholder,
+    .form-row textarea::placeholder { color: var(--pg-muted); }  /* --pg-bg 위 6.96 · --pg-raised 위 5.46 */
     .form-row textarea { resize: vertical; min-height: 60px; }
-    .form-row input:read-only { background: var(--pg-raised); color: var(--pg-muted); }
-    .form-row input.error { border-color: #dc2626; }
+    /* read-only 어포던스 — 배경만으로는 구분이 안 된다(이 팔레트의 세 표면은 서로 1.09~1.27).
+       진짜 판별자는 잉크다: 편집가능 14.48(--pg-fg on --pg-bg) vs read-only 5.46(--pg-muted). */
+    .form-row input:not([type=radio]):not([type=checkbox]):read-only { background: var(--pg-raised); color: var(--pg-muted); }
+    .form-row input:not([type=radio]):not([type=checkbox]).error { border-color: #dc2626; }
     .field-error {
       font-size: 11px;
       color: #fca5a5;  /* 크로스 리뷰 발견(Codex WARNING) — 원래 danger 잉크는 사이드바가
@@ -223,7 +271,28 @@
       margin-top: 4px;
     }
     #btn-send:hover { background: var(--brand-600); }
-    #btn-send:disabled { background: #9ca3af; cursor: not-allowed; }
+    #btn-send:disabled { background: var(--pg-muted); cursor: not-allowed; }  /* m15-02-04: muted 통일 — 잉크(--on-brand) 대비 6.98 */
+    /* m15-02-04: playground.js 가 동적 생성하는 액션 버튼 4개(btn-signdata-getaddress ·
+       btn-resolve-sender · btn-btc-getaddr · btn-btc-fetch)는 이 파일에 일반 button 규칙이
+       0건이라 UA 기본 스타일로 렌더됐다. 넷 다 .form-row 컨테이너 안이다(실측).
+       🔴 #btn-connect 와 **같은 토큰**(var(--brand)/var(--on-brand))을 참조한다 — 규칙이 둘이어도
+          값은 한 벌이므로 다음 색 변경 비용은 늘지 않는다. 셀렉터를 콤마로 합치지 않는 이유는
+          위 #btn-connect 주석 참조(형제 게이트가 정확 셀렉터로 찾는다).
+          버튼은 표면이 아니라 컴포넌트다. */
+    .form-row button {
+      background: var(--brand);
+      color: var(--on-brand);
+      border: none;
+      border-radius: 4px;
+      padding: 6px 12px;
+      cursor: pointer;
+    }
+    .form-row button:hover { background: var(--brand-600); }
+    /* m15-02-04 R2(W-A): 이 규칙이 없으면 UA 기본 button:disabled 회색이 위 저자 스타일에 져서
+       **비활성 버튼이 활성처럼 라임으로** 렌더된다. #btn-btc-fetch 는 fetchBtn.disabled=!ex 로
+       explorer 미지원 코인에서 실제로 disabled 가 된다(playground.js). 형제 3원소(#btn-connect ·
+       #btn-send · 여기) 중 새로 만든 이것만 :disabled 가 비어 있었다. */
+    .form-row button:disabled { background: var(--pg-muted); cursor: not-allowed; }
 
     /* ── Right: Log panel ── */
     #log-area {
@@ -250,13 +319,18 @@
     }
     #log-toolbar button {
       padding: 4px 10px;
-      border: 1px solid #334155;
+      border: 1px solid var(--pg-border);  /* m15-02-04 R4(W-4): 1.41 → 3.50. 조작 가능한 툴바 버튼 경계 */
       border-radius: 4px;
       background: #1e293b;
       color: #94a3b8;
       font-size: 11px;
       cursor: pointer;
     }
+    /* 🔴 m15-02-04 R4(W-4) — 이 #334155 는 **일부러 남긴다.** 위 두 곳(테두리)과 같은 값이지만
+       여기는 **배경**이라 var(--pg-border)(#6e7d94)로 올리면 그 위 잉크 #e2e8f0 가 8.40 → 3.39 로
+       AA 미달이 된다 — "면을 옮기면 그 위 잉크가 깨진다"는 이 epic 이 6번 반복한 실패 클래스다.
+       배경/테두리는 같은 리터럴을 공유해도 **다른 축**이므로 일괄 치환하면 안 된다.
+       (로그 패널은 --pg-* 시스템 밖 — m15-02-01 이전부터 다크였다. 개선은 별건으로 이관) */
     #log-toolbar button:hover { background: #334155; color: #e2e8f0; }
     #log-toolbar button.active { background: var(--brand); color: var(--on-brand); border-color: var(--brand); }
     #log-scroll {
@@ -269,7 +343,7 @@
     }
     .log-entry {
       margin-bottom: 12px;
-      border-left: 3px solid #334155;
+      border-left: 3px solid var(--pg-border);  /* m15-02-04 R4(W-4): 같은 축 형제 */
       padding-left: 10px;
     }
     .log-entry.success { border-left-color: #4ade80; }

@@ -16,6 +16,8 @@
   .new-panel { background: var(--pg-panel); border-right: 1px solid var(--pg-border); }
   .tree-group-label { color: var(--pg-muted); }
   .form-row label { color: var(--pg-fg); }
+  .form-row input:not([type=radio]):not([type=checkbox]), .form-row select, .form-row textarea { background: var(--pg-bg); color: var(--pg-fg); }
+  .form-row input:not([type=radio]):not([type=checkbox])::placeholder, .form-row textarea::placeholder { color: var(--pg-muted); }
   .form-row input:read-only { background: var(--pg-raised); color: var(--pg-muted); }
   .field-error { color: #fca5a5; }
 </style>

@@ -53,6 +53,24 @@ Every method takes a `chainId` and a payload and returns the same `{ header, bod
 
 `dcent.setTransport('hid' | 'ble')` selects the browser-native transport — **no DCENT Bridge app to install**. Each call opens the DCENT popup where the user approves the action on the device. `dcent.getDeviceInfo()` and `dcent.popupWindowClose()` remain available.
 
+## Using in a Chrome extension
+
+The connector runs **unmodified** inside a Chrome MV3 extension — measured end to end on a real device over USB (extension page → handshake with the DCENT popup → `getDeviceInfo` success), against a locally hosted DCENT popup that the connector was built to point at. Import and call it exactly as you would on a web page.
+
+Where it works, and where it does not:
+
+| Extension surface | Supported | Why |
+|---|---|---|
+| Extension **tab** (`chrome-extension://<id>/page.html`) | ✅ | Measured with a real device over USB |
+| **Side panel** | ✅ | Measured. The DCENT popup opens as a tab rather than a separate window — a UX difference only; the reply channel is unaffected |
+| **Toolbar popup** (browser action) | ❌ | Measured: `window.open` returns `null` there — the page opens with no `opener` and the popup itself is destroyed within 100 ms. The connector rejects with *"window.open returned null — popup blocked by browser?"*, which points at a popup blocker; the real cause is the surface |
+| **Background service worker** | ❌ | The connector calls `window.open` and `postMessage`, and the DCENT popup replies through `window.opener`; a service worker has no `window` at all |
+
+Two more things to know:
+
+- **MV3 CSP (`script-src 'self'`)** — extension pages cannot load remote scripts, so ship the connector inside your extension bundle. The published bundle is `eval`-free; keep your own bundler that way too (webpack's `eval-source-map` devtool would break the policy).
+- **The user sees which extension is asking** — the DCENT popup shows `chrome-extension://<id>` as the requesting origin in its connection info.
+
 ## Common methods
 
 | Method | Purpose |

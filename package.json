@@ -28,7 +28,7 @@
     "extract-chains": "node scripts/extract-chains.js",
     "lint": "eslint --ext .js src-v1 tests playground.js scripts",
     "lint:fix": "eslint --ext .js src-v1 tests playground.js --fix",
-    "lint:md": "markdownlint-cli2 \"docs/v2-payload-contract.md\" \"docs/brand-color-replacement.md\"",
+    "lint:md": "markdownlint-cli2 \"README.md\" \"MIGRATION-v1-to-v2.md\" \"docs/v2-payload-contract.md\" \"docs/brand-color-replacement.md\"",
     "check:payload-contract": "node scripts/check-payload-contract-coverage.mjs",
     "check:payload-shape": "node scripts/check-payload-contract-shape.mjs",
     "check:index-refs": "node scripts/check-index-html-preset-refs.mjs",

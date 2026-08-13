@@ -55,7 +55,7 @@ Every method takes a `chainId` and a payload and returns the same `{ header, bod
 
 ## Using in a Chrome extension
 
-The connector runs **unmodified** inside a Chrome MV3 extension — measured end to end on a real device over USB (extension page → handshake with the DCENT popup → `getDeviceInfo` success), against a locally hosted build of the popup. Import and call it exactly as you would on a web page.
+The connector runs **unmodified** inside a Chrome MV3 extension — measured end to end on a real device over USB (extension page → handshake with the DCENT popup → `getDeviceInfo` success), against a locally hosted DCENT popup that the connector was built to point at. Import and call it exactly as you would on a web page.
 
 Where it works, and where it does not:
 

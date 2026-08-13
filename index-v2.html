@@ -319,13 +319,18 @@
     }
     #log-toolbar button {
       padding: 4px 10px;
-      border: 1px solid #334155;
+      border: 1px solid var(--pg-border);  /* m15-02-04 R4(W-4): 1.41 → 3.50. 조작 가능한 툴바 버튼 경계 */
       border-radius: 4px;
       background: #1e293b;
       color: #94a3b8;
       font-size: 11px;
       cursor: pointer;
     }
+    /* 🔴 m15-02-04 R4(W-4) — 이 #334155 는 **일부러 남긴다.** 위 두 곳(테두리)과 같은 값이지만
+       여기는 **배경**이라 var(--pg-border)(#6e7d94)로 올리면 그 위 잉크 #e2e8f0 가 8.40 → 3.39 로
+       AA 미달이 된다 — "면을 옮기면 그 위 잉크가 깨진다"는 이 epic 이 6번 반복한 실패 클래스다.
+       배경/테두리는 같은 리터럴을 공유해도 **다른 축**이므로 일괄 치환하면 안 된다.
+       (로그 패널은 --pg-* 시스템 밖 — m15-02-01 이전부터 다크였다. 개선은 별건으로 이관) */
     #log-toolbar button:hover { background: #334155; color: #e2e8f0; }
     #log-toolbar button.active { background: var(--brand); color: var(--on-brand); border-color: var(--brand); }
     #log-scroll {
@@ -338,7 +343,7 @@
     }
     .log-entry {
       margin-bottom: 12px;
-      border-left: 3px solid #334155;
+      border-left: 3px solid var(--pg-border);  /* m15-02-04 R4(W-4): 같은 축 형제 */
       padding-left: 10px;
     }
     .log-entry.success { border-left-color: #4ade80; }

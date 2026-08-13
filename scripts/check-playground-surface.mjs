@@ -340,7 +340,7 @@ function runFormControlInvariant(indexText) {
   // 🔴 ::placeholder 잉크 (R3 C-1) — 배경을 다크로 옮기면 UA 기본 placeholder(Chrome 고정
   //    rgb(117,117,117))가 흰 배경 위 4.61 → --pg-bg 위 3.87 로 **AA 미달**이 된다. 선언이 없으면
   //    P3 가 순회할 규칙이 없고 리터럴이 없어 P1 도 못 본다 — 이 존재 단언이 유일한 방어다.
-  if (!/::placeholder\s*(?:,\s*[^{]*)?\{[^}]*color:\s*var\(--pg-[a-z-]+\)/.test(text)) {
+  if (!/\.form-row[^{]*::placeholder[^{]*\{[^{}]*color:\s*var\(--pg-[a-z-]+\)/.test(text)) {
     findings.push('폼 컨트롤 인바리언트: ::placeholder 잉크가 var(--pg-*) 로 선언돼 있지 않다 — UA 기본 회색은 다크 배경 위 3.87 로 AA 미달이며 게이트의 다른 축은 이 잉크를 원리적으로 못 본다')
   }
   findings.push(...runFormControlCascade(text))
@@ -362,8 +362,8 @@ function runFormControlInvariant(indexText) {
  *  세 번째 규칙이 생기면 그게 정당한 변경이든 우회든 **일단 멈추고 사람이 보게** 한다. */
 const FORM_CONTROL_BG_RULES = 2 // 기본 규칙 + :read-only (둘 다 background 선언). 늘리려면 근거를 남길 것
 function runFormControlCascade(text) {
-  const rules = [...text.matchAll(/([^{}]+)\{([^}]*)\}/g)]
-    .filter((m) => /\.form-row\s+(?:input|select|textarea)/.test(m[1]) && !m[1].trim().startsWith('/*'))
+  const rules = [...text.matchAll(/([^{}]+)\{([^{}]*)\}/g)]
+    .filter((m) => /(?:\.form-row|#form-fields)[^,{]*\b(?:input|select|textarea)\b/.test(m[1]) && !m[1].trim().startsWith('/*'))
   const withBg = rules.filter((m) => /(?:^|[^-])background(?:-color)?\s*:/.test(m[2]))
   if (withBg.length === FORM_CONTROL_BG_RULES) return []
   const sels = withBg.map((m) => m[1].trim().replace(/\s+/g, ' ').slice(0, 70))
@@ -827,10 +827,10 @@ function buildLiteralAnchors(indexHtml, pgTextRaw, pgMap) {
 //   P5 : 공용 .form-row button 3규칙 + read-only/.error 특정도 규칙 분화 + placeholder 규칙.
 //   P3 : CSS 사용처(기존 + 헤더 muted 3 + tree-family-label + 폼 컨트롤 color/border + #header seam)
 //        + 앵커 10(.field-error · _btcSetStatus · 신설 (a)~(f) 8).
-const REPO_P4_FLOOR = 40
+const REPO_P4_FLOOR = 42
 const REPO_P5_FLOOR = 61 // 실측(2026-08-13) — index-v2.html CSS 규칙 수
 // 🔴 P3 도 같은 이유로 floor 가 필요하다(Lens1 C2) — checked.length 는 지금까지 무방비였다.
-const REPO_P3_FLOOR = 25
+const REPO_P3_FLOOR = 26
 
 function loadRepoSpec() {
   const indexPath = resolve(REPO_ROOT, 'index-v2.html')

@@ -270,11 +270,14 @@ function isBrandLiteral(hex, exactSet, band) {
 
 /** 파일 텍스트에서 모든 `#hex` 리터럴(3/6자리)을 라인번호와 함께 열거. */
 function scanHexLiterals(text) {
-  const re = /#[0-9a-fA-F]{6}\b|#[0-9a-fA-F]{3}\b/g
+  // 🔴 %23 = URI 인코딩된 # — 데이터 URI(favicon 등) 안의 브랜드 hex 가 이 축이 없어
+  //    **완전히 안 보였다**(2026-08-13 R4 W-2). favicon 에 옛 보라가 살아남아 탭 아이콘과
+  //    헤더 로고가 서로 다른 브랜드로 보였고, "보라 잔재 소진" 주장이 사실과 어긋났다.
+  const re = /#[0-9a-fA-F]{6}\b|#[0-9a-fA-F]{3}\b|%23[0-9a-fA-F]{6}\b|%23[0-9a-fA-F]{3}\b/g
   const hits = []
   let m
   while ((m = re.exec(text))) {
-    hits.push({ hex: normalizeHex(m[0]), raw: m[0], line: lineOf(text, m.index), index: m.index })
+    hits.push({ hex: normalizeHex(m[0].replace(/^%23/, '#')), raw: m[0], line: lineOf(text, m.index), index: m.index })
   }
   return hits.filter((h) => h.hex)
 }
@@ -698,13 +701,26 @@ function runG3(anchorMap, mainRootProps, committedSnapshot, accentSoftCheck) {
 // 로 실제 전환되어 리터럴 자체가 사라졌다. 라임으로 밴드가 옮겨가며(hue ~80-90도) 전부 밴드
 // 밖으로 나가 실측이 0으로 떨어졌다 — 등록을 전부 지운다(REPO_G1_PAST_GENERATIONS 가 옛 9값
 // 리터럴 자체의 잔여는 별도로 계속 잡는다). 현재 두 파일 모두 등록이 필요한 항목이 없다.
-const REPO_G1_EXCEPTIONS = {}
+// 🔴 favicon 데이터 URI 는 **CSS 토큰을 쓸 수 없다** — 독립 SVG 문서라 `var(--brand)` 가 해석되지
+//    않는다. 그래서 브랜드 값을 하드코딩할 수밖에 없고, 여기에 명시 예외로 등록해 **다음 색 변경
+//    때 반드시 눈에 띄게** 한다(양방향 대조라 값이 바뀌면 즉시 불일치로 터진다).
+//    경위: 이 favicon 은 %23 인코딩이라 스캐너에 **안 보였고**, 그래서 m15-02-04 가 "보라 잔재
+//    소진" 이라고 보고하는 동안 옛 보라(#6c2ef3)가 탭 아이콘에 살아 있었다(2026-08-13 R4 W-2).
+//    스캐너에 %23 축을 추가해 보이게 만든 뒤 등록한다 — 안 보이던 것을 보이게 하는 게 먼저다.
+const REPO_G1_EXCEPTIONS = {
+  'docs/index.html': { '#90e01f': 1 }, // favicon 데이터 URI(로고 심볼). CSS 토큰 사용 불가
+}
 // 🔴 옛 퍼플 밴드에 우연히 걸렸던 카탈로그 col: 항목(Ethereum/Ravencoin/Solana/Cosmos/Stellar/
 // Stacks)도 라임 밴드 밖으로 나가 실측 0 — 6 을 그대로 두면 즉시 불일치.
 const REPO_G1_CATALOG_EXEMPT = { 'docs/index.html': 0 }
-// 🔴 m15-02-02 — index-v2.html 이 자체 BRAND-ANCHOR :root 블록(9토큰)을 신설하며 rootBlocks
-// +1(4→5) · customProps 는 docs 38 + index-v2(pg 7 + brand 9)=16 → 총 54 로 상향. 실측치로
-// 정확히 맞춘다(관례: REPO_G1_FLOORS 는 항상 실측과 일치, "신설분을 지키지 못하는" 여유를 안 둔다).
+// 🔴 m15-02-02 — index-v2.html 이 자체 BRAND-ANCHOR :root 블록(9토큰)을 신설하며 rootBlocks +1(4→5).
+// 🔴 **숫자는 아래 상수만이 출처다** (2026-08-13 R4 W-3). 초판 주석은 "docs 38 + index-v2 16 = 54"
+//    였는데 m15-02-04 가 `--purple` 을 은퇴시켜 docs 37 · 총 53 이 됐고, accentSoftUses 도 15→16 이
+//    됐는데 주석만 옛 숫자에 멈춰 stale 이 됐다. 하필 같은 라운드에 형제 스크립트 docstring 에
+//    "숫자를 두 곳에 적으면 한쪽이 반드시 stale 이 된다" 고 써 넣고서 여기서 그대로 재현했다.
+//    ⇒ 여기엔 **무엇이 세어지는지(산문)만** 적는다. 실측은 스크립트 출력으로 확인한다.
+//    customProps = docs/index.html 의 커스텀 프로퍼티 + index-v2.html(pg 토큰 + BRAND-ANCHOR 9토큰).
+// 관례: REPO_G1_FLOORS 는 항상 실측과 일치시킨다("신설분을 지키지 못하는" 여유를 안 둔다).
 const REPO_G1_FLOORS = { rootBlocks: 5, customProps: 53, accentUses: 21, accentSoftUses: 16, scannedFiles: 2 }
 // 🔴 m15-02-02 — 01 의 3(docs: B-1 쌍 · B-3a-dot · B-3b-ticker) + playground 버튼 3규칙
 // (#btn-connect/#btn-send/#log-toolbar button.active, index-v2.html) = 6.

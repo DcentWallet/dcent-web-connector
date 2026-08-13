@@ -29,7 +29,7 @@
       --pg-fg:       #e2e8f0;  /* 기존 전경 값 */
       --pg-muted:    #94a3b8;  /* 기존 로그 패널 muted 값(#log-toolbar span, .log-latency) — 재사용.
                                    이전 회색 잉크는 --pg-bg 위 5.04 로 통과하지만
-                                   --pg-raised(.form-row input:read-only) 위에서 3.95 로 떨어진다(§4-3).
+                                   --pg-raised(폼 컨트롤의 :read-only 상태) 위에서 3.95 로 떨어진다(§4-3).
                                    🔴 줄 번호 대신 셀렉터로 참조한다 — 이 :root 신설 자체가 줄
                                    번호를 밀어 원래 주석(:208 :217 :241 / :167)이 크로스 리뷰
                                    시점에 이미 stale이었다 */
@@ -95,7 +95,15 @@
     }
     #btn-connect { background: var(--brand); color: var(--on-brand); }
     #btn-connect:hover { background: var(--brand-600); }
-    #btn-connect:disabled { background: #666; cursor: not-allowed; }
+    /* m15-02-04 R2(W-D): #666 은 상속 잉크(--on-brand) 위 **3.12 로 AA 미달**이었고
+       btnConnect.disabled=true 로 실제 도달한다. #btn-send:disabled 와 같은 계약으로 통일
+       (--pg-muted 배경, 잉크 대비 6.98).
+       🔴 이 세 규칙의 셀렉터를 .form-row button 과 콤마로 합치지 말 것 — 형제 게이트
+       check-index-html-brand-tokens.mjs 의 방향 B 가 '#btn-connect' 를 **정확 셀렉터**로 찾으므로
+       합치면 대상이 6→5 로 줄어 게이트가 눈이 먼다(실측: 합쳤다가 floor 위반으로 잡혔다).
+       중복처럼 보이지만 **단일 출처는 셀렉터가 아니라 토큰**이다 — 아래 .form-row button 도
+       같은 var(--brand)/var(--on-brand) 를 참조하므로 다음 색 변경 비용은 늘지 않는다. */
+    #btn-connect:disabled { background: var(--pg-muted); cursor: not-allowed; }
     #btn-disconnect { background: #dc2626; color: #fff; display: none; }
     #btn-disconnect:hover { background: #b91c1c; }
 
@@ -108,10 +116,13 @@
       color: var(--pg-muted);
     }
     #transport-selector label { color: var(--pg-muted); font-size: 11px; font-weight: 600; text-transform: uppercase; letter-spacing: 0.04em; }
+    /* m15-02-04 R2(W-C): --pg-border 상향의 **형제 원소**. 이 select 는 조작 가능한 컨트롤인데
+       테두리가 #444(자기 배경 위 1.42)로 WCAG 1.4.11 비텍스트 3.0 미달이었다. 배경·잉크도
+       --pg-raised/--pg-fg 의 리터럴 복제라 토큰으로 합친다(값이 두 벌이면 다음 색 변경이 비싸진다). */
     #transport-selector select {
-      background: #2a2a3e;
-      color: #e2e8f0;
-      border: 1px solid #444;
+      background: var(--pg-raised);
+      color: var(--pg-fg);
+      border: 1px solid var(--pg-border);
       border-radius: 4px;
       padding: 4px 6px;
       font-size: 12px;
@@ -202,7 +213,9 @@
     /* m15-02-04: 폼 컨트롤 배경/잉크 "선언 신설" — 지금까지 background/color 선언이 아예 없어
        UA 기본(흰 배경)으로 남아 있었다(리터럴이 없어 어떤 리터럴 검사로도 안 잡히던 부류).
        🔴 라디오/체크박스 제외 — 같은 배경을 주면 컨트롤이 배경에 묻힌다(modeRow 는 이미
-          --pg-raised 라 특히). 실측 라디오 3개소(playground.js:1337 :1347 :2412 → 런타임 4개),
+          --pg-raised 라 특히). 실측 라디오 3개소(playground.js 의 v1Radio · v2Radio · btx-sign-mode
+          루프 → 런타임 4개. 🔴 줄 번호를 적지 않는다 — 초판이 적은 :1337 :1347 :2412 는 이 PR 의
+          편집으로 이미 3줄씩 밀려 stale 이었다. 셀렉터·식별자로 참조한다),
           체크박스 0개지만 방어적으로 함께 제외한다.
        🔴 color-scheme: dark 미사용 — 브라우저 의존값이 되어 m15-02-03 이 되돌린 전례.
        🔴 appearance: none 미사용 — select 화살표를 지우면 커스텀 아트가 필요해져 "선언 신설"
@@ -253,8 +266,10 @@
     /* m15-02-04: playground.js 가 동적 생성하는 액션 버튼 4개(btn-signdata-getaddress ·
        btn-resolve-sender · btn-btc-getaddr · btn-btc-fetch)는 이 파일에 일반 button 규칙이
        0건이라 UA 기본 스타일로 렌더됐다. 넷 다 .form-row 컨테이너 안이다(실측).
-       🔴 #btn-connect 의 계약을 복제하지 않고 셀렉터를 넓혀 재사용한다 — 값이 두 벌이 되면
-          다음 색 변경이 그만큼 비싸진다. 버튼은 표면이 아니라 컴포넌트다. */
+       🔴 #btn-connect 와 **같은 토큰**(var(--brand)/var(--on-brand))을 참조한다 — 규칙이 둘이어도
+          값은 한 벌이므로 다음 색 변경 비용은 늘지 않는다. 셀렉터를 콤마로 합치지 않는 이유는
+          위 #btn-connect 주석 참조(형제 게이트가 정확 셀렉터로 찾는다).
+          버튼은 표면이 아니라 컴포넌트다. */
     .form-row button {
       background: var(--brand);
       color: var(--on-brand);
@@ -263,6 +278,12 @@
       padding: 6px 12px;
       cursor: pointer;
     }
+    .form-row button:hover { background: var(--brand-600); }
+    /* m15-02-04 R2(W-A): 이 규칙이 없으면 UA 기본 button:disabled 회색이 위 저자 스타일에 져서
+       **비활성 버튼이 활성처럼 라임으로** 렌더된다. #btn-btc-fetch 는 fetchBtn.disabled=!ex 로
+       explorer 미지원 코인에서 실제로 disabled 가 된다(playground.js). 형제 3원소(#btn-connect ·
+       #btn-send · 여기) 중 새로 만든 이것만 :disabled 가 비어 있었다. */
+    .form-row button:disabled { background: var(--pg-muted); cursor: not-allowed; }
 
     /* ── Right: Log panel ── */
     #log-area {

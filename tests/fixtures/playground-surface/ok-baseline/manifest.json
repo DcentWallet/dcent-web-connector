@@ -1,7 +1,10 @@
 {
   "exceptions": {
     "index-v2.html": {
-      "#fca5a5": { "count": 1, "resolvedBy": "test-fixture" }
+      "#fca5a5": {
+        "count": 1,
+        "resolvedBy": "test-fixture"
+      }
     }
   },
   "allowedMap": {
@@ -13,6 +16,6 @@
     "pg-muted": "#94a3b8",
     "pg-selected": "#312e63"
   },
-  "p4Floor": 7,
-  "p5Floor": 7
+  "p4Floor": 9,
+  "p5Floor": 8
 }

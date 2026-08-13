@@ -14,15 +14,36 @@
 ## 앵커 위치
 
 - `docs/index.html` — `:root{` 내부, `BRAND-ANCHOR:BEGIN`/`BRAND-ANCHOR:END` 주석 사이 9줄
-- `index-v2.html` — 같은 이름의 앵커 블록(신설 시점은 형제 objective 소관)
+- `index-v2.html` — 같은 이름의 앵커 블록 (m15-02-03 에서 신설 완료)
 
-## 앵커 9토큰
+## 앵커 9토큰 — 🔴 **값을 여기 적지 않는다**
 
-```css
---brand-100:#E2E1FD; --brand-200:#927DFF; --brand-400:#C7C3FB;
---brand:#7231ff;     --brand-600:#6422E6; --brand-900:#22003C;
---brand-ink:#4F46E5; --brand-ink-lite:#ABA2FE; --on-brand:#0B0E14;
+키는 9개로 고정이다:
+`--brand-100` · `--brand-200` · `--brand-400` · `--brand` · `--brand-600` · `--brand-900` ·
+`--brand-ink` · `--brand-ink-lite` · `--on-brand`
+
+**현재 값은 아래 명령으로 읽는다.** 이 문서에 값을 베껴 적지 않는다:
+
+```bash
+sed -n '/BRAND-ANCHOR:BEGIN/,/BRAND-ANCHOR:END/p' docs/index.html \
+  | grep -oE '\-\-[a-z0-9-]+:\s*#[0-9a-fA-F]{6}'
 ```
+
+> 🔴 **왜 값을 안 적나** (2026-08-13 크로스 리뷰 W3 — 두 리뷰어가 독립적으로 지목).
+> 이 자리에 **은퇴한 보라 세대 9값이 그대로 남아 있었다.** m15-02-01 이 앵커가 아직 보라일 때
+> 이 문서를 만들었고, m15-02-02 가 앵커를 라임으로 바꾸면서 문서를 따라가지 않았다 —
+> 각 child 만 보면 둘 다 정상이라 **child 단위 리뷰로는 원리적으로 안 보이는** 드리프트였다.
+>
+> 그리고 이건 단순 오기가 아니라 **아래 4-b 를 정면으로 무산시킨다.** 4-b 는 "교체 전 9값을
+> `REPO_G1_PAST_GENERATIONS` 에 통째로 추가하라" 고 지시하는데, 그 목록을 가져올 가장 자연스러운
+> 출처가 바로 이 §다. 보라가 적혀 있으면 다음 리브랜더는 **이미 등록된 보라를 중복 등록하고
+> 라임 세대는 영영 등록하지 않는다** — 잔여 라임 리터럴이 G1 의 `exactSet` 과 hue 밴드 양쪽에서
+> 영구히 빠진다. 4-b 가 존재하는 이유 자체가 사라진다.
+>
+> 형제 스크립트가 같은 라운드에 배운 교훈과 동일하다 —
+> *"숫자를 두 곳에 적으면 한쪽이 반드시 stale 이 된다 ⇒ 여기엔 산문만 적는다"*
+> (`check-index-html-brand-tokens.mjs` · `check-playground-surface.mjs` floor 주석).
+> 그 클래스를 스크립트에서만 닫고 **이 문서에는 열어뒀던 것**이 이번 결함이다.
 
 ## 교체 절차
 

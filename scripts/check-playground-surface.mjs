@@ -326,7 +326,7 @@ function runP2(pgMap, allowedMap) {
  *
  *  🔴 라디오/체크박스 제외(`:not(...)`)까지 함께 고정한다 — 그게 빠지면 라디오가 배경에 묻히고,
  *  `:read-only`/`.error` 규칙과의 특정도 위계도 깨진다(이 PR 이 실제로 한 번 열었던 표면이다). */
-function runFormControlInvariant(indexText) {
+function runFormControlInvariant(indexText, expectedBgRules) {
   const text = blankComments(indexText)
   const re = /\.form-row\s+input:not\(\[type=radio\]\):not\(\[type=checkbox\]\)\s*,\s*\.form-row\s+select\s*,\s*\.form-row\s+textarea\s*\{([^}]*)\}/
   const m = re.exec(text)
@@ -343,7 +343,7 @@ function runFormControlInvariant(indexText) {
   if (!/\.form-row[^{]*::placeholder[^{]*\{[^{}]*color:\s*var\(--pg-[a-z-]+\)/.test(text)) {
     findings.push('폼 컨트롤 인바리언트: ::placeholder 잉크가 var(--pg-*) 로 선언돼 있지 않다 — UA 기본 회색은 다크 배경 위 3.87 로 AA 미달이며 게이트의 다른 축은 이 잉크를 원리적으로 못 본다')
   }
-  findings.push(...runFormControlCascade(text))
+  findings.push(...runFormControlCascade(text, expectedBgRules))
   return findings
 }
 
@@ -360,15 +360,25 @@ function runFormControlInvariant(indexText) {
  *    ① 폼 컨트롤을 매칭하는 규칙을 전부 열거하고
  *    ② 그중 `background` 를 **선언한** 규칙이 알려진 집합(기본 + :read-only)뿐인지 단언한다.
  *  세 번째 규칙이 생기면 그게 정당한 변경이든 우회든 **일단 멈추고 사람이 보게** 한다. */
-const FORM_CONTROL_BG_RULES = 2 // 기본 규칙 + :read-only (둘 다 background 선언). 늘리려면 근거를 남길 것
-function runFormControlCascade(text) {
+// 🔴 3 = 폼 컨트롤 기본 규칙 + `:read-only` + `#transport-selector select`. 늘리려면 근거를 남길 것.
+//    (2026-08-13 epic 크로스 리뷰 W2 로 2 → 3. 아래 필터를 넓히면서 실측 모수가 늘었다.)
+const REPO_FORM_CONTROL_BG_RULES = 3
+// fixture 는 최소 파일이라 기본 2개(기본 규칙 + :read-only). manifest 로 덮어쓸 수 있다.
+const DEFAULT_FORM_CONTROL_BG_RULES = 2
+function runFormControlCascade(text, expected) {
+  // 🔴 필터는 **셀렉터에 조상이 무엇이든** input/select/textarea 를 겨냥하면 잡는다.
+  //    초판은 `.form-row|#form-fields` 를 요구했는데, 그건 docstring 이 약속한 "전부 열거" 보다
+  //    좁았다 — 실측 우회 3종이 전부 exit 0 이었다(같은 파일에 실재하고 CONTAINER_OF 에도 등록된
+  //    조상을 쓰면 된다): `#form-panel input` · `#sidebar input` · `body input !important`.
+  //    셋 다 (1,0,1) 이상이라 기본 규칙 (0,3,1) 을 이기고 입력창이 거의 흰 표면이 된다.
+  //    ⚠️ 이건 "알려진 한계 4" 가 **닫았다고 선언한** 축이라, 좁은 필터는 그 선언을 거짓으로 만든다.
   const rules = [...text.matchAll(/([^{}]+)\{([^{}]*)\}/g)]
-    .filter((m) => /(?:\.form-row|#form-fields)[^,{]*\b(?:input|select|textarea)\b/.test(m[1]) && !m[1].trim().startsWith('/*'))
+    .filter((m) => /\b(?:input|select|textarea)\b/.test(m[1]) && !m[1].trim().startsWith('/*'))
   const withBg = rules.filter((m) => /(?:^|[^-])background(?:-color)?\s*:/.test(m[2]))
-  if (withBg.length === FORM_CONTROL_BG_RULES) return []
+  if (withBg.length === expected) return []
   const sels = withBg.map((m) => m[1].trim().replace(/\s+/g, ' ').slice(0, 70))
   return [
-    `폼 컨트롤 캐스케이드: background 를 선언하는 폼 컨트롤 규칙이 ${withBg.length}개 (기대 ${FORM_CONTROL_BG_RULES}: 기본 + :read-only) — ` +
+    `폼 컨트롤 캐스케이드: background 를 선언하는 폼 컨트롤 규칙이 ${withBg.length}개 (기대 ${expected}) — ` +
       `더 높은 특정도의 규칙이 입력창 배경을 덮으면 P3 는 원래 규칙을 계속 자기 배경으로 측정해 통과시킨다. 실측 셀렉터: ${sels.join(' | ')}`,
   ]
 }
@@ -831,6 +841,9 @@ const REPO_P4_FLOOR = 42
 const REPO_P5_FLOOR = 61 // 실측(2026-08-13) — index-v2.html CSS 규칙 수
 // 🔴 P3 도 같은 이유로 floor 가 필요하다(Lens1 C2) — checked.length 는 지금까지 무방비였다.
 const REPO_P3_FLOOR = 26
+// 🔴 위반 fixture 모수 floor (epic 크로스 리뷰 W1) — 실측과 일치시킨다. 이 숫자가 없으면
+//    위반 fixture 를 통째로 지워도 --test 가 초록이라 검출력 증명이 조용히 사라진다.
+const REPO_VIOL_FIXTURE_FLOOR = 14
 
 function loadRepoSpec() {
   const indexPath = resolve(REPO_ROOT, 'index-v2.html')
@@ -847,6 +860,7 @@ function loadRepoSpec() {
     pgText: pgEntry ? pgEntry.text : null,
     exceptions: REPO_P1_EXCEPTIONS,
     allowedMap: ALLOWED_PG_MAP,
+    formControlBgRules: REPO_FORM_CONTROL_BG_RULES,
     p3Floor: REPO_P3_FLOOR,
     p4Floor: REPO_P4_FLOOR,
     p5Floor: REPO_P5_FLOOR,
@@ -871,7 +885,7 @@ function runAll(spec) {
 
   findings.push(...runP2(pgMap, spec.allowedMap))
   findings.push(...runP2Shadow(spec.indexText, rootRange, spec.pgText))
-  findings.push(...runFormControlInvariant(spec.indexText))
+  findings.push(...runFormControlInvariant(spec.indexText, spec.formControlBgRules ?? DEFAULT_FORM_CONTROL_BG_RULES))
   findings.push(...runInlineBgAssign(spec.pgText))
 
   const literalAnchors = buildLiteralAnchors(spec.indexText, spec.pgText, pgMap)
@@ -938,6 +952,7 @@ function runFixture(dir) {
     pgText: pgEntry ? pgEntry.text : null,
     exceptions: manifest.exceptions || {},
     allowedMap: manifest.allowedMap || ALLOWED_PG_MAP,
+    formControlBgRules: manifest.formControlBgRules ?? DEFAULT_FORM_CONTROL_BG_RULES,
     p3Floor: manifest.p3Floor ?? 0,
     p4Floor: manifest.p4Floor ?? 0,
     p5Floor: manifest.p5Floor ?? 0,
@@ -982,7 +997,17 @@ function runAllFixtures() {
     console.error(`정상(exit 0) fixture 가 ${okCount}건 (2건 미만 — 가짜 초록 방지 floor 위반)`)
     return 2
   }
-  console.log(`fixtures: ${dirs.length}건 (정상 ${okCount}건)`)
+  // 🔴 **위반 fixture 모수 floor** (2026-08-13 epic 크로스 리뷰 W1).
+  //    초판은 "디렉터리 ≥1" + "정상 ≥2" 만 봤다. 그래서 `rm -rf tests/fixtures/*/viol*` 한 줄로
+  //    **위반 fixture 23개를 전부 지워도 exit 0** 이었다 — 이 epic 이 쌓은 검출력 증명 전체가
+  //    조용히 사라지고 CI 는 아무 말도 안 한다. 정상 fixture 만으로는 "게이트가 무언가를 잡는다" 를
+  //    보장하지 못한다(아무것도 안 잡아도 정상 fixture 는 통과한다).
+  const violCount = dirs.length - okCount
+  if (violCount < REPO_VIOL_FIXTURE_FLOOR) {
+    console.error(`위반 fixture 가 ${violCount}건 (floor ${REPO_VIOL_FIXTURE_FLOOR} 미만 — 검출력 증명이 사라졌다)`)
+    return 2
+  }
+  console.log(`fixtures: ${dirs.length}건 (정상 ${okCount}건 · 위반 ${violCount}건)`)
 
   // T-G-07 류 — 빈 fixture 루트 → exit 2
   {

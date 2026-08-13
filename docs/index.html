@@ -19,10 +19,18 @@
      arbitrary per-network color as background via inline style -- wiring the
      class default to --on-brand collapsed contrast on dark network colors --
      near-black ink on near-black background drops below 1.2:1, near-unreadable).
-     The rest of the 9 have no consumer in this document yet (measured 0 usages
-     beyond --accent alias below). Intentionally unused to keep parity with the
-     sibling repo's 9-token anchor -- do not delete as dead code. All 9 values
-     must stay distinct from each other. */
+     🔴 Consumer counts are NOT written here (2026-08-13 cross-review W-2): this
+     comment used to claim "the rest of the 9 have no consumer (measured 0 usages)",
+     which m15-02-04 silently falsified by wiring --brand-100 and --brand-ink into
+     badges, the info note border and the architecture diagram. The comment was
+     written by one child and invalidated by another -- invisible to per-child
+     review, same class as the stale palette in docs/brand-color-replacement.md.
+     Measure instead of trusting prose:
+       grep -oE 'var\(--brand[a-z0-9-]*\)|var\(--on-brand\)' docs/index.html | sort | uniq -c
+     Tokens with no consumer are intentionally kept to hold parity with the sibling
+     repo's 9-token anchor -- do not delete as dead code. The G3 resolved snapshot
+     (tests/fixtures/brand-tokens/resolved.snapshot.json) is their only observer.
+     All 9 values must stay distinct from each other. */
   /* BRAND-ANCHOR:END */
 
   --bg:#0f0f10; --bg-2:#0a0d12; --panel:#1b1c1e; --panel-2:#161c24;

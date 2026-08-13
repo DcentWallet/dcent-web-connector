@@ -17,5 +17,6 @@
     "pg-selected": "#312e63"
   },
   "p4Floor": 11,
-  "p5Floor": 10
+  "p5Floor": 10,
+  "formControlBgRules": 2
 }

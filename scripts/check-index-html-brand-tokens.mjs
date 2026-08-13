@@ -725,6 +725,8 @@ const REPO_G1_FLOORS = { rootBlocks: 5, customProps: 53, accentUses: 21, accentS
 // 🔴 m15-02-02 — 01 의 3(docs: B-1 쌍 · B-3a-dot · B-3b-ticker) + playground 버튼 3규칙
 // (#btn-connect/#btn-send/#log-toolbar button.active, index-v2.html) = 6.
 const REPO_DIRECTION_B_FLOOR = 6
+// 🔴 위반 fixture 모수 floor (epic 크로스 리뷰 W1) — 실측 일치. 형제 스크립트와 같은 조항.
+const REPO_VIOL_FIXTURE_FLOOR = 23
 
 // 🔴 과거 세대 앵커 값 — 브랜드 색을 다시 교체할 때(다음 리브랜드) 이 배열에 "직전 세대 9값"을
 //    통째로 추가해야 G1 이 그 세대의 잔여 리터럴을 계속 잡는다. 현재 앵커(9값)는 교체 순간
@@ -968,7 +970,16 @@ function runAllFixtures() {
     console.error(`정상(exit 0) fixture 가 ${okCount}건 (2건 미만 — 가짜 초록 방지 floor 위반)`)
     return 2
   }
-  console.log(`fixtures: ${dirs.length}건 (정상 ${okCount}건)`)
+  // 🔴 **위반 fixture 모수 floor** (2026-08-13 epic 크로스 리뷰 W1) — 형제 스크립트
+  //    check-playground-surface.mjs 와 같은 조항. `rm -rf tests/fixtures/*/viol*` 한 줄로
+  //    위반 fixture 23개를 전부 지워도 exit 0 이었다. 정상 fixture 만으로는 "게이트가 무언가를
+  //    잡는다" 를 보장하지 못한다 — 아무것도 안 잡아도 정상 fixture 는 통과하기 때문이다.
+  const violCount = dirs.length - okCount
+  if (violCount < REPO_VIOL_FIXTURE_FLOOR) {
+    console.error(`위반 fixture 가 ${violCount}건 (floor ${REPO_VIOL_FIXTURE_FLOOR} 미만 — 검출력 증명이 사라졌다)`)
+    return 2
+  }
+  console.log(`fixtures: ${dirs.length}건 (정상 ${okCount}건 · 위반 ${violCount}건)`)
 
   // ── T-U-03: contrastRatio 골든 케이스 (bridge 형제와 같은 골든값·반올림 자릿수) ──
   if (contrastRatio('#FFFFFF', '#000000') !== 21) {

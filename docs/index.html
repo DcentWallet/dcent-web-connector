@@ -3,15 +3,42 @@
 <head>
 <meta charset="utf-8" />
 <meta name="viewport" content="width=device-width, initial-scale=1" />
-<link rel="icon" href="data:image/svg+xml,%3Csvg xmlns=%27http://www.w3.org/2000/svg%27 viewBox=%270 0 32 32%27%3E%3Crect width=%2732%27 height=%2732%27 rx=%277%27 fill=%27%236c2ef3%27/%3E%3Crect x=%279%27 y=%279%27 width=%2714%27 height=%2714%27 rx=%273%27 fill=%27none%27 stroke=%27%23fff%27 stroke-width=%273.2%27/%3E%3C/svg%3E" /><title>DCENT Web Connector v2 — Developer Documentation</title>
+<link rel="icon" href="data:image/svg+xml,%3Csvg xmlns=%27http://www.w3.org/2000/svg%27 viewBox=%270 0 280 280%27%3E%3Cpath fill=%27%2390E01F%27 d=%27M15 256.709V23H160.465C264.411 23 265 46.8657 265 140C265 233.134 264.706 257 160.465 257H15V256.709ZM63.881 212.179H209.935V67.5299H63.881V211.888V212.179Z%27/%3E%3C/svg%3E" /><title>DCENT Web Connector v2 — Developer Documentation</title>
 <style>
 :root{
+  /* BRAND-ANCHOR:BEGIN -- brand color source of truth. Change values ONLY here.
+     Source: 브랜드 가이드 v1 「웹 매체 운용」 10p/11p (2026-08-12 확정).
+     Replacement procedure: docs/brand-color-replacement.md (in this repo) */
+  --brand-100:#C7F08F; --brand-200:#B3EA66; --brand-400:#99E331;
+  --brand:#90E01F;     --brand-600:#7EC11F; --brand-900:#45580E;
+  --brand-ink:#67A216; --brand-ink-lite:#84CE1C; --on-brand:#171719;
+  /* --on-brand is wired to .flow .num .n (always brand background) and to the
+     single net-ico search-fallback branch where background truly resolves to
+     the brand accent alias (m15-02-02, revised: the .net-ico *class* default
+     stays its original white ink because ~30 catalog entries paint their own
+     arbitrary per-network color as background via inline style -- wiring the
+     class default to --on-brand collapsed contrast on dark network colors --
+     near-black ink on near-black background drops below 1.2:1, near-unreadable).
+     🔴 Consumer counts are NOT written here (2026-08-13 cross-review W-2): this
+     comment used to claim "the rest of the 9 have no consumer (measured 0 usages)",
+     which m15-02-04 silently falsified by wiring --brand-100 and --brand-ink into
+     badges, the info note border and the architecture diagram. The comment was
+     written by one child and invalidated by another -- invisible to per-child
+     review, same class as the stale palette in docs/brand-color-replacement.md.
+     Measure instead of trusting prose:
+       grep -oE 'var\(--brand[a-z0-9-]*\)|var\(--on-brand\)' docs/index.html | sort | uniq -c
+     Tokens with no consumer are intentionally kept to hold parity with the sibling
+     repo's 9-token anchor -- do not delete as dead code. The G3 resolved snapshot
+     (tests/fixtures/brand-tokens/resolved.snapshot.json) is their only observer.
+     All 9 values must stay distinct from each other. */
+  /* BRAND-ANCHOR:END */
+
   --bg:#0f0f10; --bg-2:#0a0d12; --panel:#1b1c1e; --panel-2:#161c24;
   --border:#37383c; --border-2:#2d3744;
   --text:#cacaca; --text-dim:#878a93; --text-faint:#6e7681;
-  --head:#f0f6fc; --accent:#7231ff; --accent-2:#388bfd; --accent-soft:#251b4d;
+  --head:#f0f6fc; --accent:var(--brand); --accent-2:#388bfd; --accent-soft:color-mix(in srgb,var(--brand) 25%,var(--bg));
   --green:#3fb950; --green-soft:#11241a; --amber:#d29922; --amber-soft:#241c0d;
-  --red:#f85149; --red-soft:#2a1416; --purple:#967cff; --cyan:#39c5cf;
+  --red:#f85149; --red-soft:#2a1416; --cyan:#39c5cf;
   --code-bg:#050506; --mono:"SF Mono",ui-monospace,"JetBrains Mono",Menlo,Consolas,monospace;
   --sans:"Pretendard","Pretendard Variable",-apple-system,BlinkMacSystemFont,"Apple SD Gothic Neo","Segoe UI","Malgun Gothic",Roboto,Helvetica,Arial,sans-serif;
   --sidebar-w:280px; --toc-w:220px; --header-h:56px;
@@ -117,11 +144,11 @@ hr.sep{border:none;border-top:1px solid var(--border);margin:30px 0}
 .b-real{color:#ff9d96;background:var(--red-soft);border-color:#5a2126}
 .b-auto{color:#e3b341;background:var(--amber-soft);border-color:#5a4711}
 .b-opt{color:var(--green);background:var(--green-soft);border-color:#1d4427}
-.b-fixed{color:#79c0ff;background:var(--accent-soft);border-color:#274472}
+.b-fixed{color:var(--brand-100);background:var(--accent-soft);border-color:var(--brand-ink)}
 .b-rpc{color:#e3b341;background:var(--amber-soft);border-color:#5a4711}
 .b-wallet{color:#ff9d96;background:var(--red-soft);border-color:#5a2126}
-.b-dapp{color:#79c0ff;background:var(--accent-soft);border-color:#274472}
-.b-sdk{color:var(--purple);background:#1d1430;border-color:#3a2a55}
+.b-dapp{color:var(--brand-100);background:var(--accent-soft);border-color:var(--brand-ink)}
+.b-sdk{color:var(--accent-2);background:#0d1b2e;border-color:#1f3a5f}
 .b-std{color:var(--cyan);background:#0c2429;border-color:#164b52}
 .b-tech{color:var(--text-dim);background:var(--panel-2);border-color:var(--border-2)}
 .b-dep{color:var(--text-faint);background:var(--panel);border-color:var(--border-2);text-decoration:line-through}
@@ -158,7 +185,7 @@ hr.sep{border:none;border-top:1px solid var(--border);margin:30px 0}
 .copy.done{color:var(--green);border-color:var(--green)}
 /* token coloring */
 .tok-k{color:#ff7b72}.tok-s{color:#a5d6ff}.tok-n{color:#79c0ff}.tok-c{color:#8b949e;font-style:italic}
-.tok-p{color:#d2a8ff}.tok-key{color:#7ee787}.tok-b{color:#ffa657}
+.tok-p{color:#39c5cf}/* ⚠️ .tok-k/s/n/c/p/key/b 는 현재 사용처 0 (죽은 CSS) — tok-acc 만 쓰인다 */.tok-key{color:#7ee787}.tok-b{color:#ffa657}
 
 .io-pair{border-left:2px solid var(--border-2);padding-left:14px;margin:14px 0}
 .io-pair .io-label{font-size:11px;text-transform:uppercase;letter-spacing:.05em;color:var(--text-faint);font-weight:700;margin-top:8px}
@@ -168,7 +195,7 @@ table.params{width:100%;border-collapse:collapse;margin:14px 0;font-size:13px}
 table.params th{text-align:left;font-size:11px;text-transform:uppercase;letter-spacing:.04em;color:var(--text-faint);
   font-weight:600;padding:12px 12px;border-bottom:1px solid var(--border-2);white-space:nowrap}
 table.params td{padding:13px 12px;border-bottom:1px solid var(--border);vertical-align:top}
-table.params td code{color:var(--purple);font-size:12.5px}
+table.params td code{color:var(--head);font-size:12.5px}
 table.params tr:hover td{background:var(--panel)}
 table.params td.type{color:var(--cyan);font-family:var(--mono);font-size:12px}
 
@@ -182,7 +209,7 @@ table.matrix{width:100%;border-collapse:collapse;margin:8px 0;font-size:12.8px}
 table.matrix th{position:sticky;top:0;text-align:left;font-size:11px;text-transform:uppercase;color:var(--text-faint);
   font-weight:700;padding:9px 10px;border-bottom:1px solid var(--border-2);background:var(--bg);z-index:1}
 table.matrix td{padding:8px 10px;border-bottom:1px solid var(--border);vertical-align:top}
-table.matrix td code{color:var(--purple);font-size:11.5px}
+table.matrix td code{color:var(--head);font-size:11.5px}
 table.matrix tr:hover td{background:var(--panel)}
 .m-yes{color:var(--green);font-weight:700}.m-no{color:var(--text-faint)}
 .m-link{font-size:12px}
@@ -193,8 +220,8 @@ table.matrix tr:hover td{background:var(--panel)}
 .note.tip{background:var(--green-soft);border-color:#1d4427}
 .note.warn{background:var(--amber-soft);border-color:#5a4711}
 .note.danger{background:var(--red-soft);border-color:#5a2126}
-.note.info{background:var(--accent-soft);border-color:#274472}
-.note.delta{background:#1d1430;border-color:#3a2a55}
+.note.info{background:var(--accent-soft);border-color:var(--brand-ink)}
+.note.delta{background:#0d1b2e;border-color:#1f3a5f}
 .note strong{color:var(--head)}
 .note p{margin:4px 0}
 
@@ -219,7 +246,7 @@ table.matrix tr:hover td{background:var(--panel)}
 .reqs .rq .k .ico{display:inline-flex;align-items:center;justify-content:center;width:30px;height:30px;border-radius:8px;background:var(--accent-soft);color:var(--accent);flex:0 0 auto}
 .reqs .rq .v{font-size:13.5px;color:var(--text);line-height:1.6}
 .reqs .rq .v strong{color:var(--head)}
-.reqs .rq .v code{color:var(--purple)}
+.reqs .rq .v code{color:var(--head)}
 @media(max-width:560px){.reqs .rq{grid-template-columns:1fr;gap:9px;align-items:start}}
 
 /* ---------- TOC ---------- */
@@ -250,7 +277,7 @@ table.matrix tr:hover td{background:var(--panel)}
 .flow tbody tr:last-child td{border-bottom:none}
 .flow tbody tr:hover td{background:var(--bg-2)}
 .flow .num{width:54px}
-.flow .num .n{display:inline-flex;align-items:center;justify-content:center;width:27px;height:27px;border-radius:50%;font-weight:700;font-size:12.5px;color:#fff}
+.flow .num .n{display:inline-flex;align-items:center;justify-content:center;width:27px;height:27px;border-radius:50%;font-weight:700;font-size:12.5px;color:var(--on-brand)}
 .flow .num .n.c{background:var(--accent)}
 .flow .num .n.a{background:var(--amber)}
 .flow .step{display:flex;align-items:center;gap:12px}
@@ -263,7 +290,7 @@ table.matrix tr:hover td{background:var(--panel)}
 .flow .step .ss.a{color:var(--amber)}
 .flow .desc{color:var(--text-dim);line-height:1.5}
 .flow .own{display:inline-flex;align-items:center;gap:6px;padding:4px 11px;border-radius:7px;font-size:11.5px;font-weight:700;white-space:nowrap}
-.flow .own.c{background:var(--accent-soft);color:#9ec1ff;border:1px solid #2a3a5c}
+.flow .own.c{background:var(--accent-soft);color:var(--brand-100);border:1px solid var(--brand-ink)}
 .flow .own.a{background:var(--amber-soft);color:#e3b341;border:1px solid #4d3f1a}
 .flow-legend{display:flex;gap:18px;flex-wrap:wrap;margin:11px 2px 0;font-size:12px;color:var(--text-dim)}
 .flow-legend .li{display:flex;align-items:center;gap:7px}
@@ -333,7 +360,7 @@ table.matrix tr:hover td{background:var(--panel)}
 <body>
 <div class="topbar">
   <button class="menu-btn" id="menuBtn" aria-label="menu">☰</button>
-  <div class="brand"><span class="logo"><svg viewBox="0 0 32 32" width="26" height="26" fill="none" aria-hidden="true"><rect width="32" height="32" rx="7" fill="#6c2ef3"/><rect x="9" y="9" width="14" height="14" rx="3" fill="none" stroke="#fff" stroke-width="3.2"/></svg></span> <span class="brand-name">Web Connector</span> <span class="v">v2</span></div>
+  <div class="brand"><span class="logo"><svg viewBox="0 0 280 280" width="26" height="26" fill="var(--brand)" aria-hidden="true"><path d="M15 256.709V23H160.465C264.411 23 265 46.8657 265 140C265 233.134 264.706 257 160.465 257H15V256.709ZM63.881 212.179H209.935V67.5299H63.881V211.888V212.179Z"/></svg></span> <span class="brand-name">Web Connector</span> <span class="v">v2</span></div>
   <div class="search-wrap">
     <span class="si">⌕</span>
     <input id="search" type="text" placeholder="Search APIs, networks, chainId, ERC20, nonce…" autocomplete="off" />
@@ -415,9 +442,9 @@ function diagramArch(lang){
     <rect x="${X}" y="${y}" width="${BW}" height="${h}" rx="14" fill="${fill}" stroke="${stroke}" stroke-width="${sw}" filter="url(#archShadow)"/>
     <line x1="${X+16}" y1="${y+1.5}" x2="${X+BW-16}" y2="${y+1.5}" stroke="#ffffff" stroke-opacity="0.06" stroke-width="1"/>
     <text x="${W/2}" y="${y+(sub?h/2-3:h/2+5)}" text-anchor="middle" fill="#f0f6fc" font-size="15" font-weight="700" font-family="ui-sans-serif,system-ui">${title}</text>
-    ${sub?`<text x="${W/2}" y="${y+h/2+15}" text-anchor="middle" fill="#93a0b0" font-size="12" font-family="ui-sans-serif,system-ui">${sub}</text>`:''}
+    ${sub?`<text x="${W/2}" y="${y+h/2+15}" text-anchor="middle" fill="var(--text)" font-size="12" font-family="ui-sans-serif,system-ui">${sub}</text>`:''}
     ${extra||''}`;
-  const npm=(y)=>`<rect x="${X+BW-50}" y="${y+12}" width="38" height="18" rx="6" fill="#221a3a" stroke="#473a78"/><text x="${X+BW-31}" y="${y+24.5}" text-anchor="middle" fill="#c4a8ff" font-size="10" font-weight="700" font-family="ui-sans-serif,system-ui">npm</text>`;
+  const npm=(y)=>`<rect x="${X+BW-50}" y="${y+12}" width="38" height="18" rx="6" fill="var(--bg)" stroke="var(--brand-ink)"/><text x="${X+BW-31}" y="${y+24.5}" text-anchor="middle" fill="var(--brand-100)" font-size="10" font-weight="700" font-family="ui-sans-serif,system-ui">npm</text>`;
   // port badge: a rounded box with the USB / Bluetooth glyph centered inside it
   const portBox=(bx,by)=>`<rect x="${bx}" y="${by}" width="30" height="30" rx="8" fill="#10151c" stroke="#2c3a4d" stroke-width="1.2"/>`;
   const portUsb=(bx,by,c)=>portBox(bx,by)+`
@@ -440,18 +467,18 @@ function diagramArch(lang){
     <line x1="${x+16}" y1="${tY+1.5}" x2="${x+cw-16}" y2="${tY+1.5}" stroke="#ffffff" stroke-opacity="0.05" stroke-width="1"/>
     ${port(x+bxoff,by,c)}
     <text x="${cxc}" y="${tY+tH/2-2}" text-anchor="middle" fill="#f0f6fc" font-size="13.5" font-weight="700" font-family="ui-sans-serif,system-ui">${title}</text>
-    <text x="${cxc}" y="${tY+tH/2+15}" text-anchor="middle" fill="#93a0b0" font-size="11.5" font-family="ui-sans-serif,system-ui">${sub}</text>`;
+    <text x="${cxc}" y="${tY+tH/2+15}" text-anchor="middle" fill="var(--text)" font-size="11.5" font-family="ui-sans-serif,system-ui">${sub}</text>`;
   };
   const chev=(my)=>`<path d="M${W/2-5} ${my-2.5} L${W/2} ${my+2.5} L${W/2+5} ${my-2.5}" fill="none" stroke="#3c4a5e" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>`;
   return `<div class="diagram"><svg viewBox="0 0 ${W} 366" role="img" aria-label="${t.app} → ${t.con} → ${t.bridge} → ${t.hw}">
     <defs><filter id="archShadow" x="-6%" y="-20%" width="112%" height="150%"><feDropShadow dx="0" dy="2" stdDeviation="3.5" flood-color="#05070b" flood-opacity="0.55"/></filter></defs>
     ${band(12,56,'#15203a','#2c4067',1.2,t.app,t.appSub)}
     ${chev(75)}
-    ${band(82,60,'#1b1738','#5044a0',1.8,t.con,t.conSub,npm(82))}
+    ${band(82,60,'var(--accent-soft)','var(--brand-ink)',1.8,t.con,t.conSub,npm(82))}
     ${chev(149)}
     ${band(156,56,'#102a2d','#1f5a64',1.2,t.bridge,t.bridgeSub)}
     ${chev(219)}
-    ${tcard(X,portUsb,'#7c5bff',t.t1,t.t1s)}
+    ${tcard(X,portUsb,'var(--brand)',t.t1,t.t1s)}
     ${tcard(X+cw+gap,portBle,'#39c5cf',t.t2,t.t2s)}
     ${chev(289)}
     ${band(296,56,'#1a1f28','#39434f',1.2,t.hw,t.hwSub)}
@@ -756,7 +783,11 @@ function enhanceSpecCard(root, id, ko){
     iconHtml='<span class="net-ico net-img sc-ico"><img src="'+ce.img+'" alt="" loading="lazy" onerror="this.remove();this.parentNode.style.background=\''+(ce.col||'#5b6270')+'\';this.parentNode.textContent=\''+(ce.ico||'?')+'\'"></span>';
   } else {
     var col=ce?ce.col:'var(--accent)', ic=ce?ce.ico:((ticker||name)+'').slice(0,2);
-    iconHtml='<span class="net-ico sc-ico" style="background:'+col+'">'+ic+'</span>';
+    /* m15-02-02: only the ce-falsy branch paints the true brand background --
+       ce.col is an arbitrary per-network hex and must keep the .net-ico class
+       default ink, not on-brand. */
+    var inkStyle=ce?'':';color:var(--on-brand)';
+    iconHtml='<span class="net-ico sc-ico" style="background:'+col+inkStyle+'">'+ic+'</span>';
   }
   var isEvm=/ethereum \/ evm|\bEVM\b/i.test(name);
   function esc(x){ return (x||'').replace(/&/g,'&amp;').replace(/"/g,'&quot;'); }

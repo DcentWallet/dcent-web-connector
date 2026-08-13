@@ -1,0 +1,29 @@
+<!DOCTYPE html>
+<html>
+<head>
+<style>
+  :root {
+    --pg-bg: #0f172a;
+    --pg-panel: #1e1e2e;
+    --pg-raised: #2a2a3e;
+    --pg-border: #334155;
+    --pg-fg: #e2e8f0;
+    --pg-muted: #94a3b8;
+    --pg-selected: #312e63;
+  }
+  body { background: var(--pg-bg); color: var(--pg-fg); }
+  #sidebar { background: var(--pg-panel); }
+  .form-row input:not([type=radio]):not([type=checkbox]), .form-row select, .form-row textarea { background: var(--pg-bg); color: var(--pg-fg); }
+  .form-row input:not([type=radio]):not([type=checkbox])::placeholder, .form-row textarea::placeholder { color: var(--pg-muted); }
+  .form-row input:read-only { background: var(--pg-raised); color: var(--pg-muted); }
+  .field-error { color: #fca5a5; }
+  /* 규칙이 지워진 자리를 주석으로 메운다 — 텍스트만 보면 CSS 규칙처럼 보이지만 진짜 규칙이 아니다.
+     .tree-group-label { color: var(--pg-muted); }
+     .form-row label { color: var(--pg-fg); }
+  */
+</style>
+</head>
+<body>
+<div id="sidebar"></div>
+</body>
+</html>

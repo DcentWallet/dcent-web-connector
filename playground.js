@@ -1317,7 +1317,10 @@
     // 상단 안내 배너 — 초기에는 hidden. sendAccountCall이 unknown_method 에러 감지 시 표시.
     var banner = document.createElement('div')
     banner.id = 'getaddress-banner'
-    banner.style.cssText = 'display:none;background:#fff3cd;color:#856404;padding:8px 10px;border-radius:4px;margin-bottom:8px;font-size:11px;border:1px solid #ffeaa7;'
+    // m15-02-04: 밝은 경고 배너를 다크로 이관(epic m15-02-00 §5 "전 표면 dark-only").
+    // 🔴 배경만 옮기면 그 위 잉크가 깨진다 — 배너 잉크는 원래 배경 위 4.96 이었지만 --pg-raised
+    // 위에서는 2.55 로 미달이라 --pg-fg(11.36)로 동반 전환한다.
+    banner.style.cssText = 'display:none;background:var(--pg-raised);color:var(--pg-fg);padding:8px 10px;border-radius:4px;margin-bottom:8px;font-size:11px;border:1px solid var(--pg-border);'
     banner.textContent = '⚠ sdk가 v2 payload(getAddress chainId)를 아직 처리하지 못합니다 (m11-02 미머지 상태). 임시로 v1 path (coinType)를 사용하거나 m11-02 SHIPPED를 기다리세요.'
     formFields.appendChild(banner)
 
@@ -2117,7 +2120,11 @@
     function setHint (msg, isErr) {
       if (hintEl) {
         hintEl.textContent = msg
-        hintEl.style.color = isErr ? '#c00' : '#888'
+        // m15-02-04: 이 hintEl(sdResolveHint)의 부모 sdResolveRow 가 이제 --pg-raised 다.
+        // 🔴 부모 표면이 판별자다 — 밝은 회색 위에서는 옛 조합(에러 5.49 / 보조 3.31)이었지만
+        // --pg-raised 위에서는 2.38 / 3.95 로 둘 다 미달이 된다. 배경 전환과 같은 커밋에서
+        // 다크세이프 danger 잉크(7.38, 이 리포가 이미 쓰는 값)와 --pg-muted(5.46)로 옮긴다.
+        hintEl.style.color = isErr ? '#fca5a5' : 'var(--pg-muted)'
       }
     }
     if (!state.connected) {
@@ -2188,7 +2195,7 @@
     // (signTransaction sender resolver와 동일 UX).
     var sdResolveRow = document.createElement('div')
     sdResolveRow.className = 'form-row'
-    sdResolveRow.style.cssText = 'margin-bottom:8px;padding:6px;background:#f7f7f7;border-radius:4px;'
+    sdResolveRow.style.cssText = 'margin-bottom:8px;padding:6px;background:var(--pg-raised);border-radius:4px;' // m15-02-04: 밝은 섬 → 다크
     var sdResolveBtn = document.createElement('button')
     sdResolveBtn.id = 'btn-signdata-getaddress'
     sdResolveBtn.type = 'button'
@@ -2196,7 +2203,7 @@
     sdResolveBtn.style.cssText = 'font-size:11px;padding:4px 8px;'
     var sdResolveHint = document.createElement('span')
     sdResolveHint.id = 'signdata-getaddress-hint'
-    sdResolveHint.style.cssText = 'font-size:10px;color:#888;margin-left:8px;'
+    sdResolveHint.style.cssText = 'font-size:10px;color:var(--pg-muted);margin-left:8px;' // m15-02-04: 섬 잉크 동반 전환(3.95 → 5.46)
     sdResolveHint.textContent = '연결된 디바이스의 payment 주소로 채움 (address는 디바이스 소유 필수)'
     sdResolveBtn.addEventListener('click', function () {
       _signDataGetAddressClick(sdChainIdEl, sdKeyPathEl, sdResolveHint)
@@ -2286,7 +2293,7 @@
   function _appendSenderResolveRow (family) {
     var resolveRow = document.createElement('div')
     resolveRow.className = 'form-row'
-    resolveRow.style.cssText = 'margin-bottom:8px;padding:6px;background:#f7f7f7;border-radius:4px;'
+    resolveRow.style.cssText = 'margin-bottom:8px;padding:6px;background:var(--pg-raised);border-radius:4px;' // m15-02-04: 밝은 섬 → 다크
     var resolveBtn = document.createElement('button')
     resolveBtn.id = 'btn-resolve-sender'
     resolveBtn.type = 'button'
@@ -2294,7 +2301,7 @@
     resolveBtn.style.cssText = 'font-size:11px;padding:4px 8px;'
     var resolveHint = document.createElement('span')
     resolveHint.id = 'resolve-sender-hint'
-    resolveHint.style.cssText = 'font-size:10px;color:#888;margin-left:8px;'
+    resolveHint.style.cssText = 'font-size:10px;color:var(--pg-muted);margin-left:8px;' // m15-02-04: 섬 잉크 동반 전환(3.95 → 5.46)
     resolveHint.textContent = SENDER_FIELD_LABELS[family] || '이 네트워크는 payload에 sender 필드가 없음 (signer=디바이스 계정) — 클릭해도 변화 없을 수 있음'
     resolveBtn.addEventListener('click', function () {
       _resolveSenderFromDeviceClick(family, resolveHint)
@@ -2393,7 +2400,12 @@
       var btcMode = state.btxSignMode || 'json'
       var modeRow = document.createElement('div')
       modeRow.className = 'form-row'
-      modeRow.style.cssText = 'margin-bottom:10px;padding:6px;background:#eef;border-radius:4px;'
+      // 크로스 리뷰 발견(C1, 2026-08-12 4축 리뷰) — index-v2.html이 사이드바를 다크로 전환하며
+      // .form-row label{color:var(--pg-fg)}가 이 라디오 라벨에도 적용됐다. 원래는 밝은 인라인
+      // 배경 위였어서 문제없었지만(라이트 잉크·라이트 배경 조합), 이제 그 조합이 1.07(사실상
+      // 안 보임)로 붕괴한다 — Bitcoin 서명 모드(자동/JSON) 선택 라디오가 실사용 파손 대상이라
+      // 여기서 고친다. var(--pg-raised) 적용 후 11.36으로 회복.
+      modeRow.style.cssText = 'margin-bottom:10px;padding:6px;background:var(--pg-raised);border-radius:4px;'
       ;[['auto', '⚡ 자동 (UTXO fetch → build → sign)'], ['json', 'Transaction (JSON) 직접']].forEach(function (m) {
         var lb = document.createElement('label')
         lb.style.cssText = 'margin-right:14px;font-size:12px;cursor:pointer;'
@@ -2534,7 +2546,10 @@
     function setHint (msg, isError) {
       if (!hintEl) return
       hintEl.textContent = msg
-      hintEl.style.color = isError ? '#c33' : '#0a7'
+      // m15-02-04: 부모 resolveRow 가 --pg-raised 로 바뀌면서 옛 조합(4.79 / 2.79)이
+      // 2.73 / 4.68 이 된다 — 에러 잉크는 미달, 정상 잉크는 통과하지만 형제 hint 2곳
+      // (_signDataGetAddressClick · _btcSetStatus)과 값이 갈린다. 같은 짝으로 통일한다.
+      hintEl.style.color = isError ? '#fca5a5' : 'var(--pg-muted)'
     }
 
     if (!state.connected) {
@@ -3613,7 +3628,11 @@
     var el = document.getElementById('btc-fetch-status')
     if (el) {
       el.textContent = msg
-      el.style.color = isErr ? '#c00' : '#888'
+      // 크로스 리뷰 발견(C2, 2026-08-12 4축 리뷰) — 이 상태 엘리먼트는 다크 사이드바(--pg-panel)
+      // 위에 놓인다. 에러 잉크 #c00은 2.79로 AA 미달(전환 전 #fff 위 5.89) — 이 파일의
+      // .log-json.err-json이 이미 쓰는 dark-safe danger 값(#fca5a5, 8.64)으로 교체한다.
+      // 정상 상태 잉크 #888도 4.63으로 여유가 0.13뿐이라 함께 var(--pg-muted)(6.40)로 옮긴다.
+      el.style.color = isErr ? '#fca5a5' : 'var(--pg-muted)'
     }
   }
 
@@ -3693,7 +3712,10 @@
     fetchBtn.addEventListener('click', _btcFetchUtxoClick)
     var status = document.createElement('span')
     status.id = 'btc-fetch-status'
-    status.style.cssText = 'font-size:11px;color:#888;margin-left:10px;'
+    // m15-02-04 크로스 리뷰 NIT-4 — 같은 엘리먼트(#btc-fetch-status)의 동적 setter 는 이미
+    // var(--pg-muted) 인데 이 초기값만 #888 로 남아 첫 렌더에서만 다른 잉크가 됐다. :3634 주석이
+    // "정상 상태 잉크 #888도 함께 옮긴다" 라고 쓰는데 실제로는 setter 쪽만 옮겨져 있었다.
+    status.style.cssText = 'font-size:11px;color:var(--pg-muted);margin-left:10px;'
     status.textContent = ex ? 'getAddress → Fetch UTXO' : '이 코인은 explorer 자동 fetch 미지원 — prev_tx/vout 직접 입력'
     btnRow.appendChild(gaBtn)
     btnRow.appendChild(fetchBtn)

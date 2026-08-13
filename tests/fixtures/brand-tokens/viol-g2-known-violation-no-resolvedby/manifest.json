@@ -1,0 +1,62 @@
+{
+  "_comment": "T-G-05 fixture 부재 클래스(Claude 리뷰 WARNING) — 등록된 known-violation 짝(brand-bg, 실제로 대비 미달) 에 resolvedBy 가 없으면 exit 1 이어야 한다는 검사 로직은 이미 있었지만(§4-8), 이를 능동으로 태우는 fixture 가 0건이었다.",
+  "anchorFile": "index.html",
+  "files": [
+    {
+      "key": "index.html",
+      "path": "index.html"
+    }
+  ],
+  "exceptions": {},
+  "catalogExempt": {},
+  "floors": {
+    "rootBlocks": 3,
+    "customProps": 16,
+    "accentUses": 3,
+    "accentSoftUses": 1,
+    "scannedFiles": 1
+  },
+  "directionBFloor": 2,
+  "knownViolations": [
+    {
+      "pair": "brand-bg"
+    },
+    {
+      "pair": "brand-bg-2",
+      "resolvedBy": "m15-02-02"
+    },
+    {
+      "pair": "brand-panel",
+      "resolvedBy": "m15-02-02"
+    },
+    {
+      "pair": "brand-panel-2",
+      "resolvedBy": "m15-02-02"
+    },
+    {
+      "pair": "brand-code-bg",
+      "resolvedBy": "m15-02-02"
+    },
+    {
+      "pair": "brand-accent-soft",
+      "resolvedBy": "m15-02-02"
+    }
+  ],
+  "snapshot": {
+    "brand-100": "#e2e1fd",
+    "brand-200": "#927dff",
+    "brand-400": "#c7c3fb",
+    "brand": "#7231ff",
+    "brand-600": "#6422e6",
+    "brand-900": "#22003c",
+    "brand-ink": "#4f46e5",
+    "brand-ink-lite": "#aba2fe",
+    "on-brand": "#0b0e14",
+    "accent": "#7231ff",
+    "accent-soft": "#28184c"
+  },
+  "accentSoftCheck": {
+    "target": "#251b4d",
+    "maxDelta": 3
+  }
+}

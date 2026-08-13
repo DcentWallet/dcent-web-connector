@@ -1,0 +1,63 @@
+{
+  "anchorFile": "index.html",
+  "files": [
+    {
+      "key": "index.html",
+      "path": "index.html"
+    }
+  ],
+  "exceptions": {
+    "index.html": {
+      "#123456": 1
+    }
+  },
+  "catalogExempt": {},
+  "floors": {
+    "rootBlocks": 3,
+    "customProps": 16,
+    "accentUses": 3,
+    "accentSoftUses": 1,
+    "scannedFiles": 1
+  },
+  "directionBFloor": 2,
+  "knownViolations": [
+    {
+      "pair": "brand-bg",
+      "resolvedBy": "m15-02-02"
+    },
+    {
+      "pair": "brand-bg-2",
+      "resolvedBy": "m15-02-02"
+    },
+    {
+      "pair": "brand-panel",
+      "resolvedBy": "m15-02-02"
+    },
+    {
+      "pair": "brand-panel-2",
+      "resolvedBy": "m15-02-02"
+    },
+    {
+      "pair": "brand-code-bg",
+      "resolvedBy": "m15-02-02"
+    },
+    {
+      "pair": "brand-accent-soft",
+      "resolvedBy": "m15-02-02"
+    }
+  ],
+  "snapshot": {
+    "brand-100": "#e2e1fd",
+    "brand-200": "#927dff",
+    "brand-400": "#c7c3fb",
+    "brand": "#7231ff",
+    "brand-600": "#6422e6",
+    "brand-900": "#22003c",
+    "brand-ink": "#4f46e5",
+    "brand-ink-lite": "#aba2fe",
+    "on-brand": "#0b0e14",
+    "accent": "#7231ff",
+    "accent-soft": "#28184c"
+  },
+  "accentSoftCheck": null
+}

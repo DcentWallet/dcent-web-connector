@@ -1,0 +1,63 @@
+{
+  "_comment": "T-G-03 클래스 확장 — --accent 가 var(--brand) 별칭이 아니라 리터럴로 하드코딩되면 G3 스냅샷이 잡아야 한다. snapshot.accent 는 (고쳐지기 전 리브랜드 시점의) 커밋값 #7231ff 그대로 두고, live 파일만 별칭을 끊어 불일치를 만든다.",
+  "anchorFile": "index.html",
+  "files": [
+    {
+      "key": "index.html",
+      "path": "index.html"
+    }
+  ],
+  "exceptions": {},
+  "catalogExempt": {},
+  "floors": {
+    "rootBlocks": 3,
+    "customProps": 16,
+    "accentUses": 3,
+    "accentSoftUses": 1,
+    "scannedFiles": 1
+  },
+  "directionBFloor": 2,
+  "knownViolations": [
+    {
+      "pair": "brand-bg",
+      "resolvedBy": "m15-02-02"
+    },
+    {
+      "pair": "brand-bg-2",
+      "resolvedBy": "m15-02-02"
+    },
+    {
+      "pair": "brand-panel",
+      "resolvedBy": "m15-02-02"
+    },
+    {
+      "pair": "brand-panel-2",
+      "resolvedBy": "m15-02-02"
+    },
+    {
+      "pair": "brand-code-bg",
+      "resolvedBy": "m15-02-02"
+    },
+    {
+      "pair": "brand-accent-soft",
+      "resolvedBy": "m15-02-02"
+    }
+  ],
+  "snapshot": {
+    "brand-100": "#e2e1fd",
+    "brand-200": "#927dff",
+    "brand-400": "#c7c3fb",
+    "brand": "#7231ff",
+    "brand-600": "#6422e6",
+    "brand-900": "#22003c",
+    "brand-ink": "#4f46e5",
+    "brand-ink-lite": "#aba2fe",
+    "on-brand": "#0b0e14",
+    "accent": "#7231ff",
+    "accent-soft": "#28184c"
+  },
+  "accentSoftCheck": {
+    "target": "#251b4d",
+    "maxDelta": 3
+  }
+}

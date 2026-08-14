@@ -153,10 +153,17 @@ export interface DeviceBriefInfo {
 export interface ConnectionStateDetail {
   readonly popup: TransportState
   readonly device: DeviceState
-  /** `device === 'connected'` 일 때만 존재. */
+  /**
+   * `device === 'connected'` 일 때만 **값이 채워진다**.
+   *
+   * 🔴 아래 `deviceReason` 과 함께, 이 키는 방출 객체에 **항상 실린다**(`applyState` 가 네 키를
+   * 모두 담아 freeze 한다). `'deviceInfo' in detail` 로 분기하면 언제나 true 다.
+   */
   readonly deviceInfo?: DeviceBriefInfo
   /**
-   * (2026-08-14) `device === 'disconnected'` 일 때만 존재. 위 `deviceInfo` 와 정확히 대칭.
+   * (2026-08-14) `device === 'disconnected'` 일 때만 **값이 채워진다**. 위 `deviceInfo` 와
+   * 정확히 대칭이며 키가 항상 존재하는 것도 같다. 🔴 disconnected 여도 `undefined` 일 수 있다
+   * (구버전 bridge, 또는 이 버전이 모르는 사유) — App 은 default 분기를 반드시 둔다.
    *
    * 🔴 사유를 받아도 **진행 중인 요청 promise 는 settle 되지 않는다**(최대 `timeoutMs`, 기본
    * 180초). `DeviceDisconnectReason` docblock 참조.

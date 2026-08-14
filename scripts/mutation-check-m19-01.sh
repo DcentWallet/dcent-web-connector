@@ -2,10 +2,15 @@
 #
 # m19-01 뮤테이션 매트릭스 — "고쳤다" 가 아니라 "되돌리면 잡힌다" 를 증거로 남긴다.
 #
+# ⓪ 뮤테이션 전에 **baseline 이 GREEN** 인지 확인한다. red 면 5종이 전부 자동 "detected" 로
+#    찍혀 RESULT: PASS 가 나온다 — 이 스크립트의 판별력이 0 이 되는 조건이다.
+#
 # 원소 5종 각각에 대해:
 #   ① 앵커 문자열을 sed 로 치환한다
 #   ② 치환이 no-op 이 아니었는지 `git diff --quiet` 로 확인한다 (앵커가 실제로 존재했는가)
-#   ③ `yarn unit-v2 <file>` 이 **실패해야** 그 원소는 "검출됨"
+#   ③ 대상 테스트 파일만 돌려 **실패해야** 그 원소는 "검출됨"
+#      🔴 `yarn unit-v2 <file>` 을 쓰면 안 된다 — 그 script 는 이미 `tests/unit/v2` 를 위치인자로
+#      갖고 있어 jest 가 두 패턴을 OR 로 합쳐 v2 **전체**가 돈다(검출의 귀속이 흐려진다).
 #   ④ `git checkout -- <file>` 로 복원한다
 #
 # 하나라도 "되돌렸는데 통과" 면 비영 exit — 그 가드는 관측되지 않고 있다는 뜻이다.
@@ -35,7 +40,7 @@ if ! git diff --quiet -- "${SRC}"; then
 fi
 
 # baseline GREEN 확인 — red 면 5종이 전부 자동 'detected' 로 찍혀 판별력이 0 이 된다.
-npx jest --config jest.v2.config.js --runInBand "${TEST_FILE}" >/dev/null 2>&1 \
+yarn jest --config jest.v2.config.js --runInBand "${TEST_FILE}" >/dev/null 2>&1 \
   || { echo "ABORT: baseline red — 뮤테이션 없이도 실패한다. 판정 불가."; exit 2; }
 
 # 원소: 라벨|파일|sed 표현식
@@ -68,7 +73,7 @@ for entry in "${MUTANTS[@]}"; do
   fi
 
   # ③ 테스트가 실패해야 "검출됨".
-  if npx jest --config jest.v2.config.js --runInBand "${TEST_FILE}" >/dev/null 2>&1; then
+  if yarn jest --config jest.v2.config.js --runInBand "${TEST_FILE}" >/dev/null 2>&1; then
     detected='no'
     verdict='FAIL(not-detected)'
     FAILED=1

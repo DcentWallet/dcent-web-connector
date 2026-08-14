@@ -100,17 +100,25 @@ type DeviceState    = 'connected' | 'disconnected' | 'awaiting-connect-approval'
 
 // device === 'disconnected' 로 간 **사유**. 상태가 아니라 전이의 원인이다.
 type DeviceDisconnectReason =
-  | 'connect-approval-rejected'    // 기기 화면에서 사용자가 거절
+  | 'connect-approval-rejected'    // 기기 화면에서 사용자가 거절 — 🔴 USB 전용
   | 'connect-approval-cancelled'   // 팝업 취소 / BLE 세션 인계 / 원인 미관측 이탈
+                                   // 🔴 BLE 에서는 사용자 거절도 여기로 온다 (브리지가
+                                   //    거절과 링크 절단을 구분하지 못한다)
   | 'device-removed'               // 케이블 분리 · GATT 절단 · 명시적 transport 해제
+                                   // 물리적 분리는 승인 대기 중이어도 이 값이다
   | 'reconnect-timeout'            // 자동 재연결 예산 소진
-  | 'transport-failed'             // 승인 대기 도중 transport 자체가 깨짐
+  | 'transport-failed'             // 승인 대기 도중 transport 가 fatal 오류로 깨짐
+                                   // (물리적 분리는 이 값이 아니라 device-removed)
 
 interface ConnectionStateDetail {
   popup: TransportState
   device: DeviceState
-  deviceInfo?: DeviceBriefInfo        // device === 'connected' 일 때만
-  deviceReason?: DeviceDisconnectReason  // device === 'disconnected' 일 때만
+  // 🔴 두 키는 detail 에 **항상 실린다**(값만 조건부). `'deviceInfo' in detail` /
+  //    `'deviceReason' in detail` 로 분기하지 말 것 — 언제나 true 다.
+  deviceInfo?: DeviceBriefInfo           // 값이 채워지는 것은 device === 'connected' 일 때만
+  deviceReason?: DeviceDisconnectReason  // 값이 채워지는 것은 device === 'disconnected' 일 때만
+                                         // 단 disconnected 여도 undefined 일 수 있다
+                                         // (구버전 브리지 / 모르는 사유) — default 분기 필수
 }
 
 interface DeviceBriefInfo {       // 표시용 — 전부 optional
@@ -132,7 +140,7 @@ dcent.setConnectionListener((state, detail) => {
   // 기기 축 — 신규
   if (detail.device === 'connected') showDevice(detail.deviceInfo?.label, detail.deviceInfo?.connectType)
   else if (detail.device === 'awaiting-connect-approval') showApprovalWaiting()   // 기기 화면에서 허용 대기
-  else if (detail.device === 'disconnected') promptReconnectDevice(detail.deviceReason)
+  else if (detail.device === 'disconnected') promptReconnectDevice(detail.deviceReason)  // undefined 일 수 있음 — default 분기 필수
   else hideDeviceBadge()                     // 'unknown'
 })
 ```

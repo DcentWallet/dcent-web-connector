@@ -1833,7 +1833,7 @@ describe('PopupTransport', () => {
       expect(detail.deviceReason).toBeUndefined()
     })
 
-    it('T-U-DEVSTATE-22: connected 로 가면 직전 deviceReason 이 남지 않는다 (deviceInfo 와 대칭)', async () => {
+    it('T-U-DEVSTATE-22: disconnected 를 벗어나면(connected · awaiting 양쪽) 직전 deviceReason 이 남지 않는다', async () => {
       const h = await connected()
       dispatchResponse(DEFAULT_ORIGIN, {
         type: '_deviceState',
@@ -1864,7 +1864,7 @@ describe('PopupTransport', () => {
       expect(h.mock.calls[0][1].deviceReason).toBeUndefined()
     })
 
-    it('T-U-DEVSTATE-23: EC3 — connected 에 동봉된 reason 은 파싱 자체를 하지 않는다', async () => {
+    it('T-U-DEVSTATE-23: EC3 — 축과 안 맞는 동봉 필드는 파싱하지 않는다 (connected+reason · disconnected+info) + 두 키는 항상 존재', async () => {
       const h = await connected()
       dispatchResponse(DEFAULT_ORIGIN, {
         type: '_deviceState',
@@ -1875,9 +1875,22 @@ describe('PopupTransport', () => {
       expect(h).toHaveBeenCalledTimes(1)
       expect(h.mock.calls[0][1].device).toBe('connected')
       expect(h.mock.calls[0][1].deviceReason).toBeUndefined()
+      // 형제 원소 4/4: disconnected 에 동봉된 info 도 파싱하지 않는다 (connected+reason 의 거울상).
+      dispatchResponse(DEFAULT_ORIGIN, {
+        type: '_deviceState',
+        device: 'disconnected',
+        reason: 'device-removed',
+        info: { deviceId: 'SHOULD-BE-IGNORED' },
+      })
+      expect(h.mock.calls[1][1].deviceInfo).toBeUndefined()
+      // 🔴 두 키는 값이 undefined 여도 **항상 실린다** — 공개 문서가 "`in` 으로 분기하지 말라"고
+      //    가르치는 근거다. toEqual 은 undefined 프로퍼티의 존재/부재를 구별하지 못하므로
+      //    `in` 으로 직접 단언한다.
+      expect('deviceInfo' in h.mock.calls[1][1]).toBe(true)
+      expect('deviceReason' in h.mock.calls[0][1]).toBe(true)
     })
 
-    it('T-U-DEVSTATE-24: EC4 — awaiting 에 동봉된 info 는 무시되고 직전 info 도 남지 않는다', async () => {
+    it('T-U-DEVSTATE-24: EC4 — awaiting 에 동봉된 info/reason 은 무시되고 직전 info 도 남지 않는다', async () => {
       const h = await connected()
       dispatchResponse(DEFAULT_ORIGIN, {
         type: '_deviceState',

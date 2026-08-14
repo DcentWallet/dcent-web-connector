@@ -1849,6 +1849,19 @@ describe('PopupTransport', () => {
       expect(h).toHaveBeenCalledTimes(1)
       expect(h.mock.calls[0][1].device).toBe('connected')
       expect(h.mock.calls[0][1].deviceReason).toBeUndefined()
+
+      // 형제 원소: disconnected 를 벗어나는 경로가 connected 하나가 아니다 — awaiting 으로 나갈
+      // 때도 사유가 클리어되어야 한다. 한쪽만 가드하면 방어 비대칭이다(close↔ensurePopup 과 같은 축).
+      dispatchResponse(DEFAULT_ORIGIN, {
+        type: '_deviceState',
+        device: 'disconnected',
+        reason: 'reconnect-timeout',
+      })
+      h.mockClear()
+      dispatchResponse(DEFAULT_ORIGIN, { type: '_deviceState', device: 'awaiting-connect-approval' })
+      expect(h).toHaveBeenCalledTimes(1)
+      expect(h.mock.calls[0][1].device).toBe('awaiting-connect-approval')
+      expect(h.mock.calls[0][1].deviceReason).toBeUndefined()
     })
 
     it('T-U-DEVSTATE-23: EC3 — connected 에 동봉된 reason 은 파싱 자체를 하지 않는다', async () => {
@@ -1876,11 +1889,15 @@ describe('PopupTransport', () => {
         type: '_deviceState',
         device: 'awaiting-connect-approval',
         info: { deviceId: 'X' },
+        reason: 'connect-approval-rejected',
       })
       expect(h).toHaveBeenCalledTimes(1)
       expect(h.mock.calls[0][1].device).toBe('awaiting-connect-approval')
       // 승인 전에는 getDeviceInfo 가 불가하므로 실릴 값이 없다 — 직전 기기 정보도 버린다.
       expect(h.mock.calls[0][1].deviceInfo).toBeUndefined()
+      // 형제 원소: awaiting 은 disconnected 가 아니므로 동봉 reason 도 파싱하지 않는다
+      // (EC3 의 connected 짝 — 두 비-disconnected 값 모두에서 reason 이 무시되어야 한다).
+      expect(h.mock.calls[0][1].deviceReason).toBeUndefined()
     })
 
     it('T-U-DEVSTATE-25: EC5 — 첫 리스너가 throw 해도 두 번째 리스너가 정상 수신한다', async () => {

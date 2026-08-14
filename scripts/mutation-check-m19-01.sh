@@ -34,6 +34,10 @@ if ! git diff --quiet -- "${SRC}"; then
   exit 2
 fi
 
+# baseline GREEN 확인 — red 면 5종이 전부 자동 'detected' 로 찍혀 판별력이 0 이 된다.
+npx jest --config jest.v2.config.js --runInBand "${TEST_FILE}" >/dev/null 2>&1 \
+  || { echo "ABORT: baseline red — 뮤테이션 없이도 실패한다. 판정 불가."; exit 2; }
+
 # 원소: 라벨|파일|sed 표현식
 #   라벨은 매트릭스 출력용, sed 표현식은 앵커 → 뮤테이션.
 MUTANTS=(
@@ -64,7 +68,7 @@ for entry in "${MUTANTS[@]}"; do
   fi
 
   # ③ 테스트가 실패해야 "검출됨".
-  if yarn unit-v2 "${TEST_FILE}" >/dev/null 2>&1; then
+  if npx jest --config jest.v2.config.js --runInBand "${TEST_FILE}" >/dev/null 2>&1; then
     detected='no'
     verdict='FAIL(not-detected)'
     FAILED=1

@@ -3029,16 +3029,16 @@ search:'setConnectionListener connection state callback connected disconnected l
 <tr><td><code>popup</code></td><td class="type">'connected' | 'disconnected'</td><td>Same value as the first argument — the bridge popup window.</td></tr>
 <tr><td><code>device</code></td><td class="type">'connected' | 'disconnected' | 'awaiting-connect-approval' | 'unknown'</td><td>The hardware wallet. <code>'unknown'</code> means <strong>not observable</strong> (before the popup opens, and after it closes) — it is deliberately not reported as <code>'disconnected'</code>, which would be a false claim that the device was removed. <code>'awaiting-connect-approval'</code> means the link is open but <strong>the user has not approved the connection on the device screen yet</strong>. <span class="badge b-tech">v2 new</span></td></tr>
 <tr><td><code>deviceInfo</code></td><td class="type">DeviceBriefInfo | undefined</td><td>Present only while <code>device === 'connected'</code>.</td></tr>
-<tr><td><code>deviceReason</code></td><td class="type">DeviceDisconnectReason | undefined</td><td>Present only while <code>device === 'disconnected'</code> — exactly symmetric with <code>deviceInfo</code>. Tells you <strong>why</strong> the connection did not hold. <span class="badge b-tech">v2 new</span></td></tr>
+<tr><td><code>deviceReason</code></td><td class="type">DeviceDisconnectReason | undefined</td><td>Filled in only while <code>device === 'disconnected'</code> — exactly symmetric with <code>deviceInfo</code>. Tells you <strong>why</strong> the connection did not hold. 🔴 The key is <strong>always present</strong> on <code>detail</code> (do not branch on <code>'deviceReason' in detail</code>), and it can still be <code>undefined</code> while disconnected — an older bridge, or a reason this connector version does not recognise. <strong>Always handle a default.</strong> <span class="badge b-tech">v2 new</span></td></tr>
 </tbody></table>
 <h2>DeviceDisconnectReason</h2>
 <p>Why the device axis went to <code>'disconnected'</code>. The <code>connect-</code> prefix separates these from <strong>signing</strong> rejection — a rejected signature is request-scoped and surfaces as a rejected promise (error <code>4001</code>), never on this axis.</p>
 <table class="params"><thead><tr><th>Value</th><th>Meaning</th></tr></thead><tbody>
-<tr><td><code>'connect-approval-rejected'</code></td><td>The user rejected the connection on the device screen.</td></tr>
-<tr><td><code>'connect-approval-cancelled'</code></td><td>Cancelled from the popup, a BLE session was handed over, or the bridge could not observe the cause.</td></tr>
-<tr><td><code>'device-removed'</code></td><td>Cable unplugged, GATT link dropped, or the transport was released explicitly.</td></tr>
+<tr><td><code>'connect-approval-rejected'</code></td><td>The user rejected the connection on the device screen. <strong>USB only</strong> — see the next row for BLE.</td></tr>
+<tr><td><code>'connect-approval-cancelled'</code></td><td>Cancelled from the popup, a BLE session was handed over, or the bridge could not observe the cause. 🔴 <strong>On BLE a user rejection also arrives here</strong>, not as <code>'connect-approval-rejected'</code> — the bridge cannot tell a rejection apart from a dropped link on that transport.</td></tr>
+<tr><td><code>'device-removed'</code></td><td>Cable unplugged, GATT link dropped, or the transport was released explicitly. A <em>physical</em> disconnect is reported here even while waiting for approval.</td></tr>
 <tr><td><code>'reconnect-timeout'</code></td><td>The automatic reconnect budget ran out.</td></tr>
-<tr><td><code>'transport-failed'</code></td><td>The transport itself broke <strong>while waiting for approval</strong> — the user never approved, rejected, or cancelled.</td></tr>
+<tr><td><code>'transport-failed'</code></td><td>The transport itself broke with a <em>fatal error</em> <strong>while waiting for approval</strong> — the user never approved, rejected, or cancelled. Physical removal is <code>'device-removed'</code>, not this.</td></tr>
 </tbody></table>
 <div class="note warn"><span class="ni">!</span><div><strong>A reason does not settle your in-flight request.</strong> Receiving <code>deviceReason</code> tells you the connection failed, but a pending <code>signTransaction</code> / <code>getAccountInfo</code> promise keeps waiting up to <code>timeoutMs</code> (<strong>180000 ms / 3 minutes</strong> by default). If you want the rejection UI to close immediately, cancel your own pending work from this callback — do not assume the promise rejects at the same moment.</div></div>
 <h2>DeviceBriefInfo</h2>
@@ -3065,7 +3065,7 @@ search:'setConnectionListener connection state callback connected disconnected l
   } else if (detail.device === 'awaiting-connect-approval') {
     showApprovalWaiting()            // approve the connection on the device screen
   } else if (detail.device === 'disconnected') {
-    promptReconnectDevice(detail.deviceReason)   // e.g. 'connect-approval-rejected'
+    promptReconnectDevice(detail.deviceReason)   // may be undefined — handle a default
   } else {
     hideDeviceBadge()                // 'unknown' — nothing observed yet
   }
@@ -3079,7 +3079,7 @@ search:'setConnectionListener connection state callback connected disconnected l
   <li>Closing the popup sets <code>popup: 'disconnected'</code> and <code>device: 'unknown'</code> in a <strong>single</strong> call, and clears <code>deviceReason</code>. Reopening the popup does the same.</li>
   <li>Initial values before anything happens: <code>popup: 'disconnected'</code>, <code>device: 'unknown'</code>.</li>
   <li><code>detail</code> and <code>detail.deviceInfo</code> are frozen — mutating them does not affect the connector, and your changes will not persist.</li>
-  <li>A <code>'disconnected'</code> → <code>'disconnected'</code> transition <strong>does</strong> fire the listener when only <code>deviceReason</code> changed — the reason is a discriminator, not a display field.</li>
+  <li>A <code>'disconnected'</code> → <code>'disconnected'</code> transition <strong>does</strong> fire the listener when only <code>deviceReason</code> changed — the reason is a discriminator, not a display field. 🔴 The converse also holds: the <strong>same</strong> reason delivered twice in a row is de-duplicated and does <strong>not</strong> fire. A retry that is rejected again surfaces as a separate event only if the bridge pushes <code>'awaiting-connect-approval'</code> in between — do not count each rejection by counting callbacks.</li>
   <li>Older bridge popups that do not emit the device signal simply leave <code>detail.device</code> at <code>'unknown'</code>; the popup axis keeps working unchanged. The same applies to <code>'awaiting-connect-approval'</code> and <code>deviceReason</code> — a bridge that does not send them simply never produces those values.</li>
 </ul>
 <div class="related"><a href="#/set-sign-progress-listener">→ setSignProgressListener</a><a href="#/set-transport">→ setTransport</a><a href="#/popup-close">→ popupWindowClose</a><a href="#/error-codes">→ Error Codes</a></div>`});
@@ -3422,18 +3422,18 @@ if (res.header.status === 'success') { /* 브리지 준비됨 */ }</pre></div>
 <tr><td><code>popup</code></td><td class="type">'connected' | 'disconnected'</td><td>1번째 인자와 같은 값 — 브리지 팝업 창.</td></tr>
 <tr><td><code>device</code></td><td class="type">'connected' | 'disconnected' | 'awaiting-connect-approval' | 'unknown'</td><td>하드웨어 지갑. <code>'unknown'</code>은 <strong>관측할 수 없음</strong>을 뜻합니다(팝업이 열리기 전, 그리고 닫힌 뒤). <code>'disconnected'</code>로 접지 않는 이유는 그게 "기기가 빠졌다"는 거짓 단정이 되기 때문입니다. <code>'awaiting-connect-approval'</code>은 링크는 열렸지만 <strong>기기 화면에서 사용자가 아직 연결을 허용하지 않은</strong> 중간 상태입니다. <span class="badge b-tech">v2 신규</span></td></tr>
 <tr><td><code>deviceInfo</code></td><td class="type">DeviceBriefInfo | undefined</td><td><code>device === 'connected'</code>일 때만 존재합니다.</td></tr>
-<tr><td><code>deviceReason</code></td><td class="type">DeviceDisconnectReason | undefined</td><td><code>device === 'disconnected'</code>일 때만 존재하며 <code>deviceInfo</code>와 정확히 대칭입니다. 연결이 <strong>왜</strong> 성립하지 못했는지를 알려줍니다. <span class="badge b-tech">v2 신규</span></td></tr>
+<tr><td><code>deviceReason</code></td><td class="type">DeviceDisconnectReason | undefined</td><td><code>device === 'disconnected'</code>일 때만 값이 채워지며 <code>deviceInfo</code>와 정확히 대칭입니다. 연결이 <strong>왜</strong> 성립하지 못했는지를 알려줍니다. 🔴 키 자체는 <strong>항상 존재</strong>하므로(<code>'deviceReason' in detail</code>로 분기하지 마세요), disconnected 인데도 <code>undefined</code>일 수 있습니다 — 구버전 브리지이거나, 이 connector 버전이 모르는 사유인 경우입니다. <strong>default 분기를 반드시 두세요.</strong> <span class="badge b-tech">v2 신규</span></td></tr>
 </tbody></table>
 <h2>DeviceDisconnectReason</h2>
 <p>기기 축이 <code>'disconnected'</code>로 간 사유입니다. <code>connect-</code> 접두는 <strong>서명 확인</strong> 거절과 구분하기 위한 것입니다 — 서명 거절은 요청 스코프라 요청 promise가 <code>4001</code>로 reject되며 이 축에는 오지 않습니다.</p>
 <table class="params"><thead><tr><th>값</th><th>의미</th></tr></thead><tbody>
-<tr><td><code>'connect-approval-rejected'</code></td><td>기기 화면에서 사용자가 연결을 거절했습니다.</td></tr>
-<tr><td><code>'connect-approval-cancelled'</code></td><td>팝업에서 취소했거나, BLE 세션이 인계됐거나, 브리지가 원인을 관측하지 못했습니다.</td></tr>
-<tr><td><code>'device-removed'</code></td><td>케이블 분리, GATT 링크 절단, 또는 명시적 transport 해제.</td></tr>
+<tr><td><code>'connect-approval-rejected'</code></td><td>기기 화면에서 사용자가 연결을 거절했습니다. <strong>USB 전용</strong> — BLE 는 다음 행을 보세요.</td></tr>
+<tr><td><code>'connect-approval-cancelled'</code></td><td>팝업에서 취소했거나, BLE 세션이 인계됐거나, 브리지가 원인을 관측하지 못했습니다. 🔴 <strong>BLE 에서는 사용자 거절도 여기로 옵니다</strong> — 그 트랜스포트에서는 브리지가 거절과 링크 절단을 구분하지 못하므로 <code>'connect-approval-rejected'</code> 가 오지 않습니다.</td></tr>
+<tr><td><code>'device-removed'</code></td><td>케이블 분리, GATT 링크 절단, 또는 명시적 transport 해제. <em>물리적</em> 분리는 승인 대기 중이어도 이 값입니다.</td></tr>
 <tr><td><code>'reconnect-timeout'</code></td><td>자동 재연결 예산이 소진됐습니다.</td></tr>
-<tr><td><code>'transport-failed'</code></td><td><strong>승인 대기 도중</strong> transport 자체가 깨졌습니다 — 사용자는 허용·거절·취소를 한 적이 없습니다.</td></tr>
+<tr><td><code>'transport-failed'</code></td><td><strong>승인 대기 도중</strong> transport 자체가 <em>fatal 오류</em>로 깨졌습니다 — 사용자는 허용·거절·취소를 한 적이 없습니다. 물리적 분리는 이 값이 아니라 <code>'device-removed'</code> 입니다.</td></tr>
 </tbody></table>
-<div class="note warn"><span class="ni">!</span><div><strong>사유를 받아도 진행 중인 요청 promise는 settle되지 않습니다.</strong> <code>deviceReason</code>은 연결이 실패했다는 사실만 알려줄 뿐, 대기 중인 <code>signTransaction</code> / <code>getAccountInfo</code> promise는 <code>timeoutMs</code>(기본 <strong>180000ms / 3분</strong>)까지 그대로 매달립니다. 거절 UI를 즉시 닫으려면 이 콜백에서 앱이 직접 대기 중인 작업을 취소하세요 — promise가 같은 순간에 reject된다고 가정하면 안 됩니다.</div></div>
+<div class="note warn"><span class="ni">!</span><div><strong>사유를 받아도 진행 중인 요청 promise는 settle되지 않습니다.</strong> <code>deviceReason</code>은 연결이 실패했다는 사실만 알려줄 뿐, 대기 중인 <code>signTransaction</code> / <code>getAccountInfo</code> promise는 <code>timeoutMs</code>(기본 <strong>180000ms / 3분</strong>)까지 그대로 매달립니다. 거절 UI를 즉시 닫으려면 이 콜백에서 App 이 직접 대기 중인 작업을 취소하세요 — promise가 같은 순간에 reject된다고 가정하면 안 됩니다.</div></div>
 <h2>DeviceBriefInfo</h2>
 <p>표시용 필드입니다. 모두 optional이며, 값이 없으면 "보고되지 않음"으로 다루세요. <strong>필드 이름은 <a href="#/get-device-info"><code>getDeviceInfo</code></a> 응답과 동일합니다</strong> — 두 API를 함께 쓰는 앱이 같은 값을 두 어휘로 배우지 않도록 맞췄습니다.</p>
 <table class="params"><thead><tr><th>필드</th><th>타입</th><th><code>getDeviceInfo</code> 대응</th><th>설명</th></tr></thead><tbody>
@@ -3458,7 +3458,7 @@ if (res.header.status === 'success') { /* 브리지 준비됨 */ }</pre></div>
   } else if (detail.device === 'awaiting-connect-approval') {
     showApprovalWaiting()            // 기기 화면에서 연결을 허용해야 하는 구간
   } else if (detail.device === 'disconnected') {
-    promptReconnectDevice(detail.deviceReason)   // 예: 'connect-approval-rejected'
+    promptReconnectDevice(detail.deviceReason)   // undefined 일 수 있음 — default 분기 필수
   } else {
     hideDeviceBadge()                // 'unknown' — 아직 관측된 것이 없음
   }
@@ -3472,7 +3472,7 @@ if (res.header.status === 'success') { /* 브리지 준비됨 */ }</pre></div>
   <li>팝업이 닫히면 <code>popup: 'disconnected'</code> + <code>device: 'unknown'</code>이 <strong>1회 호출</strong>로 함께 전달되며 <code>deviceReason</code>도 함께 클리어됩니다. 팝업이 새로 열릴 때도 동일합니다.</li>
   <li>아무 일도 없을 때의 초기값은 <code>popup: 'disconnected'</code>, <code>device: 'unknown'</code>입니다.</li>
   <li><code>detail</code>과 <code>detail.deviceInfo</code>는 freeze되어 있습니다 — 수정해도 connector 내부 상태에 영향이 없고, 수정 내용이 유지되지도 않습니다.</li>
-  <li><code>'disconnected'</code> → <code>'disconnected'</code>로 <code>deviceReason</code>만 바뀌는 전이에서도 listener는 <strong>호출됩니다</strong> — 사유는 표시값이 아니라 판별자이기 때문입니다.</li>
+  <li><code>'disconnected'</code> → <code>'disconnected'</code>로 <code>deviceReason</code>만 바뀌는 전이에서도 listener는 <strong>호출됩니다</strong> — 사유는 표시값이 아니라 판별자이기 때문입니다. 🔴 반대도 성립합니다: <strong>같은</strong> 사유가 연속으로 오면 dedupe에 걸려 <strong>호출되지 않습니다</strong>. 재시도가 또 거절될 때 별개 이벤트로 보이려면 그 사이에 브리지가 <code>'awaiting-connect-approval'</code>을 먼저 보내야 합니다 — 콜백 횟수로 거절 횟수를 세지 마세요.</li>
   <li>기기 신호를 보내지 않는 구버전 브리지 팝업에서는 <code>detail.device</code>가 <code>'unknown'</code>으로 남을 뿐, 팝업 축은 그대로 동작합니다. <code>'awaiting-connect-approval'</code>과 <code>deviceReason</code>도 마찬가지로, 보내지 않는 브리지에서는 그 값이 아예 등장하지 않습니다.</li>
 </ul>
 <div class="related"><a href="#/set-sign-progress-listener">→ setSignProgressListener</a><a href="#/set-transport">→ setTransport</a><a href="#/popup-close">→ popupWindowClose</a><a href="#/error-codes">→ 에러 코드</a></div>`},

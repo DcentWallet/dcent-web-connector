@@ -213,8 +213,10 @@ if (detail.deviceInfo?.deviceId === lastDeviceId) { /* 같은 기기 */ }
 
 기기 신호를 보내지 않는 구버전 브리지 팝업에서는 `detail.device` 가 `'unknown'` 으로 남을 뿐,
 팝업 축은 그대로 동작한다. 같은 이유로 `'awaiting-connect-approval'` / `deviceReason` 을 보내지
-않는 브리지에서는 두 값이 등장하지 않는다 — connector 는 모르는 값을 받으면 축을 갱신하지 않고
-그대로 버리므로(구버전 브리지 호환의 근거), 양방향 어느 쪽이 먼저 올라가도 안전하다.
+않는 브리지에서는 두 값이 등장하지 않는다. 🔴 **미지 값의 처리는 두 축이 다르다** — 모르는
+`device` 값은 메시지째 버려 축을 갱신하지 않지만, 모르는 `reason` 은 `deviceReason` 만
+`undefined` 로 접고 **끊김 자체(`device: 'disconnected'`)는 그대로 전달한다**(사유를 못 읽었다고
+끊김을 버리면 더 나쁘다). 어느 쪽이든 양방향 어느 순서로 올라가도 안전하다.
 
 ---
 

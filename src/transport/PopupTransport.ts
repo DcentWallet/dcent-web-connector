@@ -724,6 +724,11 @@ export class PopupTransport implements MessageTransport {
     info?: DeviceBriefInfo,
     reason?: DeviceDisconnectReason,
   ): void {
+    // 🔴 `device === 'disconnected' ?` 는 수신부(:473 의 파싱 가드)와 **의도적 이중 가드**다.
+    //    현재는 수신부가 이미 좁혀 주므로 이 삼항만 지워도 관측되는 동작이 없다 — 그래서
+    //    mutation 매트릭스의 원소가 아니다(뮤테이션이 no-op 이라 "검출 실패"로 오판된다).
+    //    남겨 두는 이유: `setDeviceState` 는 private 이지만 수신부 말고 다른 호출자가 생길 수
+    //    있고, 그때 이 삼항이 축↔필드 계약의 마지막 방어선이 된다.
     this.applyState({
       device,
       deviceInfo: device === 'connected' ? info : undefined,

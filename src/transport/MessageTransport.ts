@@ -68,6 +68,10 @@ export type DeviceState =
  * 🔴 `'connect-'` 접두는 **서명 확인 거절과 구분**하기 위한 것이다. 서명 확인은 요청 스코프라
  * 요청 promise 가 4001 로 표현하며 이 축에 오지 않는다.
  *
+ * 🔴 **wire 키는 `reason`**(`_deviceState.reason`), App 에 노출되는 이름은 `deviceReason` 이다.
+ * bridge 가 `deviceReason` 으로 보내면 whitelist 에 걸리지 않아 **조용히 `undefined`** 가 된다
+ * (메시지 자체는 통과하므로 원인 추적이 어렵다). 배선 시 이 비대칭을 확인할 것.
+ *
  * 🔴 이 사유를 받아도 **진행 중인 요청 promise 는 settle 되지 않는다** — 최대
  * `timeoutMs`(기본 180초) 매달린다. App 이 거절 UX 를 즉시 닫으려면 이 콜백에서 자체적으로
  * 취소 처리해야 한다.

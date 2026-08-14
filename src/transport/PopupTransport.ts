@@ -6,6 +6,7 @@ import {
   SignProgressInfo,
   DeviceState,
   DeviceBriefInfo,
+  DeviceDisconnectReason,
   ConnectionStateDetail,
   StateHandler,
 } from './MessageTransport'
@@ -122,6 +123,8 @@ export class PopupTransport implements MessageTransport {
   private currentDeviceState: DeviceState = 'unknown'
   /** `currentDeviceState === 'connected'` 일 때만 채워진다. */
   private currentDeviceInfo: DeviceBriefInfo | undefined = undefined
+  /** (2026-08-14) `currentDeviceState === 'disconnected'` 일 때만 채워진다. `currentDeviceInfo` 와 대칭. */
+  private currentDeviceReason: DeviceDisconnectReason | undefined = undefined
   private handshakePromise: Promise<void> | null = null
   // m07-02: _ready 게이트 (B Gate) 상태
   private readyPromise: Promise<void> | null = null
@@ -311,7 +314,9 @@ export class PopupTransport implements MessageTransport {
     //    닫히면 기기 상태를 **관측할 수 없게** 되는 것이지 기기가 빠진 게 아니다. 여기서
     //    'disconnected' 로 적으면 App 에 거짓 단정이 나간다(MessageTransport.ts DeviceState 참조).
     //    두 축을 한 번에 넘겨 발행도 1회로 묶는다(applyState 의 쌍 dedupe).
-    this.applyState({ popup: 'disconnected', device: 'unknown', deviceInfo: undefined })
+    //    (2026-08-14) `deviceReason` 도 **키를 명시**해 함께 클리어한다 — applyState 는 키
+    //    존재 여부로 클리어를 판정하므로 생략하면 옛 사유가 latch 된다.
+    this.applyState({ popup: 'disconnected', device: 'unknown', deviceInfo: undefined, deviceReason: undefined })
 
     // 6. (크로스 리뷰 C1로 제거됨, m09-04-27) state/signProgressHandlers는 **여기서 비우지 않는다**.
     //    close()는 두 가지 경로에서 호출된다: (a) 인스턴스를 통째로 버리는 resetSingleton() 경로
@@ -377,7 +382,10 @@ export class PopupTransport implements MessageTransport {
     //
     // 첫 오픈(이전 팝업 없음)에서는 device 가 이미 'unknown' 이라 이 항은 no-op 이고,
     // 팝업 축 전환(disconnected → connected)만 1회 발행된다 — 종전과 동일하다.
-    this.applyState({ popup: 'connected', device: 'unknown', deviceInfo: undefined })
+    //
+    // (2026-08-14) `deviceReason` 도 **키를 명시**해 함께 클리어한다 — `close()` 와 거울상 짝이며,
+    // 한쪽만 가드하면 방어 비대칭이 된다(PR #177 P2 `c5644a5` 의 결함 본질).
+    this.applyState({ popup: 'connected', device: 'unknown', deviceInfo: undefined, deviceReason: undefined })
   }
 
   private ensureMessageListener (): void {
@@ -426,7 +434,13 @@ export class PopupTransport implements MessageTransport {
 
         const device = (data as { device?: unknown }).device
         // boundary-validation: 알려진 값만 수용 — 모르는 문자열로 축을 오염시키지 않는다.
-        if (device !== 'connected' && device !== 'disconnected') return
+        // (2026-08-14) `'awaiting-connect-approval'` 추가. 구버전 bridge 는 이 값을 보내지 않고,
+        // 미지 값은 종전대로 drop 하므로 양방향 하위호환이 유지된다.
+        if (
+          device !== 'connected' &&
+          device !== 'disconnected' &&
+          device !== 'awaiting-connect-approval'
+        ) return
 
         let info: DeviceBriefInfo | undefined
         if (device === 'connected') {
@@ -452,7 +466,23 @@ export class PopupTransport implements MessageTransport {
             })
           }
         }
-        this.setDeviceState(device, info)
+        // (2026-08-14) `reason` 파싱 — `info` 와 형제 위치·형제 규칙이다.
+        // boundary-validation: 알려진 5종만 수용하고, 미지 값/비-string 은 `undefined` 로
+        // 접되 **축은 반영**한다. 사유를 못 읽었다고 "끊김" 자체를 버리면 더 나쁘다.
+        let reason: DeviceDisconnectReason | undefined
+        if (device === 'disconnected') {
+          const rawReason = (data as { reason?: unknown }).reason
+          if (
+            rawReason === 'connect-approval-rejected' ||
+            rawReason === 'connect-approval-cancelled' ||
+            rawReason === 'device-removed' ||
+            rawReason === 'reconnect-timeout' ||
+            rawReason === 'transport-failed'
+          ) {
+            reason = rawReason
+          }
+        }
+        this.setDeviceState(device, info, reason)
         return // 최종 응답이 아니므로 pending 삭제/resolve 하지 않는다
       }
 
@@ -684,9 +714,32 @@ export class PopupTransport implements MessageTransport {
    *
    * `info` 는 `device === 'connected'` 일 때만 유지한다. disconnected/unknown 으로 가면서
    * 직전 기기 정보를 남겨두면 "빠진 기기의 정보"가 화면에 계속 붙어 있게 된다.
+   *
+   * (2026-08-14) `reason` 은 정확히 대칭이다 — `device === 'disconnected'` 일 때만 유지한다.
+   * 🔴 두 키를 **항상 명시**해 넘긴다(값이 `undefined` 여도). applyState 는 키 존재 여부로
+   * 클리어를 판정하므로 생략하면 옛 값이 latch 된다.
    */
-  private setDeviceState (device: DeviceState, info?: DeviceBriefInfo): void {
-    this.applyState({ device, deviceInfo: device === 'connected' ? info : undefined })
+  private setDeviceState (
+    device: DeviceState,
+    info?: DeviceBriefInfo,
+    reason?: DeviceDisconnectReason,
+  ): void {
+    // 🔴 아래 **두 삼항 모두** 수신부의 파싱 가드와 **의도적 이중 가드**다 —
+    //    `deviceInfo` 삼항 ↔ 수신부 `if (device === 'connected')`,
+    //    `deviceReason` 삼항 ↔ 수신부 `if (device === 'disconnected')`.
+    //
+    //    2026-08-14 뮤테이션 실측: **어느 한쪽만 지우면 어느 방향이든 무증상**이다(네 조합 전부
+    //    green). 두 짝을 **동시에** 지워야 테스트가 red 가 된다. 즉 이 삼항도, 수신부 가드도
+    //    단독으로는 관측되지 않으므로 mutation 매트릭스의 원소가 아니다(no-op 이 "검출 실패"로
+    //    오판된다). 🔴 수신부만 보고 "그쪽은 관측되고 있다"고 오해하지 말 것.
+    //
+    //    그럼에도 남겨 두는 이유: `setDeviceState` 는 private 이지만 수신부 말고 다른 호출자가
+    //    생길 수 있고, 그때 이 삼항이 축↔필드 계약의 마지막 방어선이 된다.
+    this.applyState({
+      device,
+      deviceInfo: device === 'connected' ? info : undefined,
+      deviceReason: device === 'disconnected' ? reason : undefined,
+    })
   }
 
   /**
@@ -707,18 +760,33 @@ export class PopupTransport implements MessageTransport {
    * 목적이 그 경로에서 사라진다. 실제 경로: bridge 가 `getDeviceInfo` 실패로 **info 없이**
    * connected 를 보낸 뒤(자동 재연결 resolver — bridge `main.tsx` 의 `catch` 후 dispatch),
    * 기기가 준비돼 실값이 담긴 connected 가 다시 와도 device 축이 같아 **빈 정보에 고정**된다.
+   *
+   * NOTE(decision-anchor: m19-01-device-reason-in-dedupe): deviceReason 을 "표시 필드"로 보고
+   * 비교에서 빼지 말 것. deviceId 와 같은 이유다 — 빼면 disconnected → disconnected 로 사유만
+   * 바뀌는 전이가 조용히 삼켜져 App 이 옛 사유에 고정된다.
    */
-  private applyState (next: { popup?: TransportState, device?: DeviceState, deviceInfo?: DeviceBriefInfo }): void {
+  private applyState (next: {
+    popup?: TransportState,
+    device?: DeviceState,
+    deviceInfo?: DeviceBriefInfo,
+    deviceReason?: DeviceDisconnectReason,
+  }): void {
     const popup = next.popup ?? this.currentState
     const device = next.device ?? this.currentDeviceState
     // `changed` 를 필드 대입보다 **먼저** 계산한다 — 이 시점의 this.currentDeviceInfo 는 직전 값이다.
     const nextInfo = 'deviceInfo' in next ? next.deviceInfo : this.currentDeviceInfo
+    // 🔴 `??` 가 아니라 키 존재 판정이다(`nextInfo` 와 정확히 같은 의미론). `??` 로 쓰면 reason 이
+    // 빠진 전이에서 옛 값이 접혀 changed=false 가 되고, disconnected(A) → disconnected(사유없음)
+    // 이 조용히 삼켜져 옛 사유에 고정된다(latch).
+    const nextReason = 'deviceReason' in next ? next.deviceReason : this.currentDeviceReason
     const changed = popup !== this.currentState ||
       device !== this.currentDeviceState ||
-      (device === 'connected' && nextInfo?.deviceId !== this.currentDeviceInfo?.deviceId)
+      (device === 'connected' && nextInfo?.deviceId !== this.currentDeviceInfo?.deviceId) ||
+      (device === 'disconnected' && nextReason !== this.currentDeviceReason)
     this.currentState = popup
     this.currentDeviceState = device
     if ('deviceInfo' in next) this.currentDeviceInfo = next.deviceInfo
+    if ('deviceReason' in next) this.currentDeviceReason = next.deviceReason
     if (!changed) return
 
     // mutation-isolation: 방출 객체를 freeze — App 이 in-place 로 고쳐도 내부 상태가 오염되지
@@ -727,6 +795,7 @@ export class PopupTransport implements MessageTransport {
       popup,
       device,
       deviceInfo: this.currentDeviceInfo,
+      deviceReason: this.currentDeviceReason,
     })
     for (const handler of this.stateHandlers) {
       try {

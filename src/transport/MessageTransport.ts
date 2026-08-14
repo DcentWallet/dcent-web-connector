@@ -45,8 +45,64 @@ export type TransportState = 'connected' | 'disconnected'
  * `'unknown'` 은 **아직 모른다**는 뜻이다. 팝업이 열리기 전(신호를 받은 적 없음)과 팝업이 닫힌 뒤
  * (더 이상 관측할 수 없음)가 여기 해당한다. `'disconnected'` 로 접지 않는 이유는 그게
  * "기기가 빠졌다"는 **거짓 단정**이 되기 때문이다.
+ *
+ * (2026-08-14) `'awaiting-connect-approval'` 은 **링크는 열렸는데 기기 화면에서 사용자가 아직
+ * 허용하지 않은** 중간 상태다. 종전에는 이 구간이 `'unknown'` 에 삼켜져 팝업이 막 열린 것과
+ * 구분되지 않았다.
+ *
+ * NOTE(decision-anchor: m19-01-awaiting-is-device-axis-value): 별도 boolean(pendingApproval)로
+ * 빼지 말 것. 축의 값이라야 App 의 지배적 패턴인 device === 'connected' 체크가 자동으로
+ * fail-closed 가 된다. 필드로 빼면 그 필드를 모르는 기존 코드가 승인 전 기기를 '붙었다'로 읽는다.
  */
-export type DeviceState = 'connected' | 'disconnected' | 'unknown'
+export type DeviceState =
+  | 'connected'
+  | 'disconnected'
+  | 'awaiting-connect-approval'
+  | 'unknown'
+
+/**
+ * (2026-08-14) 기기 축이 `'disconnected'` 로 간 **사유**. 상태가 아니라 전이의 원인이므로
+ * `DeviceState` 의 값이 아니라 별도 주석 필드로 둔다 — 거절 시점에 이미 handle 이 반납되어
+ * 실제 축은 `'disconnected'` 다.
+ *
+ * 🔴 `'connect-'` 접두는 **서명 확인 거절과 구분**하기 위한 것이다. 서명 확인은 요청 스코프라
+ * 요청 promise 가 4001 로 표현하며 이 축에 오지 않는다.
+ *
+ * 🔴 **wire 키는 `reason`**(`_deviceState.reason`), App 에 노출되는 이름은 `deviceReason` 이다.
+ * bridge 가 `deviceReason` 으로 보내면 whitelist 에 걸리지 않아 **조용히 `undefined`** 가 된다
+ * (메시지 자체는 통과하므로 원인 추적이 어렵다). 배선 시 이 비대칭을 확인할 것.
+ *
+ * 🔴 이 사유를 받아도 **진행 중인 요청 promise 는 settle 되지 않는다** — 최대
+ * `timeoutMs`(기본 180초) 매달린다. App 이 거절 UX 를 즉시 닫으려면 이 콜백에서 자체적으로
+ * 취소 처리해야 한다.
+ */
+export type DeviceDisconnectReason =
+  /** 기기 화면에서 사용자가 거절 (USB Stage 2 마커 0x15). */
+  | 'connect-approval-rejected'
+  /**
+   * 팝업에서 취소 / BLE 세션 인계 / BLE 경로의 승인 불성립(거절·링크절단 미구분)
+   * / **원인을 관측하지 못한 이탈**(bridge 의 catch-all fallback).
+   */
+  | 'connect-approval-cancelled'
+  /**
+   * 케이블 분리 · GATT 절단 · 명시적 transport 해제 (bridge 가 UI 분기와 동일 기준으로 판정).
+   *
+   * 🔴 **물리적 분리는 승인 대기 중이어도 이 값이다** — 아래 `'transport-failed'` 가 아니다.
+   */
+  | 'device-removed'
+  /** 자동 재연결 예산 소진. */
+  | 'reconnect-timeout'
+  /**
+   * 승인 대기 **도중** transport 자체가 깨진 경우 (USB fatal). 사용자는 허용·거절·취소를
+   * 한 적이 없다 — "취소됨" 으로 접으면 사실과 다른 사유가 App 에 나간다.
+   *
+   * 🔴 이 값은 **승인 단계에 도달한 뒤**의 실패에만 쓴다. 승인 화면에 가보지도 못한 연결
+   * 실패는 애초에 이 축이 `'unknown'` 이라 `disconnected` 를 push 하지 않는다.
+   *
+   * 🔴 **물리적 분리(케이블 분리 · GATT 절단)는 승인 대기 중이어도 이 값이 아니라
+   * `'device-removed'` 다.** 이 값은 사용자 조작이 아닌 **fatal 오류**에만 쓴다.
+   */
+  | 'transport-failed'
 
 /**
  * (2026-08-10) 기기 연결 시 함께 오는 표시용 정보.
@@ -104,8 +160,22 @@ export interface DeviceBriefInfo {
 export interface ConnectionStateDetail {
   readonly popup: TransportState
   readonly device: DeviceState
-  /** `device === 'connected'` 일 때만 존재. */
+  /**
+   * `device === 'connected'` 일 때만 **값이 채워진다**.
+   *
+   * 🔴 아래 `deviceReason` 과 함께, 이 키는 방출 객체에 **항상 실린다**(`applyState` 가 네 키를
+   * 모두 담아 freeze 한다). `'deviceInfo' in detail` 로 분기하면 언제나 true 다.
+   */
   readonly deviceInfo?: DeviceBriefInfo
+  /**
+   * (2026-08-14) `device === 'disconnected'` 일 때만 **값이 채워진다**. 위 `deviceInfo` 와
+   * 정확히 대칭이며 키가 항상 존재하는 것도 같다. 🔴 disconnected 여도 `undefined` 일 수 있다
+   * (구버전 bridge, 또는 이 버전이 모르는 사유) — App 은 default 분기를 반드시 둔다.
+   *
+   * 🔴 사유를 받아도 **진행 중인 요청 promise 는 settle 되지 않는다**(최대 `timeoutMs`, 기본
+   * 180초). `DeviceDisconnectReason` docblock 참조.
+   */
+  readonly deviceReason?: DeviceDisconnectReason
 }
 
 /**
@@ -117,6 +187,10 @@ export interface ConnectionStateDetail {
  *
  * 단 **호출 빈도는 늘어난다** — 기기 축만 바뀌어도 호출되며, 그때 1번째 인자는 직전과 같은
  * 값일 수 있다. v1 은 값이 바뀔 때만 불렀으므로 이 점은 마이그레이션 문서에 명시한다.
+ *
+ * (2026-08-14) `detail.device` 는 `'awaiting-connect-approval'`(기기 화면 승인 대기) 로도 올 수
+ * 있고, `'disconnected'` 일 때는 `detail.deviceReason` 에 사유가 함께 온다. `device` 를
+ * if/else 로 분기하는 App 은 새 값이 마지막 `else` 가지에 흡수되지 않도록 명시 분기를 둔다.
  */
 export type StateHandler = (state: TransportState, detail: ConnectionStateDetail) => void
 

@@ -69,6 +69,8 @@ export type {
   DeviceBriefInfo,
   ConnectionStateDetail,
   StateHandler,
+  // 2026-08-14: 기기 축이 disconnected 로 간 사유 (detail.deviceReason).
+  DeviceDisconnectReason,
 } from './transport/MessageTransport'
 export { PopupTransport } from './transport/PopupTransport'
 

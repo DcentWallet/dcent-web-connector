@@ -1,0 +1,115 @@
+#!/usr/bin/env bash
+#
+# m19-01 뮤테이션 매트릭스 — "고쳤다" 가 아니라 "되돌리면 잡힌다" 를 증거로 남긴다.
+#
+# ⓪ 뮤테이션 전에 **baseline 이 GREEN** 인지 확인한다. red 면 5종이 전부 자동 "detected" 로
+#    찍혀 RESULT: PASS 가 나온다 — 이 스크립트의 판별력이 0 이 되는 조건이다.
+#
+# 원소 5종 각각에 대해:
+#   ① 앵커 문자열을 sed 로 치환한다
+#   ② 치환이 no-op 이 아니었는지 `git diff --quiet` 로 확인한다 (앵커가 실제로 존재했는가)
+#   ③ 대상 테스트 파일만 돌려 **실패해야** 그 원소는 "검출됨"
+#      🔴 `yarn unit-v2 <file>` 을 쓰면 안 된다 — 그 script 는 이미 `tests/unit/v2` 를 위치인자로
+#      갖고 있어 jest 가 두 패턴을 OR 로 합쳐 v2 **전체**가 돈다(검출의 귀속이 흐려진다).
+#   ④ `git checkout -- <file>` 로 복원한다
+#
+# 하나라도 "되돌렸는데 통과" 면 비영 exit — 그 가드는 관측되지 않고 있다는 뜻이다.
+#
+# ⚠️ 부모 워크스페이스의 Bash 툴은 zsh 로 돌므로 반드시 `bash scripts/mutation-check-m19-01.sh`
+#    로 실행한다.
+set -u
+
+cd "$(dirname "$0")/.." || exit 1
+
+TEST_FILE='tests/unit/v2/transport/PopupTransport.test.ts'
+SRC='src/transport/PopupTransport.ts'
+
+# GNU sed(-i suffix 없음) / BSD sed(-i '' 필요) 양쪽에서 도는 in-place 치환.
+sedi () {
+  if sed --version >/dev/null 2>&1; then
+    sed -i "$@"
+  else
+    sed -i '' "$@"
+  fi
+}
+
+# 치환 전 워킹트리가 깨끗해야 복원이 안전하다.
+if ! git diff --quiet -- "${SRC}"; then
+  echo "ABORT: ${SRC} 에 커밋되지 않은 변경이 있다 — 뮤테이션 복원이 그 변경을 날린다."
+  exit 2
+fi
+
+# baseline GREEN 확인 — red 면 5종이 전부 자동 'detected' 로 찍혀 판별력이 0 이 된다.
+yarn jest --config jest.v2.config.js --runInBand "${TEST_FILE}" >/dev/null 2>&1 \
+  || { echo "ABORT: baseline red — 뮤테이션 없이도 실패한다. 판정 불가."; exit 2; }
+
+# 원소: 라벨|파일|sed 표현식
+#   라벨은 매트릭스 출력용, sed 표현식은 앵커 → 뮤테이션.
+MUTANTS=(
+  "dedupe-drops-deviceReason|${SRC}|s|(device === 'disconnected' \&\& nextReason !== this.currentDeviceReason)|false|"
+  "nextReason-uses-nullish|${SRC}|s|'deviceReason' in next ? next.deviceReason : this.currentDeviceReason|next.deviceReason ?? this.currentDeviceReason|"
+  "ensurePopup-omits-reason-key|${SRC}|s|popup: 'connected', device: 'unknown', deviceInfo: undefined, deviceReason: undefined|popup: 'connected', device: 'unknown', deviceInfo: undefined|"
+  "close-omits-reason-key|${SRC}|s|popup: 'disconnected', device: 'unknown', deviceInfo: undefined, deviceReason: undefined|popup: 'disconnected', device: 'unknown', deviceInfo: undefined|"
+  "recv-whitelist-accepts-unknown|${SRC}|s|device !== 'awaiting-connect-approval'|false|"
+  # sed 구분자를 @ 로 쓴다 — 앵커에 `||` 가 들어 있어 | 를 못 쓴다.
+  "recv-reason-whitelist-accepts-any|${SRC}|s@rawReason === 'connect-approval-rejected' ||@true ||@"
+)
+
+# 🔴 모수 floor — 원소를 지우는 것이 초록으로 가는 가장 싼 길이 되면 안 된다.
+#    이 가드가 없으면 MUTANTS 를 1개로 줄여도 exit 0 이고, 아래 문구가 "6종 전건" 을 그대로
+#    주장한다(2026-08-14 실측: 5→1 로 줄였는데 PASS + "원소 5종 전건"). 개수를 바꾸려면
+#    여기 상수도 함께 고쳐야 하므로 삭제가 조용히 지나가지 않는다.
+EXPECTED_MUTANTS=6
+if [ "${#MUTANTS[@]}" -ne "${EXPECTED_MUTANTS}" ]; then
+  echo "ABORT: 뮤테이션 원소 ${#MUTANTS[@]}개 != 기대 ${EXPECTED_MUTANTS}개 — 원소를 추가/삭제했으면"
+  echo "       EXPECTED_MUTANTS 도 함께 고쳐라(커버리지가 조용히 줄지 않게 하는 가드)."
+  exit 2
+fi
+
+FAILED=0
+# 🔴 개수는 배열에서 유도한다 — 하드코딩하면 실제로 몇 개를 돌렸는지와 무관한 문구가 찍힌다.
+echo "=== m19-01 mutation matrix (원소 ${#MUTANTS[@]}종) ==="
+printf '%-34s %-10s %-10s %s\n' 'MUTANT' 'APPLIED' 'DETECTED' 'VERDICT'
+
+for entry in "${MUTANTS[@]}"; do
+  label="${entry%%|*}"
+  rest="${entry#*|}"
+  file="${rest%%|*}"
+  expr="${rest#*|}"
+
+  sedi "${expr}" "${file}"
+
+  # ② no-op 검증 — 앵커가 사라졌으면 이 검사는 아무것도 증명하지 못한다.
+  if git diff --quiet -- "${file}"; then
+    printf '%-34s %-10s %-10s %s\n' "${label}" 'NO-OP' '-' 'FAIL(anchor-missing)'
+    FAILED=1
+    continue
+  fi
+
+  # ③ 테스트가 실패해야 "검출됨".
+  if yarn jest --config jest.v2.config.js --runInBand "${TEST_FILE}" >/dev/null 2>&1; then
+    detected='no'
+    verdict='FAIL(not-detected)'
+    FAILED=1
+  else
+    detected='yes'
+    verdict='OK'
+  fi
+  printf '%-34s %-10s %-10s %s\n' "${label}" 'yes' "${detected}" "${verdict}"
+
+  # ④ 복원.
+  git checkout -- "${file}"
+done
+
+# 복원이 실제로 됐는지 최종 확인 — 여기서 dirty 면 리포에 뮤테이션이 남은 것이다.
+if ! git diff --quiet -- "${SRC}"; then
+  echo "ABORT: 복원 실패 — ${SRC} 가 여전히 dirty 하다."
+  exit 2
+fi
+
+if [ "${FAILED}" -ne 0 ]; then
+  echo "=== RESULT: FAIL — 원소 중 하나 이상이 '되돌렸는데 통과' 했다 ==="
+  exit 1
+fi
+
+echo "=== RESULT: PASS — 원소 ${#MUTANTS[@]}종 전건 '되돌리면 잡힌다' ==="

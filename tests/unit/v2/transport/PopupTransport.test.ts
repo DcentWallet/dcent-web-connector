@@ -32,6 +32,16 @@ function makeMockPopup(): MockPopup {
   return popup
 }
 
+/**
+ * 팝업 목을 `window.open` 의 반환 타입으로 승격한다.
+ *
+ * `MockPopup` 은 트랜스포트가 실제로 만지는 표면(`closed` / `close` / `postMessage`)만
+ * 구현하므로 `Window` 와 구조적으로 호환되지 않는다. 승격을 **이 한 곳에 가두고** 호출부는
+ * 타입 우회 없이 쓰게 한다 — 종전에는 같은 캐스트가 호출부 4곳에 흩어져 있었다.
+ */
+// eslint-disable-next-line uap/no-as-unknown-as -- Window 목 승격의 단일 지점. 호출부 4곳이 이 헬퍼를 거쳐 개별 우회가 사라진다
+const asWindow = (mock: MockPopup): Window => mock as unknown as Window
+
 function makeEnvelope(id: string, method = 'test_method'): MessageEnvelope<{ x: number }> {
   return { id, method, params: { x: 1 } }
 }
@@ -162,7 +172,7 @@ describe('PopupTransport', () => {
     activeMockPopup = mockPopup
     openSpy = jest
       .spyOn(window, 'open')
-      .mockImplementation(() => mockPopup as unknown as Window)
+      .mockImplementation(() => asWindow(mockPopup))
     // 기본: handshake 자동 응답 (실패 케이스 테스트는 자체 mockImpl로 override)
     installHandshakeAutoRespond(mockPopup)
   })
@@ -448,6 +458,7 @@ describe('PopupTransport', () => {
   describe('T-U-13: setTimeoutMs non-number', () => {
     it("'60s' 입력 → ProviderError(INVALID_PARAMS) throw", () => {
       transport = new PopupTransport()
+      // eslint-disable-next-line uap/no-as-unknown-as -- 타입을 어긴 JS 호출자를 재현하는 것이 이 케이스의 목적. 런타임 가드를 검증하려면 타입을 벗어난 입력이 필요하다
       expect(() => transport.setTimeoutMs('60s' as unknown as number)).toThrow(ProviderError)
       expect(() => transport.setTimeoutMs(NaN)).toThrow(ProviderError)
       expect(() => transport.setTimeoutMs(0)).toThrow(ProviderError)
@@ -951,7 +962,7 @@ describe('PopupTransport', () => {
       // 첫 사이클 확정 후 close → 새 popup으로 두 번째 사이클
       await transport.close()
       const newPopup = makeMockPopup()
-      openSpy.mockImplementation(() => newPopup as unknown as Window)
+      openSpy.mockImplementation(() => asWindow(newPopup))
       // 두 번째 popup에도 helper 부착 (uninstall된 spy 재설치)
       installHandshakeAutoRespond(newPopup)
 
@@ -1021,10 +1032,12 @@ describe('PopupTransport', () => {
       // default
       const t1 = new PopupTransport()
       // (private이지만 runtime accessible — 타입 캐스트로 검사)
+      // eslint-disable-next-line uap/no-as-unknown-as -- private 필드(readyTimeoutMs) 직접 관측 목적, mock factory 아님(실 인스턴스 캐스팅)
       expect((t1 as unknown as { readyTimeoutMs: number }).readyTimeoutMs).toBe(10000)
 
       // override 양수
       const t2 = new PopupTransport({ readyTimeoutMs: 500 })
+      // eslint-disable-next-line uap/no-as-unknown-as -- private 필드(readyTimeoutMs) 직접 관측 목적, mock factory 아님(실 인스턴스 캐스팅)
       expect((t2 as unknown as { readyTimeoutMs: number }).readyTimeoutMs).toBe(500)
 
       // invalid: -1
@@ -1038,6 +1051,7 @@ describe('PopupTransport', () => {
       expect(() => new PopupTransport({ readyTimeoutMs: 0 })).toThrow(ProviderError)
 
       // invalid: non-number (런타임 보호 — 타입은 number지만 외부에서 any로 들어올 수 있음)
+      // eslint-disable-next-line uap/no-as-unknown-as -- 위와 같은 이유: 타입을 어긴 호출을 재현해야 런타임 가드가 관측된다
       expect(() => new PopupTransport({ readyTimeoutMs: '500' as unknown as number })).toThrow(ProviderError)
     })
   })
@@ -1056,6 +1070,7 @@ describe('PopupTransport', () => {
       // close 호출 — 모든 ready state cleanup
       await transport.close()
 
+      // eslint-disable-next-line uap/no-as-unknown-as -- private ready state 필드 직접 관측 목적, mock factory 아님(실 인스턴스 캐스팅)
       const t = transport as unknown as {
         readyTimer: unknown
         readyPromise: unknown
@@ -1617,7 +1632,7 @@ describe('PopupTransport', () => {
       // 그 사이 App 이 send() 를 부르면 ensurePopup 이 close() 를 거치지 않고 새 팝업을 연다.
       const nextPopup = makeMockPopup()
       activeMockPopup = nextPopup
-      openSpy.mockImplementation(() => nextPopup as unknown as Window)
+      openSpy.mockImplementation(() => asWindow(nextPopup))
       installHandshakeAutoRespond(nextPopup)
       void transport.send(makeEnvelope('after-replace')).catch(() => {})
       await flushHandshake()
@@ -1644,6 +1659,339 @@ describe('PopupTransport', () => {
       })
       expect(h).toHaveBeenCalledTimes(1)
       expect(h.mock.calls[0][1].deviceInfo.deviceId).toBe('NEW-DEVICE')
+    })
+  })
+
+  // ===== 2026-08-14 (m19-01): 연결 승인 대기 + 끊김 사유 =====
+  //
+  // `'unknown'` 이 삼키던 "링크는 열렸는데 기기 화면에서 아직 허용 안 함" 구간을 축의 값으로
+  // 쪼개고, `'disconnected'` 로 간 **사유**를 `detail.deviceReason` 으로 함께 싣는다.
+  // `deviceReason` 은 표시값이 아니라 **판별자**라 쌍 dedupe 비교에 들어간다(deviceId 와 동일).
+  describe('T-U-DEVSTATE-13~25 / BOUND: 승인 대기 + 끊김 사유 (m19-01, 2026-08-14)', () => {
+    async function connected(): Promise<jest.Mock> {
+      transport = new PopupTransport()
+      const h = jest.fn()
+      transport.on('state', h)
+      void transport.send(makeEnvelope('a')).catch(() => {})
+      await flushHandshake()
+      h.mockClear() // 팝업 open 으로 인한 connected 1건 제거
+      return h
+    }
+
+    /** 팝업을 사용자가 직접 닫은 뒤 send() 로 ensurePopup 재진입을 유발한다 (T-U-DEVSTATE-12 패턴). */
+    async function replacePopup(): Promise<void> {
+      mockPopup.closed = true
+      const nextPopup = makeMockPopup()
+      activeMockPopup = nextPopup
+      openSpy.mockImplementation(() => asWindow(nextPopup))
+      installHandshakeAutoRespond(nextPopup)
+      void transport.send(makeEnvelope('after-replace')).catch(() => {})
+      await flushHandshake()
+    }
+
+    it('T-U-DEVSTATE-13: awaiting-connect-approval 을 받으면 그 값 그대로 1회 발행된다', async () => {
+      const h = await connected()
+      dispatchResponse(DEFAULT_ORIGIN, { type: '_deviceState', device: 'awaiting-connect-approval' })
+      expect(h).toHaveBeenCalledTimes(1)
+      // 1번째 인자는 팝업 축 — 승인 대기와 무관하게 connected 유지 (v1 호환 의미 불변)
+      expect(h.mock.calls[0][0]).toBe('connected')
+      expect(h.mock.calls[0][1].popup).toBe('connected')
+      expect(h.mock.calls[0][1].device).toBe('awaiting-connect-approval')
+    })
+
+    it('T-U-DEVSTATE-14: unknown → awaiting → connected 3단 전이는 정확히 2회, 순서까지 고정', async () => {
+      const h = await connected() // 이 시점 기기 축은 'unknown'
+      dispatchResponse(DEFAULT_ORIGIN, { type: '_deviceState', device: 'awaiting-connect-approval' })
+      dispatchResponse(DEFAULT_ORIGIN, {
+        type: '_deviceState',
+        device: 'connected',
+        info: { deviceId: 'DEV-A' },
+      })
+      expect(h).toHaveBeenCalledTimes(2)
+      // 🔴 횟수만 세면 순서가 뒤집혀도 통과한다 — 인덱스로 대조한다.
+      expect(h.mock.calls[0][1].device).toBe('awaiting-connect-approval')
+      expect(h.mock.calls[1][1].device).toBe('connected')
+    })
+
+    it('T-U-DEVSTATE-15: disconnected + reason=connect-approval-rejected 가 그대로 전달된다', async () => {
+      const h = await connected()
+      dispatchResponse(DEFAULT_ORIGIN, {
+        type: '_deviceState',
+        device: 'disconnected',
+        reason: 'connect-approval-rejected',
+      })
+      expect(h).toHaveBeenCalledTimes(1)
+      expect(h.mock.calls[0][1].device).toBe('disconnected')
+      expect(h.mock.calls[0][1].deviceReason).toBe('connect-approval-rejected')
+    })
+
+    it('T-U-DEVSTATE-16: 나머지 사유 4종도 그대로 전달된다 (-15 와 합쳐 5종 전수)', async () => {
+      const reasons = [
+        'connect-approval-cancelled',
+        'device-removed',
+        'reconnect-timeout',
+        'transport-failed',
+      ]
+      for (const reason of reasons) {
+        const h = await connected()
+        dispatchResponse(DEFAULT_ORIGIN, { type: '_deviceState', device: 'disconnected', reason })
+        expect(h).toHaveBeenCalledTimes(1)
+        expect(h.mock.calls[0][1].device).toBe('disconnected')
+        expect(h.mock.calls[0][1].deviceReason).toBe(reason)
+        await transport.close()
+      }
+    })
+
+    it('T-U-DEVSTATE-17: 🔴 사유만 바뀌는 disconnected → disconnected 도 발행된다 (dedupe 판별자)', async () => {
+      const h = await connected()
+      dispatchResponse(DEFAULT_ORIGIN, {
+        type: '_deviceState',
+        device: 'disconnected',
+        reason: 'connect-approval-rejected',
+      })
+      dispatchResponse(DEFAULT_ORIGIN, {
+        type: '_deviceState',
+        device: 'disconnected',
+        reason: 'device-removed',
+      })
+      expect(h).toHaveBeenCalledTimes(2)
+      // 🔴 두 값이 서로 달라야 라벨↔방향 매핑이 고정된다 (같은 값이면 순서 뒤집힘이 투명해진다).
+      expect(h.mock.calls[0][1].deviceReason).toBe('connect-approval-rejected')
+      expect(h.mock.calls[1][1].deviceReason).toBe('device-removed')
+    })
+
+    it('T-U-DEVSTATE-18: 대조군 — 같은 사유의 disconnected 재통지는 발행하지 않는다', async () => {
+      const h = await connected()
+      dispatchResponse(DEFAULT_ORIGIN, {
+        type: '_deviceState',
+        device: 'disconnected',
+        reason: 'device-removed',
+      })
+      h.mockClear()
+      // 이 단언이 없으면 dedupe 를 "항상 발행" 으로 고쳐도 T-U-DEVSTATE-17 이 통과한다
+      // (기존 -09 ↔ -10 쌍과 같은 역할).
+      dispatchResponse(DEFAULT_ORIGIN, {
+        type: '_deviceState',
+        device: 'disconnected',
+        reason: 'device-removed',
+      })
+      expect(h).not.toHaveBeenCalled()
+    })
+
+    it('T-U-DEVSTATE-19: 🔴 사유가 빠진 disconnected 재통지는 undefined 로 바뀌며 발행된다 (latch 금지)', async () => {
+      const h = await connected()
+      dispatchResponse(DEFAULT_ORIGIN, {
+        type: '_deviceState',
+        device: 'disconnected',
+        reason: 'reconnect-timeout',
+      })
+      h.mockClear()
+      // `??` 구현이면 옛 사유가 접혀 changed=false 가 되고 App 이 옛 사유에 고정된다.
+      dispatchResponse(DEFAULT_ORIGIN, { type: '_deviceState', device: 'disconnected' })
+      expect(h).toHaveBeenCalledTimes(1)
+      expect(h.mock.calls[0][1].device).toBe('disconnected')
+      expect(h.mock.calls[0][1].deviceReason).toBeUndefined()
+    })
+
+    it('T-U-DEVSTATE-20: 팝업이 교체되면 축이 unknown + deviceReason 도 클리어된다 (ensurePopup)', async () => {
+      const h = await connected()
+      dispatchResponse(DEFAULT_ORIGIN, { type: '_deviceState', device: 'awaiting-connect-approval' })
+      dispatchResponse(DEFAULT_ORIGIN, {
+        type: '_deviceState',
+        device: 'disconnected',
+        reason: 'connect-approval-rejected',
+      })
+      h.mockClear()
+
+      await replacePopup()
+
+      const resetEmits = h.mock.calls.filter((c) => c[1].device === 'unknown')
+      expect(resetEmits.length).toBeGreaterThanOrEqual(1)
+      const [, detail] = resetEmits[0]
+      expect(detail.popup).toBe('connected')
+      expect(detail.device).toBe('unknown')
+      // 🔴 키를 생략하면 옛 사유가 그대로 남는다(유지 = latch).
+      expect(detail.deviceReason).toBeUndefined()
+    })
+
+    it('T-U-DEVSTATE-21: close() 도 축을 unknown 으로 되돌리며 deviceReason 을 클리어한다 (거울상 짝)', async () => {
+      const h = await connected()
+      dispatchResponse(DEFAULT_ORIGIN, {
+        type: '_deviceState',
+        device: 'disconnected',
+        reason: 'connect-approval-rejected',
+      })
+      h.mockClear()
+
+      await transport.close()
+
+      expect(h).toHaveBeenCalledTimes(1)
+      const detail = h.mock.calls[0][1]
+      expect(detail.popup).toBe('disconnected')
+      expect(detail.device).toBe('unknown')
+      // 🔴 ensurePopup(-20) 과 한쪽만 가드하면 방어 비대칭 — c5644a5 의 결함 본질.
+      expect(detail.deviceReason).toBeUndefined()
+    })
+
+    it('T-U-DEVSTATE-22: disconnected 를 벗어나면(connected · awaiting 양쪽) 직전 deviceReason 이 남지 않는다', async () => {
+      const h = await connected()
+      dispatchResponse(DEFAULT_ORIGIN, {
+        type: '_deviceState',
+        device: 'disconnected',
+        reason: 'device-removed',
+      })
+      h.mockClear()
+      dispatchResponse(DEFAULT_ORIGIN, {
+        type: '_deviceState',
+        device: 'connected',
+        info: { deviceId: 'DEV-A' },
+      })
+      expect(h).toHaveBeenCalledTimes(1)
+      expect(h.mock.calls[0][1].device).toBe('connected')
+      expect(h.mock.calls[0][1].deviceReason).toBeUndefined()
+
+      // 형제 원소: disconnected 를 벗어나는 경로가 connected 하나가 아니다 — awaiting 으로 나갈
+      // 때도 사유가 클리어되어야 한다. 한쪽만 가드하면 방어 비대칭이다(close↔ensurePopup 과 같은 축).
+      dispatchResponse(DEFAULT_ORIGIN, {
+        type: '_deviceState',
+        device: 'disconnected',
+        reason: 'reconnect-timeout',
+      })
+      h.mockClear()
+      dispatchResponse(DEFAULT_ORIGIN, { type: '_deviceState', device: 'awaiting-connect-approval' })
+      expect(h).toHaveBeenCalledTimes(1)
+      expect(h.mock.calls[0][1].device).toBe('awaiting-connect-approval')
+      expect(h.mock.calls[0][1].deviceReason).toBeUndefined()
+    })
+
+    it('T-U-DEVSTATE-23: EC3 — 축과 안 맞는 동봉 필드는 파싱하지 않는다 (connected+reason · disconnected+info)', async () => {
+      const h = await connected()
+      dispatchResponse(DEFAULT_ORIGIN, {
+        type: '_deviceState',
+        device: 'connected',
+        reason: 'connect-approval-rejected',
+        info: { deviceId: 'DEV-A' },
+      })
+      expect(h).toHaveBeenCalledTimes(1)
+      expect(h.mock.calls[0][1].device).toBe('connected')
+      expect(h.mock.calls[0][1].deviceReason).toBeUndefined()
+      // 형제 원소 4/4: disconnected 에 동봉된 info 도 파싱하지 않는다 (connected+reason 의 거울상).
+      dispatchResponse(DEFAULT_ORIGIN, {
+        type: '_deviceState',
+        device: 'disconnected',
+        reason: 'device-removed',
+        info: { deviceId: 'SHOULD-BE-IGNORED' },
+      })
+      // `calls[1]` 인덱스의 근거를 단언으로 고정한다 — 앞선 dispatch 수가 바뀌면 여기서 red.
+      expect(h).toHaveBeenCalledTimes(2)
+      expect(h.mock.calls[1][1].deviceInfo).toBeUndefined()
+    })
+
+    it('T-U-DEVSTATE-26: deviceInfo / deviceReason 두 키는 값이 undefined 여도 detail 에 항상 실린다', async () => {
+      // 🔴 공개 문서가 "`'deviceInfo' in detail` / `'deviceReason' in detail` 로 분기하지 말라"고
+      //    가르치는 근거를 고정한다. 두 키에 대한 **유일한** 관측점이다.
+      //
+      // 🔴 픽스처가 `info` 도 `reason` 도 없는 `connected` 인 것이 이 케이스의 핵심이다 —
+      //    **두 값이 모두 undefined 여야** 조건부 spread 뮤테이션이 두 축 다 잡힌다.
+      //    2026-08-14 실측: `disconnected` + `reason:'device-removed'` 로 쏘면
+      //    `currentDeviceReason` 이 정의된 값이라 조건부 spread 여도 키가 실려
+      //    **deviceReason 축 단언이 항진명제**가 됐다(뮤테이션 M8 을 102건 어디서도 못 잡았다).
+      //    값이 있는 픽스처는 "키가 있다"를 증명하지 못한다.
+      const h = await connected()
+      dispatchResponse(DEFAULT_ORIGIN, { type: '_deviceState', device: 'connected' })
+      expect(h).toHaveBeenCalledTimes(1)
+      const detail = h.mock.calls[0][1]
+      // 두 값 모두 없는 상태 — 그래도 키는 둘 다 있어야 한다.
+      expect(detail.deviceInfo).toBeUndefined()
+      expect(detail.deviceReason).toBeUndefined()
+      expect('deviceInfo' in detail).toBe(true)
+      expect('deviceReason' in detail).toBe(true)
+    })
+
+    it('T-U-DEVSTATE-24: EC4 — awaiting 에 동봉된 info/reason 은 무시되고 직전 info 도 남지 않는다', async () => {
+      const h = await connected()
+      dispatchResponse(DEFAULT_ORIGIN, {
+        type: '_deviceState',
+        device: 'connected',
+        info: { deviceId: 'DEV-A', label: 'old' },
+      })
+      h.mockClear()
+      dispatchResponse(DEFAULT_ORIGIN, {
+        type: '_deviceState',
+        device: 'awaiting-connect-approval',
+        info: { deviceId: 'X' },
+        reason: 'connect-approval-rejected',
+      })
+      expect(h).toHaveBeenCalledTimes(1)
+      expect(h.mock.calls[0][1].device).toBe('awaiting-connect-approval')
+      // 승인 전에는 getDeviceInfo 가 불가하므로 실릴 값이 없다 — 직전 기기 정보도 버린다.
+      expect(h.mock.calls[0][1].deviceInfo).toBeUndefined()
+      // 형제 원소: awaiting 은 disconnected 가 아니므로 동봉 reason 도 파싱하지 않는다
+      // (EC3 의 connected 짝 — 두 비-disconnected 값 모두에서 reason 이 무시되어야 한다).
+      expect(h.mock.calls[0][1].deviceReason).toBeUndefined()
+    })
+
+    it('T-U-DEVSTATE-25: EC5 — 첫 리스너가 throw 해도 두 번째 리스너가 정상 수신한다', async () => {
+      transport = new PopupTransport()
+      const bad = jest.fn(() => { throw new Error('listener boom') })
+      const good = jest.fn()
+      transport.on('state', bad)
+      transport.on('state', good)
+      void transport.send(makeEnvelope('a')).catch(() => {})
+      await flushHandshake()
+      bad.mockClear()
+      good.mockClear()
+
+      dispatchResponse(DEFAULT_ORIGIN, { type: '_deviceState', device: 'awaiting-connect-approval' })
+      dispatchResponse(DEFAULT_ORIGIN, {
+        type: '_deviceState',
+        device: 'disconnected',
+        reason: 'transport-failed',
+      })
+
+      expect(bad).toHaveBeenCalledTimes(2)
+      expect(good).toHaveBeenCalledTimes(2)
+      expect(good.mock.calls[0][1].device).toBe('awaiting-connect-approval')
+      expect(good.mock.calls[1][1].device).toBe('disconnected')
+      expect(good.mock.calls[1][1].deviceReason).toBe('transport-failed')
+    })
+
+    it('T-U-DEVSTATE-BOUND-01: 미지 device 값(오타/숫자/null)은 drop 되고 내부 축도 불변이다', async () => {
+      const h = await connected()
+      dispatchResponse(DEFAULT_ORIGIN, {
+        type: '_deviceState',
+        device: 'connected',
+        info: { deviceId: 'DEV-A' },
+      })
+      h.mockClear()
+
+      // 오타 — 'awaiting' 은 bridge 내부 emitter 어휘라 wire 값이 아니다(§4 어휘 분기).
+      dispatchResponse(DEFAULT_ORIGIN, { type: '_deviceState', device: 'awaiting' })
+      dispatchResponse(DEFAULT_ORIGIN, { type: '_deviceState', device: 42 })
+      dispatchResponse(DEFAULT_ORIGIN, { type: '_deviceState', device: null })
+      expect(h).not.toHaveBeenCalled()
+
+      // 내부 축 불변 확인 — 같은 connected 재통지가 dedupe 에 걸려야 한다.
+      // drop 이 사라져 축이 오염됐다면 여기서 "달라졌다"로 판정돼 발행된다.
+      dispatchResponse(DEFAULT_ORIGIN, {
+        type: '_deviceState',
+        device: 'connected',
+        info: { deviceId: 'DEV-A' },
+      })
+      expect(h).not.toHaveBeenCalled()
+    })
+
+    it('T-U-DEVSTATE-BOUND-02: 미지 reason 은 undefined 로 접되 disconnected 축은 반영한다', async () => {
+      const bogus = ['sign-rejected', 7, { evil: true }, null]
+      for (const reason of bogus) {
+        const h = await connected()
+        dispatchResponse(DEFAULT_ORIGIN, { type: '_deviceState', device: 'disconnected', reason })
+        expect(h).toHaveBeenCalledTimes(1)
+        // 사유를 못 읽었다고 "끊김" 자체를 버리면 더 나쁘다.
+        expect(h.mock.calls[0][1].device).toBe('disconnected')
+        expect(h.mock.calls[0][1].deviceReason).toBeUndefined()
+        await transport.close()
+      }
     })
   })
 })

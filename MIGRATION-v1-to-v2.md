@@ -89,19 +89,28 @@ v1 의 연결 상태는 **한 축**이었다. v2 는 그 축이 실제로 두 �
 | 축 | 무엇을 말하나 | 어디서 읽나 |
 |---|---|---|
 | **팝업** | 브리지 팝업 창이 살아있는가 | 1번째 인자 (= `detail.popup`) |
-| **기기** | 하드웨어 지갑이 붙어있는가 | `detail.device` (v2 신규) |
+| **기기** | 하드웨어 지갑이 붙어있는가 (승인 대기 중인가 · 왜 끊겼는가 포함) | `detail.device` · `detail.deviceReason` (v2 신규) |
 
 두 축은 **독립**이다 — 팝업이 열린 채로 USB 를 뽑으면 기기 축만 바뀐다. v1 에서 `'connected'` 는
 "팝업이 열렸다"였지 "기기가 붙었다"가 아니었는데, 한 축만 보이니 그 구분이 불가능했다.
 
 ```ts
 type TransportState = 'connected' | 'disconnected'          // 팝업 축 (v1 그대로)
-type DeviceState    = 'connected' | 'disconnected' | 'unknown'
+type DeviceState    = 'connected' | 'disconnected' | 'awaiting-connect-approval' | 'unknown'
+
+// device === 'disconnected' 로 간 **사유**. 상태가 아니라 전이의 원인이다.
+type DeviceDisconnectReason =
+  | 'connect-approval-rejected'    // 기기 화면에서 사용자가 거절
+  | 'connect-approval-cancelled'   // 팝업 취소 / BLE 세션 인계 / 원인 미관측 이탈
+  | 'device-removed'               // 케이블 분리 · GATT 절단 · 명시적 transport 해제
+  | 'reconnect-timeout'            // 자동 재연결 예산 소진
+  | 'transport-failed'             // 승인 대기 도중 transport 자체가 깨짐
 
 interface ConnectionStateDetail {
   popup: TransportState
   device: DeviceState
-  deviceInfo?: DeviceBriefInfo    // device === 'connected' 일 때만
+  deviceInfo?: DeviceBriefInfo        // device === 'connected' 일 때만
+  deviceReason?: DeviceDisconnectReason  // device === 'disconnected' 일 때만
 }
 
 interface DeviceBriefInfo {       // 표시용 — 전부 optional
@@ -122,10 +131,19 @@ dcent.setConnectionListener((state, detail) => {
 
   // 기기 축 — 신규
   if (detail.device === 'connected') showDevice(detail.deviceInfo?.label, detail.deviceInfo?.connectType)
-  else if (detail.device === 'disconnected') promptReconnectDevice()
+  else if (detail.device === 'awaiting-connect-approval') showApprovalWaiting()   // 기기 화면에서 허용 대기
+  else if (detail.device === 'disconnected') promptReconnectDevice(detail.deviceReason)
   else hideDeviceBadge()                     // 'unknown'
 })
 ```
+
+> 🔴 **`else` 가지에 새 값을 흡수시키지 말 것.** `'awaiting-connect-approval'` 을 명시 분기로
+> 두지 않으면 승인 대기가 `'unknown'`(= 아무것도 관측 안 됨)으로 보여, 기기 화면 승인 구간을
+> 알린다는 목적 자체가 사라진다.
+>
+> 🔴 **`deviceReason` 을 받아도 진행 중인 요청 promise 는 settle 되지 않는다** — 최대
+> `timeoutMs`(기본 180000ms / 3분) 매달린다. 거절 UX 를 즉시 닫으려면 이 콜백에서 App 이
+> 자체적으로 취소 처리해야 한다.
 
 #### 🔴 호출 빈도가 늘어난다 (마이그레이션 시 확인할 것)
 
@@ -194,7 +212,9 @@ if (detail.deviceInfo?.deviceId === lastDeviceId) { /* 같은 기기 */ }
 호출한다. `detail` 과 `detail.deviceInfo` 는 freeze 되어 있어 수정해도 반영되지 않는다.
 
 기기 신호를 보내지 않는 구버전 브리지 팝업에서는 `detail.device` 가 `'unknown'` 으로 남을 뿐,
-팝업 축은 그대로 동작한다.
+팝업 축은 그대로 동작한다. 같은 이유로 `'awaiting-connect-approval'` / `deviceReason` 을 보내지
+않는 브리지에서는 두 값이 등장하지 않는다 — connector 는 모르는 값을 받으면 축을 갱신하지 않고
+그대로 버리므로(구버전 브리지 호환의 근거), 양방향 어느 쪽이 먼저 올라가도 안전하다.
 
 ---
 

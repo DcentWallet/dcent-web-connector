@@ -51,10 +51,24 @@ MUTANTS=(
   "ensurePopup-omits-reason-key|${SRC}|s|popup: 'connected', device: 'unknown', deviceInfo: undefined, deviceReason: undefined|popup: 'connected', device: 'unknown', deviceInfo: undefined|"
   "close-omits-reason-key|${SRC}|s|popup: 'disconnected', device: 'unknown', deviceInfo: undefined, deviceReason: undefined|popup: 'disconnected', device: 'unknown', deviceInfo: undefined|"
   "recv-whitelist-accepts-unknown|${SRC}|s|device !== 'awaiting-connect-approval'|false|"
+  # sed 구분자를 @ 로 쓴다 — 앵커에 `||` 가 들어 있어 | 를 못 쓴다.
+  "recv-reason-whitelist-accepts-any|${SRC}|s@rawReason === 'connect-approval-rejected' ||@true ||@"
 )
 
+# 🔴 모수 floor — 원소를 지우는 것이 초록으로 가는 가장 싼 길이 되면 안 된다.
+#    이 가드가 없으면 MUTANTS 를 1개로 줄여도 exit 0 이고, 아래 문구가 "6종 전건" 을 그대로
+#    주장한다(2026-08-14 실측: 5→1 로 줄였는데 PASS + "원소 5종 전건"). 개수를 바꾸려면
+#    여기 상수도 함께 고쳐야 하므로 삭제가 조용히 지나가지 않는다.
+EXPECTED_MUTANTS=6
+if [ "${#MUTANTS[@]}" -ne "${EXPECTED_MUTANTS}" ]; then
+  echo "ABORT: 뮤테이션 원소 ${#MUTANTS[@]}개 != 기대 ${EXPECTED_MUTANTS}개 — 원소를 추가/삭제했으면"
+  echo "       EXPECTED_MUTANTS 도 함께 고쳐라(커버리지가 조용히 줄지 않게 하는 가드)."
+  exit 2
+fi
+
 FAILED=0
-echo "=== m19-01 mutation matrix (원소 5종) ==="
+# 🔴 개수는 배열에서 유도한다 — 하드코딩하면 실제로 몇 개를 돌렸는지와 무관한 문구가 찍힌다.
+echo "=== m19-01 mutation matrix (원소 ${#MUTANTS[@]}종) ==="
 printf '%-34s %-10s %-10s %s\n' 'MUTANT' 'APPLIED' 'DETECTED' 'VERDICT'
 
 for entry in "${MUTANTS[@]}"; do
@@ -98,4 +112,4 @@ if [ "${FAILED}" -ne 0 ]; then
   exit 1
 fi
 
-echo "=== RESULT: PASS — 원소 5종 전건 '되돌리면 잡힌다' ==="
+echo "=== RESULT: PASS — 원소 ${#MUTANTS[@]}종 전건 '되돌리면 잡힌다' ==="

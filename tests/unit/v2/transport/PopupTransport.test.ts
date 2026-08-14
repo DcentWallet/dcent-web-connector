@@ -1864,7 +1864,7 @@ describe('PopupTransport', () => {
       expect(h.mock.calls[0][1].deviceReason).toBeUndefined()
     })
 
-    it('T-U-DEVSTATE-23: EC3 — 축과 안 맞는 동봉 필드는 파싱하지 않는다 (connected+reason · disconnected+info) + 두 키는 항상 존재', async () => {
+    it('T-U-DEVSTATE-23: EC3 — 축과 안 맞는 동봉 필드는 파싱하지 않는다 (connected+reason · disconnected+info)', async () => {
       const h = await connected()
       dispatchResponse(DEFAULT_ORIGIN, {
         type: '_deviceState',
@@ -1889,19 +1889,21 @@ describe('PopupTransport', () => {
 
     it('T-U-DEVSTATE-26: deviceInfo / deviceReason 두 키는 값이 undefined 여도 detail 에 항상 실린다', async () => {
       // 🔴 공개 문서가 "`'deviceInfo' in detail` / `'deviceReason' in detail` 로 분기하지 말라"고
-      //    가르치는 근거를 고정한다. 이 단언이 유일한 관측점이다 — 2026-08-14 뮤테이션 실측에서
-      //    "값이 있을 때만 spread" 로 바꾸면 `toBeUndefined()` 계열은 **전부 통과**하고 이 케이스만
-      //    red 가 됐다. 별도 it 으로 둔 이유는 실패 시 깨진 축을 테스트 이름으로 특정하기 위함.
+      //    가르치는 근거를 고정한다. 두 키에 대한 **유일한** 관측점이다.
+      //
+      // 🔴 픽스처가 `info` 도 `reason` 도 없는 `connected` 인 것이 이 케이스의 핵심이다 —
+      //    **두 값이 모두 undefined 여야** 조건부 spread 뮤테이션이 두 축 다 잡힌다.
+      //    2026-08-14 실측: `disconnected` + `reason:'device-removed'` 로 쏘면
+      //    `currentDeviceReason` 이 정의된 값이라 조건부 spread 여도 키가 실려
+      //    **deviceReason 축 단언이 항진명제**가 됐다(뮤테이션 M8 을 102건 어디서도 못 잡았다).
+      //    값이 있는 픽스처는 "키가 있다"를 증명하지 못한다.
       const h = await connected()
-      dispatchResponse(DEFAULT_ORIGIN, {
-        type: '_deviceState',
-        device: 'disconnected',
-        reason: 'device-removed',
-      })
+      dispatchResponse(DEFAULT_ORIGIN, { type: '_deviceState', device: 'connected' })
       expect(h).toHaveBeenCalledTimes(1)
       const detail = h.mock.calls[0][1]
-      // disconnected 이므로 deviceInfo 는 값이 없다 — 그래도 키는 있어야 한다.
+      // 두 값 모두 없는 상태 — 그래도 키는 둘 다 있어야 한다.
       expect(detail.deviceInfo).toBeUndefined()
+      expect(detail.deviceReason).toBeUndefined()
       expect('deviceInfo' in detail).toBe(true)
       expect('deviceReason' in detail).toBe(true)
     })

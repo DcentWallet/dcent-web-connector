@@ -84,7 +84,11 @@ export type DeviceDisconnectReason =
    * / **원인을 관측하지 못한 이탈**(bridge 의 catch-all fallback).
    */
   | 'connect-approval-cancelled'
-  /** 케이블 분리 · GATT 절단 · 명시적 transport 해제 (bridge 가 UI 분기와 동일 기준으로 판정). */
+  /**
+   * 케이블 분리 · GATT 절단 · 명시적 transport 해제 (bridge 가 UI 분기와 동일 기준으로 판정).
+   *
+   * 🔴 **물리적 분리는 승인 대기 중이어도 이 값이다** — 아래 `'transport-failed'` 가 아니다.
+   */
   | 'device-removed'
   /** 자동 재연결 예산 소진. */
   | 'reconnect-timeout'
@@ -94,6 +98,9 @@ export type DeviceDisconnectReason =
    *
    * 🔴 이 값은 **승인 단계에 도달한 뒤**의 실패에만 쓴다. 승인 화면에 가보지도 못한 연결
    * 실패는 애초에 이 축이 `'unknown'` 이라 `disconnected` 를 push 하지 않는다.
+   *
+   * 🔴 **물리적 분리(케이블 분리 · GATT 절단)는 승인 대기 중이어도 이 값이 아니라
+   * `'device-removed'` 다.** 이 값은 사용자 조작이 아닌 **fatal 오류**에만 쓴다.
    */
   | 'transport-failed'
 

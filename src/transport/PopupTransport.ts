@@ -724,11 +724,17 @@ export class PopupTransport implements MessageTransport {
     info?: DeviceBriefInfo,
     reason?: DeviceDisconnectReason,
   ): void {
-    // 🔴 `device === 'disconnected' ?` 는 수신부(:473 의 파싱 가드)와 **의도적 이중 가드**다.
-    //    현재는 수신부가 이미 좁혀 주므로 이 삼항만 지워도 관측되는 동작이 없다 — 그래서
-    //    mutation 매트릭스의 원소가 아니다(뮤테이션이 no-op 이라 "검출 실패"로 오판된다).
-    //    남겨 두는 이유: `setDeviceState` 는 private 이지만 수신부 말고 다른 호출자가 생길 수
-    //    있고, 그때 이 삼항이 축↔필드 계약의 마지막 방어선이 된다.
+    // 🔴 아래 **두 삼항 모두** 수신부의 파싱 가드와 **의도적 이중 가드**다 —
+    //    `deviceInfo` 삼항 ↔ 수신부 `if (device === 'connected')`,
+    //    `deviceReason` 삼항 ↔ 수신부 `if (device === 'disconnected')`.
+    //
+    //    2026-08-14 뮤테이션 실측: **어느 한쪽만 지우면 어느 방향이든 무증상**이다(네 조합 전부
+    //    green). 두 짝을 **동시에** 지워야 테스트가 red 가 된다. 즉 이 삼항도, 수신부 가드도
+    //    단독으로는 관측되지 않으므로 mutation 매트릭스의 원소가 아니다(no-op 이 "검출 실패"로
+    //    오판된다). 🔴 수신부만 보고 "그쪽은 관측되고 있다"고 오해하지 말 것.
+    //
+    //    그럼에도 남겨 두는 이유: `setDeviceState` 는 private 이지만 수신부 말고 다른 호출자가
+    //    생길 수 있고, 그때 이 삼항이 축↔필드 계약의 마지막 방어선이 된다.
     this.applyState({
       device,
       deviceInfo: device === 'connected' ? info : undefined,

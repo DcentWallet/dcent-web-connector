@@ -1882,12 +1882,28 @@ describe('PopupTransport', () => {
         reason: 'device-removed',
         info: { deviceId: 'SHOULD-BE-IGNORED' },
       })
+      // `calls[1]` 인덱스의 근거를 단언으로 고정한다 — 앞선 dispatch 수가 바뀌면 여기서 red.
+      expect(h).toHaveBeenCalledTimes(2)
       expect(h.mock.calls[1][1].deviceInfo).toBeUndefined()
-      // 🔴 두 키는 값이 undefined 여도 **항상 실린다** — 공개 문서가 "`in` 으로 분기하지 말라"고
-      //    가르치는 근거다. toEqual 은 undefined 프로퍼티의 존재/부재를 구별하지 못하므로
-      //    `in` 으로 직접 단언한다.
-      expect('deviceInfo' in h.mock.calls[1][1]).toBe(true)
-      expect('deviceReason' in h.mock.calls[0][1]).toBe(true)
+    })
+
+    it('T-U-DEVSTATE-26: deviceInfo / deviceReason 두 키는 값이 undefined 여도 detail 에 항상 실린다', async () => {
+      // 🔴 공개 문서가 "`'deviceInfo' in detail` / `'deviceReason' in detail` 로 분기하지 말라"고
+      //    가르치는 근거를 고정한다. 이 단언이 유일한 관측점이다 — 2026-08-14 뮤테이션 실측에서
+      //    "값이 있을 때만 spread" 로 바꾸면 `toBeUndefined()` 계열은 **전부 통과**하고 이 케이스만
+      //    red 가 됐다. 별도 it 으로 둔 이유는 실패 시 깨진 축을 테스트 이름으로 특정하기 위함.
+      const h = await connected()
+      dispatchResponse(DEFAULT_ORIGIN, {
+        type: '_deviceState',
+        device: 'disconnected',
+        reason: 'device-removed',
+      })
+      expect(h).toHaveBeenCalledTimes(1)
+      const detail = h.mock.calls[0][1]
+      // disconnected 이므로 deviceInfo 는 값이 없다 — 그래도 키는 있어야 한다.
+      expect(detail.deviceInfo).toBeUndefined()
+      expect('deviceInfo' in detail).toBe(true)
+      expect('deviceReason' in detail).toBe(true)
     })
 
     it('T-U-DEVSTATE-24: EC4 — awaiting 에 동봉된 info/reason 은 무시되고 직전 info 도 남지 않는다', async () => {

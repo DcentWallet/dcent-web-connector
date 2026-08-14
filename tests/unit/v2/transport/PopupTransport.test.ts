@@ -32,6 +32,16 @@ function makeMockPopup(): MockPopup {
   return popup
 }
 
+/**
+ * 팝업 목을 `window.open` 의 반환 타입으로 승격한다.
+ *
+ * `MockPopup` 은 트랜스포트가 실제로 만지는 표면(`closed` / `close` / `postMessage`)만
+ * 구현하므로 `Window` 와 구조적으로 호환되지 않는다. 승격을 **이 한 곳에 가두고** 호출부는
+ * 타입 우회 없이 쓰게 한다 — 종전에는 같은 캐스트가 호출부 4곳에 흩어져 있었다.
+ */
+// eslint-disable-next-line uap/no-as-unknown-as -- Window 목 승격의 단일 지점. 호출부 4곳이 이 헬퍼를 거쳐 개별 우회가 사라진다
+const asWindow = (mock: MockPopup): Window => mock as unknown as Window
+
 function makeEnvelope(id: string, method = 'test_method'): MessageEnvelope<{ x: number }> {
   return { id, method, params: { x: 1 } }
 }
@@ -162,7 +172,7 @@ describe('PopupTransport', () => {
     activeMockPopup = mockPopup
     openSpy = jest
       .spyOn(window, 'open')
-      .mockImplementation(() => mockPopup as unknown as Window)
+      .mockImplementation(() => asWindow(mockPopup))
     // 기본: handshake 자동 응답 (실패 케이스 테스트는 자체 mockImpl로 override)
     installHandshakeAutoRespond(mockPopup)
   })
@@ -448,6 +458,7 @@ describe('PopupTransport', () => {
   describe('T-U-13: setTimeoutMs non-number', () => {
     it("'60s' 입력 → ProviderError(INVALID_PARAMS) throw", () => {
       transport = new PopupTransport()
+      // eslint-disable-next-line uap/no-as-unknown-as -- 타입을 어긴 JS 호출자를 재현하는 것이 이 케이스의 목적. 런타임 가드를 검증하려면 타입을 벗어난 입력이 필요하다
       expect(() => transport.setTimeoutMs('60s' as unknown as number)).toThrow(ProviderError)
       expect(() => transport.setTimeoutMs(NaN)).toThrow(ProviderError)
       expect(() => transport.setTimeoutMs(0)).toThrow(ProviderError)
@@ -951,7 +962,7 @@ describe('PopupTransport', () => {
       // 첫 사이클 확정 후 close → 새 popup으로 두 번째 사이클
       await transport.close()
       const newPopup = makeMockPopup()
-      openSpy.mockImplementation(() => newPopup as unknown as Window)
+      openSpy.mockImplementation(() => asWindow(newPopup))
       // 두 번째 popup에도 helper 부착 (uninstall된 spy 재설치)
       installHandshakeAutoRespond(newPopup)
 
@@ -1021,10 +1032,12 @@ describe('PopupTransport', () => {
       // default
       const t1 = new PopupTransport()
       // (private이지만 runtime accessible — 타입 캐스트로 검사)
+      // eslint-disable-next-line uap/no-as-unknown-as -- private 필드(readyTimeoutMs) 직접 관측 목적, mock factory 아님(실 인스턴스 캐스팅)
       expect((t1 as unknown as { readyTimeoutMs: number }).readyTimeoutMs).toBe(10000)
 
       // override 양수
       const t2 = new PopupTransport({ readyTimeoutMs: 500 })
+      // eslint-disable-next-line uap/no-as-unknown-as -- private 필드(readyTimeoutMs) 직접 관측 목적, mock factory 아님(실 인스턴스 캐스팅)
       expect((t2 as unknown as { readyTimeoutMs: number }).readyTimeoutMs).toBe(500)
 
       // invalid: -1
@@ -1038,6 +1051,7 @@ describe('PopupTransport', () => {
       expect(() => new PopupTransport({ readyTimeoutMs: 0 })).toThrow(ProviderError)
 
       // invalid: non-number (런타임 보호 — 타입은 number지만 외부에서 any로 들어올 수 있음)
+      // eslint-disable-next-line uap/no-as-unknown-as -- 위와 같은 이유: 타입을 어긴 호출을 재현해야 런타임 가드가 관측된다
       expect(() => new PopupTransport({ readyTimeoutMs: '500' as unknown as number })).toThrow(ProviderError)
     })
   })
@@ -1056,6 +1070,7 @@ describe('PopupTransport', () => {
       // close 호출 — 모든 ready state cleanup
       await transport.close()
 
+      // eslint-disable-next-line uap/no-as-unknown-as -- private ready state 필드 직접 관측 목적, mock factory 아님(실 인스턴스 캐스팅)
       const t = transport as unknown as {
         readyTimer: unknown
         readyPromise: unknown
@@ -1617,7 +1632,7 @@ describe('PopupTransport', () => {
       // 그 사이 App 이 send() 를 부르면 ensurePopup 이 close() 를 거치지 않고 새 팝업을 연다.
       const nextPopup = makeMockPopup()
       activeMockPopup = nextPopup
-      openSpy.mockImplementation(() => nextPopup as unknown as Window)
+      openSpy.mockImplementation(() => asWindow(nextPopup))
       installHandshakeAutoRespond(nextPopup)
       void transport.send(makeEnvelope('after-replace')).catch(() => {})
       await flushHandshake()
@@ -1668,7 +1683,7 @@ describe('PopupTransport', () => {
       mockPopup.closed = true
       const nextPopup = makeMockPopup()
       activeMockPopup = nextPopup
-      openSpy.mockImplementation(() => nextPopup as unknown as Window)
+      openSpy.mockImplementation(() => asWindow(nextPopup))
       installHandshakeAutoRespond(nextPopup)
       void transport.send(makeEnvelope('after-replace')).catch(() => {})
       await flushHandshake()

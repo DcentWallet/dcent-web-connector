@@ -5,6 +5,7 @@ npm connector for integrating the **DCENT hardware wallet** into web apps. It op
 - 📘 **v2 Developer Guide** (full API + per-chain reference): [**dev-docs.dcentwallet.com**](https://dev-docs.dcentwallet.com/dcent-biometric-wallet-for-pc/dcent-web-connector) — the canonical guide
   - `docs/legacy-v2-dev-doc.html` is a **frozen** offline snapshot (the single-file prototype the guide was built from, EN + KO). It is no longer updated — do not edit it.
 - [Per-family payload contract](docs/v2-payload-contract.md)
+- 🇰🇷 Korean copies: [MIGRATION-v1-to-v2-ko.md](MIGRATION-v1-to-v2-ko.md) · [docs/v2-payload-contract-ko.md](docs/v2-payload-contract-ko.md) — **English is canonical**; update it first and treat the Korean copy as a translation.
 - **v0.16.x (v1) → v2 migration:** [MIGRATION-v1-to-v2.md](./MIGRATION-v1-to-v2.md)
 
 > **v2 is a breaking change from v0.16.x.** The v1 `get*Signed*Transaction/Message` wrappers are replaced by a single `dcent.sign({ method, chainId, payload })`. Existing v0.16.x Apps keep working — see [v0.16.x users](#v016x-v1-users) below.

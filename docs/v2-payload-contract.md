@@ -1,66 +1,68 @@
 # dcent-web-connector v2 — Per-Family Payload Contract
 
-이 문서는 v2 통합 sign API에서 각 chain family별로 `payload` 필드에 어떤 shape를 전달해야 하는지를 명시한다.
+> 🇰🇷 한국어: [v2-payload-contract-ko.md](v2-payload-contract-ko.md)
+
+This document specifies the `payload` shape each chain family expects on the v2 unified sign API.
 
 ```js
 const result = await dcent.sign({
-  method: 'signTransaction',  // 또는 'signMessage' / 'signTypedData' / ...
+  method: 'signTransaction',  // or 'signMessage' / 'signTypedData' / ...
   chainId: 'eip155:1/slip44:60',
   payload: {
-    keyPath: "m/44'/60'/0'/0/0",   // ⚠️ keyPath는 payload 안에 위치 (필수)
+    keyPath: "m/44'/60'/0'/0/0",   // ⚠️ keyPath lives inside payload (required)
     transaction: { /* family-specific shape */ }
   }
 })
 ```
 
-**진실 출처(source of truth):** `playground/chains.json` (family → chainId 매핑) + `playground/presets.*.json` (payload shape 예시).
+**Source of truth:** `playground/chains.json` (family → chainId map) + `playground/presets.*.json` (payload shape examples).
 
-> **지원 상태는 실측값이다** (2026-07-21, swproxy 하네스 — signMessage 152 chain 전수 / signTransaction 86 preset · 367 case).
+> **Support status is measured, not assumed** (2026-07-21, swproxy harness — signMessage across all 152 chains / signTransaction over 86 presets · 367 cases).
 >
-> - ✅ — 서명까지 도달 확인
-> - ◐ — 경로는 존재하나 현재 예시 payload 로는 서명 미도달(아래 사유 참고). **미지원이 아니다**
-> - ❌ `-32601` — 브리지가 그 method 를 지원하지 않는다는 **유일한 신뢰 신호**
+> - ✅ — reached signing
+> - ◐ — the path exists but the current example payload does not reach signing (reason per section). **This is not "unsupported"**
+> - ❌ `-32601` — the **only trustworthy signal** that the bridge does not support that method
 >
-> `-32602` 는 미지원이 아니라 **payload 가 덜 채워졌다**는 뜻이다. 브리지는 네트워크 접근 없이 서명하므로
-> nonce · sequence · fee · blockhash 같은 consensus 필드를 앱이 완성해 보내야 한다(각 family 섹션 참고).
+> `-32602` does not mean unsupported — it means the **payload is incomplete**. The bridge signs with no network access, so
+> consensus fields such as nonce · sequence · fee · blockhash must be filled in by your app (see each family section).
 
 ---
 
-## 지원 상태 요약
+## Support status summary
 
-| Family | signTransaction | signMessage | 실측 비고 |
+| Family | signTransaction | signMessage | Measured notes |
 |--------|----------------|-------------|------|
-| algorand | ✅ | ❌ `-32601` | payment / ASA / ASA descriptor 서명 |
-| bitcoin | ◐ | ❌ `-32601` | 하네스가 실계정 UTXO 를 못 만들어 미도달(prevout 불일치) |
-| cardano | ✅ | ❌ `-32601` | full-CBOR 10 preset 서명 |
-| conflux | ◐ | ❌ `-32601` | `storageLimit` / `epochHeight` 완성 필요 |
-| constellation | ✅ | ❌ `-32601` | 지원 metagraph(DOR) 서명. 미지원 metagraph 는 `-32602` |
-| cosmos | ✅ | ❌ `-32601` | Amino 7 preset 서명 |
-| ethereum | ✅ | ✅ | signMessage 94 chain 중 91 서명. **XDC(`eip155:50/51`)만 `-32601`** |
+| algorand | ✅ | ❌ `-32601` | payment / ASA / ASA descriptor signed |
+| bitcoin | ◐ | ❌ `-32601` | harness could not build real-account UTXOs, so signing was not reached (prevout mismatch) |
+| cardano | ✅ | ❌ `-32601` | 10 full-CBOR presets signed |
+| conflux | ◐ | ❌ `-32601` | needs `storageLimit` / `epochHeight` filled in |
+| constellation | ✅ | ❌ `-32601` | supported metagraph (DOR) signed. An unsupported metagraph returns `-32602` |
+| cosmos | ✅ | ❌ `-32601` | 7 Amino presets signed |
+| ethereum | ✅ | ✅ | signMessage signed on 91 of 94 chains. **Only XDC (`eip155:50/51`) returns `-32601`** |
 | fil | ✅ | ❌ `-32601` | |
-| havah | ✅ (EVM 호환) | ❌ `-32601` | EVM 호환이지만 signMessage 는 미지원 |
-| hedera | ✅ | ❌ `-32601` | `extra.unsignedTxBytes` passthrough 서명. structured 는 `-32602` |
-| klaytn (Kaia) | ✅ | ✅ | ethereum family 로 처리 |
-| near | ◐ | ❌ `-32601` | 예시 `publicKey` 가 기기 파생 키와 달라 미도달 |
-| polkadot | ✅ (`extra.scaleHex`) | ✅ parachain / ❌ relay `-32601` | relay chain(Polkadot)만 signMessage 미지원 |
-| solana | ✅ | ✅ | form-D descriptor 서명 |
+| havah | ✅ (EVM-compatible) | ❌ `-32601` | EVM-compatible, but signMessage is not supported |
+| hedera | ✅ | ❌ `-32601` | `extra.unsignedTxBytes` passthrough signed. The structured form returns `-32602` |
+| klaytn (Kaia) | ✅ | ✅ | handled by the ethereum family |
+| near | ◐ | ❌ `-32601` | the example `publicKey` differs from the device-derived key, so signing was not reached |
+| polkadot | ✅ (`extra.scaleHex`) | ✅ parachain / ❌ relay `-32601` | only the relay chain (Polkadot) lacks signMessage |
+| solana | ✅ | ✅ | form-D descriptor signed |
 | stacks | ✅ | ❌ `-32601` | |
-| stellar | ✅ (`{xdr}`) | ✅ | structured payment / Soroban 은 `-32602` |
-| tezos | ◐ | ❌ `-32601` | pre-forged `extra.unsignedTxBytes` 필요 |
-| tron | ✅ | ❌ `-32601` | TRX / TRC20 transfer / approve 서명 |
+| stellar | ✅ (`{xdr}`) | ✅ | structured payment / Soroban return `-32602` |
+| tezos | ◐ | ❌ `-32601` | requires a pre-forged `extra.unsignedTxBytes` |
+| tron | ✅ | ❌ `-32601` | TRX / TRC20 transfer / approve signed |
 | vechain | ✅ | ❌ `-32601` | |
-| xahau | ◐ | ❌ `-32601` | `tx_json` 의 `Sequence` / `LastLedgerSequence` 완성 필요 |
-| xrp | ◐ | ❌ `-32601` | 동일 (Payment / AccountSet / TrustSet 모두 `-32601` 아님) |
+| xahau | ◐ | ❌ `-32601` | needs `Sequence` / `LastLedgerSequence` filled into `tx_json` |
+| xrp | ◐ | ❌ `-32601` | same (Payment / AccountSet / TrustSet are none of them `-32601`) |
 
 ---
 
-## Family별 Payload Contract
+## Payload contract by family
 
 ### Algorand
 
-**지원:** `signTransaction` ✅ | `signMessage` ❌ `-32601`
+**Support:** `signTransaction` ✅ | `signMessage` ❌ `-32601`
 
-**chainId 예시:** `algorand:wGHE2Pwdvd7S12BL5FaOP20EGYesN73k/slip44:283`
+**Example chainId:** `algorand:wGHE2Pwdvd7S12BL5FaOP20EGYesN73k/slip44:283`
 
 **signTransaction payload:**
 
@@ -85,9 +87,9 @@ const result = await dcent.sign({
 
 ### Bitcoin
 
-**지원:** `signTransaction` ◐ 경로 존재 | `signMessage` ❌ `-32601`
+**Support:** `signTransaction` ◐ path exists | `signMessage` ❌ `-32601`
 
-Bitcoin은 `dcent.sign({ method: 'signTransaction', chainId, payload })`로 서명한다. `payload.transaction`은 UTXO `inputs[]` + `outputs[]` 구조이며, 각 input의 `txType`(`p2pkh`=legacy / `p2wpkh`=native segwit)이 서명 방식을 결정한다 (keyPath는 legacy·segwit 공통으로 항상 `m/44'`). 상태 기반 builder(`getBitcoinTransactionObject` + `addBitcoinTransactionInput`/`addBitcoinTransactionOutput`)도 대안으로 제공된다.
+Bitcoin signs through `dcent.sign({ method: 'signTransaction', chainId, payload })`. `payload.transaction` is a UTXO structure of `inputs[]` + `outputs[]`, and each input's `txType` (`p2pkh` = legacy / `p2wpkh` = native segwit) decides how it is signed (the keyPath is always `m/44'` for both legacy and segwit). A stateful builder (`getBitcoinTransactionObject` + `addBitcoinTransactionInput`/`addBitcoinTransactionOutput`) is available as an alternative.
 
 ```js
 {
@@ -98,27 +100,27 @@ Bitcoin은 `dcent.sign({ method: 'signTransaction', chainId, payload })`로 서�
 }
 ```
 
-**chainId 예시:** `bip122:000000000019d6689c085ae165831e93/slip44:0` (BTC mainnet)
+**Example chainId:** `bip122:000000000019d6689c085ae165831e93/slip44:0` (BTC mainnet)
 
 **Source:** `playground/presets.bitcoin-tx.json`
 
-**Horizen(ZEN) — 종료된 체인:** 네이티브 ZEN 체인은 **2025-07-23 Base ERC-20 마이그레이션으로 종료**되었다(구 mainchain과 EON EVM 체인 모두 discontinued). 기존 ZEN 잔고는 Base 상의 ERC-20 으로 이관되었고, 클레임은 지갑 message signing 기반 스냅샷이라 레거시 체인 트랜잭션을 요구하지 않는다.
+**Horizen (ZEN) — discontinued chain:** the native ZEN chain was **shut down by the 2025-07-23 migration to a Base ERC-20** (both the old mainchain and the EON EVM chain are discontinued). Existing ZEN balances moved to an ERC-20 on Base, and the claim is a snapshot based on wallet message signing — it does not require a legacy-chain transaction.
 
-따라서 `bip122:0007104ccda289427919efc39dc9e4d4/slip44:121` 로의 `signTransaction` 은 **더 이상 지원되지 않는다**. 종전에 이 문서가 안내하던 BIP-115 `option`(block hash + height) 규격은 그 체인 전용이었으므로 함께 제거했다.
+`signTransaction` against `bip122:0007104ccda289427919efc39dc9e4d4/slip44:121` is therefore **no longer supported**. The BIP-115 `option` (block hash + height) spec this document used to describe was specific to that chain, so it was removed with it.
 
-> 체인 자체가 닫혀 있어 서명이 성공하더라도 broadcast 할 대상이 없다. Base 상의 ZEN 은 일반 ERC-20 이므로 **Ethereum family 경로(`eip155:8453`)** 를 사용한다.
+> The chain itself is closed, so even a successful signature has nowhere to broadcast. ZEN on Base is an ordinary ERC-20 — use the **Ethereum family path (`eip155:8453`)**.
 
-**ZCASH도 `option`이 필수다** (2026-08-03 변경 — 이전에는 지갑이 자동으로 채웠다). ZCASH의 option은 consensus branch ID인데, 이 값은 네트워크 업그레이드 활성 높이마다 바뀐다. 서명기는 현재 블록 높이를 모르므로 **어떤 고정값을 써도 활성화 경계를 넘는 순간 틀린다** — 실제로 종전 자동 조립은 NU6.3 활성 이후 낡은 NU6.2 branch로 서명하고 있었다. 서명은 정상으로 보이고 broadcast에서만 거부되므로 원인이 드러나지 않는다.
+**ZCASH also requires `option`** (changed 2026-08-03 — the wallet used to fill it in automatically). ZCASH's option is a consensus branch ID, and that value changes at every network-upgrade activation height. The signer does not know the current block height, so **any hardcoded value becomes wrong the moment an activation boundary is crossed** — in practice the previous automatic assembly kept signing with the stale NU6.2 branch after NU6.3 activated. The signature looks fine and is only rejected at broadcast, so the cause never surfaces.
 
-`option`은 **prepare 단계에서 만드는 값**이다. 지갑 라이브러리의 `getZCASHOption(currency)`가 현재 높이를 조회해 만들어주므로, 그 결과를 그대로 넘기면 된다. 형식은 **정확히 16 hex**(`GroupId8 + branchId8`)다. 앞 8자는 해당 체인의 `GroupId`와 일치해야 하고 뒤 8자는 알려진 consensus branch ID여야 한다(둘 중 하나라도 어긋나면 `-32602`) — 디바이스가 앞 절반을 서명 대상과 최종 트랜잭션의 `nVersionGroupId`로, 뒤 절반을 sighash 개인화로 쓰기 때문이다.
+`option` is a value you build **during the prepare step**. The wallet library's `getZCASHOption(currency)` reads the current height and builds it, so pass its result through unchanged. The format is **exactly 16 hex characters** (`GroupId8 + branchId8`). The first 8 must match that chain's `GroupId` and the last 8 must be a known consensus branch ID (if either is off you get `-32602`) — the device uses the first half as the `nVersionGroupId` of both the signing target and the final transaction, and the second half as the sighash personalization.
 
 ---
 
 ### Cardano
 
-**지원:** `signTransaction` ✅ (full-CBOR) | `signMessage` ❌ `-32601`
+**Support:** `signTransaction` ✅ (full-CBOR) | `signMessage` ❌ `-32601`
 
-**chainId 예시:** `cip34:1-764824073` (mainnet), `cip34:0-2` (testnet)
+**Example chainId:** `cip34:1-764824073` (mainnet), `cip34:0-2` (testnet)
 
 **signTransaction payload (structured — ORDINARY_TRANSACTION):**
 
@@ -140,7 +142,7 @@ Bitcoin은 `dcent.sign({ method: 'signTransaction', chainId, payload })`로 서�
 **signTransaction payload (full-CBOR, preferred):**
 
 ```js
-// Full CBOR hex — 어떤 트랜잭션 타입도 처리 가능
+// Full CBOR hex — handles any transaction type
 {
   transaction: {
     txCbor: '0x84a500...'   // CBOR-serialized transaction hex
@@ -152,15 +154,15 @@ Bitcoin은 `dcent.sign({ method: 'signTransaction', chainId, payload })`로 서�
 
 ### Conflux
 
-**지원:** `signTransaction` ◐ 경로 존재 | `signMessage` ❌ `-32601`
+**Support:** `signTransaction` ◐ path exists | `signMessage` ❌ `-32601`
 
-**chainId 예시:** `conflux:cfx/slip44:503`
+**Example chainId:** `conflux:cfx/slip44:503`
 
 **signTransaction payload:**
 
 ```js
 // Source: playground/presets.rest.json → cfx-transfer
-// ⚠️ Conflux Core Space는 CIP-37 base32 주소(cfx:...) 필수 — hex(0x) 주소는 디바이스 오류
+// ⚠️ Conflux Core Space requires a CIP-37 base32 address (cfx:...) — a hex (0x) address is a device error
 {
   transaction: {
     from: 'cfx:aar...',
@@ -171,8 +173,8 @@ Bitcoin은 `dcent.sign({ method: 'signTransaction', chainId, payload })`로 서�
     nonce: '0x1',
     data: '0x',
     chainId: '0x405',          // Conflux mainnet (1029, hex string)
-    epochHeight: 100000,       // 필수
-    storageLimit: 0            // 필수
+    epochHeight: 100000,       // required
+    storageLimit: 0            // required
   }
 }
 ```
@@ -181,11 +183,11 @@ Bitcoin은 `dcent.sign({ method: 'signTransaction', chainId, payload })`로 서�
 
 ### Constellation
 
-**지원:** `signTransaction` ✅ | `signMessage` ❌ `-32601`
+**Support:** `signTransaction` ✅ | `signMessage` ❌ `-32601`
 
-> 실측 — 지원되는 metagraph(예: DOR) 전송은 서명된다. 미지원 metagraph id 는 `-32602`(gateway endpoint 부재).
+> Measured — transfers on a supported metagraph (e.g. DOR) are signed. An unsupported metagraph id returns `-32602` (no gateway endpoint).
 
-**chainId 예시:** `constellation:mainnet/slip44:1137`
+**Example chainId:** `constellation:mainnet/slip44:1137`
 
 **signTransaction payload:**
 
@@ -205,17 +207,17 @@ Bitcoin은 `dcent.sign({ method: 'signTransaction', chainId, payload })`로 서�
 
 ### Cosmos
 
-**지원:** `signTransaction` ✅ | `signMessage` ❌ `-32601`
+**Support:** `signTransaction` ✅ | `signMessage` ❌ `-32601`
 
-**chainId 예시:** `cosmos:cosmoshub-4/slip44:118`, `cosmos:coreum-mainnet-1/slip44:990`
+**Example chainId:** `cosmos:cosmoshub-4/slip44:118`, `cosmos:coreum-mainnet-1/slip44:990`
 
-**signTransaction payload (Amino SignDoc — 단일 bank `MsgSend`만 지원):**
+**signTransaction payload (Amino SignDoc — only a single bank `MsgSend` is supported):**
 
 ```js
 // Source: playground/presets.rest.json → atom-transfer
-// ⚠️ Amino 형식(snake_case) 필수. 단일 MsgSend만 서명 가능 —
-//    CW20/IBC MsgTransfer·다중 메시지·기타 typeUrl은 -32601.
-//    (Protobuf SIGN_MODE_DIRECT 형식은 bodyBytes 필드로 별도 지원)
+// ⚠️ Amino form (snake_case) is required. Only a single MsgSend can be signed —
+//    CW20 / IBC MsgTransfer / multiple messages / other typeUrls return -32601.
+//    (The Protobuf SIGN_MODE_DIRECT form is supported separately via the bodyBytes field)
 {
   transaction: {
     msgs: [{
@@ -239,9 +241,9 @@ Bitcoin은 `dcent.sign({ method: 'signTransaction', chainId, payload })`로 서�
 
 ### Ethereum
 
-**지원:** `signTransaction` ✅ | `signMessage` ✅
+**Support:** `signTransaction` ✅ | `signMessage` ✅
 
-**chainId 예시:** `eip155:1/slip44:60` (mainnet), `eip155:8217/slip44:60` (Kaia)
+**Example chainId:** `eip155:1/slip44:60` (mainnet), `eip155:8217/slip44:60` (Kaia)
 
 **signTransaction payload (EIP-1559, type 2):**
 
@@ -283,7 +285,7 @@ Bitcoin은 `dcent.sign({ method: 'signTransaction', chainId, payload })`로 서�
 // method: 'signMessage'  (payload.message = hex-encoded bytes)
 { message: '0x48656c6c6f' }
 
-// method: 'signTypedData'  (EIP-712) — payload.data는 JSON.stringify된 문자열, version 동반
+// method: 'signTypedData'  (EIP-712) — payload.data is a JSON.stringify'd string, sent with a version
 {
   data: JSON.stringify({
     types: { EIP712Domain: [/*...*/], Transfer: [/*...*/] },
@@ -299,9 +301,9 @@ Bitcoin은 `dcent.sign({ method: 'signTransaction', chainId, payload })`로 서�
 
 ### Fil
 
-**지원:** `signTransaction` ✅ | `signMessage` ❌ `-32601`
+**Support:** `signTransaction` ✅ | `signMessage` ❌ `-32601`
 
-**chainId 예시:** `fil:f/slip44:461`
+**Example chainId:** `fil:f/slip44:461`
 
 **signTransaction payload (Lotus Message):**
 
@@ -326,21 +328,21 @@ Bitcoin은 `dcent.sign({ method: 'signTransaction', chainId, payload })`로 서�
 
 ### Havah
 
-**지원:** `signTransaction` ✅ (EVM 호환) | `signMessage` ❌ `-32601`
+**Support:** `signTransaction` ✅ (EVM-compatible) | `signMessage` ❌ `-32601`
 
-**chainId 예시:** `havah:mainnet/slip44:858` (mainnet), `havah:testnet/slip44:858` (testnet)
+**Example chainId:** `havah:mainnet/slip44:858` (mainnet), `havah:testnet/slip44:858` (testnet)
 
-**signTransaction payload:** EVM shape와 동일 (Ethereum 섹션 참조)
+**signTransaction payload:** identical to the EVM shape (see the Ethereum section)
 
 ---
 
 ### Hedera
 
-**지원:** `signTransaction` ✅ (`extra.unsignedTxBytes`) | `signMessage` ❌ `-32601`
+**Support:** `signTransaction` ✅ (`extra.unsignedTxBytes`) | `signMessage` ❌ `-32601`
 
-> 실측 — `hedera-unsigned-passthrough`(pre-built Transaction bytes)는 서명된다. structured 요청은 노드 타임스탬프가 필요해 `-32602`.
+> Measured — `hedera-unsigned-passthrough` (pre-built Transaction bytes) is signed. A structured request needs a node timestamp, so it returns `-32602`.
 
-**chainId 예시:** `hedera:mainnet/slip44:3030`
+**Example chainId:** `hedera:mainnet/slip44:3030`
 
 **signTransaction payload:**
 
@@ -363,11 +365,11 @@ Bitcoin은 `dcent.sign({ method: 'signTransaction', chainId, payload })`로 서�
 
 ### Near
 
-**지원:** `signTransaction` ◐ 경로 존재 | `signMessage` ❌ `-32601`
+**Support:** `signTransaction` ◐ path exists | `signMessage` ❌ `-32601`
 
-> 실측 — `-32601` 은 발생하지 않는다. 현재 preset 은 `publicKey` 가 기기 파생 키와 달라 `-32602`(app 이 실제 access-key 를 넣어야 함).
+> Measured — `-32601` never occurs. The current preset returns `-32602` because its `publicKey` differs from the device-derived key (the app must supply the real access key).
 
-**chainId 예시:** `near:mainnet/slip44:397`
+**Example chainId:** `near:mainnet/slip44:397`
 
 **signTransaction payload:**
 
@@ -389,25 +391,25 @@ Bitcoin은 `dcent.sign({ method: 'signTransaction', chainId, payload })`로 서�
 
 ### Polkadot
 
-**지원:** `signTransaction` ✅ (decoded `method`+`args`, 또는 `extra.scaleHex` blob) | `signMessage` ✅ (parachain만)
+**Support:** `signTransaction` ✅ (decoded `method`+`args`, or an `extra.scaleHex` blob) | `signMessage` ✅ (parachain only)
 
-**chainId 예시:** `polkadot:91b171bb158e2d3848fa23a9f1c25182/slip44:354`
+**Example chainId:** `polkadot:91b171bb158e2d3848fa23a9f1c25182/slip44:354`
 
-**두 형태 중 하나를 쓰고, 섞지 않는다.**
+**Use one of the two forms — do not mix them.**
 
-- **decoded** — `method` + `args`. 기기가 호출을 디코드해 화면에 보여준다.
-- **blob** — `extra.scaleHex`(SCALE 인코딩된 call). blind-sign 이고, `method`/`args` 를 함께 두지 않는다.
+- **decoded** — `method` + `args`. The device decodes the call and shows it on screen.
+- **blob** — `extra.scaleHex` (a SCALE-encoded call). This is blind-signing; do not send `method`/`args` alongside it.
 
-같은 값을 두 곳에 적으면 drift 가 난다 — 실측(2026-07-22)에서 blob 의 수취인만 바꾸고 `args[0]` 을 그대로 둬, **표시용 필드와 서명 바이트가 서로 다른 수취인**을 가리켰다.
+Writing the same value in two places drifts — measured (2026-07-22): only the recipient inside the blob was changed while `args[0]` was left as is, so **the displayed field and the signed bytes pointed at different recipients**.
 
-**서명 payload 필드는 어느 형태든 전부 보낸다.** blob 은 **call 만** 담으므로 아래 값들은 blob 밖에 있다. 하나라도 빠지면 지갑이 자체 재도출하게 되고, "앱이 선언한 것"과 "서명된 것"이 갈린다(실측: preset `era` Immortal → 서명은 Mortal).
+**Send every signing-payload field regardless of which form you use.** A blob carries **only the call**, so the values below live outside it. If any is missing the wallet re-derives it, and "what the app declared" diverges from "what was signed" (measured: preset `era` Immortal → signed as Mortal).
 
-| 필드 | 의미 |
+| Field | Meaning |
 |---|---|
-| `era` · `nonce` · `tip` | 서명 확장(extrinsic extra) |
-| `specVersion` · `transactionVersion` | 런타임 버전 — 체인에서 조회한 **실값** |
-| `blockHash` · `genesisHash` | 체인에서 조회한 **실값**(mortal era 는 checkpoint 블록) |
-| `fee` | 기기 표시용. 앱이 산정해 전달 |
+| `era` · `nonce` · `tip` | signed extensions (extrinsic extra) |
+| `specVersion` · `transactionVersion` | runtime versions — **real values** read from the chain |
+| `blockHash` · `genesisHash` | **real values** read from the chain (a mortal era uses the checkpoint block) |
+| `fee` | for device display. The app computes and passes it |
 
 **signTransaction payload:**
 
@@ -432,21 +434,21 @@ Bitcoin은 `dcent.sign({ method: 'signTransaction', chainId, payload })`로 서�
 }
 ```
 
-> ⚠️ 위 `specVersion` / `transactionVersion` / `blockHash` / `genesisHash` 의 `0` · all-zero 는 **playground preset 의 placeholder** 다. playground 하네스가 서명 직전에 체인 조회값으로 치환한다. **실제 App 은 이 자리에 체인에서 조회한 실값을 넣어야 한다** — placeholder 를 그대로 보내면 노드가 거부한다. preset 에 실값을 박아두지 않는 이유는, 시간이 지나면 stale 값으로 서명하게 되기 때문이다.
+> ⚠️ The `0` / all-zero values above for `specVersion` / `transactionVersion` / `blockHash` / `genesisHash` are **placeholders in the playground preset**. The playground harness substitutes chain-read values just before signing. **A real app must put the values it read from the chain here** — sending the placeholders gets the transaction rejected by the node. The presets do not hardcode real values because they would go stale and you would end up signing with them.
 
 ---
 
 ### Solana
 
-**지원:** `signTransaction` ✅ | `signMessage` ✅
+**Support:** `signTransaction` ✅ | `signMessage` ✅
 
-**chainId 예시:** `solana:5eykt4UsFv8P8NJdTREpY1vzqKqZKvdp/slip44:501`
+**Example chainId:** `solana:5eykt4UsFv8P8NJdTREpY1vzqKqZKvdp/slip44:501`
 
-**signTransaction payload — 권장: base58 serialized (가장 안정적)**
+**signTransaction payload — recommended: base58 serialized (most reliable)**
 
 ```js
 // Source: playground/presets.non-evm.json → sol-transfer-base58-serialized
-// @solana/web3.js로 직렬화:
+// Serialize with @solana/web3.js:
 // bs58.encode(tx.serialize({ requireAllSignatures: false, verifySignatures: false }))
 {
   transaction: {
@@ -455,13 +457,13 @@ Bitcoin은 `dcent.sign({ method: 'signTransaction', chainId, payload })`로 서�
 }
 ```
 
-**signTransaction payload — 대안: JSON instruction**
+**signTransaction payload — alternative: JSON instruction**
 
 ```js
-// data field는 네 가지 형식 지원: 0x hex(권장) / base58 string / number array / object(SystemProgram만)
+// the data field accepts four forms: 0x hex (recommended) / base58 string / number array / object (SystemProgram only)
 {
   transaction: {
-    version: 0,  // 또는 'legacy'
+    version: 0,  // or 'legacy'
     feePayer: '11111111111111111111111111111111',
     instructions: [{
       programId: '11111111111111111111111111111111',
@@ -469,23 +471,23 @@ Bitcoin은 `dcent.sign({ method: 'signTransaction', chainId, payload })`로 서�
         { pubkey: '...', isSigner: true, isWritable: true },
         { pubkey: '...', isSigner: false, isWritable: true }
       ],
-      data: '0x020000000010270000000000'  // 0x hex 권장
+      data: '0x020000000010270000000000'  // 0x hex recommended
     }],
     recentBlockhash: '...'
   }
 }
 ```
 
-**signTransaction payload — SPL 토큰: form-D descriptor (기기가 심볼/금액을 표시하는 유일한 형태)**
+**signTransaction payload — SPL token: form-D descriptor (the only form where the device shows symbol/amount)**
 
 ```js
 // Source: playground/presets.non-evm.json → sol-spl-descriptor-transfer
-// instructions 대신 token descriptor 를 보낸다. instruction 조립과 수신 ATA 파생은 브리지가 한다.
-// 브리지는 네트워크 접근 없이 서명하므로 아래 3개를 앱이 완성해 보내야 한다 (빠지면 -32602):
-//   recentBlockhash    — base58 32바이트, 앞뒤 공백 없이
-//   preparedFee.fee    — 양의 정수 lamports (기기가 표시하는 수수료)
-//   extra.isAssociated — 수신자 ATA 존재 여부. false 면 브리지가 ATA 생성 instruction 을 함께 넣는다
-// 수신 ATA 는 보내지 않는다 — 브리지가 owner+mint 로 오프라인 파생한다(앱이 표시 목적지를 못 바꾼다).
+// Send a token descriptor instead of instructions. The bridge assembles the instruction and derives the recipient ATA.
+// The bridge signs with no network access, so the app must fill in these three (missing any of them returns -32602):
+//   recentBlockhash    — base58, 32 bytes, no surrounding whitespace
+//   preparedFee.fee    — positive integer lamports (the fee the device displays)
+//   extra.isAssociated — whether the recipient ATA exists. If false, the bridge prepends an ATA-creation instruction
+// Do not send the recipient ATA — the bridge derives it offline from owner+mint (so the app cannot change the displayed destination).
 {
   transaction: {
     sender: '<owner pubkey>',
@@ -494,8 +496,8 @@ Bitcoin은 `dcent.sign({ method: 'signTransaction', chainId, payload })`로 서�
     extra: { isAssociated: true },
     token: {
       contract: 'EPjFWdd5AufqSSqeM2qN1xzybapC8G4wEGGkZwyTDt1v',  // mint
-      to: '<수신자 owner 지갑 주소 — ATA 아님>',
-      amount: '1000',      // base units (decimals 반영 전)
+      to: '<recipient owner wallet address — not the ATA>',
+      amount: '1000',      // base units (before applying decimals)
       decimals: 6,
       symbol: 'USDC'
     }
@@ -513,9 +515,9 @@ Bitcoin은 `dcent.sign({ method: 'signTransaction', chainId, payload })`로 서�
 
 ### Stacks
 
-**지원:** `signTransaction` ✅ | `signMessage` ❌ `-32601`
+**Support:** `signTransaction` ✅ | `signMessage` ❌ `-32601`
 
-**chainId 예시:** `stacks:1/slip44:5757`
+**Example chainId:** `stacks:1/slip44:5757`
 
 **signTransaction payload:**
 
@@ -537,21 +539,21 @@ Bitcoin은 `dcent.sign({ method: 'signTransaction', chainId, payload })`로 서�
 
 ### Stellar
 
-**지원:** `signTransaction` ✅ (structured op / issued-asset descriptor / `{xdr}` envelope) | `signMessage` ✅ | `signAuthEntry` ✅ (Soroban auth entry)
+**Support:** `signTransaction` ✅ (structured op / issued-asset descriptor / `{xdr}` envelope) | `signMessage` ✅ | `signAuthEntry` ✅ (Soroban auth entry)
 
-**chainId 예시:** `stellar:pubnet/slip44:148`
+**Example chainId:** `stellar:pubnet/slip44:148`
 
-**세 형태 중 하나를 쓰고, 섞지 않는다.**
+**Use one of the three forms — do not mix them.**
 
-| 형태 | 쓰는 곳 | 식별 필드 |
+| Form | Used for | Identifying field |
 |---|---|---|
-| **structured op** | native XLM `payment`, Soroban `invokeHostFunction` | `type` (문자열) |
-| **form-D (issued asset)** | trustline 토큰(USDC 등) 전송 | `token` (객체) — `type` 을 적지 않는다 |
-| **`{xdr}` envelope** | 완성된 XDR 을 그대로 blind-sign | `xdr` (문자열) |
+| **structured op** | native XLM `payment`, Soroban `invokeHostFunction` | `type` (string) |
+| **form-D (issued asset)** | trustline token transfers (USDC etc.) | `token` (object) — do not set `type` |
+| **`{xdr}` envelope** | blind-sign a fully built XDR as is | `xdr` (string) |
 
-form-D 는 `type` 을 **앱이 적지 않는다** — 지갑이 descriptor 를 `{type:'payment', asset:{code,issuer}, destination, amount}` 봉투로 합성한다. 여기에 `type` 을 함께 적으면 같은 값을 두 곳에서 표현하게 된다.
+With form-D the **app does not set `type`** — the wallet composes the descriptor into a `{type:'payment', asset:{code,issuer}, destination, amount}` envelope. Adding `type` yourself expresses the same value twice.
 
-**서명 payload 를 이루는 값은 앱이 전부 제공한다** — structured / form-D 모두 `fee` · `sequenceNumber` · `timeBounds` 가 필요하다. `{xdr}` 은 그 값들이 XDR 안에 인코딩돼 있으므로 `fee` 만 유지한다(blind-sign 이라 기기에 전달되는 유일한 표시 정보).
+**The app supplies every value that makes up the signing payload** — both structured and form-D need `fee` · `sequenceNumber` · `timeBounds`. `{xdr}` encodes those inside the XDR, so only `fee` is kept (it is blind-signing, and that fee is the only display information the device receives).
 
 **signTransaction payload — structured op (native XLM):**
 
@@ -565,13 +567,13 @@ form-D 는 `type` 을 **앱이 적지 않는다** — 지갑이 descriptor 를 `
     amount: '10',
     memo: { type: 'none' },
     fee: 100,
-    sequenceNumber: '0',                    // placeholder — 아래 주의 참조
+    sequenceNumber: '0',                    // placeholder — see the caution below
     timeBounds: { minTime: '0', maxTime: '0' }
   }
 }
 ```
 
-**signTransaction payload — form-D (issued asset, 예: USDC):**
+**signTransaction payload — form-D (issued asset, e.g. USDC):**
 
 ```js
 // Source: playground/presets.non-evm.json → xlm-usdc-payment
@@ -580,7 +582,7 @@ form-D 는 `type` 을 **앱이 적지 않는다** — 지갑이 descriptor 를 `
     token: {
       contract: 'USDC-GA5ZSEJYB37JRC5AVCIA5MOP4RHTM335X2KGX3IHOJAPP5RE34K4KZVN',  // `code-issuer`
       to: 'GC6OISCEYJSHTO6QBZYVT52B4ZW63BCVTNCFYLUJQK5FUKLJP6L2XNAJ',
-      amount: '10000000',   // 토큰 최소단위 (USDC 7 decimals → 1 USDC)
+      amount: '10000000',   // token base units (USDC has 7 decimals → 1 USDC)
       decimals: 7,
       symbol: 'USDC'
     },
@@ -591,17 +593,17 @@ form-D 는 `type` 을 **앱이 적지 않는다** — 지갑이 descriptor 를 `
 }
 ```
 
-> ⚠️ 위 `sequenceNumber: '0'` 과 `timeBounds` 의 `'0'` 은 **playground preset 의 placeholder** 다(fresh state 라 실값을 박아두면 stale 로 서명된다). playground 하네스가 서명 직전에 치환한다 — **실제 App 은 계정의 현재 sequence 와 의도한 timeBounds 를 넣어야 한다.**
+> ⚠️ The `sequenceNumber: '0'` above and the `'0'` values in `timeBounds` are **placeholders in the playground preset** (the state is fresh, so hardcoding real values would sign with stale ones). The playground harness substitutes them just before signing — **a real app must supply the account's current sequence and the timeBounds it intends.**
 >
-> issued asset 전송은 **수신처에 해당 토큰의 trustline 이 선행**돼야 한다(없으면 `op_no_trust`).
+> An issued-asset transfer requires the **recipient to already hold a trustline** for that token (otherwise `op_no_trust`).
 
 ---
 
 ### Tezos
 
-**지원:** `signTransaction` ◐ 경로 존재 | `signMessage` ❌ `-32601`
+**Support:** `signTransaction` ◐ path exists | `signMessage` ❌ `-32601`
 
-**chainId 예시:** `tezos:NetXdQprcVkpaWU/slip44:1729`
+**Example chainId:** `tezos:NetXdQprcVkpaWU/slip44:1729`
 
 **signTransaction payload:**
 
@@ -625,13 +627,13 @@ form-D 는 `type` 을 **앱이 적지 않는다** — 지갑이 descriptor 를 `
 
 ### Tron
 
-**지원:** `signTransaction` ✅ (TRX / TRC20 / approve) | `signMessage` ❌ `-32601`
+**Support:** `signTransaction` ✅ (TRX / TRC20 / approve) | `signMessage` ❌ `-32601`
 
-> 실측 — TRC20 `TriggerSmartContract` 도 서명된다. descriptor 형태는 `ref_block_*` 완성 필드가 없으면 `-32602`.
+> Measured — TRC20 `TriggerSmartContract` is signed as well. The descriptor form returns `-32602` unless the `ref_block_*` fields are filled in.
 
-**chainId 예시:** `tron:0x2b6653dc/slip44:195`
+**Example chainId:** `tron:0x2b6653dc/slip44:195`
 
-**signTransaction payload — TRX transfer (지원):**
+**signTransaction payload — TRX transfer (supported):**
 
 ```js
 {
@@ -677,9 +679,9 @@ form-D 는 `type` 을 **앱이 적지 않는다** — 지갑이 descriptor 를 `
 
 ### VeChain
 
-**지원:** `signTransaction` ✅ | `signMessage` ❌ `-32601`
+**Support:** `signTransaction` ✅ | `signMessage` ❌ `-32601`
 
-**chainId 예시:** `vechain:b1ac3413d346d43539627e6be7ec1b4a/slip44:818`
+**Example chainId:** `vechain:b1ac3413d346d43539627e6be7ec1b4a/slip44:818`
 
 **signTransaction payload:**
 
@@ -706,13 +708,13 @@ form-D 는 `type` 을 **앱이 적지 않는다** — 지갑이 descriptor 를 `
 
 ### Xahau
 
-**지원:** `signTransaction` ◐ 경로 존재 | `signMessage` ❌ `-32601`
+**Support:** `signTransaction` ◐ path exists | `signMessage` ❌ `-32601`
 
-> 실측 — `-32601` 은 발생하지 않는다. `tx_json` 에 `Sequence` / `LastLedgerSequence` / `Fee` 가 완성돼야 서명된다(없으면 `-32602`).
+> Measured — `-32601` never occurs. Signing proceeds once `tx_json` carries `Sequence` / `LastLedgerSequence` / `Fee` (without them: `-32602`).
 
-**chainId 예시:** `xahau:mainnet/slip44:144`, `xahau:testnet/slip44:21337`
+**Example chainId:** `xahau:mainnet/slip44:144`, `xahau:testnet/slip44:21337`
 
-**signTransaction payload (XRP와 동일 구조):**
+**signTransaction payload (same structure as XRP):**
 
 ```js
 // Source: playground/presets.non-evm.json → xahau-payment
@@ -733,13 +735,13 @@ form-D 는 `type` 을 **앱이 적지 않는다** — 지갑이 descriptor 를 `
 
 ### XRP
 
-**지원:** `signTransaction` ◐ 경로 존재 (Payment / AccountSet / TrustSet) | `signMessage` ❌ `-32601`
+**Support:** `signTransaction` ◐ path exists (Payment / AccountSet / TrustSet) | `signMessage` ❌ `-32601`
 
-> 실측(2026-07-21) — `Payment` / `AccountSet` / `TrustSet` 모두 `-32601` 이 아니다. 완성 `tx_json`(`Fee`·`Sequence`·`LastLedgerSequence`)을 넣으면 서명 경로로 진입한다.
+> Measured (2026-07-21) — `Payment` / `AccountSet` / `TrustSet` are none of them `-32601`. Supplying a complete `tx_json` (`Fee` · `Sequence` · `LastLedgerSequence`) enters the signing path.
 
-**chainId 예시:** `xrpl:0/slip44:144`
+**Example chainId:** `xrpl:0/slip44:144`
 
-**signTransaction payload — Payment (지원):**
+**signTransaction payload — Payment (supported):**
 
 ```js
 // Source: playground/presets.non-evm.json → xrp-payment
@@ -758,19 +760,19 @@ form-D 는 `type` 을 **앱이 적지 않는다** — 지갑이 descriptor 를 `
 
 ---
 
-## 공통 에러 코드
+## Common error codes
 
-| 코드 | 의미 |
+| Code | Meaning |
 |------|------|
-| `-32601` | Method not found — family 가 브리지에서 미지원이거나 method 가 미지원 |
-| `-32602` | Invalid params — 잘못된 payload (keyPath 누락, 타입 불일치 등) |
-| `-32603` | Internal error — 디바이스 통신 오류 또는 예기치 않은 실패 |
+| `-32601` | Method not found — the family is unsupported by the bridge, or the method is unsupported |
+| `-32602` | Invalid params — malformed payload (missing keyPath, type mismatch, …) |
+| `-32603` | Internal error — device communication error or an unexpected failure |
 
-## 관련 문서
+## Related documents
 
-- [playground/chains.json](../playground/chains.json) — family → chainId 매핑 (진실 출처)
-- [playground/presets.evm.json](../playground/presets.evm.json) — EVM payload 예시
-- [playground/presets.non-evm.json](../playground/presets.non-evm.json) — non-EVM payload 예시
-- [playground/presets.rest.json](../playground/presets.rest.json) — 추가 payload 예시
-- [playground/presets.bitcoin-tx.json](../playground/presets.bitcoin-tx.json) — Bitcoin UTXO 예시
-- [MIGRATION-v1-to-v2.md](../MIGRATION-v1-to-v2.md) — v1 → v2 마이그레이션 가이드
+- [playground/chains.json](../playground/chains.json) — family → chainId map (source of truth)
+- [playground/presets.evm.json](../playground/presets.evm.json) — EVM payload examples
+- [playground/presets.non-evm.json](../playground/presets.non-evm.json) — non-EVM payload examples
+- [playground/presets.rest.json](../playground/presets.rest.json) — additional payload examples
+- [playground/presets.bitcoin-tx.json](../playground/presets.bitcoin-tx.json) — Bitcoin UTXO examples
+- [MIGRATION-v1-to-v2.md](../MIGRATION-v1-to-v2.md) — v1 → v2 migration guide

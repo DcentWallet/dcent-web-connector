@@ -2,7 +2,7 @@
 
 v2는 **breaking change**다. v0.16.x에서 chain별로 나뉘어 있던 `get*Signed*` sign wrapper 21개를 제거하고, 모든 chain을 하나로 처리하는 통합 **`dcent.sign({ method, chainId, payload })`** API로 대체했다.
 
-> 📘 전체 API · chain별 payload · 에러 코드는 [v2 Developer Guide](https://dcentwallet.github.io/dcent-web-connector/), chain별 payload 계약은 [docs/v2-payload-contract.md](docs/v2-payload-contract.md) 참조.
+> 📘 전체 API · chain별 payload · 에러 코드는 [v2 Developer Guide](https://dev-docs.dcentwallet.com/dcent-biometric-wallet-for-pc/dcent-web-connector), chain별 payload 계약은 [docs/v2-payload-contract.md](docs/v2-payload-contract.md) 참조.
 
 ---
 
@@ -312,7 +312,7 @@ v1과 동일한 `{ header, body }` envelope를 반환한다:
 }
 ```
 
-실패 시 `header.status !== 'success'` 이고 `body.error.code`(문자열 — `user_cancel`, `param_error`, `device_not_connected`, ...)를 확인한다. 전체 에러 코드는 [Developer Guide](https://dcentwallet.github.io/dcent-web-connector/) 참조.
+실패 시 `header.status !== 'success'` 이고 `body.error.code`(문자열 — `user_cancel`, `param_error`, `device_not_connected`, ...)를 확인한다. 전체 에러 코드는 [Developer Guide](https://dev-docs.dcentwallet.com/dcent-biometric-wallet-for-pc/dcent-web-connector) 참조.
 
 ---
 

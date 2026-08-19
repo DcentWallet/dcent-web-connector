@@ -48,7 +48,7 @@ if (signed.header.status === 'success') {
 }
 ```
 
-Every method takes a `chainId` and a payload and returns the same `{ header, body }` envelope — the call shape does not change from one network to the next. Full per-chain payloads, `chainId` formats, `keyPath` rules, and error codes are in the **[Developer Guide](https://dcentwallet.github.io/dcent-web-connector/)**.
+Every method takes a `chainId` and a payload and returns the same `{ header, body }` envelope — the call shape does not change from one network to the next. Full per-chain payloads, `chainId` formats, `keyPath` rules, and error codes are in the **[Developer Guide](https://dev-docs.dcentwallet.com/dcent-biometric-wallet-for-pc/dcent-web-connector)**.
 
 ## Transport
 
@@ -83,7 +83,7 @@ Two more things to know:
 | `sign({ method, chainId, payload })` | `method`: `signTransaction` / `signMessage` / … |
 | `popupWindowClose()` | Close the popup |
 
-See the [Developer Guide](https://dcentwallet.github.io/dcent-web-connector/) for the full method + chain reference.
+See the [Developer Guide](https://dev-docs.dcentwallet.com/dcent-biometric-wallet-for-pc/dcent-web-connector) for the full method + chain reference.
 
 ## v0.16.x (v1) users
 

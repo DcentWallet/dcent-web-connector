@@ -1,12 +1,12 @@
 #!/usr/bin/env node
 /**
- * docs/index.html 의 **EN ↔ KO 언어별 존재** 검사 (m19-01, 2026-08-14).
+ * docs/legacy-v2-dev-doc.html 의 **EN ↔ KO 언어별 존재** 검사 (m19-01, 2026-08-14).
  *
  * 왜 필요한가 — `check:docs` 6종(preset-refs / dup-keys / page-refs / fw-models / brand-tokens /
  * playground-surface) 어디에도 **EN↔KO parity 게이트가 없다.** 한쪽 언어에만 들어간 서술은 어떤
  * 게이트도 못 잡고, 사람이 원소별로 손으로 대조해야만 걸린다.
  *
- * 🔴 왜 `grep -c <token> docs/index.html` 총합 단언으로는 안 되는가 (2026-08-14 크로스 리뷰 실측):
+ * 🔴 왜 `grep -c <token> docs/legacy-v2-dev-doc.html` 총합 단언으로는 안 되는가 (2026-08-14 크로스 리뷰 실측):
  *    총합은 **한 축이 통째로 사라져도** 다른 축이 메워 통과한다. 당시 실측 —
  *      awaiting-connect-approval  총15 → KO 를 전부 지워도 EN 잔량만으로 `-ge 2` 통과
  *      deviceReason               총19 → 동일
@@ -22,7 +22,7 @@ import { fileURLToPath } from 'node:url'
 import { dirname, resolve } from 'node:path'
 
 const here = dirname(fileURLToPath(import.meta.url))
-const INDEX = resolve(here, '../docs/index.html')
+const INDEX = resolve(here, '../docs/legacy-v2-dev-doc.html')
 
 /** 각 토큰은 EN·KO **양쪽에 각각 1회 이상** 있어야 한다. */
 const TOKENS = ['awaiting-connect-approval', 'deviceReason', 'timeoutMs']
@@ -58,7 +58,7 @@ for (let i = 0; i < lines.length; i++) {
 const enMarkers = lines.filter((l) => EN_MARKER.test(l)).length
 const koMarkers = lines.filter((l) => KO_MARKER.test(l)).length
 if (enMarkers === 0 || koMarkers === 0) {
-  console.error(`ABORT: 언어 마커 추출 실패 (EN ${enMarkers} / KO ${koMarkers}) — docs/index.html 구조가 바뀌었다.`)
+  console.error(`ABORT: 언어 마커 추출 실패 (EN ${enMarkers} / KO ${koMarkers}) — docs/legacy-v2-dev-doc.html 구조가 바뀌었다.`)
   process.exit(2)
 }
 

@@ -1,10 +1,10 @@
 /**
- * T-DOC-01 — `docs/index.html` 의 syncAccount 예제가 **실제 sanitizer** 를 통과하는지.
+ * T-DOC-01 — `docs/legacy-v2-dev-doc.html` 의 syncAccount 예제가 **실제 sanitizer** 를 통과하는지.
  *
  * docs-must-match-real-behavior: 문서에 적힌 것을 그대로 넣으면 동작해야 한다.
  *
  * 🔴 **문서를 실제로 파싱한다**(크로스 리뷰 R1/R4). 초판은 예제를 이 파일에 복사해 두고
- *    검증해서, 이름은 "docs/index.html 의 예제"인데 **문서가 드리프트해도 통과**했다 —
+ *    검증해서, 이름은 "docs/legacy-v2-dev-doc.html 의 예제"인데 **문서가 드리프트해도 통과**했다 —
  *    이번 objective 가 반복해서 부딪힌 "서술이 실제 검증 범위보다 넓다" 부류 그 자체다.
  */
 import { readFileSync } from 'fs'
@@ -12,7 +12,7 @@ import { resolve } from 'path'
 
 import { _sanitizeSyncAccountItem } from '../../../../src/sign/_sanitizeSyncAccountItem'
 
-const INDEX_HTML = resolve(__dirname, '../../../../docs/index.html')
+const INDEX_HTML = resolve(__dirname, '../../../../docs/legacy-v2-dev-doc.html')
 
 interface DocExample { lang: 'EN' | 'KO', literal: string }
 
@@ -63,7 +63,7 @@ function evalArrayLiteral (literal: string): Array<Record<string, unknown>> {
 const html = readFileSync(INDEX_HTML, 'utf8')
 const examples = extractSyncAccountExamples(html)
 
-describe('T-DOC-01: docs/index.html syncAccount 예제 ↔ 실제 sanitizer', () => {
+describe('T-DOC-01: docs/legacy-v2-dev-doc.html syncAccount 예제 ↔ 실제 sanitizer', () => {
   test('EN·KO 양쪽에서 예제 블록을 실제로 찾는다 (추출 실패가 초록으로 접히지 않게)', () => {
     // 🔴 이 단언이 없으면 정규식이 안 맞을 때 examples=[] 가 되어 아래 테스트가
     //    "0건 검증"으로 조용히 통과한다 — 이 파일이 고치려던 바로 그 실패 모드다.

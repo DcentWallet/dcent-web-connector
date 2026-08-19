@@ -2,7 +2,8 @@
 
 npm connector for integrating the **DCENT hardware wallet** into web apps. It opens a popup served from `https://v2bridge.dcentwallet.com/` and talks to the device over **WebHID (USB)** or **Web Bluetooth** — no native bridge app to install.
 
-- 📘 **v2 Developer Guide** (EN / KO — full API + per-chain reference): [**GitHub Pages**](https://dcentwallet.github.io/dcent-web-connector/) — or download [`docs/index.html`](docs/index.html) and open it in a browser (self-contained, works offline)
+- 📘 **v2 Developer Guide** (full API + per-chain reference): [**dev-docs.dcentwallet.com**](https://dev-docs.dcentwallet.com/dcent-biometric-wallet-for-pc/dcent-web-connector) — the canonical guide
+  - `docs/legacy-v2-dev-doc.html` is a **frozen** offline snapshot (the single-file prototype the guide was built from, EN + KO). It is no longer updated — do not edit it.
 - [Per-family payload contract](docs/v2-payload-contract.md)
 - **v0.16.x (v1) → v2 migration:** [MIGRATION-v1-to-v2.md](./MIGRATION-v1-to-v2.md)
 

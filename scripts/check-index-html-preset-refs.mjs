@@ -2,7 +2,7 @@
 /**
  * check-index-html-preset-refs.mjs
  *
- * Validates that preset-id-looking <code> references inside docs/index.html
+ * Validates that preset-id-looking <code> references inside docs/legacy-v2-dev-doc.html
  * still resolve to a real preset in playground/presets.*.json (source of
  * truth). Catches the case where a preset was renamed/removed but the
  * hand-written dev guide still cites the old id (docs-payload-fidelity rule).
@@ -49,8 +49,8 @@ for (const f of PRESET_FILES) {
 }
 const prefixes = new Set([...ids].map((id) => id.split('-')[0]))
 
-// candidate extraction from docs/index.html
-const html = readFileSync(resolve(ROOT, 'docs/index.html'), 'utf8')
+// candidate extraction from docs/legacy-v2-dev-doc.html
+const html = readFileSync(resolve(ROOT, 'docs/legacy-v2-dev-doc.html'), 'utf8')
 const re = /<code>([a-z][a-z0-9]*(?:-[a-z0-9]+){2,})(-\*)?<\/code>/g
 const candidates = new Set()
 let m
@@ -73,7 +73,7 @@ for (const raw of candidates) {
 }
 
 if (dangling.length > 0) {
-  console.error('docs/index.html preset reference drift:')
+  console.error('docs/legacy-v2-dev-doc.html preset reference drift:')
   dangling.forEach((d) =>
     console.error(`  dangling: <code>${d}</code> — no matching preset id in playground/presets.*.json`)
   )

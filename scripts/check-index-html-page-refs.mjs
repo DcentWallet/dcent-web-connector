@@ -1,6 +1,6 @@
 #!/usr/bin/env node
 /**
- * docs/index.html 의 **참조 id ↔ 등록 페이지 정합** 검사 (m13-02-09).
+ * docs/legacy-v2-dev-doc.html 의 **참조 id ↔ 등록 페이지 정합** 검사 (m13-02-09).
  *
  * 왜 필요한가 — 이 문서는 페이지를 **두 가지 방식**으로 등록한다:
  *   ① 리터럴   `DOC.register("chain-bitcoin", {...})`
@@ -27,7 +27,7 @@ import { dirname, resolve } from 'node:path'
 import { JSDOM, VirtualConsole } from 'jsdom'
 
 const here = dirname(fileURLToPath(import.meta.url))
-const INDEX = resolve(here, '../docs/index.html')
+const INDEX = resolve(here, '../docs/legacy-v2-dev-doc.html')
 
 const html = readFileSync(INDEX, 'utf8')
 
@@ -53,7 +53,7 @@ const failures = []
 // 🔴 fail-closed — 스크립트 실행이 깨져 PAGES 가 비면 아래 검사가 전부 "참조 0건, 미등록 0건"
 //    으로 공허하게 통과한다. 그 침묵이 이 게이트의 가장 위험한 실패 모드다.
 if (pages.size === 0) {
-  console.error('✗ window.PAGES 가 비어 있다 — docs/index.html 스크립트 실행 실패로 검사가 성립하지 않는다.')
+  console.error('✗ window.PAGES 가 비어 있다 — docs/legacy-v2-dev-doc.html 스크립트 실행 실패로 검사가 성립하지 않는다.')
   process.exit(1)
 }
 
@@ -105,12 +105,12 @@ for (const id of pages) {
 for (const d of dangling) failures.push(`죽은 in-page 링크: ${d}`)
 
 if (failures.length > 0) {
-  console.error('✗ docs/index.html 참조 id ↔ 등록 페이지 정합 실패')
+  console.error('✗ docs/legacy-v2-dev-doc.html 참조 id ↔ 등록 페이지 정합 실패')
   for (const f of failures) console.error(`  - ${f}`)
   process.exit(1)
 }
 
 console.log(
-  `✓ docs/index.html 페이지 정합 — 등록 ${pages.size} · NAV ${navIds.length} · ` +
+  `✓ docs/legacy-v2-dev-doc.html 페이지 정합 — 등록 ${pages.size} · NAV ${navIds.length} · ` +
     `MATRIX ${w.MATRIX.length} · STUBS ${w.STUBS.length} · METHODS ${w.METHODS.length} · 죽은 링크 0`,
 )

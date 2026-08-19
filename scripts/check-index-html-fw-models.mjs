@@ -1,6 +1,6 @@
 #!/usr/bin/env node
 /**
- * docs/index.html 의 **펌웨어 표 모델 축(bio / x) 전수 검사** (m09-04-28).
+ * docs/legacy-v2-dev-doc.html 의 **펌웨어 표 모델 축(bio / x) 전수 검사** (m09-04-28).
  *
  * 왜 필요한가 — DCENT X 는 펌웨어 `1.x` 라인이고 DCENT Biometric Wallet 은 `1.x~2.x` 라인이다.
  * 두 값을 **한 컬럼**에 합치면 X 사용자에게 "내 펌웨어 1.0.0 < 2.35.0 → 미지원"으로 읽혀,
@@ -65,7 +65,7 @@ import { dirname, resolve } from 'node:path'
 import { JSDOM, VirtualConsole } from 'jsdom'
 
 const here = dirname(fileURLToPath(import.meta.url))
-const INDEX = resolve(here, '../docs/index.html')
+const INDEX = resolve(here, '../docs/legacy-v2-dev-doc.html')
 
 /** 모델 라벨 — 문서 전체에서 이 표기를 정본으로 쓴다 (dcentx-model-id-naming 과 짝). */
 const BIO = "DCENT Biometric Wallet"
@@ -557,13 +557,13 @@ let matrixRowsChecked = 0
 }
 
 if (failures.length > 0) {
-  console.error('✗ docs/index.html 펌웨어 표 모델 축(bio/x) 검사 실패')
+  console.error('✗ docs/legacy-v2-dev-doc.html 펌웨어 표 모델 축(bio/x) 검사 실패')
   for (const f of failures) console.error(`  - ${f}`)
   process.exit(1)
 }
 
 console.log(
-  `✓ docs/index.html 펌웨어 모델 축 — FWREQ ${fwreqCells}행(체인 ${Object.keys(fwreq).length}) · ` +
+  `✓ docs/legacy-v2-dev-doc.html 펌웨어 모델 축 — FWREQ ${fwreqCells}행(체인 ${Object.keys(fwreq).length}) · ` +
     `MATRIX ${matrixChecked}행 검사 / ${matrixSkipped}행 skip(fw 미지정) · FWNOTE ${fwnoteChecked}건(EN·KO) · ` +
     `Requirements 블록 ${reqBlocks.length} · Support Matrix 헤더 ${matrixHeaders.length} · ` +
     `injectFwReq 렌더 ${rendererChecked}/2 (EN·KO) · Support Matrix row ${matrixRowsChecked}행 렌더 검사`,

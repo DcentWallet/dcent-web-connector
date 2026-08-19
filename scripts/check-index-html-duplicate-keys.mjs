@@ -1,8 +1,8 @@
 #!/usr/bin/env node
 /**
- * docs/index.html 의 **문서 키 중복** 검사 (m13-02-08).
+ * docs/legacy-v2-dev-doc.html 의 **문서 키 중복** 검사 (m13-02-08).
  *
- * 왜 필요한가 — `docs/index.html` 은 페이지를 두 방식으로 등록한다:
+ * 왜 필요한가 — `docs/legacy-v2-dev-doc.html` 은 페이지를 두 방식으로 등록한다:
  *   EN: `DOC.register('<key>', {...})`
  *   KO: `Object.assign(window.KO, { '<key>': {bcko:…, ko:`…`} })`  ← **여러 블록으로 나뉘어 있다**
  *
@@ -23,7 +23,7 @@ import { fileURLToPath } from 'node:url'
 import { dirname, resolve } from 'node:path'
 
 const here = dirname(fileURLToPath(import.meta.url))
-const INDEX = resolve(here, '../docs/index.html')
+const INDEX = resolve(here, '../docs/legacy-v2-dev-doc.html')
 
 /**
  * 이미 중복이던 KO 키 → **그 시점의 정확한 사본 수**. 새 중복은 여기 추가하지 말고 **고칠 것**.

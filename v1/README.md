@@ -11,7 +11,7 @@ User interface is presented in a popup window served from `https://bridge.dcentw
 
 - 📘 **v2 Developer Guide** (full API + per-chain reference): https://dev-docs.dcentwallet.com/dcent-biometric-wallet-for-pc/dcent-web-connector
 - [Integration](INTEGRATION-GUIDE.md)
-- v0.16.0 → v2 마이그레이션 가이드: [MIGRATION-v1-to-v2.md](./MIGRATION-v1-to-v2.md)
+- v0.16.0 → v2 migration guide: [MIGRATION-v1-to-v2.md](./MIGRATION-v1-to-v2.md)
 
 ## Installation
 

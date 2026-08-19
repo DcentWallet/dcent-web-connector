@@ -107,6 +107,14 @@ yarn unit-v2-e2e    # v2 e2e tests
 yarn check:docs     # docs lint + payload-contract coverage/shape
 ```
 
+## Support
+
+Need help integrating the connector, or hitting something the guide does not cover?
+Email **contact@iotrust.kr** — include the `chainId`, the method you are calling, the connector version, and the device model/firmware if the issue involves a device.
+
+- 📘 [Developer Guide](https://dev-docs.dcentwallet.com/dcent-biometric-wallet-for-pc/dcent-web-connector) — full API + per-chain reference
+- 🐞 [GitHub Issues](https://github.com/DcentWallet/dcent-web-connector/issues) — bugs and feature requests
+
 ## License
 
 MIT

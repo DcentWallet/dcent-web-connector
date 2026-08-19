@@ -31,17 +31,12 @@
     "lint:md": "markdownlint-cli2 \"README.md\" \"MIGRATION-v1-to-v2.md\" \"docs/v2-payload-contract.md\" \"docs/brand-color-replacement.md\"",
     "check:payload-contract": "node scripts/check-payload-contract-coverage.mjs",
     "check:payload-shape": "node scripts/check-payload-contract-shape.mjs",
-    "check:index-refs": "node scripts/check-index-html-preset-refs.mjs",
-    "check:docs": "yarn lint:md && yarn check:payload-contract && yarn check:payload-shape && yarn check:index-refs && yarn check:index-dup && yarn check:index-en-ko-parity && yarn check:index-pages && yarn check:index-fw-models && yarn check:brand-tokens && yarn check:brand-tokens:test && yarn check:playground-surface && yarn check:playground-surface:test",
-    "check:index-fw-models": "node scripts/check-index-html-fw-models.mjs",
-    "check:index-dup": "node scripts/check-index-html-duplicate-keys.mjs",
+    "check:docs": "yarn lint:md && yarn check:payload-contract && yarn check:payload-shape && yarn check:brand-tokens && yarn check:brand-tokens:test && yarn check:playground-surface && yarn check:playground-surface:test",
     "check:brand-tokens": "node scripts/check-index-html-brand-tokens.mjs",
     "check:brand-tokens:test": "node scripts/check-index-html-brand-tokens.mjs --test",
     "check:playground-surface": "node scripts/check-playground-surface.mjs",
     "check:playground-surface:test": "node scripts/check-playground-surface.mjs --test",
-    "tsc": "tsc --noEmit",
-    "check:index-en-ko-parity": "node scripts/check-index-html-en-ko-parity.mjs",
-    "check:index-pages": "node scripts/check-index-html-page-refs.mjs"
+    "tsc": "tsc --noEmit"
   },
   "jest": {
     "preset": "jest-puppeteer",

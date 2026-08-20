@@ -47,7 +47,7 @@ const result = await dcent.sign({
 | polkadot | ✅ (`extra.scaleHex`) | ✅ parachain / ❌ relay `-32601` | only the relay chain (Polkadot) lacks signMessage |
 | solana | ✅ | ✅ | form-D descriptor signed |
 | stacks | ✅ | ❌ `-32601` | |
-| stellar | ✅ (`{xdr}`) | ✅ | structured payment / Soroban return `-32602` |
+| stellar | ✅ (`{xdr}`) | ✅ | structured `payment`/`createAccount` signed. Soroban `invokeHostFunction` needs `sorobanData` and stays rejected until wm opens it (m20-06) |
 | tezos | ◐ | ❌ `-32601` | requires a pre-forged `extra.unsignedTxBytes` |
 | tron | ✅ | ❌ `-32601` | TRX / TRC20 transfer / approve signed |
 | vechain | ✅ | ❌ `-32601` | |

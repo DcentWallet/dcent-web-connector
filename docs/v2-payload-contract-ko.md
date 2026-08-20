@@ -48,7 +48,7 @@ const result = await dcent.sign({
 | polkadot | ✅ (`extra.scaleHex`) | ✅ parachain / ❌ relay `-32601` | relay chain(Polkadot)만 signMessage 미지원 |
 | solana | ✅ | ✅ | form-D descriptor 서명 |
 | stacks | ✅ | ❌ `-32601` | |
-| stellar | ✅ (`{xdr}`) | ✅ | structured payment / Soroban 은 `-32602` |
+| stellar | ✅ (`{xdr}`) | ✅ | structured `payment`/`createAccount` 서명됨. Soroban `invokeHostFunction` 은 `sorobanData` 가 필요하며 wm 개방(m20-06) 전까지 거부 |
 | tezos | ◐ | ❌ `-32601` | pre-forged `extra.unsignedTxBytes` 필요 |
 | tron | ✅ | ❌ `-32601` | TRX / TRC20 transfer / approve 서명 |
 | vechain | ✅ | ❌ `-32601` | |

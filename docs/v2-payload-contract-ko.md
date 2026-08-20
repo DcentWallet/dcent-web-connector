@@ -48,7 +48,7 @@ const result = await dcent.sign({
 | polkadot | ✅ (`extra.scaleHex`) | ✅ parachain / ❌ relay `-32601` | relay chain(Polkadot)만 signMessage 미지원 |
 | solana | ✅ | ✅ | form-D descriptor 서명 |
 | stacks | ✅ | ❌ `-32601` | |
-| stellar | ✅ (`{xdr}`) | ✅ | structured payment / Soroban 은 `-32602` |
+| stellar | ✅ (`{xdr}`) | ✅ | 지갑 허용 목록의 structured op 는 서명된다. Soroban `invokeHostFunction` 은 `sorobanData` 가 추가로 필요하며 아직 거부된다 |
 | tezos | ◐ | ❌ `-32601` | pre-forged `extra.unsignedTxBytes` 필요 |
 | tron | ✅ | ❌ `-32601` | TRX / TRC20 transfer / approve 서명 |
 | vechain | ✅ | ❌ `-32601` | |
@@ -548,13 +548,13 @@ Bitcoin은 `dcent.sign({ method: 'signTransaction', chainId, payload })`로 서�
 
 | 형태 | 쓰는 곳 | 식별 필드 |
 |---|---|---|
-| **structured op** | native XLM `payment`, Soroban `invokeHostFunction` | `type` (문자열) |
+| **structured op** | native XLM `payment`, Soroban `invokeHostFunction` (`sorobanData` 추가 필요) | `type` (문자열) |
 | **form-D (issued asset)** | trustline 토큰(USDC 등) 전송 | `token` (객체) — `type` 을 적지 않는다 |
 | **`{xdr}` envelope** | 완성된 XDR 을 그대로 blind-sign | `xdr` (문자열) |
 
 form-D 는 `type` 을 **앱이 적지 않는다** — 지갑이 descriptor 를 `{type:'payment', asset:{code,issuer}, destination, amount}` 봉투로 합성한다. 여기에 `type` 을 함께 적으면 같은 값을 두 곳에서 표현하게 된다.
 
-**서명 payload 를 이루는 값은 앱이 전부 제공한다** — structured / form-D 모두 `fee` · `sequenceNumber` · `timeBounds` 가 필요하다. `{xdr}` 은 그 값들이 XDR 안에 인코딩돼 있으므로 `fee` 만 유지한다(blind-sign 이라 기기에 전달되는 유일한 표시 정보).
+**서명 payload 를 이루는 값은 앱이 전부 제공한다** — structured / form-D 모두 `fee` · `sequenceNumber` · `timeBounds` 가 필요하고, Soroban `invokeHostFunction` 은 `sorobanData`(`simulateTransaction` 으로 얻는 base64 `SorobanTransactionData`)가 추가로 필요하다. `{xdr}` 은 그 값들이 XDR 안에 인코딩돼 있으므로 `fee` 만 유지한다(blind-sign 이라 기기에 전달되는 유일한 표시 정보).
 
 **signTransaction payload — structured op (native XLM):**
 

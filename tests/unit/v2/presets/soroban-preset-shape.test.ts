@@ -8,7 +8,7 @@
  * T-C-PRESET-02: `sorobanData` 는 빈 문자열 (더미 값이면 fail-closed 가 무력화된다)
  * T-C-PRESET-03: transaction 키 집합·순서 불변 (개수만 세면 개명을 못 잡는다)
  * T-C-PRESET-04: 정정 대상 검색어 3종이 playground/docs 에서 잔존 0
- * T-C-PRESET-05: preset 총수 55 (모수 floor)
+ * T-C-PRESET-05: preset 총수 55 정확 일치 (추가·삭제 둘 다 red)
  * T-C-PRESET-06: 정정 대상 6건을 preset id · 파일 경로로 각각 대조
  * T-C-PRESET-07: `fee` 는 number, `sequenceNumber` 는 string
  *
@@ -42,7 +42,7 @@ const STALE_TERMS = [
   '게이트(5.3)가 `{xdr}` 봉투만 허용',
 ]
 
-/** 전이 아니라 정정 이후 불변식 — soroban 2건 transaction 의 키 순서. */
+/** soroban 2건 transaction 의 키 순서 — 순서까지 불변식이다(개명·재배치를 잡는다). */
 const EXPECTED_TX_KEYS = [
   'type',
   'contractAddress',
@@ -62,6 +62,13 @@ function byId(id: string): Preset {
 
 function countOf(haystack: string, needle: string): number {
   return haystack.split(needle).length - 1
+}
+
+/** 요약표의 stellar 행 — 문서 어딘가가 아니라 **그 행**이 고쳐졌는지 봐야 한다. */
+function stellarRow(doc: string): string {
+  const row = doc.split('\n').find((l) => l.startsWith('| stellar |'))
+  if (!row) throw new Error('stellar summary row not found')
+  return row
 }
 
 describe('soroban preset shape (m20-05)', () => {
@@ -121,18 +128,22 @@ describe('soroban preset shape (m20-05)', () => {
       expect(`${id}:old=${note.includes(OLD_SNIPPET)}`).toBe(`${id}:old=false`)
       expect(`${id}:m20-06=${note.includes('m20-06')}`).toBe(`${id}:m20-06=true`)
       expect(`${id}:blind=${note.includes('blind-sign')}`).toBe(`${id}:blind=true`)
+      // 🔴 이 절이 빠지면 note 가 "지금 열려 있다" 는 무조건 서술이 된다 — connector 는 published 표면이다.
+      expect(`${id}:conditional=${note.includes('그 이전에는 `-32602`')}`).toBe(
+        `${id}:conditional=true`
+      )
     }
 
     expect(`docs/v2-payload-contract.md:old=${docEn.includes('Soroban return `-32602`')}`).toBe(
       'docs/v2-payload-contract.md:old=false'
     )
-    expect(`docs/v2-payload-contract.md:new=${docEn.includes('sorobanData')}`).toBe(
+    expect(`docs/v2-payload-contract.md:new=${stellarRow(docEn).includes('sorobanData')}`).toBe(
       'docs/v2-payload-contract.md:new=true'
     )
     expect(`docs/v2-payload-contract-ko.md:old=${docKo.includes('Soroban 은 `-32602`')}`).toBe(
       'docs/v2-payload-contract-ko.md:old=false'
     )
-    expect(`docs/v2-payload-contract-ko.md:new=${docKo.includes('sorobanData')}`).toBe(
+    expect(`docs/v2-payload-contract-ko.md:new=${stellarRow(docKo).includes('sorobanData')}`).toBe(
       'docs/v2-payload-contract-ko.md:new=true'
     )
   })

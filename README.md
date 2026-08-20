@@ -2,8 +2,10 @@
 
 npm connector for integrating the **DCENT hardware wallet** into web apps. It opens a popup served from `https://v2bridge.dcentwallet.com/` and talks to the device over **WebHID (USB)** or **Web Bluetooth** — no native bridge app to install.
 
-- 📘 **v2 Developer Guide** (EN / KO — full API + per-chain reference): [**GitHub Pages**](https://dcentwallet.github.io/dcent-web-connector/) — or download [`docs/index.html`](docs/index.html) and open it in a browser (self-contained, works offline)
+- 📘 **v2 Developer Guide** (full API + per-chain reference): [**dev-docs.dcentwallet.com**](https://dev-docs.dcentwallet.com/dcent-biometric-wallet-for-pc/dcent-web-connector) — the canonical guide
+  - `docs/legacy-v2-dev-doc.html` is a **frozen** offline snapshot (the single-file prototype the guide was built from, EN + KO). It is no longer updated — do not edit it.
 - [Per-family payload contract](docs/v2-payload-contract.md)
+- 🇰🇷 Korean copies: [MIGRATION-v1-to-v2-ko.md](MIGRATION-v1-to-v2-ko.md) · [docs/v2-payload-contract-ko.md](docs/v2-payload-contract-ko.md) — **English is canonical**; update it first and treat the Korean copy as a translation.
 - **v0.16.x (v1) → v2 migration:** [MIGRATION-v1-to-v2.md](./MIGRATION-v1-to-v2.md)
 
 > **v2 is a breaking change from v0.16.x.** The v1 `get*Signed*Transaction/Message` wrappers are replaced by a single `dcent.sign({ method, chainId, payload })`. Existing v0.16.x Apps keep working — see [v0.16.x users](#v016x-v1-users) below.
@@ -47,7 +49,7 @@ if (signed.header.status === 'success') {
 }
 ```
 
-Every method takes a `chainId` and a payload and returns the same `{ header, body }` envelope — the call shape does not change from one network to the next. Full per-chain payloads, `chainId` formats, `keyPath` rules, and error codes are in the **[Developer Guide](https://dcentwallet.github.io/dcent-web-connector/)**.
+Every method takes a `chainId` and a payload and returns the same `{ header, body }` envelope — the call shape does not change from one network to the next. Full per-chain payloads, `chainId` formats, `keyPath` rules, and error codes are in the **[Developer Guide](https://dev-docs.dcentwallet.com/dcent-biometric-wallet-for-pc/dcent-web-connector)**.
 
 ## Transport
 
@@ -82,7 +84,7 @@ Two more things to know:
 | `sign({ method, chainId, payload })` | `method`: `signTransaction` / `signMessage` / … |
 | `popupWindowClose()` | Close the popup |
 
-See the [Developer Guide](https://dcentwallet.github.io/dcent-web-connector/) for the full method + chain reference.
+See the [Developer Guide](https://dev-docs.dcentwallet.com/dcent-biometric-wallet-for-pc/dcent-web-connector) for the full method + chain reference.
 
 ## v0.16.x (v1) users
 
@@ -105,6 +107,14 @@ yarn unit-v2        # v2 unit tests (jest.v2.config.js)
 yarn unit-v2-e2e    # v2 e2e tests
 yarn check:docs     # docs lint + payload-contract coverage/shape
 ```
+
+## Support
+
+Need help integrating the connector, or hitting something the guide does not cover?
+Email **contact@iotrust.kr** — include the `chainId`, the method you are calling, the connector version, and the device model/firmware if the issue involves a device.
+
+- 📘 [Developer Guide](https://dev-docs.dcentwallet.com/dcent-biometric-wallet-for-pc/dcent-web-connector) — full API + per-chain reference
+- 🐞 [GitHub Issues](https://github.com/DcentWallet/dcent-web-connector/issues) — bugs and feature requests
 
 ## License
 

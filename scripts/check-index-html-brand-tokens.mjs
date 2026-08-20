@@ -1,9 +1,9 @@
 #!/usr/bin/env node
 /**
- * docs/index.html + index-v2.html 의 브랜드 색 하드코딩(G1) · 대비(G2, 양방향) · 해석 스냅샷(G3) 게이트.
+ * docs/legacy-v2-dev-doc.html + index-v2.html 의 브랜드 색 하드코딩(G1) · 대비(G2, 양방향) · 해석 스냅샷(G3) 게이트.
  * (m15-02-01)
  *
- * 왜 필요한가 — 브랜드 색이 `:root` 앵커 블록 한 곳으로 모였다(BRAND-ANCHOR:BEGIN/END, docs/index.html).
+ * 왜 필요한가 — 브랜드 색이 `:root` 앵커 블록 한 곳으로 모였다(BRAND-ANCHOR:BEGIN/END, docs/legacy-v2-dev-doc.html).
  * 이 게이트가 없으면 (a) 누군가 앵커 밖에 브랜드 색을 다시 하드코딩해도 아무도 못 잡고,
  * (b) `--accent`/`--accent-soft` 파생이 앵커를 실제로 추종하는지 확인할 수단이 없고,
  * (c) AA 대비 미달이 방치돼도 조용히 넘어간다. 다음 브랜드 색 교체(`m15-02-02`)가 "상수만 바꾸면 되는"
@@ -356,7 +356,7 @@ function runG1(spec) {
   // 🔴 앵커 parity — anchorFile 이 아닌 파일도 자기 앵커 블록을 가지면(index-v2.html) 9값이
   // anchorFile 과 정확히 같아야 한다. G1은 지금까지 이걸 "하드코딩 스캔"으로만 간접 검사했는데
   // (마커 안이라 excludeRange 로 면제되므로 하드코딩 스캔이 아예 못 봄), 값이 서로 다르면
-  // 아무 게이트도 못 잡는 구멍이 생긴다(T-R-10 — "index-v2.html 앵커 값이 docs/index.html 과
+  // 아무 게이트도 못 잡는 구멍이 생긴다(T-R-10 — "index-v2.html 앵커 값이 docs/legacy-v2-dev-doc.html 과
   // 다름 → G1 이 FAIL"). 명시로 비교한다.
   for (const { key } of spec.files) {
     if (key === spec.anchorFile) continue
@@ -531,7 +531,7 @@ function resolveValue(raw, mainRootProps, depth = 0) {
 }
 
 /** 방향 B — 브랜드가 배경일 때의 잉크 심사. B-1(캐스케이드 쌍)·B-2(같은 블록, 파일 전체 스캔)·B-3(명시 열거).
- *  `mainFileText` = docs/index.html 역할(B-1/B-3 가 정의되는 곳). `b2ScanTexts` = B-2 구조 스캔 대상
+ *  `mainFileText` = docs/legacy-v2-dev-doc.html 역할(B-1/B-3 가 정의되는 곳). `b2ScanTexts` = B-2 구조 스캔 대상
  *  전체(anchor 유무 무관 — 카탈로그 col: 와 같은 이유로 line-range 가 아니라 필드 패턴으로 식별한다).
  *  `pgText` = index-v2.html 역할(B-3c~e, playground 버튼 3규칙이 정의되는 곳) — 없으면(undefined)
  *  해당 target 은 스킵한다(픽스처가 playground 파일을 안 줄 수 있음). */
@@ -708,18 +708,20 @@ function runG3(anchorMap, mainRootProps, committedSnapshot, accentSoftCheck) {
 //    소진" 이라고 보고하는 동안 옛 보라(#6c2ef3)가 탭 아이콘에 살아 있었다(2026-08-13 R4 W-2).
 //    스캐너에 %23 축을 추가해 보이게 만든 뒤 등록한다 — 안 보이던 것을 보이게 하는 게 먼저다.
 const REPO_G1_EXCEPTIONS = {
-  'docs/index.html': { '#90e01f': 1 }, // favicon 데이터 URI(로고 심볼). CSS 토큰 사용 불가
+  // 🔴 파비콘을 새 브랜드 마크로 교체(1e9d5d4)하면서 소문자 하드코딩 1건이 사라졌다.
+  //    실측 0건인데 예외목록이 1건으로 남아 이 검사가 빨간 상태였다(rename 과 무관한 선행 드리프트).
+  'docs/legacy-v2-dev-doc.html': {},
 }
 // 🔴 옛 퍼플 밴드에 우연히 걸렸던 카탈로그 col: 항목(Ethereum/Ravencoin/Solana/Cosmos/Stellar/
 // Stacks)도 라임 밴드 밖으로 나가 실측 0 — 6 을 그대로 두면 즉시 불일치.
-const REPO_G1_CATALOG_EXEMPT = { 'docs/index.html': 0 }
+const REPO_G1_CATALOG_EXEMPT = { 'docs/legacy-v2-dev-doc.html': 0 }
 // 🔴 m15-02-02 — index-v2.html 이 자체 BRAND-ANCHOR :root 블록(9토큰)을 신설하며 rootBlocks +1(4→5).
 // 🔴 **숫자는 아래 상수만이 출처다** (2026-08-13 R4 W-3). 초판 주석은 "docs 38 + index-v2 16 = 54"
 //    였는데 m15-02-04 가 `--purple` 을 은퇴시켜 docs 37 · 총 53 이 됐고, accentSoftUses 도 15→16 이
 //    됐는데 주석만 옛 숫자에 멈춰 stale 이 됐다. 하필 같은 라운드에 형제 스크립트 docstring 에
 //    "숫자를 두 곳에 적으면 한쪽이 반드시 stale 이 된다" 고 써 넣고서 여기서 그대로 재현했다.
 //    ⇒ 여기엔 **무엇이 세어지는지(산문)만** 적는다. 실측은 스크립트 출력으로 확인한다.
-//    customProps = docs/index.html 의 커스텀 프로퍼티 + index-v2.html(pg 토큰 + BRAND-ANCHOR 9토큰).
+//    customProps = docs/legacy-v2-dev-doc.html 의 커스텀 프로퍼티 + index-v2.html(pg 토큰 + BRAND-ANCHOR 9토큰).
 // 관례: REPO_G1_FLOORS 는 항상 실측과 일치시킨다("신설분을 지키지 못하는" 여유를 안 둔다).
 const REPO_G1_FLOORS = { rootBlocks: 5, customProps: 53, accentUses: 21, accentSoftUses: 16, scannedFiles: 2 }
 // 🔴 m15-02-02 — 01 의 3(docs: B-1 쌍 · B-3a-dot · B-3b-ticker) + playground 버튼 3규칙
@@ -761,15 +763,15 @@ function mainRootPropsOf(anchorFileAnalysis) {
 }
 
 function loadRepoSpec() {
-  const docsPath = resolve(REPO_ROOT, 'docs/index.html')
+  const docsPath = resolve(REPO_ROOT, 'docs/legacy-v2-dev-doc.html')
   const pgPath = resolve(REPO_ROOT, 'index-v2.html')
   const docsText = readFileSync(docsPath, 'utf8')
   const pgText = existsSync(pgPath) ? readFileSync(pgPath, 'utf8') : null
-  const files = [{ key: 'docs/index.html', text: docsText }]
+  const files = [{ key: 'docs/legacy-v2-dev-doc.html', text: docsText }]
   if (pgText !== null) files.push({ key: 'index-v2.html', text: pgText })
   return {
     files,
-    anchorFile: 'docs/index.html',
+    anchorFile: 'docs/legacy-v2-dev-doc.html',
     exceptions: REPO_G1_EXCEPTIONS,
     catalogExempt: REPO_G1_CATALOG_EXEMPT,
     floors: REPO_G1_FLOORS,
@@ -845,7 +847,7 @@ function runReal({ forceHardFailA = false } = {}) {
 
 /**
  * 픽스처 디렉터리 규약:
- *   index.html        (필수) — docs/index.html 역할의 합성 파일
+ *   index.html        (필수) — docs/legacy-v2-dev-doc.html 역할의 합성 파일
  *   playground.html   (선택) — index-v2.html 역할
  *   manifest.json      (필수) — { anchorFile, exceptions, catalogExempt, floors, directionBFloor,
  *                                 knownViolations, snapshot, forceHardFailA, pastGenerations }
@@ -1032,17 +1034,17 @@ function runAllFixtures() {
     console.log('deriveMode self-test OK: deriveMode([])=hard-fail, deriveMode(1건)=warn')
   }
 
-  // ── T-G-04: 실제 docs/index.html 을 hard-fail 모드로 강제 실행해도 방향 A 6쌍이 전부
+  // ── T-G-04: 실제 docs/legacy-v2-dev-doc.html 을 hard-fail 모드로 강제 실행해도 방향 A 6쌍이 전부
   //    통과(0건 미달)하는지 확인 (m15-02-02 — 라임 전환으로 6쌍 모두 AA 통과, 등록 0건이라
   //    실제 모드도 이미 hard-fail 이지만 강제 플래그로 한 번 더 고정한다) ──
   const real = runReal({ forceHardFailA: true })
   const hardFailFindings = (real.findings || []).filter((f) => f.includes('hard-fail'))
   if (real.exit !== 0 || hardFailFindings.length !== 0) {
-    console.error(`T-G-04 실패: 실제 docs/index.html 을 hard-fail 모드로 돌렸는데 방향 A 미달이 남아있음 (검출 ${hardFailFindings.length}건, exit ${real.exit})`)
+    console.error(`T-G-04 실패: 실제 docs/legacy-v2-dev-doc.html 을 hard-fail 모드로 돌렸는데 방향 A 미달이 남아있음 (검출 ${hardFailFindings.length}건, exit ${real.exit})`)
     console.error(JSON.stringify(real, null, 2))
     fail = 1
   } else {
-    console.log('T-G-04 OK: hard-fail 모드에서 실제 docs/index.html 의 방향 A 6쌍 전부 통과 (exit 0)')
+    console.log('T-G-04 OK: hard-fail 모드에서 실제 docs/legacy-v2-dev-doc.html 의 방향 A 6쌍 전부 통과 (exit 0)')
   }
 
   // ── 실제 리포 스캔 (hard-fail 모드, 등록 0건으로 자동 전환) — 기계 판독 라인 출력 형식 자기검증 ──

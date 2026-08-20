@@ -3,7 +3,7 @@
  *
  * 배경 (PR #177 리뷰 P2): npm은 `files` 허용목록을 `.npmignore`보다 **우선** 적용한다.
  * `files`에 `"docs/"` / `"index-v2.html"` / `"playground.js"`가 있는 동안 `.npmignore`의
- * 같은 항목 3줄이 전부 무효였고, `docs/index.html`(1.2MB)이 모든 소비자에게 배포됐다.
+ * 같은 항목 3줄이 전부 무효였고, `docs/legacy-v2-dev-doc.html`(1.2MB)이 모든 소비자에게 배포됐다.
  * PR 본문에는 ".npmignore 처리(tarball 미포함)"로 적혀 있어 서술과 실제가 반대였다.
  *
  * 이 테스트가 지키는 invariant:
@@ -73,7 +73,7 @@ describe('packaging — .npmignore vs package.json#files 우선순위', () => {
 
     // 각 경로가 실제로 리포에 존재하고 큰지 함께 확인한다 —
     // 파일이 사라져 "검사할 게 없어서 초록"이 되는 경로를 막는다.
-    const devOnly = ['docs/index.html', 'index-v2.html', 'playground.js']
+    const devOnly = ['docs/legacy-v2-dev-doc.html', 'index-v2.html', 'playground.js']
     for (const rel of devOnly) {
       expect(fs.existsSync(path.join(REPO_ROOT, rel))).toBe(true)
       expect(isCoveredByFiles(rel, filesField)).toBe(false)

@@ -1,5 +1,5 @@
 > **⚠️ Archived — v0.16.x (v1) README.** Describes the legacy v1 API (native DCENT Bridge app + `get*Signed*` wrappers).
-> For the current **v2** API see the [root README](../README.md) and the [Developer Guide](https://dcentwallet.github.io/dcent-web-connector/).
+> For the current **v2** API see the [root README](../README.md) and the [Developer Guide](https://dev-docs.dcentwallet.com/dcent-biometric-wallet-for-pc/dcent-web-connector).
 > Migration: [MIGRATION-v1-to-v2.md](../MIGRATION-v1-to-v2.md).
 
 ---
@@ -9,9 +9,9 @@ This is package for connecting WEB and DCENT biometric wallet.<br>
 `dcent-web-connector` is modules for easy integration of DCENT into 3rd party services.<br>
 User interface is presented in a popup window served from `https://bridge.dcentwallet.com/v2`.
 
-- 📘 **v2 Developer Guide** (EN / KO — full API + per-chain reference): https://dcentwallet.github.io/dcent-web-connector/
+- 📘 **v2 Developer Guide** (full API + per-chain reference): https://dev-docs.dcentwallet.com/dcent-biometric-wallet-for-pc/dcent-web-connector
 - [Integration](INTEGRATION-GUIDE.md)
-- v0.16.0 → v2 마이그레이션 가이드: [MIGRATION-v1-to-v2.md](./MIGRATION-v1-to-v2.md)
+- v0.16.0 → v2 migration guide: [MIGRATION-v1-to-v2.md](./MIGRATION-v1-to-v2.md)
 
 ## Installation
 

@@ -71,6 +71,17 @@ function stellarRow(doc: string): string {
   return row
 }
 
+/**
+ * `### Stellar` 절 — dApp 개발자가 payload 를 조립할 때 실제로 읽는 곳이다.
+ * 요약행만 잠그면 이 절이 stale 로 남아도 green 이 된다(R2 실측: 요약행 단언만으로는 SURVIVED).
+ */
+function stellarSection(doc: string): string {
+  const start = doc.indexOf('### Stellar')
+  const end = doc.indexOf('### Tezos', start)
+  if (start < 0 || end < 0) throw new Error('stellar section not found')
+  return doc.slice(start, end)
+}
+
 describe('soroban preset shape (m20-05)', () => {
   it('T-C-PRESET-01: soroban preset 2건의 transaction 이 sorobanData 키를 보유한다', () => {
     for (const id of SOROBAN_IDS) {
@@ -140,12 +151,19 @@ describe('soroban preset shape (m20-05)', () => {
     expect(`docs/v2-payload-contract.md:new=${stellarRow(docEn).includes('sorobanData')}`).toBe(
       'docs/v2-payload-contract.md:new=true'
     )
+    // form 표 행 + "앱이 전부 제공" 문장 2곳 — 요약행과 별개 축이다.
+    expect(
+      `docs/v2-payload-contract.md:section=${countOf(stellarSection(docEn), 'sorobanData')}`
+    ).toBe('docs/v2-payload-contract.md:section=2')
     expect(`docs/v2-payload-contract-ko.md:old=${docKo.includes('Soroban 은 `-32602`')}`).toBe(
       'docs/v2-payload-contract-ko.md:old=false'
     )
     expect(`docs/v2-payload-contract-ko.md:new=${stellarRow(docKo).includes('sorobanData')}`).toBe(
       'docs/v2-payload-contract-ko.md:new=true'
     )
+    expect(
+      `docs/v2-payload-contract-ko.md:section=${countOf(stellarSection(docKo), 'sorobanData')}`
+    ).toBe('docs/v2-payload-contract-ko.md:section=2')
   })
 
   it('T-C-PRESET-07: soroban preset 의 fee 는 number, sequenceNumber 는 string 이다', () => {

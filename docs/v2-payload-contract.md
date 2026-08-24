@@ -47,7 +47,7 @@ const result = await dcent.sign({
 | polkadot | ✅ (`extra.scaleHex`) | ✅ parachain / ❌ relay `-32601` | only the relay chain (Polkadot) lacks signMessage |
 | solana | ✅ | ✅ | form-D descriptor signed |
 | stacks | ✅ | ❌ `-32601` | |
-| stellar | ✅ (`{xdr}`) | ✅ | structured payment / Soroban return `-32602` |
+| stellar | ✅ (`{xdr}`) | ✅ | structured ops on the wallet allowlist are signed. Soroban `invokeHostFunction` additionally needs `sorobanData` and is still rejected |
 | tezos | ◐ | ❌ `-32601` | requires a pre-forged `extra.unsignedTxBytes` |
 | tron | ✅ | ❌ `-32601` | TRX / TRC20 transfer / approve signed |
 | vechain | ✅ | ❌ `-32601` | |
@@ -547,13 +547,13 @@ Writing the same value in two places drifts — measured (2026-07-22): only the 
 
 | Form | Used for | Identifying field |
 |---|---|---|
-| **structured op** | native XLM `payment`, Soroban `invokeHostFunction` | `type` (string) |
+| **structured op** | native XLM `payment`, Soroban `invokeHostFunction` (also needs `sorobanData`) | `type` (string) |
 | **form-D (issued asset)** | trustline token transfers (USDC etc.) | `token` (object) — do not set `type` |
 | **`{xdr}` envelope** | blind-sign a fully built XDR as is | `xdr` (string) |
 
 With form-D the **app does not set `type`** — the wallet composes the descriptor into a `{type:'payment', asset:{code,issuer}, destination, amount}` envelope. Adding `type` yourself expresses the same value twice.
 
-**The app supplies every value that makes up the signing payload** — both structured and form-D need `fee` · `sequenceNumber` · `timeBounds`. `{xdr}` encodes those inside the XDR, so only `fee` is kept (it is blind-signing, and that fee is the only display information the device receives).
+**The app supplies every value that makes up the signing payload** — both structured and form-D need `fee` · `sequenceNumber` · `timeBounds`, and Soroban `invokeHostFunction` additionally needs `sorobanData` (base64 `SorobanTransactionData` obtained from `simulateTransaction`). `{xdr}` encodes those inside the XDR, so only `fee` is kept (it is blind-signing, and that fee is the only display information the device receives).
 
 **signTransaction payload — structured op (native XLM):**
 

@@ -76,10 +76,10 @@ export interface BitcoinWireTransaction {
 //   input  : wm `VALID_TX_TYPES` — P2TR 입력 서명 경로가 없어 `p2tr` 제외 (wm 이 -32602).
 //   output : wm `BitcoinWireOutputTxType` — `p2tr`(Taproot 수신 주소) **포함**. wm 은
 //            witness v1 을 선언한 currency(BITCOIN / BTC-SEGWIT 등 — **서명하는 계정** 쪽)에 한해
-//            허용하고. ⚠️ 여기서 열리는 것은 "Taproot 주소로 **보내기**" 지 "Taproot 계정으로
-//            **서명하기**" 가 아니다. 후자는 addressFormat `'taproot'` 축이고 아직 미지원이다.
-//            주소 hrp·mislabel·change 가드까지 스스로 건다. 커넥터가 여기서 함께 막으면
+//            허용하고, 주소 hrp·mislabel·change 가드까지 스스로 건다. 커넥터가 여기서 함께 막으면
 //            **wm 이 이미 연 경로를 빌더만 막는 드리프트**가 된다(실제로 그 상태였다).
+//            ⚠️ 여기서 열리는 것은 "Taproot 주소로 **보내기**" 지 "Taproot 계정으로 **서명하기**"
+//            가 아니다. 후자는 addressFormat `'taproot'` 축이고 아직 미지원이다.
 //   p2pk / multisig 는 양쪽 모두 미지원.
 const WIRE_INPUT_TX_TYPES: readonly string[] = ['p2pkh', 'p2sh', 'p2wpkh', 'p2wsh']
 const WIRE_OUTPUT_TX_TYPES: readonly string[] = ['p2pkh', 'p2sh', 'p2wpkh', 'p2wsh', 'p2tr', 'change']

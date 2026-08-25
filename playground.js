@@ -3925,7 +3925,8 @@
       return
     }
 
-    var params = { chainId: chainId, keyPath: keyPath, transaction: txObj }  // addressFormat 은 도출 후 아래에서 채운다
+    // addressFormat 은 아래에서 도출한 뒤 payload 와 **함께** 채운다 (로그 = 실제 요청).
+    var params = { chainId: chainId, keyPath: keyPath, transaction: txObj }
     var startMs = Date.now()
 
     // m09-04-01.5: NEW schema 마이그레이션 — { method, chainId, payload }.

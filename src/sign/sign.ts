@@ -70,6 +70,14 @@ export interface SignInput {
   /**
    * bridge sdk가 받을 payload — `keyPath: string` 필수, family-specific 필드는 sdk가 처리.
    * connector 경계에서 보장되는 contract는 `_validateSignPayload` 참조.
+   *
+   * **Bitcoin family 전용 optional 필드 `addressFormat`** (`'legacy' | 'segwit-wrapped' |
+   * 'segwit-native' | 'taproot'` — `getAddress` / `getPublicKey` 와 같은 enum): BTC 는 legacy 와
+   * segwit 계정이 같은 chainId 와 같은 `m/44'` keyPath 를 쓰므로 그 둘만으로는 어느 계정이
+   * 서명하는지 가려지지 않는다. `getAccountInfo` 응답의 `meta.addressFormat` 을 그대로 실어
+   * 보내면 된다. 생략하면 sdk/wm 이 `transaction.inputs[].txType` 에서 추론하는 종전 동작으로
+   * 폴백한다(PSBT payload 에는 그 신호가 없다). connector 는 값을 해석하지 않고 forward 만 한다
+   * (`connector-chain-addition-isolation` — chain enum/매핑 0건). enum 검증은 sdk 경계에서 수행.
    */
   payload: Record<string, unknown>
   // (DC-2701) per-call transport 옵션 제거 — transport는 기기 연결 속성이므로 연결 단위
@@ -102,12 +110,15 @@ export interface SignInput {
  *     },
  *   })
  *
- * @example Bitcoin signTransaction
+ * @example Bitcoin signTransaction (addressFormat 로 legacy/segwit 계정 지정)
  *   await dcent.sign({
  *     method: 'signTransaction',
  *     chainId: 'bip122:000000000019d6689c085ae165831e93',
  *     payload: {
  *       keyPath: "m/44'/0'/0'/0/0",
+ *       // getAccountInfo 응답의 meta.addressFormat 을 그대로 되돌려준다.
+ *       // 생략 시 inputs[].txType 추론으로 폴백 (종전 동작).
+ *       addressFormat: 'segwit-native',
  *       transaction: { inputs: [...], outputs: [...] },
  *     },
  *   })

@@ -163,6 +163,16 @@ describe('add 시점 boundary validation (T-U-TXBLD-VAL)', () => {
     expect(tx.outputs.map((o) => o.txType)).toEqual(['p2tr', 'change'])
   })
 
+  // v1 호환 enum 은 `types-drift` 가 v1 과 1:1 로 동결한다 → `p2tr` 을 **넣을 수 없다**.
+  // 그 사실을 JSDoc 에만 적으면 낡는다. "enum 에 없다 + raw 문자열은 동작한다" 두 축을 함께 고정해,
+  // 누군가 enum 에 p2tr 을 추가하면(= v1 표면 파괴) 여기서 빨개진다.
+  test('T-U-TXBLD-VAL-03e: p2tr 은 v1 bitcoinTxType enum 밖이며 raw 문자열로만 전달한다', () => {
+    expect(dcent.bitcoinTxType).not.toHaveProperty('p2tr')
+    const tx = getBitcoinTransactionObject()
+    addBitcoinTransactionOutput(tx, 'p2tr', '1000', 'bc1pdest')
+    expect(tx.outputs[0].txType).toBe('p2tr')
+  })
+
   test('T-U-TXBLD-VAL-04: addOutput 비-satoshi value → param_error', () => {
     const tx = getBitcoinTransactionObject()
     expect(() => addBitcoinTransactionOutput(tx, 'p2pkh', 1.5, 'addr')).toThrow(PARAM_ERROR)

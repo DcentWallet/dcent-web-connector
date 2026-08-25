@@ -2061,7 +2061,11 @@
   // rawTransaction을 교체한다. getAddress 실패/변환 실패 input은 기존 rawTransaction 유지(폴백)
   // → wm이 실제 원인 에러를 내도록. 반환: Promise<{ synthesized, skipped, notes:[] }>.
   // 디바이스 순차 호출(같은 keyPath는 캐시)로 병렬 getAddress 회피.
-  function _synthesizeBitcoinPrevouts (builtTx, chainId) {
+  // @param addressFormat 서명에 쓸 계정 변종. 🔴 **서명 payload 와 반드시 같은 값**이어야 한다 —
+  //   여기서 파생한 주소로 prevout scriptPubKey 를 합성해 rawTransaction 을 덮어쓰기 때문에,
+  //   서명은 segwit 계정으로 하는데 합성은 legacy 주소로 하면 wm 의 prevout ownership 게이트가
+  //   불일치로 -32602 를 낸다(자산 안전 게이트라 완화 대상이 아니다).
+  function _synthesizeBitcoinPrevouts (builtTx, chainId, addressFormat) {
     var dcent = _getDcent()
     var inputs = (builtTx && builtTx.inputs) || []
     var outputs = (builtTx && builtTx.outputs) || []
@@ -2089,7 +2093,9 @@
         if (valueSat < 1) valueSat = 1
         var addrP = addrCache[keyPath]
         if (!addrP) {
-          addrP = Promise.resolve().then(function () { return dcent.getAddress({ chainId: chainId, keyPath: keyPath }) })
+          var gaReq = { chainId: chainId, keyPath: keyPath }
+          if (addressFormat) gaReq.addressFormat = addressFormat
+          addrP = Promise.resolve().then(function () { return dcent.getAddress(gaReq) })
             .then(_unwrapV1Envelope).then(function (res) {
               var a = res && (res.address || res.pubkey)
               return typeof a === 'string' ? a : null
@@ -3242,14 +3248,14 @@
         // prev_tx를 합성해 rawTransaction 교체 → outs[index].script == toOutputScript(deviceAddr).
         // static preset prev_tx는 디바이스별 실주소를 모르므로 여기서 device 주소로 덮어쓴다.
         // addressFormat 은 **누적된 tx 의 input txType 에서 도출**한다(별도 입력 필드를 두지 않는다).
-        // 손으로 고르게 하면 txType 과 어긋난 값을 넣을 수 있고 그건 wm 이 -32602 로 되돌려준다 —
-        // 빌더는 이미 "모든 input 이 같은 txType" 계약 위에 있으므로 도출이 유일하게 안전하다.
-        // 🔴 선언 위치는 `_synthesizeBitcoinPrevouts` **호출 전**이어야 한다 — 아래 세 개의 appendLog
-        // 중 마지막 하나는 바깥 `.catch` 안이라, then 콜백 안에서 선언하면 그 자리에서 ReferenceError 다.
-        var bsAf = _btcAddressFormatFor(builtTx.inputs && builtTx.inputs[0] && builtTx.inputs[0].txType)
+        // 손으로 고르게 하면 txType 과 어긋난 값을 넣을 수 있고 그건 wm 이 -32602 로 되돌려준다.
+        // 도출이 안전한 이유는 빌더가 아니라 **wm** 이 mixed txType 을 -32602 로 차단하기 때문이다
+        // (커넥터 빌더의 addBitcoinTransactionInput 은 input 간 txType 동일성을 강제하지 않는다).
+        var bsAf = _btcAddressFormatForTx(builtTx)
         var bsPayload = { keyPath: bsKeyPath, transaction: builtTx }
         if (bsAf) bsPayload.addressFormat = bsAf
-        _synthesizeBitcoinPrevouts(builtTx, bsChainId).then(function (synth) {
+        // 🔴 합성에 **같은 값**을 넘긴다 — 합성 주소와 서명 계정이 갈리면 prevout ownership 이 깨진다.
+        _synthesizeBitcoinPrevouts(builtTx, bsChainId, bsAf).then(function (synth) {
           var bsSignInput = { method: 'signTransaction', chainId: bsChainId, payload: bsPayload }
           return dcent.sign(bsSignInput).then(_unwrapV1Envelope).then(function (result) {
             appendLog({
@@ -3649,6 +3655,20 @@
     return afMap[txType] || ''
   }
 
+  // 누적 tx 전체에서 addressFormat 을 도출한다. `inputs[0]` 만 보면 섞인 tx 에서 나머지 input 과
+  // 어긋난 값을 명시하게 된다 — wm 은 mixed txType 을 -32602 로 **먼저** 끊으므로 잘못된 계정으로
+  // 서명되지는 않지만, 그 경우 명시값을 보내는 것 자체가 의미 없고 에러를 흐린다.
+  // 섞여 있으면 `''` 를 돌려 필드를 빼고, wm 이 정확한 mixed 에러를 내게 둔다.
+  function _btcAddressFormatForTx (builtTx) {
+    var inputs = (builtTx && builtTx.inputs) || []
+    if (inputs.length === 0) return ''
+    var first = inputs[0] && inputs[0].txType
+    for (var i = 1; i < inputs.length; i++) {
+      if (!inputs[i] || inputs[i].txType !== first) return ''
+    }
+    return _btcAddressFormatFor(first)
+  }
+
   function _btcSetStatus (msg, isErr) {
     var el = document.getElementById('btc-fetch-status')
     if (el) {
@@ -3850,7 +3870,7 @@
     // DC-2701: transport는 연결 단위(dcent.setTransport) — sign per-call transport 미지원.
     // addressFormat: 위 getAddress 와 **같은 매핑**을 써서 주소를 보여준 계정이 그대로 서명하게 한다.
     var signPayload = { keyPath: keyPath, transaction: builtTx }
-    var signAf = _btcAddressFormatFor(txType)
+    var signAf = _btcAddressFormatForTx(builtTx)
     if (signAf) signPayload.addressFormat = signAf
     var signInput = { method: 'signTransaction', chainId: chainId, payload: signPayload }
     var req = { chainId: chainId, keyPath: keyPath, addressFormat: signAf || undefined, transaction: builtTx }
@@ -3913,7 +3933,14 @@
     var dcent = _getDcent()
     // b08-01: _unwrapV1Envelope이 success → body.parameter unwrap, failure → throw로 변환
     // DC-2701: transport는 연결 단위(dcent.setTransport) — sign per-call transport 미지원.
-    var nonEvmSignInput = { method: 'signTransaction', chainId: chainId, payload: { keyPath: keyPath, transaction: txObj } }
+    // BTC 계정 변종 축 — payload **형태**로 판정한다(chain enum 분기 없음): transaction 이
+    // `inputs[].txType` 을 가진 UTXO shape 이면 거기서 addressFormat 을 도출해 함께 보낸다.
+    // 이 경로는 preset/수동 JSON 서명이라 위 빌더 폼을 거치지 않으므로, 여기를 빼면 BTC preset 은
+    // 여전히 wm 의 txType 추론에만 의존한다(같은 클래스의 마지막 원소).
+    var nonEvmPayload = { keyPath: keyPath, transaction: txObj }
+    var nonEvmAf = _btcAddressFormatForTx(txObj)
+    if (nonEvmAf) nonEvmPayload.addressFormat = nonEvmAf
+    var nonEvmSignInput = { method: 'signTransaction', chainId: chainId, payload: nonEvmPayload }
     dcent.sign(nonEvmSignInput).then(_unwrapV1Envelope).then(function (result) {
       appendLog({
         method: 'signTransaction',

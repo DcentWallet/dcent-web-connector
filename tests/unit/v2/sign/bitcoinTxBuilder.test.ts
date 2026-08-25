@@ -144,11 +144,17 @@ describe('add 시점 boundary validation (T-U-TXBLD-VAL)', () => {
     expect(tx.outputs[0].amount).toBe('200000')
   })
 
-  test('T-U-TXBLD-VAL-03c: addInput p2tr → 여전히 param_error (입력 서명 경로 미지원)', () => {
-    const tx = getBitcoinTransactionObject()
-    expect(() => addBitcoinTransactionInput(tx, 'raw', 0, 'p2tr', "m/86'/0'/0'/0/0")).toThrow(PARAM_ERROR)
-    expect(tx.inputs).toHaveLength(0)
-  })
+  // 클래스는 "**output 전용** txType 을 input 이 거부한다" 이고 원소는 `p2tr` 과 `change` **둘**이다.
+  // p2tr 만 단언하면 `WIRE_INPUT_TX_TYPES = WIRE_OUTPUT_TX_TYPES.filter(t => t !== 'p2tr')` 형태의
+  // 병합이 그대로 통과한다 — 그러면 'change' 가 input 으로 들어가고 wm 이 -32602 를 낸다.
+  test.each(['p2tr', 'change'])(
+    'T-U-TXBLD-VAL-03c: addInput %s → param_error (output 전용 txType 은 input 이 거부)',
+    (outputOnlyType) => {
+      const tx = getBitcoinTransactionObject()
+      expect(() => addBitcoinTransactionInput(tx, 'raw', 0, outputOnlyType, "m/44'/0'/0'/0/0")).toThrow(PARAM_ERROR)
+      expect(tx.inputs).toHaveLength(0)
+    },
+  )
 
   test('T-U-TXBLD-VAL-03d: change output 은 p2tr 과 별개로 계속 허용된다', () => {
     const tx = getBitcoinTransactionObject()

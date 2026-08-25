@@ -78,6 +78,11 @@ export interface SignInput {
    * 보내면 된다. 생략하면 sdk/wm 이 `transaction.inputs[].txType` 에서 추론하는 종전 동작으로
    * 폴백한다(PSBT payload 에는 그 신호가 없다). connector 는 값을 해석하지 않고 forward 만 한다
    * (`connector-chain-addition-isolation` — chain enum/매핑 0건). enum 검증은 sdk 경계에서 수행.
+   *
+   * ⚠️ 네 값 중 **현재 동작하는 것은 `'legacy'` 와 `'segwit-native'` 뿐**이다.
+   * `'segwit-wrapped'` / `'taproot'` 는 대응 currency 변종이 registry 에 없어 `-32602` 로 거부된다
+   * (`address.ts` 의 `AddressFormat` 주석과 같은 단서). Taproot 주소로 **보내는 것**은 별개이며
+   * `outputs[].txType: 'p2tr'` 로 지원된다.
    */
   payload: Record<string, unknown>
   // (DC-2701) per-call transport 옵션 제거 — transport는 기기 연결 속성이므로 연결 단위

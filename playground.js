@@ -1661,7 +1661,10 @@
     if (action === 'addOutput') {
       // facade 시그니처: addBitcoinTransactionOutput(tx, type, value, to)
       // output type enum 값 (change 포함)
-      var otKeys = ['p2wpkh', 'p2pkh', 'p2pk', 'p2sh', 'change']
+      // 빌더의 WIRE_OUTPUT_TX_TYPES 와 **같은 집합**이어야 한다. 종전엔 셋이 어긋나 있었다 —
+      // 'p2tr'(빌더가 이제 허용) · 'p2wsh'(계속 허용) 누락, 'p2pk'(빌더가 거부) 노출.
+      // default 는 'p2wpkh' 유지 (playground.bitcoin-tx.spec.ts 가 핀하고 있다).
+      var otKeys = ['p2wpkh', 'p2pkh', 'p2sh', 'p2wsh', 'p2tr', 'change']
       var otRow = document.createElement('div')
       otRow.className = 'form-row'
       var otLabel = document.createElement('label')
@@ -3238,14 +3241,22 @@
         // prevout ownership(validateBitcoinPrevoutOwnership): 각 input의 keyPath 실주소로
         // prev_tx를 합성해 rawTransaction 교체 → outs[index].script == toOutputScript(deviceAddr).
         // static preset prev_tx는 디바이스별 실주소를 모르므로 여기서 device 주소로 덮어쓴다.
+        // addressFormat 은 **누적된 tx 의 input txType 에서 도출**한다(별도 입력 필드를 두지 않는다).
+        // 손으로 고르게 하면 txType 과 어긋난 값을 넣을 수 있고 그건 wm 이 -32602 로 되돌려준다 —
+        // 빌더는 이미 "모든 input 이 같은 txType" 계약 위에 있으므로 도출이 유일하게 안전하다.
+        // 🔴 선언 위치는 `_synthesizeBitcoinPrevouts` **호출 전**이어야 한다 — 아래 세 개의 appendLog
+        // 중 마지막 하나는 바깥 `.catch` 안이라, then 콜백 안에서 선언하면 그 자리에서 ReferenceError 다.
+        var bsAf = _btcAddressFormatFor(builtTx.inputs && builtTx.inputs[0] && builtTx.inputs[0].txType)
+        var bsPayload = { keyPath: bsKeyPath, transaction: builtTx }
+        if (bsAf) bsPayload.addressFormat = bsAf
         _synthesizeBitcoinPrevouts(builtTx, bsChainId).then(function (synth) {
-          var bsSignInput = { method: 'signTransaction', chainId: bsChainId, payload: { keyPath: bsKeyPath, transaction: builtTx } }
+          var bsSignInput = { method: 'signTransaction', chainId: bsChainId, payload: bsPayload }
           return dcent.sign(bsSignInput).then(_unwrapV1Envelope).then(function (result) {
             appendLog({
               method: 'signTransaction',
               chainId: bsChainId,
               keyPath: bsKeyPath,
-              request: { chainId: bsChainId, keyPath: bsKeyPath, transaction: builtTx },
+              request: { chainId: bsChainId, keyPath: bsKeyPath, addressFormat: bsAf || undefined, transaction: builtTx },
               response: result,
               prevoutSynthesis: synth,
               latencyMs: Date.now() - startMs,
@@ -3256,7 +3267,7 @@
               method: 'signTransaction',
               chainId: bsChainId,
               keyPath: bsKeyPath,
-              request: { chainId: bsChainId, keyPath: bsKeyPath, transaction: builtTx },
+              request: { chainId: bsChainId, keyPath: bsKeyPath, addressFormat: bsAf || undefined, transaction: builtTx },
               prevoutSynthesis: synth,
               error: normalizeError(err),
               latencyMs: Date.now() - startMs,
@@ -3267,7 +3278,7 @@
             method: 'signTransaction',
             chainId: bsChainId,
             keyPath: bsKeyPath,
-            request: { chainId: bsChainId, keyPath: bsKeyPath, transaction: builtTx },
+            request: { chainId: bsChainId, keyPath: bsKeyPath, addressFormat: bsAf || undefined, transaction: builtTx },
             error: normalizeError(err),
             latencyMs: Date.now() - startMs,
           })
@@ -3624,6 +3635,20 @@
     return sel
   }
 
+  // input txType → addressFormat.
+  //
+  // 🔴 **getAddress 와 signTransaction 이 같은 값을 써야 한다.** BTC 는 legacy 와 segwit 계정이
+  // 같은 chainId·같은 m/44' keyPath 를 쓰므로, 주소를 보여준 계정과 서명하는 계정이 갈리는 축은
+  // addressFormat 뿐이다. 종전엔 이 매핑이 getAddress 호출부에만 인라인으로 있어서
+  // **서명 요청은 addressFormat 없이 나갔고**, wm 이 inputs[].txType 으로 추론하는 폴백에 의존했다.
+  //
+  // p2sh 는 매핑하지 않는다 — legacy multisig 와 BIP-49 wrapped 를 동시에 가리켜 모호하고,
+  // 'segwit-wrapped' 변종은 wm registry 에 아직 없다(명시하면 wm 이 -32602).
+  function _btcAddressFormatFor (txType) {
+    var afMap = { p2pkh: 'legacy', p2wpkh: 'segwit-native' }
+    return afMap[txType] || ''
+  }
+
   function _btcSetStatus (msg, isErr) {
     var el = document.getElementById('btc-fetch-status')
     if (el) {
@@ -3648,10 +3673,9 @@
       _btcSetStatus('chainId / keyPath 필요', true)
       return
     }
-    // txType → addressFormat (wm registry 지원: legacy / segwit-native. p2sh는 미지정)
-    var afMap = { p2pkh: 'legacy', p2wpkh: 'segwit-native' }
     var input = { chainId: chainId, keyPath: keyPath }
-    if (afMap[txType]) input.addressFormat = afMap[txType]
+    var af = _btcAddressFormatFor(txType)
+    if (af) input.addressFormat = af
     var dcent = _getDcent()
     if (!dcent || typeof dcent.getAddress !== 'function') {
       _btcSetStatus('dcent.getAddress 사용 불가', true)
@@ -3824,8 +3848,12 @@
       return
     }
     // DC-2701: transport는 연결 단위(dcent.setTransport) — sign per-call transport 미지원.
-    var signInput = { method: 'signTransaction', chainId: chainId, payload: { keyPath: keyPath, transaction: builtTx } }
-    var req = { chainId: chainId, keyPath: keyPath, transaction: builtTx }
+    // addressFormat: 위 getAddress 와 **같은 매핑**을 써서 주소를 보여준 계정이 그대로 서명하게 한다.
+    var signPayload = { keyPath: keyPath, transaction: builtTx }
+    var signAf = _btcAddressFormatFor(txType)
+    if (signAf) signPayload.addressFormat = signAf
+    var signInput = { method: 'signTransaction', chainId: chainId, payload: signPayload }
+    var req = { chainId: chainId, keyPath: keyPath, addressFormat: signAf || undefined, transaction: builtTx }
     _btcSetStatus('디바이스 서명 요청 중...', false)
     dcent.sign(signInput).then(_unwrapV1Envelope).then(function (result) {
       appendLog({ method: 'signTransaction', chainId: chainId, keyPath: keyPath, request: req, response: result, latencyMs: Date.now() - startMs, deviceFirmware: state.device && state.device.firmware })

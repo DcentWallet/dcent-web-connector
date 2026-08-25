@@ -168,6 +168,8 @@ export function addBitcoinTransactionInput (
  * @param type p2pkh/p2sh/p2wpkh/p2wsh/**p2tr** 또는 'change' (wire `txType`).
  *   `p2tr` 은 Taproot 수신 주소(`bc1p…`)로 보낼 때 쓴다 — 허용 여부의 최종 판정(currency 의
  *   witness v1 선언 · 주소 hrp 일치)은 wm 이 -32602 로 한다.
+ *   ⚠️ `'p2tr'` 은 v1 호환 enum `bitcoinTxType` 에 **없다**(그 enum 은 v1 과 키·값 1:1 로 동결돼
+ *   있고 `types-drift` 테스트가 그것을 강제한다). raw 문자열 `'p2tr'` 로 전달할 것.
  * @param value satoshi 금액 — number(safe int ≥0) 또는 canonical 10진 문자열 (wire `amount`로 String화, 단위 변환 없음)
  * @param to 수신 주소 (wire `addresses: [to]`)
  * @returns 같은 transaction 객체 (chaining)

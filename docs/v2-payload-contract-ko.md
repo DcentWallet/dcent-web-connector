@@ -90,7 +90,7 @@ const result = await dcent.sign({
 
 **지원:** `signTransaction` ◐ 경로 존재 | `signMessage` ❌ `-32601`
 
-Bitcoin은 `dcent.sign({ method: 'signTransaction', chainId, payload })`로 서명한다. `payload.transaction`은 UTXO `inputs[]` + `outputs[]` 구조이며, legacy 와 segwit 이 `chainId` 와 `m/44'` keyPath 를 **둘 다** 공유하므로 어느 계정이 서명하는지는 `payload.addressFormat`(`legacy` / `segwit-native` — `getAddress` 와 같은 enum)이 정한다. 생략하면 각 input 의 `txType`(`p2pkh`=legacy / `p2wpkh`=native segwit) 추론으로 폴백하는데, 그 신호는 PSBT payload 에는 없다. output 은 추가로 `txType: 'p2tr'`(Taproot 수신 주소)을 받는다 (input 은 불가 — Taproot UTXO 소비는 미지원). 상태 기반 builder(`getBitcoinTransactionObject` + `addBitcoinTransactionInput`/`addBitcoinTransactionOutput`)도 대안으로 제공된다.
+Bitcoin은 `dcent.sign({ method: 'signTransaction', chainId, payload })`로 서명한다. `payload.transaction`은 UTXO `inputs[]` + `outputs[]` 구조이며, legacy 와 segwit 이 `chainId` 와 `m/44'` keyPath 를 **둘 다** 공유하므로 어느 계정이 서명하는지는 `payload.addressFormat`(`legacy` / `segwit-native` — `getAddress` 와 같은 enum)이 정한다(**가용성**: 이 필드는 wallet-models 의 `SignTransactionFromWireParams.addressFormat` 을 담은 bridge 배포본부터 읽힌다 — 그 이전 배포본은 필드를 무시하고 아래 `inputs[].txType` 추론으로 폴백한다). 생략하면 각 input 의 `txType`(`p2pkh`=legacy / `p2wpkh`=native segwit) 추론으로 폴백하는데, 그 신호는 PSBT payload 에는 없다. output 은 추가로 `txType: 'p2tr'`(Taproot 수신 주소)을 받는다 (input 은 불가 — Taproot UTXO 소비는 미지원). 상태 기반 builder(`getBitcoinTransactionObject` + `addBitcoinTransactionInput`/`addBitcoinTransactionOutput`)도 대안으로 제공된다.
 
 ```js
 {

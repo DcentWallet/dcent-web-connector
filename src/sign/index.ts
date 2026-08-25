@@ -49,6 +49,7 @@ export type {
   BitcoinWireInput,
   BitcoinWireOutput,
   BitcoinWireTxType,
+  BitcoinWireOutputTxType,
 } from './bitcoinTxBuilder'
 
 // v1 validator helpers — 보존. App 표면 1:1 유지.

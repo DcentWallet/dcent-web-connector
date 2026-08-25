@@ -134,6 +134,29 @@ describe('add 시점 boundary validation (T-U-TXBLD-VAL)', () => {
     expect(() => addBitcoinTransactionOutput(tx, 'multisig', '1', 'addr')).toThrow(PARAM_ERROR)
   })
 
+  // p2tr 은 **거울상 비대칭**이다 — output 은 허용, input 은 거부. 한쪽만 단언하면 두 배열을
+  // 하나로 합치는 리팩터가 조용히 통과한다(합치면 input 이 p2tr 을 받아 wm 에서 -32602 가 난다).
+  test('T-U-TXBLD-VAL-03b: addOutput p2tr(Taproot 수신) → 허용 + wire 에 그대로 실린다', () => {
+    const tx = getBitcoinTransactionObject()
+    addBitcoinTransactionOutput(tx, 'p2tr', '200000', 'bc1p5cyxnuxmeuwuvkwfem96l0bqaq6bqqkzqvqzqqqqqqqqqqqqqqqqq')
+    expect(tx.outputs).toHaveLength(1)
+    expect(tx.outputs[0].txType).toBe('p2tr')
+    expect(tx.outputs[0].amount).toBe('200000')
+  })
+
+  test('T-U-TXBLD-VAL-03c: addInput p2tr → 여전히 param_error (입력 서명 경로 미지원)', () => {
+    const tx = getBitcoinTransactionObject()
+    expect(() => addBitcoinTransactionInput(tx, 'raw', 0, 'p2tr', "m/86'/0'/0'/0/0")).toThrow(PARAM_ERROR)
+    expect(tx.inputs).toHaveLength(0)
+  })
+
+  test('T-U-TXBLD-VAL-03d: change output 은 p2tr 과 별개로 계속 허용된다', () => {
+    const tx = getBitcoinTransactionObject()
+    addBitcoinTransactionOutput(tx, 'p2tr', '200000', 'bc1pdest')
+    addBitcoinTransactionOutput(tx, 'change', '40000', 'bc1qchange')
+    expect(tx.outputs.map((o) => o.txType)).toEqual(['p2tr', 'change'])
+  })
+
   test('T-U-TXBLD-VAL-04: addOutput 비-satoshi value → param_error', () => {
     const tx = getBitcoinTransactionObject()
     expect(() => addBitcoinTransactionOutput(tx, 'p2pkh', 1.5, 'addr')).toThrow(PARAM_ERROR)

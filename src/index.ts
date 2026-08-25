@@ -149,6 +149,7 @@ export type {
   BitcoinWireInput,
   BitcoinWireOutput,
   BitcoinWireTxType,
+  BitcoinWireOutputTxType,
 } from './sign'
 // m09-04-12: SyncAccountInfo(v1) removed — replaced by V2SyncAccountInfo(chainId/keyPath)
 // getAccountInfo v2 return types(V2AccountInfo / AccountListV2Payload)도 루트 배럴에서 노출 —

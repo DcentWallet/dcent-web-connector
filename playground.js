@@ -3925,7 +3925,7 @@
       return
     }
 
-    var params = { chainId: chainId, keyPath: keyPath, transaction: txObj }
+    var params = { chainId: chainId, keyPath: keyPath, transaction: txObj }  // addressFormat 은 도출 후 아래에서 채운다
     var startMs = Date.now()
 
     // m09-04-01.5: NEW schema 마이그레이션 — { method, chainId, payload }.
@@ -3939,7 +3939,11 @@
     // 여전히 wm 의 txType 추론에만 의존한다(같은 클래스의 마지막 원소).
     var nonEvmPayload = { keyPath: keyPath, transaction: txObj }
     var nonEvmAf = _btcAddressFormatForTx(txObj)
-    if (nonEvmAf) nonEvmPayload.addressFormat = nonEvmAf
+    if (nonEvmAf) {
+      nonEvmPayload.addressFormat = nonEvmAf
+      // 로그는 **실제로 보낸 것**을 남긴다 — 여기서 빠지면 로그만 보고 원인을 못 찾는다.
+      params.addressFormat = nonEvmAf
+    }
     var nonEvmSignInput = { method: 'signTransaction', chainId: chainId, payload: nonEvmPayload }
     dcent.sign(nonEvmSignInput).then(_unwrapV1Envelope).then(function (result) {
       appendLog({

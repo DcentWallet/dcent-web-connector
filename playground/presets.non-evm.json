@@ -1164,6 +1164,172 @@
     }
   },
   {
+    "id": "xrp-payment-desttag",
+    "scenarioCode": "108",
+    "label": "XRP Payment + DestinationTag",
+    "family": "xrp",
+    "applicableChainIds": [
+      "xrpl:0/slip44:144"
+    ],
+    "note": "거래소 입금 형태 — Payment 에 DestinationTag 를 실어 구조화 서명이 태그를 보존하는지 본다. 🔴 없던 자리에 DestinationTag:0 이 생기면 안 된다: lsfRequireDestTag 계정은 태그의 존재 여부로 판정하므로, 오늘 tecDST_TAG_NEEDED 로 안전하게 거부되던 입금이 성사되어 미귀속된다.",
+    "sourceUrl": "https://xrpl.org/source-and-destination-tags.html",
+    "transaction": {
+      "TransactionType": "Payment",
+      "Account": "rHb9CJAWyB4rj91VRWn96DkukG4bwdtyTh",
+      "Destination": "rPT1Sjq2YGrBMTttX4GZHjKu9dyfzbpAYe",
+      "Amount": "1000000",
+      "Fee": "12",
+      "Sequence": 42,
+      "Flags": 2147483648,
+      "LastLedgerSequence": 85000000,
+      "DestinationTag": 3735928559
+    }
+  },
+  {
+    "id": "xrp-iou-payment-hex-currency",
+    "scenarioCode": "109",
+    "label": "XRP IOU Payment (40-hex currency)",
+    "family": "xrp",
+    "applicableChainIds": [
+      "xrpl:0/slip44:144"
+    ],
+    "note": "issued-currency 의 비표준 통화 표기 — currency 를 3-char 대신 40-hex 로 보낸다. '0000000000000000000000005553440000000000' 은 'USD' 의 표준 형식 인코딩과 **바이트 동일**하므로 구조화로 서명돼야 한다(문자열로 비교하면 오판). 🔴 40-hex 는 대문자만 유효 — codec HEX_REGEX 가 소문자를 거부한다.",
+    "sourceUrl": "https://xrpl.org/currency-formats.html",
+    "transaction": {
+      "TransactionType": "Payment",
+      "Account": "rHb9CJAWyB4rj91VRWn96DkukG4bwdtyTh",
+      "Destination": "rPT1Sjq2YGrBMTttX4GZHjKu9dyfzbpAYe",
+      "Amount": {
+        "currency": "0000000000000000000000005553440000000000",
+        "issuer": "rvYAfWj5gh67oV6fW32ZzP3Aw4Eubs59B",
+        "value": "10"
+      },
+      "Fee": "12",
+      "Sequence": 42,
+      "Flags": 2147483648,
+      "LastLedgerSequence": 85000000
+    }
+  },
+  {
+    "id": "xrp-payment-memos",
+    "scenarioCode": "110",
+    "label": "XRP Payment + Memos (블라인드 fallback)",
+    "family": "xrp",
+    "applicableChainIds": [
+      "xrpl:0/slip44:144"
+    ],
+    "note": "🔴 **블라인드 서명이 기대값인 preset.** Memos 는 wm 의 convert 가 읽지 않아 구조화로 조립하면 탈락한다. round-trip 동등성 검사가 그 탈락을 잡아 블라인드(verbatim)로 떨어뜨리므로, 기기는 32B 해시만 받고 Memos 는 보존된다 — 표시를 잃는 대신 내용을 지키는 의도된 동작이다.",
+    "sourceUrl": "https://xrpl.org/transaction-common-fields.html#memos-field",
+    "transaction": {
+      "TransactionType": "Payment",
+      "Account": "rHb9CJAWyB4rj91VRWn96DkukG4bwdtyTh",
+      "Destination": "rPT1Sjq2YGrBMTttX4GZHjKu9dyfzbpAYe",
+      "Amount": "1000000",
+      "Fee": "12",
+      "Sequence": 42,
+      "Flags": 2147483648,
+      "LastLedgerSequence": 85000000,
+      "Memos": [
+        {
+          "Memo": {
+            "MemoType": "74657374",
+            "MemoData": "6D32302D3039"
+          }
+        }
+      ]
+    }
+  },
+  {
+    "id": "xrp-trustset-default-flags",
+    "scenarioCode": "111",
+    "label": "XRP TrustSet (Flags 없음 → tfSetNoRipple 기본값)",
+    "family": "xrp",
+    "applicableChainIds": [
+      "xrpl:0/slip44:144"
+    ],
+    "note": "🔴 **Flags 를 의도적으로 넣지 않는다.** wm 은 (dappFlags ?? tfSetNoRipple) | tfFullyCanonicalSig 로 조립하므로, 기본값 주입 축은 Flags 가 **부재할 때만** 열린다. 형제 xrp-trustset 은 Flags 를 갖고 있어 이 축을 검증하지 못한다. 기대 서명값 Flags = 2147614720.",
+    "sourceUrl": "https://xrpl.org/trustset.html",
+    "transaction": {
+      "TransactionType": "TrustSet",
+      "Account": "rHb9CJAWyB4rj91VRWn96DkukG4bwdtyTh",
+      "Fee": "12",
+      "Sequence": 42,
+      "LimitAmount": {
+        "currency": "USD",
+        "issuer": "rvYAfWj5gh67oV6fW32ZzP3Aw4Eubs59B",
+        "value": "1000"
+      },
+      "LastLedgerSequence": 85000000
+    }
+  },
+  {
+    "id": "xrp-trustset-clear-noripple",
+    "scenarioCode": "112",
+    "label": "XRP TrustSet + tfClearNoRipple",
+    "family": "xrp",
+    "applicableChainIds": [
+      "xrpl:0/slip44:144"
+    ],
+    "note": "🔴 **자산 안전 축.** Flags = 2147745792 (tfFullyCanonicalSig | tfClearNoRipple). 조립부가 tfSetNoRipple 을 하드코딩하면 dApp 값이 덮여 **정반대 의미**의 신뢰선 설정(2147614720)에 서명된다. 형제 xrp-trustset-default-flags 와 **짝으로** 돌려 두 값이 갈리는지 확인해야 한다 — 한쪽만 보면 구별이 안 된다.",
+    "sourceUrl": "https://xrpl.org/trustset.html",
+    "transaction": {
+      "TransactionType": "TrustSet",
+      "Account": "rHb9CJAWyB4rj91VRWn96DkukG4bwdtyTh",
+      "Fee": "12",
+      "Sequence": 42,
+      "Flags": 2147745792,
+      "LimitAmount": {
+        "currency": "USD",
+        "issuer": "rvYAfWj5gh67oV6fW32ZzP3Aw4Eubs59B",
+        "value": "1000"
+      },
+      "LastLedgerSequence": 85000000
+    }
+  },
+  {
+    "id": "xrp-accountset-domain",
+    "scenarioCode": "113",
+    "label": "XRP AccountSet + Domain (hex)",
+    "family": "xrp",
+    "applicableChainIds": [
+      "xrpl:0/slip44:144"
+    ],
+    "note": "계정 도메인 설정 — XRPL 은 Domain 을 hex 로만 받는다(ASCII 자동 인코딩은 추측이라 하지 않는다). '6578616D706C652E636F6D' = 'example.com'. 형제 xrp-accountset 은 Domain 이 없어 이 필드를 검증하지 못한다. ⚠️ Domain: '' (도메인 삭제)는 wm 미모델이라 -32601 → 블라인드다.",
+    "sourceUrl": "https://xrpl.org/accountset.html",
+    "transaction": {
+      "TransactionType": "AccountSet",
+      "Account": "rHb9CJAWyB4rj91VRWn96DkukG4bwdtyTh",
+      "Fee": "12",
+      "Sequence": 42,
+      "Flags": 2147483648,
+      "Domain": "6578616D706C652E636F6D",
+      "LastLedgerSequence": 85000000
+    }
+  },
+  {
+    "id": "xrp-payment-ticket",
+    "scenarioCode": "114",
+    "label": "XRP Payment + TicketSequence (블라인드 fallback)",
+    "family": "xrp",
+    "applicableChainIds": [
+      "xrpl:0/slip44:144"
+    ],
+    "noPrepare": true,
+    "note": "🔴 **블라인드 서명이 기대값이고, Prepare 를 누르면 검증 축이 사라진다.** 티켓 사용의 정식 형태는 Sequence:0 + TicketSequence 인데, prepare 가 Sequence 를 getAccountInfo 실값으로 덮어써 그 조합이 깨진다 — 그래서 noPrepare 로 표시한다. TicketSequence 는 convert 가 읽지 않아 round-trip 검사가 탈락을 잡고 블라인드로 떨어뜨린다.",
+    "sourceUrl": "https://xrpl.org/tickets.html",
+    "transaction": {
+      "TransactionType": "Payment",
+      "Account": "rHb9CJAWyB4rj91VRWn96DkukG4bwdtyTh",
+      "Destination": "rPT1Sjq2YGrBMTttX4GZHjKu9dyfzbpAYe",
+      "Amount": "1000000",
+      "Fee": "12",
+      "Sequence": 0,
+      "TicketSequence": 12345,
+      "Flags": 2147483648,
+      "LastLedgerSequence": 85000000
+    }
+  },
+  {
     "id": "ada-structured-signtx-stake-registration",
     "scenarioCode": "048",
     "label": "Cardano signTransaction (structured — stake registration + delegation, 편집 가능)",

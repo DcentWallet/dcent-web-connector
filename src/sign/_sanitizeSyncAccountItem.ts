@@ -214,7 +214,9 @@ export function _sanitizeSyncAccountItem (raw: unknown): V2SyncAccountInfo {
 
   // meta.addressFormat — BTC 주소 형식 disambiguation (legacy/segwit-wrapped/segwit-native/taproot).
   //   dapp-input-sanitization: meta 전체를 pass-through하지 않고 known key(addressFormat)만 추출·검증한다.
-  //   _sanitizeAddressFormat: 부재/null → undefined, non-string/미허용 enum → param_error throw (getAddress와 동일).
+  //   _sanitizeAddressFormat: 부재/null → undefined, non-string/빈 문자열/과길이/prototype 키 →
+  //   param_error throw (getAddress 와 동일 helper). **enum membership 은 sdk 소관** — 여기서
+  //   막으면 새 형식이 열릴 때 connector 재배포 없이는 못 쓴다.
   //   connector는 값을 해석하지 않고 forward만 — chainId+addressFormat → coin_name 매핑은 sdk(accountV2)가 수행.
   if (Object.prototype.hasOwnProperty.call(o, 'meta') &&
       o.meta !== undefined && o.meta !== null) {

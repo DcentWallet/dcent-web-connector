@@ -411,14 +411,28 @@ describe('getAddress v2 — addressFormat field (m09-04-09)', () => {
     expect(callArg.params).not.toHaveProperty('addressFormat')
   })
 
-  test('T-U-ADF-V2-03: addressFormat invalid string → param_error throw', async () => {
-    await expect(
-      getAddress({
-        chainId: 'bip122:000000000019d6689c085ae165831e93',
-        keyPath: "m/44'/0'/0'/0/0",
-        addressFormat: 'invalid' as any,
-      }),
-    ).rejects.toEqual(expectV1Error('param_error'))
+  /**
+    * 🔴 **알려지지 않은 형식은 connector 가 막지 않고 sdk 로 넘긴다.**
+    * 여기서 막으면 sdk/wm 이 새 형식을 열 때마다 connector 를 재배포해야 하고, 그때까지
+    * App 은 이미 열린 형식을 못 쓴다(connector 는 npm — App 이 의존성을 올려야 반영된다).
+    * 관측점은 **양성**이다: 값이 envelope 에 그대로 실렸는가. "안 던진다" 만 보면
+    * 값이 조용히 탈락해도 통과한다.
+    */
+  test('T-U-ADF-V2-03: 미지 형식은 거부하지 않고 envelope 에 그대로 실어 sdk 로 넘긴다', async () => {
+    const { transport } = ensureSingleton()
+    const sendSpy = jest.spyOn(transport, 'send').mockResolvedValue({
+      id: 'adf-r3',
+      result: { address: 'bc1p...' },
+    })
+
+    await getAddress({
+      chainId: 'bip122:000000000019d6689c085ae165831e93',
+      keyPath: "m/86'/0'/0'/0/0",
+      addressFormat: 'a-format-connector-has-never-heard-of',
+    })
+
+    const callArg = sendSpy.mock.calls[0][0] as any
+    expect(callArg.params.addressFormat).toBe('a-format-connector-has-never-heard-of')
   })
 
   test('T-U-ADF-V2-04: addressFormat number → param_error throw', async () => {
@@ -545,10 +559,27 @@ describe('_sanitizeAddressFormat — unit (m09-04-09)', () => {
     expect(() => _sanitizeAddressFormat(true)).toThrow()
   })
 
-  test('unknown string → param_error throw', () => {
-    expect(() => _sanitizeAddressFormat('BITCOIN')).toThrow()
-    expect(() => _sanitizeAddressFormat('p2pkh')).toThrow()
+  // 🔴 enum membership 은 sdk 소관 — 여기서 통과시키는 것이 계약이다.
+  test('알려지지 않은 문자열은 그대로 통과한다 (enum 판정은 sdk 경계)', () => {
+    expect(_sanitizeAddressFormat('BITCOIN')).toBe('BITCOIN')
+    expect(_sanitizeAddressFormat('p2pkh')).toBe('p2pkh')
+    expect(_sanitizeAddressFormat('some-future-format')).toBe('some-future-format')
+  })
+
+  // 드리프트하지 않는 위생 가드는 그대로 남는다.
+  test('빈 문자열 → param_error throw', () => {
     expect(() => _sanitizeAddressFormat('')).toThrow()
+  })
+
+  test('길이 상한(256) 초과 → param_error throw', () => {
+    expect(_sanitizeAddressFormat('x'.repeat(256))).toBe('x'.repeat(256))
+    expect(() => _sanitizeAddressFormat('x'.repeat(257))).toThrow()
+  })
+
+  test('값이 prototype 키면 → param_error throw (대소문자 무시)', () => {
+    expect(() => _sanitizeAddressFormat('__proto__')).toThrow()
+    expect(() => _sanitizeAddressFormat('constructor')).toThrow()
+    expect(() => _sanitizeAddressFormat('PROTOTYPE')).toThrow()
   })
 
   test('object → param_error throw', () => {

@@ -198,14 +198,22 @@ describe('getPublicKey v2 facade — 입력 검증 (boundary-validation / dapp-i
     ).rejects.toEqual(expectV1Error('param_error', 'keyPath required'))
   })
 
-  test('addressFormat invalid enum → param_error reject', async () => {
-    await expect(
-      getPublicKey({
-        chainId: 'cip34:1-764824073',
-        keyPath: "m/1852'/1815'/0'/0/0",
-        addressFormat: 'invalid' as any,
-      }),
-    ).rejects.toEqual(expectV1Error('param_error'))
+  // 🔴 getAddress 와 **같은 계약** — 미지 형식은 sdk 로 넘긴다(거울상 짝).
+  test('미지 형식은 거부하지 않고 params 에 그대로 실어 sdk 로 넘긴다', async () => {
+    const { transport } = ensureSingleton()
+    const sendSpy = jest.spyOn(transport, 'send').mockResolvedValue({
+      id: 'gp-r1d',
+      result: CARDANO_PUBKEY_RESULT,
+    })
+
+    await getPublicKey({
+      chainId: 'cip34:1-764824073',
+      keyPath: "m/1852'/1815'/0'/0/0",
+      addressFormat: 'a-format-connector-has-never-heard-of',
+    })
+
+    const callArg = sendSpy.mock.calls[0][0] as any
+    expect(callArg.params.addressFormat).toBe('a-format-connector-has-never-heard-of')
   })
 
   test('addressFormat 프로토타입 오염 키(__proto__) → param_error reject', async () => {

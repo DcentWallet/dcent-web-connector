@@ -157,8 +157,10 @@ export type {
 export type { V2SyncAccountInfo, V2AccountInfo, AccountListV2Payload } from './sign'
 // m11-01-02: v2 chainId facade input type for getAddress overload
 export type { GetAddressV2Input } from './sign'
-// m09-04-09: addressFormat enum for BTC family multi-variant dispatch
-export type { AddressFormat } from './sign'
+// m09-04-09: BTC family multi-variant dispatch 축.
+//   `AddressFormat` 은 열린 문자열이고, 알려진 4값은 `KnownAddressFormat` 이다 — **둘 다 내보낸다.**
+//   좁은 쪽을 안 내보내면 소비자가 자기 리포에 4값을 재복제하게 된다(이 축이 없애려던 그 복제).
+export type { AddressFormat, KnownAddressFormat } from './sign'
 // m09-04-21: v2 getPublicKey verb input type (chain-agnostic — Cardano payment/stake/drep)
 export type { GetPublicKeyV2Input } from './sign'
 // v1 validator helpers — App 표면 1:1 보존 (v1 typo `getCzonePrifix` 포함)

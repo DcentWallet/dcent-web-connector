@@ -14,10 +14,11 @@
  *   - 배경: m11-02-03 PoC 결과 펌웨어가 `request_to` (= sdk가 sdk에서 사용하는 coinType 필드)
  *     단독으로 P2PKH vs Bech32를 결정 → chainId 단독으로는 BITCOIN / BTC-SEGWIT 구분 불가.
  *     v1의 coinType='BTC-SEGWIT' 신호를 v2 wire에서 회복하기 위한 generic 필드.
- *   - 세 값이 허용: 'legacy' / 'segwit-native' / 'taproot' ('segwit-wrapped' 포함 4종 전체)
+ *   - 알려진 값 4종은 `KnownAddressFormat` 참조. **connector 는 그 목록으로 거르지 않는다** —
+ *     실제 수용 여부는 sdk/wm registry 가 판정한다(도달 불가한 형식은 거기서 거절).
  *   - connector-chain-addition-isolation 룰 준수: chain-specific 분기 추가 없음.
  *     `addressFormat`은 sdk/wm이 해석하는 generic payload 필드이며,
- *     connector는 enum 검증 + pass-through만 수행.
+ *     connector는 위생 검사 + pass-through만 수행 (enum 판정은 sdk 소관).
  *
  * connector-chain-addition-isolation 룰: v2 path는 chainId pass-through만 수행한다.
  * chain enum / chain → method 정적 매핑 / chain-prefixed switch 분기 추가 0건.
@@ -34,7 +35,7 @@
  * getAddress v2 동작 (m11-01-02 + m09-04-09):
  *   1. input.chainId 검증 (`_sanitizeChainId`) — type/length/whitelist
  *   2. input.keyPath 검증 — non-empty string
- *   3. input.addressFormat 검증 (`_sanitizeAddressFormat`) — enum whitelist, param_error on invalid
+ *   3. input.addressFormat 위생 검사 (`_sanitizeAddressFormat`) — 타입/길이/prototype 키, param_error
  *   4. `_call({method: 'getAddress', chainId, params: {chainId, keyPath, prefix?, addressFormat?}})` 호출
  *   5. 응답 그대로 반환 (czone 복원 같은 v1 특례 분기 없음 — sdk가 family-specific 처리)
  *
@@ -63,45 +64,89 @@ import { dcentException } from '../v1/dcent-exception'
 import type { V1Response } from './types'
 
 /**
- * BTC family 주소 형식 enum (m09-04-09).
- *
- * 같은 chainId 내 여러 주소 encoding variant가 있는 chain(BTC family)에서
- * App이 어느 variant를 원하는지 명시하는 generic 필드.
- * sdk가 본 값을 wallet-models resolver에 전달하고 firmware `request_to`를 결정.
- *
- * 값 정합: m02-05-09 wm addressFormat resolver의 AddressFormat enum과 동일.
+ * 현재 **알려진** BTC family 주소 형식 (m09-04-09).
  *
  * - 'legacy':          P2PKH (BITCOIN, BTC-TESTNET — 1xxx / mxxx)
  * - 'segwit-wrapped':  P2SH-P2WPKH (BIP49 wrapped SegWit — 3xxx / 2xxx)
- *                      ※ m11-02-03 PoC: 현재 펌웨어 미지원 (M-FW-05 결과)
  * - 'segwit-native':   P2WPKH bech32 (BTC-SEGWIT — bc1q... / tb1q...)
  * - 'taproot':         P2TR bech32m (BIP86 — bc1p...)
- *                      ※ m11-02-03 PoC: 현재 펌웨어 미지원 (M-FW-06 결과)
  *
- * connector는 enum 검증 + sdk pass-through만 수행. chain-specific 분기 없음
- * (connector-chain-addition-isolation 룰).
+ * ⚠️ 어느 값이 **실제로 동작하는지는 여기서 결정되지 않는다** — sdk/wm registry 소관이고
+ * 시점에 따라 바뀐다. 도달 불가한 형식은 `-32602` 로 거절된다.
  */
-export type AddressFormat = 'legacy' | 'segwit-wrapped' | 'segwit-native' | 'taproot'
+export type KnownAddressFormat =
+  | 'legacy'
+  | 'segwit-wrapped'
+  | 'segwit-native'
+  | 'taproot'
 
-const ADDRESS_FORMAT_VALUES: readonly AddressFormat[] = [
-  'legacy',
-  'segwit-wrapped',
-  'segwit-native',
-  'taproot',
-] as const
+/**
+ * BTC family 주소 형식 — 같은 chainId 내 여러 주소 encoding variant 중 어느 것인지 명시하는
+ * generic 필드. sdk 가 이 값을 wallet-models resolver 에 전달해 firmware `request_to` 를 결정한다.
+ *
+ * 🔴 **connector 는 이 값을 해석하지 않는다.** 알려진 값 목록은 `KnownAddressFormat` 이 문서·
+ * 자동완성용으로만 들고 있고, 타입은 임의 문자열로 열려 있다 — **런타임 enum 검사는 sdk 경계
+ * (`_sanitize:readWireAddressFormat`) 하나가 소유**한다. 그래야 새 형식이 열릴 때
+ * **connector 를 재배포하지 않아도** 된다(connector 는 npm 이라 App 이 의존성을 올려야 반영되고,
+ * bridge 는 호스팅이라 즉시 배포된다). `connector-chain-addition-isolation` — chain enum/매핑 0건.
+ *
+ * 같은 이유로 `sign({method:'signTransaction'})` 의 payload 는 애초에 enum 검사를 하지 않는다.
+ * 네 진입점(getAddress / getPublicKey / syncAccount / sign)의 **enum 축** 계약을 여기서 일치시킨다.
+ * ⚠️ **위생 축은 여전히 sign 이 느슨하다**(`''`/비문자열/과길이/prototype 키를 그대로 forward) —
+ * 그쪽은 `_validateSignPayload` 소관이고 이 커밋의 스코프가 아니다.
+ */
+export type AddressFormat = KnownAddressFormat | (string & {})
+
+/**
+ * 🔴 **타입이 열려 있다는 것의 검출자 둘 중 하나.** 잡는 것은 **좁힘**이다 —
+ * `AddressFormat = string` 으로 **넓히는** 퇴화는 의도적으로 미검출이다(`string extends string`).
+ * 위험 방향이 아니라서다: 넓힘은 `KnownAddressFormat` 의 자동완성 가치만 잃고 정확성·보안 영향이 없다.
+ * v2 테스트는 babel 이 타입을 벗겨내고 돌기 때문에(`jest.v2.config.js` — `babel-jest`),
+ * 이 union 을 다시 좁혀도 **빨개지는 테스트가 하나도 없다.** `tsc --noEmit` 이 보는 범위는
+ * `src/**` 뿐이라(`tsconfig.json` 의 `exclude: tests/**`) 컴파일 타임 단언을 여기 둔다.
+ * 타입만 쓰므로 번들에 아무것도 남지 않는다.
+ *
+ * 다른 하나는 `_sanitizeAddressFormat` 의 `return value` 다 — 좁히면 `string` 대입이 깨진다.
+ * 🔴 **그쪽을 캐스트로 무마하는 드리프트는 이 단언만 잡는다**(실측: 좁힘+캐스트 → 여기서만 RED).
+ */
+type _AssertTrue<T extends true> = T
+// 🔴 프로브는 **리터럴이 아니라 `string`** 이다. 리터럴이면 타입을 좁혔을 때 "타입 말고
+//    리터럴을 고치면 통과" 하는 우회가 생긴다(실측: 프로브를 'legacy' 로 바꾸면 침묵한다).
+// 🔴 실패 분기는 반드시 `false` 다. `never` 로 두면 `never extends true` 가 **참**이라
+//    단언이 통째로 inert 해진다(실측으로 그렇게 만들었다가 잡았다).
+// 🔴 export 하지 않는다 — 배포 `.d.ts` 에 내부 이름을 남길 이유가 없고, 없어도 단언은 작동한다.
+type _AddressFormatAcceptsUnknown = _AssertTrue<
+  string extends AddressFormat ? true : false
+>
+
+/** 값으로 실려도 prototype 오염 벡터가 되는 문자열 — `sanitize.ts` 의 동명 가드와 같은 집합. */
+const FORBIDDEN_ADDRESS_FORMAT_VALUES = new Set(['__proto__', 'constructor', 'prototype'])
+
+/** 형식 문자열 길이 상한 — 형제 `_sanitizeChainId`(`_sanitizeString`)와 같은 값. */
+const ADDRESS_FORMAT_MAX_LEN = 256
 
 /**
  * addressFormat 필드 sanitize helper (m09-04-09).
  *
- * dapp-input-sanitization 룰 준수:
- *   - undefined / null → undefined (optional 필드로 envelope에 미포함)
- *   - non-string → param_error throw
- *   - unknown string (enum 외) → param_error throw
- *   - prototype pollution 키 (__proto__, constructor, prototype) — 타입 가드로 차단됨
- *     (string 타입 검사 통과 후 ADDRESS_FORMAT_VALUES 포함 여부 확인)
+ * 🔴 **enum membership 은 검사하지 않는다** — 알려진 값 목록을 여기 두면 sdk/wm 이 새 형식을
+ * 열 때마다 connector 를 재배포해야 하고, 그때까지 App 은 이미 열린 형식을 못 쓴다. 판정은
+ * sdk 경계 하나가 소유한다(거기서 `-32602`).
  *
- * boundary-validation + error-handling-consistency 룰 준수:
- *   검증 실패 시 undefined 반환 없이 모두 throw.
+ * 🔴 그 sdk 거절은 **reject 가 아니라 resolve** 로 온다 — `_call` 은 throw 하지 않고
+ * `header.status:'failure'` + `body.error.code:'param_error'`(`-32602` 매핑)를 담은 V1Response 를
+ * 돌려준다(`call.ts`). 반면 아래 위생 위반은 **reject**(`dcentException`)다. 두 경로가 다르다.
+ *
+ * 여기 남기는 것은 **드리프트하지 않는 위생**뿐:
+ *
+ *   - undefined / null → undefined (optional 필드로 envelope 에 미포함)
+ *   - non-string → param_error
+ *   - 빈 문자열 → param_error (어떤 시점에도 유효한 형식이 아니고, wm 계약도 `''` 를 거절한다)
+ *   - 길이 > 256 → param_error (형제 `_sanitizeChainId` 와 같은 상한)
+ *   - 값이 prototype 키(`__proto__` 등) → param_error
+ *
+ * boundary-validation + error-handling-consistency 룰 준수: 실패 시 전부 throw.
+ * 에러는 형제 필드들과 같이 `dcentException('param_error')` 로 통일한다
+ * (v1 App 이 `.catch(err => err.body?.error?.code)` 패턴을 쓴다 — 이 파일 위 `chainId` 주석 참조).
  */
 export function _sanitizeAddressFormat (value: unknown): AddressFormat | undefined {
   if (value === undefined || value === null) return undefined
@@ -111,13 +156,22 @@ export function _sanitizeAddressFormat (value: unknown): AddressFormat | undefin
       `addressFormat must be a string, got ${typeof value}`,
     )
   }
-  if (!(ADDRESS_FORMAT_VALUES as readonly string[]).includes(value)) {
+  if (value.length === 0) {
+    throw dcentException('param_error', 'addressFormat must not be empty')
+  }
+  if (value.length > ADDRESS_FORMAT_MAX_LEN) {
     throw dcentException(
       'param_error',
-      `addressFormat must be one of ${ADDRESS_FORMAT_VALUES.join('|')}, got '${value}'`,
+      `addressFormat length exceeds ${ADDRESS_FORMAT_MAX_LEN} chars (got ${value.length})`,
     )
   }
-  return value as AddressFormat
+  if (FORBIDDEN_ADDRESS_FORMAT_VALUES.has(value.toLowerCase())) {
+    throw dcentException(
+      'param_error',
+      `addressFormat rejected: prototype-pollution key '${value}'`,
+    )
+  }
+  return value
 }
 
 /**
@@ -180,8 +234,8 @@ async function _getAddressV2 (input: GetAddressV2Input): Promise<V1Response> {
     throw dcentException('param_error', 'keyPath required')
   }
 
-  // addressFormat sanitize — enum whitelist 검증 (m09-04-09).
-  // undefined/null → 미포함. 잘못된 값 → param_error throw.
+  // addressFormat sanitize — 위생 검사만 (m09-04-09).
+  // undefined/null → 미포함. enum membership 은 sdk 경계가 판정한다.
   const safeAddressFormat = _sanitizeAddressFormat(input.addressFormat)
 
   // chainId pass-through — connector는 method dispatch / chain 분기 0건.

@@ -74,7 +74,7 @@ describe('[dcent-web-connector] Bridge - init', () => {
     //     const transaction = {
     //         'TransactionType': 'AccountDelete',
     //         'Account': 'rWYkbWkCeg8dP6rXALnjgZSjjLyih5NXm',
-    //         'Destination': 'rPT1Sjq2YGrBMTttX4GZHjKu9dyfzbpAYe',
+    //         'Destination': 'rGZQKj1U9fy21xRjrAtYCniUarwxFRrzmi',
     //         'DestinationTag': 13,
     //         'Fee': '5000000',
     //         'Sequence': 2470665,

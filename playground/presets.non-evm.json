@@ -401,7 +401,7 @@
     "sourceUrl": "https://stellar.github.io/js-stellar-sdk/Operation.payment.html",
     "transaction": {
       "type": "payment",
-      "destination": "GDQP2KPQGKIHYJGXNUIYOMHARUARCA7DJT5FO2FFOOKY3B2WSQHG4W37",
+      "destination": "GAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAWHF",
       "asset": {
         "code": "XLM",
         "issuer": null
@@ -431,7 +431,7 @@
     "transaction": {
       "token": {
         "contract": "USDC-GA5ZSEJYB37JRC5AVCIA5MOP4RHTM335X2KGX3IHOJAPP5RE34K4KZVN",
-        "to": "GC6OISCEYJSHTO6QBZYVT52B4ZW63BCVTNCFYLUJQK5FUKLJP6L2XNAJ",
+        "to": "GAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAC6PV",
         "amount": "10000000",
         "decimals": 7,
         "symbol": "USDC"
@@ -645,8 +645,8 @@
     "note": "Havah(ICON 계열) ICON-native wire payload {from,to,value,stepLimit,nid,nonce,timestamp}. wm havah/wire-convert.ts가 HavahTransaction으로 변환 — stepLimit 제공 시 preparedFee 생성(self-contained, popup-bridge preparedFee 크래시 회피). value=0xDE0B6B3A7640001(1 HVH + 1 loop, >MAX_SAFE_INTEGER 정밀도 회귀 방지). self address(from==to) — asset risk 0. timestamp 는 lastRef/salt(DAG)와 동형 placeholder — wm buildTransaction 이 예전엔 서명 시점에 Date.now()*1000 을 무조건 새로 생성해 wire 값을 드롭했으나(B2 broadcast fix), 이제 marker-gated 로 wire 값을 그대로 서명에 쓴다. prepare 버튼(patchHavah)이 실제 현재 시각으로 치환한다.",
     "sourceUrl": "https://docs.havah.io/",
     "transaction": {
-      "from": "hx99bc2f9ee6aea6f9ed252e3dc48f6a7fdc9e916c",
-      "to": "hx99bc2f9ee6aea6f9ed252e3dc48f6a7fdc9e916c",
+      "from": "hx0000000000000000000000000000000000000000",
+      "to": "hx0000000000000000000000000000000000000000",
       "value": "0xDE0B6B3A7640001",
       "stepLimit": "0x186a0",
       "nid": "0x100",
@@ -668,7 +668,7 @@
     "sourceUrl": "https://docs.havah.io/havah-juwon/specifications/hsp-20",
     "transaction": {
       "dataType": "call",
-      "from": "hx99bc2f9ee6aea6f9ed252e3dc48f6a7fdc9e916c",
+      "from": "hx0000000000000000000000000000000000000000",
       "to": "cxd7fed2ae1d9b2314087520efe1870c33e5c5baa4",
       "value": "0x0",
       "stepLimit": "0x30d40",
@@ -678,7 +678,7 @@
       "data": {
         "method": "transfer",
         "params": {
-          "_to": "hx99bc2f9ee6aea6f9ed252e3dc48f6a7fdc9e916c",
+          "_to": "hx0000000000000000000000000000000000000000",
           "_value": "0x16345785d8a0001"
         }
       },
@@ -930,8 +930,8 @@
       "functionName": "transfer",
       "functionArgs": [
         1000000,
-        "SP3FBR2AGK5H9QBDH3EEN6DF8EK8JY7RX8QJ5SVTE",
-        "SP3FBR2AGK5H9QBDH3EEN6DF8EK8JY7RX8QJ5SVTE",
+        "SP000000000000000000002Q6VF78",
+        "SP000000000000000000002Q6VF78",
         ""
       ],
       "nonce": "0",
@@ -951,12 +951,12 @@
     "transaction": {
       "token": {
         "contract": "cxd8303731bf989a1597a6d38505d7a9483c4d9a38",
-        "to": "hx99bc2f9ee6aea6f9ed252e3dc48f6a7fdc9e916c",
+        "to": "hx0000000000000000000000000000000000000000",
         "amount": "0",
         "decimals": 6,
         "symbol": "GODH"
       },
-      "from": "hx99bc2f9ee6aea6f9ed252e3dc48f6a7fdc9e916c",
+      "from": "hx0000000000000000000000000000000000000000",
       "stepLimit": "0x30d40",
       "nid": "0x100",
       "nonce": "0x1",
@@ -1011,7 +1011,7 @@
       "args": [
         {
           "type": "scv_address",
-          "value": "GC6OISCEYJSHTO6QBZYVT52B4ZW63BCVTNCFYLUJQK5FUKLJP6L2XNAJ"
+          "value": "GAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAC6PV"
         }
       ],
       "fee": 100,
@@ -1051,12 +1051,12 @@
     "transaction": {
       "token": {
         "contract": "SM3VDXK3WZZSA84XXFKAFAF15NNZX32CTSG82JFQ4.sbtc-token::sbtc-token",
-        "to": "SP3FBR2AGK5H9QBDH3EEN6DF8EK8JY7RX8QJ5SVTE",
+        "to": "SP000000000000000000002Q6VF78",
         "amount": "100000",
         "decimals": 8,
         "symbol": "sBTC"
       },
-      "from": "SP3FBR2AGK5H9QBDH3EEN6DF8EK8JY7RX8QJ5SVTE",
+      "from": "SP000000000000000000002Q6VF78",
       "nonce": "0",
       "fee": "180",
       "anchorMode": 3,

@@ -312,8 +312,8 @@ Bitcoin은 `dcent.sign({ method: 'signTransaction', chainId, payload })`로 서�
 // Source: playground/presets.rest.json → fil-transfer
 {
   transaction: {
-    to: 'f1xcbgdhkgkwht3hrrnui3jdopeejsoas2rujnkdi',
-    from: 'f1xcbgdhkgkwht3hrrnui3jdopeejsoas2rujnkdi',
+    to: 'f1aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaahaui6xa',
+    from: 'f1aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaahaui6xa',
     nonce: 1,
     value: '1000000000000000000',   // attoFIL (1 FIL = 10^18)
     gasLimit: 1000000,
@@ -563,7 +563,7 @@ form-D 는 `type` 을 **앱이 적지 않는다** — 지갑이 descriptor 를 `
 {
   transaction: {
     type: 'payment',
-    destination: 'GDQP2KPQGKIHYJGXNUIYOMHARUARCA7DJT5FO2FFOOKY3B2WSQHG4W37',
+    destination: 'GAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAWHF',
     asset: { code: 'XLM', issuer: null },   // native
     amount: '10',
     memo: { type: 'none' },
@@ -582,7 +582,7 @@ form-D 는 `type` 을 **앱이 적지 않는다** — 지갑이 descriptor 를 `
   transaction: {
     token: {
       contract: 'USDC-GA5ZSEJYB37JRC5AVCIA5MOP4RHTM335X2KGX3IHOJAPP5RE34K4KZVN',  // `code-issuer`
-      to: 'GC6OISCEYJSHTO6QBZYVT52B4ZW63BCVTNCFYLUJQK5FUKLJP6L2XNAJ',
+      to: 'GAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAC6PV',
       amount: '10000000',   // 토큰 최소단위 (USDC 7 decimals → 1 USDC)
       decimals: 7,
       symbol: 'USDC'
@@ -645,7 +645,7 @@ form-D 는 `type` 을 **앱이 적지 않는다** — 지갑이 descriptor 를 `
         parameter: {
           value: {
             amount: 1000000,    // sun (1 TRX = 1,000,000)
-            owner_address: 'TJRabPrwbZy45sbavfcjinPJC18kjpRTv8',
+            owner_address: 'T9yD14Nj9j7xAB4dbGeiX9h8unkKHxuWwb',
             to_address: 'TVjsyZ7fYF3qLF6BQgPmTEZy1xrNNyVAAA'
           }
         }

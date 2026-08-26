@@ -309,15 +309,39 @@ describe('syncAccount v2 — m09-04-12', () => {
     expect(sentInfos[0].meta).toEqual({ addressFormat: 'segwit-native' })
   })
 
-  test('T-U-SYNC-AF-02: meta.addressFormat 미허용 enum → param_error (동기 throw, getAddress와 동일 검증)', () => {
+  // 🔴 getAddress / getPublicKey 와 **같은 계약** — 미지 형식은 sdk 로 넘긴다(세 진입점 일치).
+  test('T-U-SYNC-AF-02: meta.addressFormat 의 미지 형식은 거부하지 않고 그대로 forward 한다', async () => {
     const { transport } = ensureSingleton()
-    jest.spyOn(transport, 'send').mockResolvedValue({ id: 's4', result: { ok: true } })
+    const sendSpy = jest.spyOn(transport, 'send').mockResolvedValue({ id: 's4', result: { ok: true } })
+
+    await syncAccount([{
+      chainId: 'bip122:000000000019d6689c085ae165831e93/slip44:0',
+      keyPath: "m/44'/0'/0'/0/0",
+      label: 'BTC',
+      meta: { addressFormat: 'a-format-connector-has-never-heard-of' },
+    } as unknown as never])
+
+    const sentInfos = sendSpy.mock.calls[0][0].params.accountInfos
+    expect(sentInfos[0].meta).toEqual({ addressFormat: 'a-format-connector-has-never-heard-of' })
+  })
+
+  /**
+   * 🔴 위생 가드는 세 진입점이 helper 하나를 공유하지만, **syncAccount 열이 비어 있었다** —
+   * non-string / prototype 키 뮤테이션을 걸어도 이 파일에서는 아무것도 안 죽었다(실측).
+   * `_sanitizeSyncAccountItem` 이 helper 호출을 잃거나 자체 분기를 갖게 되면 스위트가 침묵한다.
+   */
+  test.each([
+    ['non-string(number)', 42],
+    ['prototype 키', '__proto__'],
+  ])('T-U-SYNC-AF-02b: meta.addressFormat 이 %s 이면 param_error 로 끊는다 (getAddress 와 동일 위생)', (_label, bad) => {
+    const { transport } = ensureSingleton()
+    jest.spyOn(transport, 'send').mockResolvedValue({ id: 's4b', result: { ok: true } })
 
     expect(() => syncAccount([{
       chainId: 'bip122:000000000019d6689c085ae165831e93/slip44:0',
       keyPath: "m/44'/0'/0'/0/0",
       label: 'BTC',
-      meta: { addressFormat: 'banana' },
+      meta: { addressFormat: bad },
     } as unknown as never])).toThrow(
       expect.objectContaining({ body: expect.objectContaining({ error: expect.objectContaining({ code: 'param_error' }) }) }),
     )

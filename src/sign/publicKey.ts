@@ -110,8 +110,9 @@ export async function getPublicKey (input: GetPublicKeyV2Input): Promise<V1Respo
     throw dcentException('param_error', 'keyPath required')
   }
 
-  // addressFormat sanitize — enum whitelist 검증 (getAddress facade와 동일 helper 재사용).
-  // undefined/null → 미포함. 잘못된 값 → param_error throw.
+  // addressFormat sanitize — 위생 검사만 (getAddress facade 와 동일 helper 재사용).
+  //   enum membership 은 sdk 경계가 소유한다 — `_sanitizeAddressFormat` docblock 참조.
+  // undefined/null → 미포함. 위생 위반(비문자열/빈 문자열/과길이/prototype 키)만 param_error.
   const safeAddressFormat = _sanitizeAddressFormat(input.addressFormat)
 
   // chainId pass-through — connector는 method dispatch / chain 분기 0건.

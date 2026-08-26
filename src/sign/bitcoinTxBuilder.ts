@@ -20,7 +20,8 @@
  *
  * 룰 준수:
  *   - boundary-validation / dapp-input-sanitization: 각 add 시점에 필드 type/값 검증 (fail-fast).
- *     unsupported txType(p2pk/multisig/p2tr) / 비-satoshi amount / malformed 인자 → param_error throw.
+ *     unsupported txType(input: p2pk/multisig/p2tr, output: p2pk/multisig)
+ *     / 비-satoshi amount / malformed 인자 → param_error throw.
  *   - error-handling-consistency: 검증 실패는 모두 dcentException('param_error') (v2 builder는 coinType 미사용 — m09-04-15).
  *   - mutation-isolation (T-MUT-TX-01/02): getBitcoinTransactionObject는 매 호출마다 새 객체 반환.
  *     add*는 명시적 in-place mutation (v1 1:1 chaining) — 두 별도 호출 결과는 서로 독립.
@@ -30,8 +31,14 @@
 
 import { dcentException } from '../v1/dcent-exception'
 
-/** wm BITCOIN family wire txType (wm wire-convert.ts:37 VALID_TX_TYPES). p2tr/p2pk/multisig 의도적 제외. */
+/** wm BITCOIN family wire **input** txType (wm `VALID_TX_TYPES`). p2tr/p2pk/multisig 의도적 제외.
+ *  `p2tr` 이 input 에서만 빠지는 이유는 wm 입력 서명 경로에 P2TR 처리가 없기 때문이다 —
+ *  **output(수신 주소)은 허용**된다(`BitcoinWireOutputTxType`). */
 export type BitcoinWireTxType = 'p2pkh' | 'p2sh' | 'p2wpkh' | 'p2wsh'
+
+/** wm BITCOIN family wire **output** txType. input union 과 달리 `'p2tr'`(Taproot 수신 주소)과
+ *  `'change'` 를 포함한다 — wm `BitcoinWireOutputTxType` 과 1:1. */
+export type BitcoinWireOutputTxType = BitcoinWireTxType | 'p2tr' | 'change'
 
 /** flat wire input — wm `BitcoinWireInput` 1:1. */
 export interface BitcoinWireInput {
@@ -49,8 +56,8 @@ export interface BitcoinWireInput {
 
 /** flat wire output — wm `BitcoinWireOutput` 1:1. */
 export interface BitcoinWireOutput {
-  /** script type 또는 'change'. */
-  txType: BitcoinWireTxType | 'change'
+  /** script type(`'p2tr'` 포함) 또는 'change'. */
+  txType: BitcoinWireOutputTxType
   /** Satoshi 단위 금액 문자열. */
   amount: string
   /** 수신 주소 배열 (builder는 단일 `to` → `[to]`). */
@@ -65,9 +72,17 @@ export interface BitcoinWireTransaction {
   keyPath?: string
 }
 
-// wm wire-convert.ts:37 VALID_TX_TYPES와 1:1. p2pk/multisig/p2tr은 wm가 거부하므로 add 시점에 reject.
+// wm 의 두 union 과 1:1. **input 과 output 은 서로 다르다** — 한 배열로 합치지 말 것.
+//   input  : wm `VALID_TX_TYPES` — P2TR 입력 서명 경로가 없어 `p2tr` 제외 (wm 이 -32602).
+//   output : wm `BitcoinWireOutputTxType` — `p2tr`(Taproot 수신 주소) **포함**. wm 은
+//            witness v1 을 선언한 currency(BITCOIN / BTC-SEGWIT 등 — **서명하는 계정** 쪽)에 한해
+//            허용하고, 주소 hrp·mislabel·change 가드까지 스스로 건다. 커넥터가 여기서 함께 막으면
+//            **wm 이 이미 연 경로를 빌더만 막는 드리프트**가 된다(실제로 그 상태였다).
+//            ⚠️ 여기서 열리는 것은 "Taproot 주소로 **보내기**" 지 "Taproot 계정으로 **서명하기**"
+//            가 아니다. 후자는 addressFormat `'taproot'` 축이고 아직 미지원이다.
+//   p2pk / multisig 는 양쪽 모두 미지원.
 const WIRE_INPUT_TX_TYPES: readonly string[] = ['p2pkh', 'p2sh', 'p2wpkh', 'p2wsh']
-const WIRE_OUTPUT_TX_TYPES: readonly string[] = ['p2pkh', 'p2sh', 'p2wpkh', 'p2wsh', 'change']
+const WIRE_OUTPUT_TX_TYPES: readonly string[] = ['p2pkh', 'p2sh', 'p2wpkh', 'p2wsh', 'p2tr', 'change']
 
 /** satoshi 값 검증 — number는 safe integer(≥0), string은 canonical 10진 정수 문자열. */
 function isValidSatoshi (value: unknown): boolean {
@@ -152,7 +167,11 @@ export function addBitcoinTransactionInput (
  * output을 flat wire에 push한다 (in-place mutation, v1 1:1 chaining).
  *
  * @param transaction `getBitcoinTransactionObject` 산출물
- * @param type p2pkh/p2sh/p2wpkh/p2wsh 또는 'change' (wire `txType`)
+ * @param type p2pkh/p2sh/p2wpkh/p2wsh/**p2tr** 또는 'change' (wire `txType`).
+ *   `p2tr` 은 Taproot 수신 주소(`bc1p…`)로 보낼 때 쓴다 — 허용 여부의 최종 판정(currency 의
+ *   witness v1 선언 · 주소 hrp 일치)은 wm 이 -32602 로 한다.
+ *   ⚠️ `'p2tr'` 은 v1 호환 enum `bitcoinTxType` 에 **없다**(그 enum 은 v1 과 키·값 1:1 로 동결돼
+ *   있고 `types-drift` 테스트가 그것을 강제한다). raw 문자열 `'p2tr'` 로 전달할 것.
  * @param value satoshi 금액 — number(safe int ≥0) 또는 canonical 10진 문자열 (wire `amount`로 String화, 단위 변환 없음)
  * @param to 수신 주소 (wire `addresses: [to]`)
  * @returns 같은 transaction 객체 (chaining)
@@ -181,7 +200,7 @@ export function addBitcoinTransactionOutput (
     throw dcentException('param_error', 'addBitcoinTransactionOutput: to must be a non-empty string')
   }
   transaction.outputs.push({
-    txType: type as BitcoinWireTxType | 'change',
+    txType: type as BitcoinWireOutputTxType,
     // satoshi 계약 — 단위 변환 없이 문자열화만.
     amount: String(value),
     addresses: [to],

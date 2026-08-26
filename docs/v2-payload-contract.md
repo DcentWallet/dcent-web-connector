@@ -721,8 +721,8 @@ With form-D the **app does not set `type`** — the wallet composes the descript
 {
   transaction: {
     TransactionType: 'Payment',
-    Account: 'raJ1Aqkhf19P7cyUc33MMVAzgvHPvtNFC',
-    Destination: 'rGZQKj1U9fy21xRjrAtYCniUarwxFRrzmi',
+    Account: 'rrrrrrrrrrrrrrrrrrrputRj8Lyv',
+    Destination: 'rrrrrrrrrrrrrhbyxFUyg4pJeFLCBn',
     Amount: '1000000',   // drops (1 XAH = 1,000,000)
     Fee: '12',
     Sequence: 1,
@@ -748,8 +748,8 @@ With form-D the **app does not set `type`** — the wallet composes the descript
 {
   transaction: {
     TransactionType: 'Payment',
-    Account: 'raJ1Aqkhf19P7cyUc33MMVAzgvHPvtNFC',
-    Destination: 'rGZQKj1U9fy21xRjrAtYCniUarwxFRrzmi',
+    Account: 'rrrrrrrrrrrrrrrrrrrputRj8Lyv',
+    Destination: 'rrrrrrrrrrrrrhbyxFUyg4pJeFLCBn',
     Amount: '1000000',   // drops (1 XRP = 1,000,000)
     Fee: '12',
     Sequence: 1,

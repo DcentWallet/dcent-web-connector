@@ -722,8 +722,8 @@ form-D 는 `type` 을 **앱이 적지 않는다** — 지갑이 descriptor 를 `
 {
   transaction: {
     TransactionType: 'Payment',
-    Account: 'raJ1Aqkhf19P7cyUc33MMVAzgvHPvtNFC',
-    Destination: 'rGZQKj1U9fy21xRjrAtYCniUarwxFRrzmi',
+    Account: 'rrrrrrrrrrrrrrrrrrrputRj8Lyv',
+    Destination: 'rrrrrrrrrrrrrhbyxFUyg4pJeFLCBn',
     Amount: '1000000',   // drops (1 XAH = 1,000,000)
     Fee: '12',
     Sequence: 1,
@@ -749,8 +749,8 @@ form-D 는 `type` 을 **앱이 적지 않는다** — 지갑이 descriptor 를 `
 {
   transaction: {
     TransactionType: 'Payment',
-    Account: 'raJ1Aqkhf19P7cyUc33MMVAzgvHPvtNFC',
-    Destination: 'rGZQKj1U9fy21xRjrAtYCniUarwxFRrzmi',
+    Account: 'rrrrrrrrrrrrrrrrrrrputRj8Lyv',
+    Destination: 'rrrrrrrrrrrrrhbyxFUyg4pJeFLCBn',
     Amount: '1000000',   // drops (1 XRP = 1,000,000)
     Fee: '12',
     Sequence: 1,

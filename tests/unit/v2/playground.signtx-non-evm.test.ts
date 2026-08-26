@@ -131,8 +131,8 @@ const SAMPLE_NON_EVM_PRESETS = [
     sourceUrl: 'https://js.xrpl.org/',
     transaction: {
       TransactionType: 'Payment',
-      Account: 'rHb9CJAWyB4rj91VRWn96DkukG4bwdtyTh',
-      Destination: 'rPT1Sjq2YGrBMTttX4GZHjKu9dyfzbpAYe',
+      Account: 'rrrrrrrrrrrrrrrrrrrputRj8Lyv',
+      Destination: 'rrrrrrrrrrrrrhbyxFUyg4pJeFLCBn',
       Amount: '1000000',
       Fee: '12',
       Sequence: 1,
@@ -635,7 +635,7 @@ describe('_substituteAlgorandSender: placeholder → wallet address', () => {
   })
 
   it('T-U-NEVM-FAMILY-SUB-04: _substituteSenderByFamily — xrp family → XRP Account 치환', () => {
-    const tx = { TransactionType: 'Payment', Account: 'rHb9CJAWyB4rj91VRWn96DkukG4bwdtyTh', Destination: RECIPIENT, Amount: '1000000' }
+    const tx = { TransactionType: 'Payment', Account: 'rrrrrrrrrrrrrrrrrrrputRj8Lyv', Destination: RECIPIENT, Amount: '1000000' }
     const out = subByFamily(tx, 'xrp', WALLET)
     expect(out.Account).toBe(WALLET)
     expect(out.Destination).toBe(RECIPIENT)
@@ -643,7 +643,7 @@ describe('_substituteAlgorandSender: placeholder → wallet address', () => {
   })
 
   it('T-U-NEVM-FAMILY-SUB-05: _substituteSenderByFamily — xahau family → XRP Account 치환 (ripple 로직 공유)', () => {
-    const tx = { TransactionType: 'Payment', Account: 'rHb9CJAWyB4rj91VRWn96DkukG4bwdtyTh', Destination: RECIPIENT }
+    const tx = { TransactionType: 'Payment', Account: 'rrrrrrrrrrrrrrrrrrrputRj8Lyv', Destination: RECIPIENT }
     const out = subByFamily(tx, 'xahau', WALLET)
     expect(out.Account).toBe(WALLET)
     expect(out.Destination).toBe(RECIPIENT)
@@ -731,14 +731,14 @@ describe('_substituteAlgorandSender: placeholder → wallet address', () => {
 // ─────────────────────────────────────────────────────────────────────────────
 describe('_substituteXrpAccount: placeholder → wallet r-address', () => {
   const WALLET = 'rWALLETxxxxxxxxxxxxxxxxxxxxxxxxxx'
-  const RECIPIENT = 'rPT1Sjq2YGrBMTttX4GZHjKu9dyfzbpAYe'
+  const RECIPIENT = 'rrrrrrrrrrrrrhbyxFUyg4pJeFLCBn'
   function sub (txObj: any, address = WALLET) {
     const api = (window as any)._playgroundTestAPI
     return api._substituteXrpAccount(txObj, address)
   }
 
   it('T-U-NEVM-XRP-SUB-01: XRPL 표준 Payment — Account 치환, Destination/Amount/Fee/Sequence 보존', () => {
-    const tx = { TransactionType: 'Payment', Account: 'rHb9CJAWyB4rj91VRWn96DkukG4bwdtyTh', Destination: RECIPIENT, Amount: '1000000', Fee: '12', Sequence: 1, Flags: 0 }
+    const tx = { TransactionType: 'Payment', Account: 'rrrrrrrrrrrrrrrrrrrputRj8Lyv', Destination: RECIPIENT, Amount: '1000000', Fee: '12', Sequence: 1, Flags: 0 }
     const out = sub(tx)
     expect(out.Account).toBe(WALLET)
     expect(out.Destination).toBe(RECIPIENT)
@@ -748,7 +748,7 @@ describe('_substituteXrpAccount: placeholder → wallet r-address', () => {
   })
 
   it('T-U-NEVM-XRP-SUB-02: wm-internal {sender, ...} shape → sender 치환', () => {
-    const tx = { sender: 'rHb9CJAWyB4rj91VRWn96DkukG4bwdtyTh', recipient: RECIPIENT, amount: '1000000' }
+    const tx = { sender: 'rrrrrrrrrrrrrrrrrrrputRj8Lyv', recipient: RECIPIENT, amount: '1000000' }
     const out = sub(tx)
     expect(out.sender).toBe(WALLET)
     expect(out.recipient).toBe(RECIPIENT)
@@ -760,10 +760,10 @@ describe('_substituteXrpAccount: placeholder → wallet r-address', () => {
   })
 
   it('T-U-NEVM-XRP-SUB-04: 원본 객체 mutation 금지 (deep clone)', () => {
-    const tx = { TransactionType: 'Payment', Account: 'rHb9CJAWyB4rj91VRWn96DkukG4bwdtyTh', Destination: RECIPIENT }
+    const tx = { TransactionType: 'Payment', Account: 'rrrrrrrrrrrrrrrrrrrputRj8Lyv', Destination: RECIPIENT }
     const out = sub(tx)
     expect(out).not.toBe(tx)
-    expect(tx.Account).toBe('rHb9CJAWyB4rj91VRWn96DkukG4bwdtyTh')
+    expect(tx.Account).toBe('rrrrrrrrrrrrrrrrrrrputRj8Lyv')
   })
 
   it('T-U-NEVM-XRP-SUB-05: invalid input (null / undefined / number) → 그대로 반환', () => {
@@ -773,9 +773,9 @@ describe('_substituteXrpAccount: placeholder → wallet r-address', () => {
   })
 
   it('T-U-NEVM-XRP-SUB-06: empty wallet address → no-op (원본 보존)', () => {
-    const tx = { TransactionType: 'Payment', Account: 'rHb9CJAWyB4rj91VRWn96DkukG4bwdtyTh' }
+    const tx = { TransactionType: 'Payment', Account: 'rrrrrrrrrrrrrrrrrrrputRj8Lyv' }
     const out = sub(tx, '')
-    expect(out.Account).toBe('rHb9CJAWyB4rj91VRWn96DkukG4bwdtyTh')
+    expect(out.Account).toBe('rrrrrrrrrrrrrrrrrrrputRj8Lyv')
   })
 })
 

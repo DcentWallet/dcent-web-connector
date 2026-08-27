@@ -419,7 +419,7 @@ Writing the same value in two places drifts — measured (2026-07-22): only the 
   transaction: {
     method: 'balances.transferAllowDeath',
     args: [
-      '14dyYY72MDtfxAAjFnqwCR3YihV5UrqzMjEAf1ABXJ4vzLZj',  // recipient
+      '14rmqfMwFrv9mhwJwMb1vGWcmKmCNTRM8J365TRsJuPzX1Hv',  // recipient
       '1000000000000'   // Planck (1 DOT = 10^10)
     ],
     era: '0x00',

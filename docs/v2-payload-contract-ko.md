@@ -420,7 +420,7 @@ Bitcoin은 `dcent.sign({ method: 'signTransaction', chainId, payload })`로 서�
   transaction: {
     method: 'balances.transferAllowDeath',
     args: [
-      '14dyYY72MDtfxAAjFnqwCR3YihV5UrqzMjEAf1ABXJ4vzLZj',  // recipient
+      '14rmqfMwFrv9mhwJwMb1vGWcmKmCNTRM8J365TRsJuPzX1Hv',  // recipient
       '1000000000000'   // Planck (1 DOT = 10^10)
     ],
     era: '0x00',

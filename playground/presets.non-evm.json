@@ -1011,7 +1011,7 @@
       "args": [
         {
           "type": "scv_address",
-          "value": "GCVKVKVKVKVKVKVKVKVKVKVKVKVKVKVKVKVKVKVKVKVKVKVKVKVKVH7N"
+          "value": "GAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAC6PV"
         }
       ],
       "fee": 100,
@@ -1031,10 +1031,10 @@
     "applicableChainIds": [
       "stellar:pubnet/slip44:148"
     ],
-    "note": "★v1 parity 검증용. v1 dcent-web-connector getStellarSignedTransaction 은 host 가 만든 트랜잭션의 signature base 를 디바이스가 블라인드 서명하던 방식(op-type 무관). v2 wire 는 그 상위호환 경로를 갖는다: transaction={xdr:'<base64 envelope>'} → convertTransaction 최상단 분기(transaction.ts:628)가 extra.envelopeXdr 로 carry → signTransaction 이 signStellarEnvelopeXdr(walletconnect blind-sign, sig_hash 32B 만 디바이스 전송)로 서명. ★임의 operation 전부 서명 가능 — 이 샘플은 구조화(structured) 경로가 지원하지 않는 클래식 op 'bumpSequence' envelope 이라, structured 7종(payment/pathPayment×2/manageData/invokeHostFunction/createAccount/changeTrust)을 넘어서는 parity 초과분을 증명한다. accountMerge/manageOffer/setOptions/claimableBalance/i128-args Soroban 등도 동일하게 XDR 로 넣으면 서명됨. wm 은 parseStellarEnvelope 로 구조 검증(최대 ~180KB base64) 후 서명. ⚠️ envelope 내부 source 계정이 placeholder(GDQP2KPQ...)라 서명은 되지만 broadcast 불가 — 실기기 §9 는 byte-proof(디바이스가 이 envelope 해시를 서명하는가)만 확인하면 충분. 실제 broadcast-가능 테스트를 원하면 @stellar/stellar-base TransactionBuilder 로 source=본인 디바이스 Stellar 계정(G...)인 envelope 을 rebuild 해 xdr 만 교체. keyPath 는 chains.json 에서 자동(m/44'/148'/0'). ⚠️ mainnet(slip44:148), broadcast 안 함. 검증: /verify-wire-sign STELLAR (envelope op=bumpSequence, ed25519=device 키).",
+    "note": "★v1 parity 검증용. v1 dcent-web-connector getStellarSignedTransaction 은 host 가 만든 트랜잭션의 signature base 를 디바이스가 블라인드 서명하던 방식(op-type 무관). v2 wire 는 그 상위호환 경로를 갖는다: transaction={xdr:'<base64 envelope>'} → convertTransaction 최상단 분기(transaction.ts:628)가 extra.envelopeXdr 로 carry → signTransaction 이 signStellarEnvelopeXdr(walletconnect blind-sign, sig_hash 32B 만 디바이스 전송)로 서명. ★임의 operation 전부 서명 가능 — 이 샘플은 구조화(structured) 경로가 지원하지 않는 클래식 op 'bumpSequence' envelope 이라, structured 7종(payment/pathPayment×2/manageData/invokeHostFunction/createAccount/changeTrust)을 넘어서는 parity 초과분을 증명한다. accountMerge/manageOffer/setOptions/claimableBalance/i128-args Soroban 등도 동일하게 XDR 로 넣으면 서명됨. wm 은 parseStellarEnvelope 로 구조 검증(최대 ~180KB base64) 후 서명. ⚠️ envelope 내부 source 계정이 placeholder(0xBB×32 = GC53XO53…)라 서명은 되지만 broadcast 불가 — 실기기 §9 는 byte-proof(디바이스가 이 envelope 해시를 서명하는가)만 확인하면 충분. 실제 broadcast-가능 테스트를 원하면 @stellar/stellar-base TransactionBuilder 로 source=본인 디바이스 Stellar 계정(G...)인 envelope 을 rebuild 해 xdr 만 교체. keyPath 는 chains.json 에서 자동(m/44'/148'/0'). ⚠️ mainnet(slip44:148), broadcast 안 함. 검증: /verify-wire-sign STELLAR (envelope op=bumpSequence, ed25519=device 키).",
     "sourceUrl": "https://dev-docs.dcentwallet.com/dcent-biometric-wallet-for-pc/dcent-web-connector/stellar",
     "transaction": {
-      "xdr": "AAAAAgAAAADg/SnwMpB8JNdtEYcw4I0BEQPjTPpXaKVzlY2HVpQObgAAAGQAAAAAAAAAAQAAAAEAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAEAAAAAAAAACwAAAAA7msoAAAAAAAAAAAA=",
+      "xdr": "AAAAAgAAAAC7u7u7u7u7u7u7u7u7u7u7u7u7u7u7u7u7u7u7u7u7uwAAAGQAAAAAAAAAAQAAAAEAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAEAAAAAAAAACwAAAAA7msoAAAAAAAAAAAA=",
       "fee": 100
     }
   },

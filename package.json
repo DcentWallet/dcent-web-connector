@@ -1,6 +1,6 @@
 {
   "name": "dcent-web-connector",
-  "version": "0.16.0",
+  "version": "2.0.0",
   "description": "DCENT Web SDK Connector",
   "main": "dist/v2/dcent-web-connector.min.js",
   "module": "dist/v2/dcent-web-connector.min.js",

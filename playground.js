@@ -2420,7 +2420,10 @@
   }
 
   // ── renderSignTxNonEvmForm (m06-01-03) ──
-  // 비-EVM family 공용 폼: chainId(read-only) + keyPath + transaction(JSON) + preset selector
+  // 비-EVM family 공용 폼: chainId(**자유 입력** — 트리 선택값이 default 이고 같은 family datalist 를 단다.
+  //   🔴 종전 산문의 `read-only` 는 오기이며, 그 오기가 m21-02 R3 의 WARNING 을 낳았다:
+  //   preset 이 선언한 체인 밖으로 사용자가 옮길 수 있다는 사실을 놓쳐 `applicableChainIds`
+  //   축소만으로 막았다고 판단했다) + keyPath + transaction(JSON) + preset selector
   function renderSignTxNonEvmForm (methodDef) {
     // m09-04-15 follow-up: Bitcoin은 [⚡ 자동 / Transaction(JSON)] 모드 선택.
     // 자동 = mempool UTXO fetch → getBitcoinTransactionObject()+add* 빌드 → sign.
@@ -2752,6 +2755,11 @@
     //   같은 family 전체를 datalist 로 제공**하므로 그 축소만으로는 이 경로가 안 막힌다
     //   (2026-09-02 크로스 리뷰 실측 — 축소 근거와 반대 방향으로 동작하고 있었다).
     //   범위를 벗어나면 preset 을 무시하고 체인 기본값으로 **자기 교정**한다.
+    // 🔴 `!Array.isArray(...)` 는 **오늘 도달 불가**다(뮤테이션 SURVIVED — 열거해 남기는 원소).
+    //   `presets.non-evm.json` 63건 전건이 `applicableChainIds` 를 선언하고,
+    //   `playground.signtx-non-evm.test.ts` / `playground.signtx-rest.test.ts` 가
+    //   `Array.isArray` + `length > 0` 을 필수 필드로 단언해 **데이터 게이트가 막는다.**
+    //   fail-open 처럼 보이지만 미선언 preset 자체가 들어올 수 없다.
     var applicable =
       !preset ||
       !Array.isArray(preset.applicableChainIds) ||

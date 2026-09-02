@@ -208,6 +208,29 @@ describe('m21-02 preset 배선 — 행위', () => {
     expect(`keyPath=${kp()}`).toBe("keyPath=m/49'/0'/0'/0/0")
   })
 
+  it('T-U-CON-18f: preset 선택을 비우면(null preset) chainId 기본값 경로로 떨어진다', () => {
+    // 🔴 R4 WARNING — 이 델타가 `preset.applicableChainIds` 를 **선평가**하는 식을 새로 만들면서
+    //    `!preset ||` null 가드가 그 역참조를 막는 **새 표면**이 됐다. 그런데 테스트가 0건이라
+    //    가드를 지워도 초록이었다(실측 SURVIVED). 도달성은 실재한다 — preset 을
+    //    `-- select preset --` 로 되돌린 뒤 chainId 를 만지는 경로, 그리고 `field-preset` 이
+    //    `nonEvmPresetsMap` 에 없는 **다른 폼 5종 전부**가 이 경로를 탄다.
+    //    (`review-finding-class-closure` 4문항 #3 — 내 수정이 연 표면에도 가드가 닿아야 한다.)
+    openBitcoinSignForm()
+    selectPreset('btc-wrapped-transfer')
+    expect(`picked=${kp()}`).toBe("picked=m/49'/0'/0'/0/0")
+    // 선택 해제 — preset 객체가 없는 상태로 chainId 훅이 돈다
+    const sel = document.getElementById('field-preset') as HTMLSelectElement
+    sel.value = ''
+    sel.dispatchEvent(new Event('change'))
+    const chainEl = document.getElementById('field-chainId') as HTMLInputElement
+    chainEl.value = BCH_CAIP
+    chainEl.dispatchEvent(new Event('input'))
+    expect(`cleared=${kp()}`).toBe('cleared=m/44\'/145\'/0\'/0/0')
+    chainEl.value = BTC_MAINNET_CAIP
+    chainEl.dispatchEvent(new Event('input'))
+    expect(`backToBtc=${kp()}`).toBe('backToBtc=m/44\'/0\'/0\'/0/0')
+  })
+
   it('T-U-CON-18d: preset 이 없으면 chainId 기본값이 그대로 적용된다 (기존 폼 동작 불변)', () => {
     openBitcoinSignForm()
     selectPreset('btc-transfer')

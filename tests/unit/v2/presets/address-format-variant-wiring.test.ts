@@ -111,12 +111,12 @@ describe('m21-02 preset 배선 — 행위', () => {
   // 🔴 wm 의 경로 축이 보는 것은 payload 의 **top-level keyPath** 다. 여기가 어긋나면
   //    `inputs[].keyPath` 와 갈려 wm prevout ownership 게이트가 -32602 를 내고, 그 -32602 는
   //    이 트랙이 가르치려는 "하류 미배포" 신호와 **구별되지 않는다.**
-  function openBitcoinSignForm(): void {
+  function openBitcoinSignForm(presetsOverride?: any[]): void {
     const chains = [
       { chainId: BTC_MAINNET_CAIP, family: 'bitcoin', name: 'Bitcoin', defaultKeyPath: "m/44'/0'/0'/0/0" },
       { chainId: BCH_CAIP, family: 'bitcoin', name: 'Bitcoin Cash', defaultKeyPath: "m/44'/145'/0'/0/0" },
     ]
-    api.simulateNonEvmLoad(chains, nonEvmPresets)
+    api.simulateNonEvmLoad(chains, presetsOverride ?? nonEvmPresets)
     api.simulateConnect(
       {
         sign: jest.fn().mockResolvedValue({ header: { status: 'success' }, body: { parameter: {} } }),
@@ -176,6 +176,20 @@ describe('m21-02 preset 배선 — 행위', () => {
     chainEl.value = BTC_MAINNET_CAIP
     chainEl.dispatchEvent(new Event('input'))
     expect(`back=${kp()}`).toBe("back=m/49'/0'/0'/0/0")
+  })
+
+  it('T-U-CON-18e: **자동선택**된 preset 의 keyPath 도 반영된다 (거울상 짝)', () => {
+    // 🔴 `presetSelect.value = …` 는 change 를 **발화하지 않는다.** 자동선택 분기는 change
+    //    핸들러의 사본이라, 배선을 한쪽에만 걸면 여기가 빈다(R2 CRITICAL 2).
+    // 🔴 이 결함은 실제 파일 순서에서는 `btc-transfer` 가 먼저라 **잠재**다 — 순서에 기대면
+    //    테스트가 아무것도 못 잡는다(실측: 순서를 안 바꾸면 이 뮤테이션이 SURVIVE 한다).
+    //    그래서 keyPath 를 선언한 preset 이 **첫째가 되도록 순서를 주입**해 활성화시킨다.
+    const wrapped = (nonEvmPresets as any[]).find((p) => p.id === 'btc-wrapped-transfer')
+    const reordered = [wrapped, ...(nonEvmPresets as any[]).filter((p) => p !== wrapped)]
+    openBitcoinSignForm(reordered)
+    const sel = document.getElementById('field-preset') as HTMLSelectElement
+    expect(`autoselected=${sel.value}`).toBe('autoselected=btc-wrapped-transfer')
+    expect(`keyPath=${kp()}`).toBe("keyPath=m/49'/0'/0'/0/0")
   })
 
   it('T-U-CON-18d: preset 이 없으면 chainId 기본값이 그대로 적용된다 (기존 폼 동작 불변)', () => {

@@ -1784,6 +1784,18 @@
       if (a.contractAddress != null && a.contractAddress !== '') {
         out.contractAddress = String(a.contractAddress)
       }
+      // 🔴 [m21-02] meta.addressFormat — whitelist 에 없어서 **preset 의 meta 가 통째로
+      //   버려지고 있었다**. 그 결과 `syncAccount:algorand-ledger` 는 base Algorand 계정
+      //   요청과 **바이트 단위로 같은 요청**이 나갔다(Algorand 는 base 와 LGR 의 keyPath 가
+      //   같아 addressFormat 만이 판별자다) — 실기기 검증이 "LGR 을 봤다" 고 오판할 수 있었다.
+      //   🔴 own-enumerable 만 읽는다 — 상위 항목/`contractAddress` 와 같은 규칙이고,
+      //   connector 의 `_sanitizeSyncAccountItem` 이 `Object.create({addressFormat:…})` 의
+      //   상속값을 거부하는 것과도 짝이 맞는다.
+      if (a.meta != null && typeof a.meta === 'object' && !Array.isArray(a.meta) &&
+          Object.keys(a.meta).indexOf('addressFormat') !== -1) {
+        var af = a.meta.addressFormat
+        if (af != null && af !== '') out.meta = { addressFormat: String(af) }
+      }
       return out
     })
   }
@@ -2517,6 +2529,16 @@
           txEl.value = preset.transaction
         } else {
           txEl.value = JSON.stringify(preset.transaction, null, 2)
+        }
+        // 🔴 [m21-02] preset 이 keyPath 를 선언하면 **top-level keyPath 필드도 채운다.**
+        //   wm 의 경로 축(`resolveCurrencyByChainIdAndKeyPath`)이 보는 것은 payload 의
+        //   **top-level keyPath** 이지 `inputs[].keyPath` 가 아니다. 이 필드는 chainId 동기화
+        //   훅이 `chains.json` 의 defaultKeyPath(BTC = m/44'/0'/0'/0/0)로 채워 두므로,
+        //   `m/49'` 계정 preset 을 골라도 요청은 legacy 계정으로 나갔다.
+        //   🔴 선언하지 않은 preset 은 건드리지 않는다(기존 62건의 동작 불변).
+        if (typeof preset.keyPath === 'string' && preset.keyPath !== '') {
+          var kpEl = document.getElementById('field-keyPath')
+          if (kpEl) kpEl.value = preset.keyPath
         }
       })
       presetRow.appendChild(presetLabel)

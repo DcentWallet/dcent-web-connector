@@ -65,16 +65,20 @@ const result = await dcent.sign({
 **Example chainId:** `algorand:wGHE2Pwdvd7S12BL5FaOP20EGYesN73k/slip44:283`
 
 **Account variants (`meta.addressFormat: 'ledger'`)** — the device can hold a second account
-derived under the Ledger BIP32-Ed25519 standard alongside the base account. Both accounts share
-one `chainId`, so `addressFormat` (or a Ledger `keyPath`) is what tells them apart:
+derived under the Ledger BIP32-Ed25519 standard alongside the base account.
+
+**Algorand is the case where `addressFormat` is the only discriminator.** The two accounts share
+one `chainId` *and* one `keyPath` — the Ledger derivation is `m/44'/283'/{account}'/0/0`, byte for
+byte the same as `chains.json`'s `defaultKeyPath`:
 
 | | keyPath | `meta.addressFormat` |
 |---|---|---|
-| base | `m/44'/{coinType}'/0'/0/0` | omit |
-| Ledger | `m/44'/{coinType}'/0'/0'/0'` | `'ledger'` |
+| base | `m/44'/283'/0'/0/0` | omit |
+| Ledger | `m/44'/283'/0'/0/0` (identical) | `'ledger'` |
 
-Note the hardened tail on the Ledger path. `chains.json`'s `defaultKeyPath` holds the **base**
-path — copying it verbatim will not reach the Ledger account.
+So omitting `addressFormat` here does not fall back to "some variant" — it produces a request that
+is indistinguishable from the base account. Unlike Polkadot and the parachains, there is **no
+hardened tail** to tell them apart; do not "fix" this path to match those.
 
 
 **signTransaction payload:**

@@ -373,7 +373,8 @@ describe('getAddress chain isolation — connector-chain-addition-isolation 룰'
 })
 
 // ──────────────────────────────────────────────────────────────────────────
-// m09-04-09 — addressFormat field (BTC family multi-variant dispatch)
+// m09-04-09 / m21-02 — addressFormat field (multi-variant dispatch).
+//   🔴 BTC 인코딩 축 + BTC 밖 파생 표준 축('ledger') 둘 다. BTC 전용이 아니다.
 // ──────────────────────────────────────────────────────────────────────────
 
 describe('getAddress v2 — addressFormat field (m09-04-09)', () => {

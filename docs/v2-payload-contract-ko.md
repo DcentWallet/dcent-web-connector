@@ -66,16 +66,20 @@ const result = await dcent.sign({
 **chainId 예시:** `algorand:wGHE2Pwdvd7S12BL5FaOP20EGYesN73k/slip44:283`
 
 **계정 variant (`meta.addressFormat: 'ledger'`)** — 디바이스는 base 계정과 별도로 Ledger
-BIP32-Ed25519 표준으로 파생한 계정을 하나 더 들 수 있다. 두 계정은 `chainId` 를 공유하므로
-가르는 축은 `addressFormat`(또는 Ledger keyPath)이다:
+BIP32-Ed25519 표준으로 파생한 계정을 하나 더 들 수 있다.
+
+🔴 **Algorand 는 `addressFormat` 이 유일한 판별자인 경우다.** 두 계정이 `chainId` 뿐 아니라
+`keyPath` 까지 공유한다 — Ledger 파생이 `m/44'/283'/{account}'/0/0` 로 `chains.json` 의
+`defaultKeyPath` 와 **바이트 단위로 같다**:
 
 | | keyPath | `meta.addressFormat` |
 |---|---|---|
-| base | `m/44'/{coinType}'/0'/0/0` | 생략 |
-| Ledger | `m/44'/{coinType}'/0'/0'/0'` | `'ledger'` |
+| base | `m/44'/283'/0'/0/0` | 생략 |
+| Ledger | `m/44'/283'/0'/0/0` (동일) | `'ledger'` |
 
-🔴 Ledger 경로는 **tail 이 하드닝**이다. `chains.json` 의 `defaultKeyPath` 는 **base** 경로라
-그대로 복사하면 Ledger 계정에 도달하지 못한다.
+따라서 여기서 `addressFormat` 을 생략하는 것은 "기본 variant 로 폴백" 이 아니라 **base 계정 요청과
+구별 불가능한 요청**을 만드는 것이다. Polkadot·파라체인과 달리 **하드닝 tail 이 없다** —
+그쪽에 맞춰 이 경로를 "정정" 하지 말 것.
 
 
 **signTransaction payload:**

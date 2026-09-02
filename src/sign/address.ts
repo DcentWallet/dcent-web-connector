@@ -93,8 +93,9 @@ export type KnownAddressFormat =
   | 'ledger'
 
 /**
- * BTC family 주소 형식 — 같은 chainId 내 여러 주소 encoding variant 중 어느 것인지 명시하는
- * generic 필드. sdk 가 이 값을 wallet-models resolver 에 전달해 firmware `request_to` 를 결정한다.
+ * variant disambiguation — 같은 chainId 안에 계정이 둘 이상일 때 어느 쪽인지 명시하는 generic 필드.
+ * 🔴 **BTC 전용이 아니다**(m21-02): BTC 는 주소 **인코딩** variant 이고, Polkadot/Algorand/파라체인은
+ * **파생 표준** variant(`'ledger'`)다. 축이 둘이라는 사실은 `KnownAddressFormat` 주석이 정본이다. sdk 가 이 값을 wallet-models resolver 에 전달해 firmware `request_to` 를 결정한다.
  *
  * 🔴 **connector 는 이 값을 해석하지 않는다.** 알려진 값 목록은 `KnownAddressFormat` 이 문서·
  * 자동완성용으로만 들고 있고, 타입은 임의 문자열로 열려 있다 — **런타임 enum 검사는 sdk 경계

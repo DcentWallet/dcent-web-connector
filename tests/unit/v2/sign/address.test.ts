@@ -491,16 +491,24 @@ describe('getAddress v2 — addressFormat field (m09-04-09)', () => {
   test('T-U-ADF-V2-08: AddressFormat type이 dcent-web-connector에서 import type 가능', () => {
     // TypeScript 컴파일 타임 검증 — import type { AddressFormat } from 'dcent-web-connector'
     // 런타임에는 _sanitizeAddressFormat으로 enum 동작 검증
-    const validFormats: import('../../../../src/sign/address').AddressFormat[] = [
+    // 🔴 `KnownAddressFormat` 의 원소를 **전부** 적는다. 여기가 줄면 union 이 줄어도
+    //    이 테스트는 통과한다 — 그 축의 유일한 검출자는 `address.ts` 의 `_AssertLedgerKnown`
+    //    (컴파일 타임)이다. 이 배열은 "sanitize 가 다 통과시키나" 만 본다.
+    const validFormats: import('../../../../src/sign/address').KnownAddressFormat[] = [
       'legacy',
       'segwit-wrapped',
       'segwit-native',
       'taproot',
+      'ledger',
     ]
-    // 4개 모두 _sanitizeAddressFormat을 통과해야 함
+    // 5개 모두 _sanitizeAddressFormat을 통과해야 함
     for (const fmt of validFormats) {
       expect(_sanitizeAddressFormat(fmt)).toBe(fmt)
     }
+    // T-U-CON-01: 'ledger' 는 **오늘도** 통과한다(열린 타입이라 런타임 게이트가 없다).
+    //   published 2.0.0 으로도 통과한다는 사실의 회귀 앵커 — 여기가 빨개지면 누군가
+    //   `_sanitizeAddressFormat` 에 화이트리스트를 되살린 것이다(forward-only 결정 위반).
+    expect(_sanitizeAddressFormat('ledger')).toBe('ledger')
   })
 
   test('T-U-ADF-V2-01.b: addressFormat legacy → envelope.params.addressFormat 동행', async () => {

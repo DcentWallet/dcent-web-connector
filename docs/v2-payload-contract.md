@@ -64,6 +64,19 @@ const result = await dcent.sign({
 
 **Example chainId:** `algorand:wGHE2Pwdvd7S12BL5FaOP20EGYesN73k/slip44:283`
 
+**Account variants (`meta.addressFormat: 'ledger'`)** — the device can hold a second account
+derived under the Ledger BIP32-Ed25519 standard alongside the base account. Both accounts share
+one `chainId`, so `addressFormat` (or a Ledger `keyPath`) is what tells them apart:
+
+| | keyPath | `meta.addressFormat` |
+|---|---|---|
+| base | `m/44'/{coinType}'/0'/0/0` | omit |
+| Ledger | `m/44'/{coinType}'/0'/0'/0'` | `'ledger'` |
+
+Note the hardened tail on the Ledger path. `chains.json`'s `defaultKeyPath` holds the **base**
+path — copying it verbatim will not reach the Ledger account.
+
+
 **signTransaction payload:**
 
 ```js
@@ -89,7 +102,7 @@ const result = await dcent.sign({
 
 **Support:** `signTransaction` ◐ path exists | `signMessage` ❌ `-32601`
 
-Bitcoin signs through `dcent.sign({ method: 'signTransaction', chainId, payload })`. `payload.transaction` is a UTXO structure of `inputs[]` + `outputs[]`, and `payload.addressFormat` (`legacy` / `segwit-native` — the same enum as `getAddress`) selects which account signs (**availability**: the bridge only reads this field from the release that ships wallet-models with `SignTransactionFromWireParams.addressFormat`; earlier deployments ignore it and fall back to the `inputs[].txType` inference below), because legacy and segwit share one `chainId` **and** one `m/44'` keyPath. Omit it and the variant falls back to each input's `txType` (`p2pkh` = legacy / `p2wpkh` = native segwit); that fallback is absent from PSBT payloads. Outputs additionally accept `txType: 'p2tr'` for Taproot recipients (inputs do not — spending a Taproot UTXO is not supported). A stateful builder (`getBitcoinTransactionObject` + `addBitcoinTransactionInput`/`addBitcoinTransactionOutput`) is available as an alternative.
+Bitcoin signs through `dcent.sign({ method: 'signTransaction', chainId, payload })`. `payload.transaction` is a UTXO structure of `inputs[]` + `outputs[]`, and `payload.addressFormat` (the same enum as `getAddress` — see `KnownAddressFormat`; for Bitcoin the encoding values `legacy` / `segwit-wrapped` / `segwit-native` / `taproot`) selects which account signs (**availability**: the bridge only reads this field from the release that ships wallet-models with `SignTransactionFromWireParams.addressFormat`; earlier deployments ignore it and fall back to the `inputs[].txType` inference below), because legacy and segwit share one `chainId` **and** one `m/44'` keyPath. Omit it and the variant falls back to each input's `txType` (`p2pkh` = legacy / `p2wpkh` = native segwit); that fallback is absent from PSBT payloads. Outputs additionally accept `txType: 'p2tr'` for Taproot recipients; inputs do not list `p2tr`. Which encodings are actually reachable is decided by wallet-models, not by the connector, and it changes over time — an unreachable one comes back as `-32602`. A stateful builder (`getBitcoinTransactionObject` + `addBitcoinTransactionInput`/`addBitcoinTransactionOutput`) is available as an alternative.
 
 ```js
 {
@@ -394,6 +407,21 @@ Bitcoin signs through `dcent.sign({ method: 'signTransaction', chainId, payload 
 **Support:** `signTransaction` ✅ (decoded `method`+`args`, or an `extra.scaleHex` blob) | `signMessage` ✅ (parachain only)
 
 **Example chainId:** `polkadot:91b171bb158e2d3848fa23a9f1c25182/slip44:354`
+
+**Account variants (`meta.addressFormat: 'ledger'`)** — the device can hold a second account
+derived under the Ledger BIP32-Ed25519 standard alongside the base account. Both accounts share
+one `chainId`, so `addressFormat` (or a Ledger `keyPath`) is what tells them apart:
+
+| | keyPath | `meta.addressFormat` |
+|---|---|---|
+| base | `m/44'/{coinType}'/0'/0/0` | omit |
+| Ledger | `m/44'/{coinType}'/0'/0'/0'` | `'ledger'` |
+
+Note the hardened tail on the Ledger path. `chains.json`'s `defaultKeyPath` holds the **base**
+path — copying it verbatim will not reach the Ledger account.
+
+The same applies to parachains that expose a Ledger account (Astar, Creditcoin).
+
 
 **Use one of the two forms — do not mix them.**
 

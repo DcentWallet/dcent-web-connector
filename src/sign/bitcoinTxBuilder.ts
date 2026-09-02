@@ -79,7 +79,10 @@ export interface BitcoinWireTransaction {
 //            허용하고, 주소 hrp·mislabel·change 가드까지 스스로 건다. 커넥터가 여기서 함께 막으면
 //            **wm 이 이미 연 경로를 빌더만 막는 드리프트**가 된다(실제로 그 상태였다).
 //            ⚠️ 여기서 열리는 것은 "Taproot 주소로 **보내기**" 지 "Taproot 계정으로 **서명하기**"
-//            가 아니다. 후자는 addressFormat `'taproot'` 축이고 아직 미지원이다.
+//            가 아니다. 후자는 addressFormat `'taproot'` 축이고, 개통 여부는 **wm registry 가**
+//            정한다(connector 는 판정하지 않는다). 🔴 여기에 개통 상태를 적지 말 것 — wm 이
+//            열면 조용히 낡는다. input 쪽 `p2tr` 를 여는 것은 wm m21-01-04 소관이며, 이 배열은
+//            그때 wm 의 `VALID_TX_TYPES` 와 다시 대조한다.
 //   p2pk / multisig 는 양쪽 모두 미지원.
 const WIRE_INPUT_TX_TYPES: readonly string[] = ['p2pkh', 'p2sh', 'p2wpkh', 'p2wsh']
 const WIRE_OUTPUT_TX_TYPES: readonly string[] = ['p2pkh', 'p2sh', 'p2wpkh', 'p2wsh', 'p2tr', 'change']

@@ -65,6 +65,19 @@ const result = await dcent.sign({
 
 **chainId 예시:** `algorand:wGHE2Pwdvd7S12BL5FaOP20EGYesN73k/slip44:283`
 
+**계정 variant (`meta.addressFormat: 'ledger'`)** — 디바이스는 base 계정과 별도로 Ledger
+BIP32-Ed25519 표준으로 파생한 계정을 하나 더 들 수 있다. 두 계정은 `chainId` 를 공유하므로
+가르는 축은 `addressFormat`(또는 Ledger keyPath)이다:
+
+| | keyPath | `meta.addressFormat` |
+|---|---|---|
+| base | `m/44'/{coinType}'/0'/0/0` | 생략 |
+| Ledger | `m/44'/{coinType}'/0'/0'/0'` | `'ledger'` |
+
+🔴 Ledger 경로는 **tail 이 하드닝**이다. `chains.json` 의 `defaultKeyPath` 는 **base** 경로라
+그대로 복사하면 Ledger 계정에 도달하지 못한다.
+
+
 **signTransaction payload:**
 
 ```js
@@ -90,7 +103,7 @@ const result = await dcent.sign({
 
 **지원:** `signTransaction` ◐ 경로 존재 | `signMessage` ❌ `-32601`
 
-Bitcoin은 `dcent.sign({ method: 'signTransaction', chainId, payload })`로 서명한다. `payload.transaction`은 UTXO `inputs[]` + `outputs[]` 구조이며, legacy 와 segwit 이 `chainId` 와 `m/44'` keyPath 를 **둘 다** 공유하므로 어느 계정이 서명하는지는 `payload.addressFormat`(`legacy` / `segwit-native` — `getAddress` 와 같은 enum)이 정한다(**가용성**: 이 필드는 wallet-models 의 `SignTransactionFromWireParams.addressFormat` 을 담은 bridge 배포본부터 읽힌다 — 그 이전 배포본은 필드를 무시하고 아래 `inputs[].txType` 추론으로 폴백한다). 생략하면 각 input 의 `txType`(`p2pkh`=legacy / `p2wpkh`=native segwit) 추론으로 폴백하는데, 그 신호는 PSBT payload 에는 없다. output 은 추가로 `txType: 'p2tr'`(Taproot 수신 주소)을 받는다 (input 은 불가 — Taproot UTXO 소비는 미지원). 상태 기반 builder(`getBitcoinTransactionObject` + `addBitcoinTransactionInput`/`addBitcoinTransactionOutput`)도 대안으로 제공된다.
+Bitcoin은 `dcent.sign({ method: 'signTransaction', chainId, payload })`로 서명한다. `payload.transaction`은 UTXO `inputs[]` + `outputs[]` 구조이며, legacy 와 segwit 이 `chainId` 와 `m/44'` keyPath 를 **둘 다** 공유하므로 어느 계정이 서명하는지는 `payload.addressFormat`(`getAddress` 와 같은 enum — `KnownAddressFormat` 참조. Bitcoin 은 인코딩 축인 `legacy` / `segwit-wrapped` / `segwit-native` / `taproot`)이 정한다(**가용성**: 이 필드는 wallet-models 의 `SignTransactionFromWireParams.addressFormat` 을 담은 bridge 배포본부터 읽힌다 — 그 이전 배포본은 필드를 무시하고 아래 `inputs[].txType` 추론으로 폴백한다). 생략하면 각 input 의 `txType`(`p2pkh`=legacy / `p2wpkh`=native segwit) 추론으로 폴백하는데, 그 신호는 PSBT payload 에는 없다. output 은 추가로 `txType: 'p2tr'`(Taproot 수신 주소)을 받는다. input 목록에는 `p2tr` 이 없다. 🔴 어느 인코딩이 실제로 도달 가능한지는 connector 가 아니라 wallet-models 가 정하며 시점에 따라 바뀐다 — 도달 불가한 값은 `-32602` 로 돌아온다. 상태 기반 builder(`getBitcoinTransactionObject` + `addBitcoinTransactionInput`/`addBitcoinTransactionOutput`)도 대안으로 제공된다.
 
 ```js
 {
@@ -395,6 +408,21 @@ Bitcoin은 `dcent.sign({ method: 'signTransaction', chainId, payload })`로 서�
 **지원:** `signTransaction` ✅ (decoded `method`+`args`, 또는 `extra.scaleHex` blob) | `signMessage` ✅ (parachain만)
 
 **chainId 예시:** `polkadot:91b171bb158e2d3848fa23a9f1c25182/slip44:354`
+
+**계정 variant (`meta.addressFormat: 'ledger'`)** — 디바이스는 base 계정과 별도로 Ledger
+BIP32-Ed25519 표준으로 파생한 계정을 하나 더 들 수 있다. 두 계정은 `chainId` 를 공유하므로
+가르는 축은 `addressFormat`(또는 Ledger keyPath)이다:
+
+| | keyPath | `meta.addressFormat` |
+|---|---|---|
+| base | `m/44'/{coinType}'/0'/0/0` | 생략 |
+| Ledger | `m/44'/{coinType}'/0'/0'/0'` | `'ledger'` |
+
+🔴 Ledger 경로는 **tail 이 하드닝**이다. `chains.json` 의 `defaultKeyPath` 는 **base** 경로라
+그대로 복사하면 Ledger 계정에 도달하지 못한다.
+
+Ledger 계정을 노출하는 파라체인(Astar, Creditcoin)도 동일하다.
+
 
 **두 형태 중 하나를 쓰고, 섞지 않는다.**
 

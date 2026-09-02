@@ -1501,10 +1501,13 @@
       // BTC family처럼 같은 chainId가 multi-variant currency (BITCOIN legacy vs BTC-SEGWIT)를
       // 공유하는 경우 명시적 disambiguation. 누락 시 wm resolver가 default(현재 legacy)
       // 사용하지만 디바이스 표시 주소와 SDK 응답 주소가 불일치할 수 있음 (HW smoke 2026-05-29).
-      // 사용자가 legacy/segwit-native 둘 다 테스트할 수 있도록 dropdown 제공.
-      // segwit-wrapped(P2SH-P2WPKH) / taproot(P2TR)는 AddressFormat 타입엔 있으나 wm registry에
-      // 대응 currency가 아직 없어 resolveCurrencyByChainIdAndFormat이 undefined → sdk 4901.
-      // 따라서 현재 사용 가능한 legacy/segwit-native만 노출 (wm이 variant 추가 시 재등록).
+      // 🔴 [m21-02] 알려진 값 **전부** 노출한다. 종전엔 legacy/segwit-native 2값만 노출했는데,
+      // 그 근거였던 "wm registry 에 대응 currency 가 없다" 는 wm m21-01 이후 낡았다(BTC-SW-49 /
+      // BTC-TAPROOT / Polkadot·Algorand·파라체인 LGR 이 전부 등록돼 있다).
+      // 🔴 여기서 목록을 다시 좁히지 말 것 — 노출하지 않으면 **preset 이 UI 로 도달 불가**해지고,
+      // 도달 불가는 "wm 이 거절한다" 와 구별되지 않아 회귀를 감춘다. 어느 값이 지금 통하는지는
+      // connector 가 판정하지 않는다(`address.ts` 의 forward-only 결정 앵커).
+      // 미개통 형식은 sdk/wm 이 -32602 로 거절하며, **그게 정상 응답**이다.
       var afRow = document.createElement('div')
       afRow.className = 'form-row'
       var afLabel = document.createElement('label')
@@ -1515,7 +1518,10 @@
       var afOptions = [
         { value: '', label: '(default — wm resolver 결정)' },
         { value: 'legacy', label: 'legacy (P2PKH — 1xxx / mxxx)' },
+        { value: 'segwit-wrapped', label: 'segwit-wrapped (P2SH-P2WPKH BIP-49 — 3xxx / 2xxx)' },
         { value: 'segwit-native', label: 'segwit-native (P2WPKH bech32 — bc1q / tb1q)' },
+        { value: 'taproot', label: 'taproot (P2TR bech32m BIP-86 — bc1p)' },
+        { value: 'ledger', label: 'ledger (파생 표준 축 — Polkadot / Algorand / 파라체인 LGR)' },
       ]
       afOptions.forEach(function (o) {
         var opt = document.createElement('option')
@@ -3648,8 +3654,15 @@
   // addressFormat 뿐이다. 종전엔 이 매핑이 getAddress 호출부에만 인라인으로 있어서
   // **서명 요청은 addressFormat 없이 나갔고**, wm 이 inputs[].txType 으로 추론하는 폴백에 의존했다.
   //
-  // p2sh 는 매핑하지 않는다 — legacy multisig 와 BIP-49 wrapped 를 동시에 가리켜 모호하고,
-  // 'segwit-wrapped' 변종은 wm registry 에 아직 없다(명시하면 wm 이 -32602).
+  // 🔴 p2sh 는 **여전히** 매핑하지 않는다. 다만 종전 사유 두 개 중 하나는 낡았다:
+  //   - (여전히 유효) legacy multisig 와 BIP-49 wrapped 를 동시에 가리켜 **모호**하다.
+  //   - (낡음) "'segwit-wrapped' 변종은 wm registry 에 없다" — wm m21-01 에서 BTC-SW-49 가
+  //     등록됐다. 이제 -32602 가 아니라 **잘못된 계정으로 매핑될** 위험이 되므로, 안 매핑하는
+  //     이유가 오히려 강해졌다.
+  // 🔴 p2tr 도 매핑하지 않는다 — input 쪽 p2tr 은 `WIRE_INPUT_TX_TYPES` 에 없어 여기 도달하지
+  //   않는다(wm m21-01-04 가 열면 그때 함께 본다). 지금 매핑하면 도달 불가 분기만 는다.
+  // 🔴 'ledger' 는 이 함수의 축이 아니다 — 여기는 **BTC input txType** 에서 도출하는 자리고,
+  //   'ledger' 는 BTC 밖 파생 표준 축이다.
   function _btcAddressFormatFor (txType) {
     var afMap = { p2pkh: 'legacy', p2wpkh: 'segwit-native' }
     return afMap[txType] || ''

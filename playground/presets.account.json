@@ -221,5 +221,131 @@
         }
       }
     ]
+  },
+  {
+    "id": "syncAccount:btc-segwit-wrapped",
+    "scenarioCode": "115",
+    "label": "Bitcoin — segwit-wrapped (P2SH-P2WPKH BIP-49, 3xxx)",
+    "applicableMethodIds": [
+      "account:syncAccount"
+    ],
+    "value": [
+      {
+        "chainId": "bip122:000000000019d6689c085ae165831e93/slip44:0",
+        "keyPath": "m/49'/0'/0'/0/0",
+        "label": "BTC-SW49-01",
+        "meta": {
+          "addressFormat": "segwit-wrapped"
+        }
+      }
+    ]
+  },
+  {
+    "id": "syncAccount:btc-native-84",
+    "scenarioCode": "116",
+    "label": "Bitcoin — segwit-native BIP-84 경로 (P2WPKH, bc1q)",
+    "applicableMethodIds": [
+      "account:syncAccount"
+    ],
+    "value": [
+      {
+        "chainId": "bip122:000000000019d6689c085ae165831e93/slip44:0",
+        "keyPath": "m/84'/0'/0'/0/0",
+        "label": "BTC-SW84-01",
+        "meta": {
+          "addressFormat": "segwit-native"
+        }
+      }
+    ]
+  },
+  {
+    "id": "syncAccount:btc-taproot",
+    "scenarioCode": "117",
+    "label": "Bitcoin — taproot (P2TR BIP-86, bc1p)",
+    "applicableMethodIds": [
+      "account:syncAccount"
+    ],
+    "value": [
+      {
+        "chainId": "bip122:000000000019d6689c085ae165831e93/slip44:0",
+        "keyPath": "m/86'/0'/0'/0/0",
+        "label": "BTC-TR-01",
+        "meta": {
+          "addressFormat": "taproot"
+        }
+      }
+    ]
+  },
+  {
+    "id": "syncAccount:polkadot-ledger",
+    "scenarioCode": "118",
+    "label": "Polkadot — Ledger 계정 (BIP32-Ed25519)",
+    "applicableMethodIds": [
+      "account:syncAccount"
+    ],
+    "value": [
+      {
+        "chainId": "polkadot:91b171bb158e2d3848fa23a9f1c25182/slip44:354",
+        "keyPath": "m/44'/354'/0'/0'/0'",
+        "label": "DOT-LGR-01",
+        "meta": {
+          "addressFormat": "ledger"
+        }
+      }
+    ]
+  },
+  {
+    "id": "syncAccount:algorand-ledger",
+    "scenarioCode": "119",
+    "label": "Algorand — Ledger 계정 (keyPath 가 base 와 동일 — addressFormat 만이 판별자)",
+    "applicableMethodIds": [
+      "account:syncAccount"
+    ],
+    "value": [
+      {
+        "chainId": "algorand:wGHE2Pwdvd7S12BL5FaOP20EGYesN73k/slip44:283",
+        "keyPath": "m/44'/283'/0'/0/0",
+        "label": "ALGO-LGR-01",
+        "meta": {
+          "addressFormat": "ledger"
+        }
+      }
+    ]
+  },
+  {
+    "id": "syncAccount:astar-ledger",
+    "scenarioCode": "120",
+    "label": "Astar (파라체인) — Ledger 계정",
+    "applicableMethodIds": [
+      "account:syncAccount"
+    ],
+    "value": [
+      {
+        "chainId": "polkadot:9eb76c5184c4ab8679d2d5d819fdf90b/slip44:810",
+        "keyPath": "m/44'/810'/0'/0'/0'",
+        "label": "ASTR-LGR-01",
+        "meta": {
+          "addressFormat": "ledger"
+        }
+      }
+    ]
+  },
+  {
+    "id": "syncAccount:creditcoin-ledger",
+    "scenarioCode": "121",
+    "label": "Creditcoin (파라체인) — Ledger 계정 (keyPath 가 Polkadot LGR 과 동일 — chainId 만이 판별자)",
+    "applicableMethodIds": [
+      "account:syncAccount"
+    ],
+    "value": [
+      {
+        "chainId": "polkadot:6673c7e2c2b7bde45a60c71ef70d9c7c/slip44:354",
+        "keyPath": "m/44'/354'/0'/0'/0'",
+        "label": "CTC-LGR-01",
+        "meta": {
+          "addressFormat": "ledger"
+        }
+      }
+    ]
   }
 ]

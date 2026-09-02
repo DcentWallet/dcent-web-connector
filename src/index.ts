@@ -157,9 +157,11 @@ export type {
 export type { V2SyncAccountInfo, V2AccountInfo, AccountListV2Payload } from './sign'
 // m11-01-02: v2 chainId facade input type for getAddress overload
 export type { GetAddressV2Input } from './sign'
-// m09-04-09: BTC family multi-variant dispatch 축.
-//   `AddressFormat` 은 열린 문자열이고, 알려진 4값은 `KnownAddressFormat` 이다 — **둘 다 내보낸다.**
-//   좁은 쪽을 안 내보내면 소비자가 자기 리포에 4값을 재복제하게 된다(이 축이 없애려던 그 복제).
+// m09-04-09 / m21-02: multi-variant dispatch 축 (BTC 인코딩 + BTC 밖 파생 표준).
+//   `AddressFormat` 은 열린 문자열이고, 알려진 값은 `KnownAddressFormat` 이다 — **둘 다 내보낸다.**
+//   좁은 쪽을 안 내보내면 소비자가 자기 리포에 그 목록을 재복제하게 된다(이 축이 없애려던 그 복제).
+//   🔴 여기에 개수(`4값`)를 적지 말 것 — union 이 늘 때마다 조용히 거짓이 된다(m21-02 에서
+//   'ledger' 가 늘며 실제로 그랬다). 개수는 `address.ts` 의 union 이 유일한 출처다.
 export type { AddressFormat, KnownAddressFormat } from './sign'
 // m09-04-21: v2 getPublicKey verb input type (chain-agnostic — Cardano payment/stake/drep)
 export type { GetPublicKeyV2Input } from './sign'

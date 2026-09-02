@@ -116,8 +116,11 @@ export interface V2SyncAccountInfo {
     decimals?: number
   }
   /** 주소 인코딩 힌트 등 forward-compat 메타. 현재 known: `addressFormat`
-   *  (BTC legacy/segwit-wrapped/segwit-native/taproot disambiguation — getAddress와 동일 enum, m09-04-09).
-   *  같은 chainId(bip122/slip44:0)를 공유하는 BTC variant 를 구분해 sdk 가 coin_name 을 매핑한다. */
+   *  (BTC legacy/segwit-wrapped/segwit-native/taproot + 파생 표준 축 `ledger` — getAddress와 동일 enum,
+   *  m09-04-09 / m21-02).
+   *  같은 chainId 를 공유하는 variant 를 구분해 sdk 가 coin_name 을 매핑한다 — BTC 는
+   *  bip122/slip44:0 을 공유하는 인코딩 variant, Polkadot/Algorand/파라체인은 base 와 LGR 이
+   *  같은 chainId 를 공유하는 파생 표준 variant 다. */
   meta?: { addressFormat?: AddressFormat }
 }
 

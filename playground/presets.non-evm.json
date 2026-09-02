@@ -1702,5 +1702,38 @@
         "branch": "BLockGenesisGenesisGenesisGenesisGenesisf79b5d1CoW2"
       }
     }
+  },
+  {
+    "id": "btc-wrapped-transfer",
+    "scenarioCode": "122",
+    "label": "Bitcoin segwit-wrapped (P2SH-P2WPKH, BIP-49 m/49') transfer",
+    "family": "bitcoin",
+    "applicableChainIds": [
+      "bip122:000000000019d6689c085ae165831e93/slip44:0",
+      "bip122:000000000933ea01ad0ee984209779ba/slip44:0",
+      "bip122:7497ea1b465eb39f1c8f507bc877078f/slip44:20"
+    ],
+    "note": "BIP-49 wrapped SegWit 계정(m/49')으로 서명한다. 🔴 이 preset 의 요점은 **경로 축**이다 — playground 는 sign 시 addressFormat 을 input txType 에서 도출하는데(`_btcAddressFormatFor`), p2sh 는 legacy multisig 와 BIP-49 wrapped 를 동시에 가리켜 모호하므로 **매핑하지 않는다**. 따라서 이 요청은 addressFormat 없이 나가고, 계정을 가르는 것은 keyPath `m/49'` 하나다 (wallet-models m21-01-02 가 chainId+keyPath 로 BTC-SW-49 를 고르는 축을 열었다). prevout 합성도 같은 keyPath 로 getAddress 를 부르므로 서명 계정과 합성 주소가 같은 변종에서 나온다 — 두 축이 갈리면 wm 의 prevout ownership 게이트가 -32602 를 낸다(자산 안전 게이트). 🔴 **경로 축을 담은 wallet-models 가 아직 안 실린 bridge 배포본에서는 legacy 계정으로 떨어져 prevout 불일치 -32602 가 난다 — 그건 이 preset 의 결함이 아니라 하류 미배포 신호다.** 짝 objective: bridge m21-03. ★ taproot 서명 preset 은 이 PR 에 **넣지 않았다** — input `p2tr` 은 connector `WIRE_INPUT_TX_TYPES` 와 wm `VALID_TX_TYPES` 양쪽에 없어(둘 다 실측) 요청이 wm 에 닿기 전에 connector 에서 param_error 로 끊긴다. 그 상태로 preset 을 넣으면 '미배포 -32602' 와 구별되지 않는 가짜 실패를 가르치게 된다. input 개통은 wm m21-01-04 소관이고, 그 뒤 connector 후속에서 넣는다.",
+    "sourceUrl": "https://github.com/bitcoin/bips/blob/master/bip-0049.mediawiki",
+    "transaction": {
+      "inputs": [
+        {
+          "rawTransaction": "0100000001abcdef0123456789abcdef0123456789abcdef0123456789abcdef0123456789000000006a47304402200000000000000000000000000000000000000000000000000000000000000000022000000000000000000000000000000000000000000000000000000000000000000121020000000000000000000000000000000000000000000000000000000000000000ffffffff0140420f00000000001976a914000000000000000000000000000000000000000088ac00000000",
+          "index": 0,
+          "txType": "p2sh",
+          "keyPath": "m/49'/0'/0'/0/0",
+          "sequence": 4294967295
+        }
+      ],
+      "outputs": [
+        {
+          "txType": "p2wpkh",
+          "amount": 990000,
+          "addresses": [
+            "bc1qw508d6qejxtdg4y5r3zarvary0c5xw7kv8f3t4"
+          ]
+        }
+      ]
+    }
   }
 ]

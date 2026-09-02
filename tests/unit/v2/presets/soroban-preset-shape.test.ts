@@ -119,10 +119,11 @@ describe('soroban preset shape (m20-05)', () => {
     }
   })
 
-  it('T-C-PRESET-05: soroban preset 이 든 presets.non-evm.json 의 총 preset 수가 62 다', () => {
+  it('T-C-PRESET-05: soroban preset 이 든 presets.non-evm.json 의 총 preset 수가 63 다', () => {
     // preset 을 추가/삭제하면 이 숫자를 함께 옮긴다 — 유실·중복을 잡는 것이 목적이라
     // 범위 단언으로 풀지 않는다. 55 → 62: XRP/Xahau wire 시나리오 preset 7건(108~114).
-    expect(presets.length).toBe(62)
+    // 62 → 63: m21-02 `btc-wrapped-transfer`(122) — BIP-49 경로 축 preset 1건.
+    expect(presets.length).toBe(63)
   })
 
   it('T-C-PRESET-06: soroban 2건 + XLM payment 2건 + payload-contract EN/KO 6건이 각각 정정됐다', () => {

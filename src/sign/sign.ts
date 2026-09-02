@@ -71,18 +71,23 @@ export interface SignInput {
    * bridge sdk가 받을 payload — `keyPath: string` 필수, family-specific 필드는 sdk가 처리.
    * connector 경계에서 보장되는 contract는 `_validateSignPayload` 참조.
    *
-   * **Bitcoin family 전용 optional 필드 `addressFormat`** (`'legacy' | 'segwit-wrapped' |
-   * 'segwit-native' | 'taproot'` — `getAddress` / `getPublicKey` 와 같은 enum): BTC 는 legacy 와
+   * **variant disambiguation optional 필드 `addressFormat`** (`'legacy' | 'segwit-wrapped' |
+   * 'segwit-native' | 'taproot' | 'ledger'` — `getAddress` / `getPublicKey` 와 같은 enum): BTC 는 legacy 와
    * segwit 계정이 같은 chainId 와 같은 `m/44'` keyPath 를 쓰므로 그 둘만으로는 어느 계정이
    * 서명하는지 가려지지 않는다. `getAccountInfo` 응답의 `meta.addressFormat` 을 그대로 실어
    * 보내면 된다. 생략하면 sdk/wm 이 `transaction.inputs[].txType` 에서 추론하는 종전 동작으로
    * 폴백한다(PSBT payload 에는 그 신호가 없다). connector 는 값을 해석하지 않고 forward 만 한다
    * (`connector-chain-addition-isolation` — chain enum/매핑 0건). enum 검증은 sdk 경계에서 수행.
    *
-   * ⚠️ 네 값 중 **현재 동작하는 것은 `'legacy'` 와 `'segwit-native'` 뿐**이다.
-   * `'segwit-wrapped'` / `'taproot'` 는 대응 currency 변종이 registry 에 없어 `-32602` 로 거부된다
-   * (`address.ts` 의 `AddressFormat` 주석과 같은 단서). Taproot 주소로 **보내는 것**은 별개이며
-   * `outputs[].txType: 'p2tr'` 로 지원된다.
+   * `'ledger'` 는 BTC 축이 아니라 **파생 표준** 축이다 — Polkadot / Algorand / 파라체인(Astar,
+   * Creditcoin) 에서 base 계정과 LGR 계정을 가른다. 🔴 Cardano 는 이 축이 아니다(판별자가
+   * keyPath purpose 다 — 실으면 wm 에서 매칭 실패로 떨어진다).
+   *
+   * ⚠️ **어느 값이 실제로 동작하는지는 connector 가 알지 못한다** — sdk/wm registry 소관이고
+   * 시점에 따라 바뀐다(`address.ts` 의 `AddressFormat` 주석과 같은 단서). 도달 불가한 형식은
+   * `-32602` 로 거부된다. 🔴 이 자리에 "지금 어느 값이 되는지" 목록을 다시 적지 말 것 —
+   * registry 가 열릴 때마다 조용히 낡는다(m21-02 이전 서술이 정확히 그렇게 낡아 있었다).
+   * Taproot 주소로 **보내는 것**은 별개이며 `outputs[].txType: 'p2tr'` 로 지원된다.
    */
   payload: Record<string, unknown>
   // (DC-2701) per-call transport 옵션 제거 — transport는 기기 연결 속성이므로 연결 단위

@@ -164,18 +164,34 @@ describe('m21-02 preset 배선 — 행위', () => {
     expect(`after=${kp()}`).toBe("after=m/44'/0'/0'/0/0")
   })
 
-  it('T-U-CON-18c: chainId 를 건드려도 선택된 preset 의 keyPath 가 되돌아가지 않는다 (경합 금지)', () => {
+  it('T-U-CON-18c: 같은 chainId 로 input 이 다시 떠도 preset keyPath 가 유지된다 (경합 금지)', () => {
     // 🔴 R2 CRITICAL 3 — `_wireKeyPathSync` 가 chainId `input` 마다 defaultKeyPath 로
     //    **무조건 덮어써서**, preset 선택 뒤 chainId 를 만지면 조용히 legacy 로 돌아갔다.
+    //    (같은 값으로 다시 입력해도 event 는 뜬다 — 그게 원래 경합의 모양이다.)
     openBitcoinSignForm()
     selectPreset('btc-wrapped-transfer')
     const chainEl = document.getElementById('field-chainId') as HTMLInputElement
-    chainEl.value = BCH_CAIP
-    chainEl.dispatchEvent(new Event('input'))
-    expect(`otherChain=${kp()}`).toBe("otherChain=m/49'/0'/0'/0/0")
     chainEl.value = BTC_MAINNET_CAIP
     chainEl.dispatchEvent(new Event('input'))
-    expect(`back=${kp()}`).toBe("back=m/49'/0'/0'/0/0")
+    expect(`same=${kp()}`).toBe("same=m/49'/0'/0'/0/0")
+  })
+
+  it('T-U-CON-18c-2: preset 이 선언하지 않은 체인으로 옮기면 **체인 기본값으로 자기 교정**한다', () => {
+    // 🔴 R3 WARNING — `applicableChainIds` 를 BTC mainnet 으로 좁혀도 **폼은 같은 family
+    //    전체를 chainId datalist 로 제공**하므로 축소만으로는 우회가 안 막힌다.
+    //    `btc-wrapped-transfer` 의 keyPath 는 coinType 이 박힌 절대 경로라, 다른 체인에
+    //    그대로 남으면 chainId ↔ coinType 이 어긋난다(축소의 근거와 정반대 방향).
+    //    ⇒ 범위를 벗어나면 preset 을 무시한다. 범위로 돌아오면 다시 preset 이 이긴다.
+    openBitcoinSignForm()
+    selectPreset('btc-wrapped-transfer')
+    expect(`inScope=${kp()}`).toBe("inScope=m/49'/0'/0'/0/0")
+    const chainEl = document.getElementById('field-chainId') as HTMLInputElement
+    chainEl.value = BCH_CAIP
+    chainEl.dispatchEvent(new Event('input'))
+    expect(`outOfScope=${kp()}`).toBe("outOfScope=m/44'/145'/0'/0/0")
+    chainEl.value = BTC_MAINNET_CAIP
+    chainEl.dispatchEvent(new Event('input'))
+    expect(`backInScope=${kp()}`).toBe("backInScope=m/49'/0'/0'/0/0")
   })
 
   it('T-U-CON-18e: **자동선택**된 preset 의 keyPath 도 반영된다 (거울상 짝)', () => {

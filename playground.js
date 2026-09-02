@@ -2741,14 +2741,31 @@
   function _applyNonEvmKeyPath () {
     var kpEl = document.getElementById('field-keyPath')
     if (!kpEl) return
+    var chainEl = document.getElementById('field-chainId')
+    var chainId = chainEl ? chainEl.value : ''
     var presetEl = document.getElementById('field-preset')
     var preset = presetEl ? nonEvmPresetsMap[presetEl.value] : null
-    if (preset && typeof preset.keyPath === 'string' && preset.keyPath !== '') {
+    // 🔴 preset 의 keyPath 는 **그 preset 이 선언한 체인에서만** 이긴다.
+    //   `btc-wrapped-transfer` 의 keyPath 는 coinType 이 박힌 절대 경로(`m/49'/0'`)라,
+    //   폼의 chainId datalist 로 다른 체인(testnet `m/44'/1'` · DigiByte `m/44'/20'`)으로
+    //   옮겨가면 chainId 와 coinType 이 어긋난다. 🔴 applicableChainIds 를 좁혀도 **폼은
+    //   같은 family 전체를 datalist 로 제공**하므로 그 축소만으로는 이 경로가 안 막힌다
+    //   (2026-09-02 크로스 리뷰 실측 — 축소 근거와 반대 방향으로 동작하고 있었다).
+    //   범위를 벗어나면 preset 을 무시하고 체인 기본값으로 **자기 교정**한다.
+    var applicable =
+      !preset ||
+      !Array.isArray(preset.applicableChainIds) ||
+      preset.applicableChainIds.indexOf(chainId) !== -1
+    if (
+      preset &&
+      applicable &&
+      typeof preset.keyPath === 'string' &&
+      preset.keyPath !== ''
+    ) {
       kpEl.value = preset.keyPath
       return
     }
-    var chainEl = document.getElementById('field-chainId')
-    var entry = chainEl ? allChainsMap[chainEl.value] : null
+    var entry = allChainsMap[chainId]
     if (entry && entry.defaultKeyPath) {
       kpEl.value = entry.defaultKeyPath
     }

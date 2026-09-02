@@ -225,7 +225,7 @@
   {
     "id": "syncAccount:btc-segwit-wrapped",
     "scenarioCode": "115",
-    "label": "Bitcoin — segwit-wrapped (P2SH-P2WPKH BIP-49, 3xxx)",
+    "label": "Bitcoin — segwit-wrapped (P2SH-P2WPKH BIP-49, 3xxx) · 경로 축 m/49' [meta 미탑재]",
     "applicableMethodIds": [
       "account:syncAccount"
     ],
@@ -233,17 +233,14 @@
       {
         "chainId": "bip122:000000000019d6689c085ae165831e93/slip44:0",
         "keyPath": "m/49'/0'/0'/0/0",
-        "label": "BTC-SW49-01",
-        "meta": {
-          "addressFormat": "segwit-wrapped"
-        }
+        "label": "BTC-SW49-01"
       }
     ]
   },
   {
     "id": "syncAccount:btc-native-84",
     "scenarioCode": "116",
-    "label": "Bitcoin — segwit-native BIP-84 경로 (P2WPKH, bc1q)",
+    "label": "Bitcoin — segwit-native BIP-84 경로 (P2WPKH, bc1q) · 두 축 일치 (형식+경로 모두 도달)",
     "applicableMethodIds": [
       "account:syncAccount"
     ],
@@ -261,7 +258,7 @@
   {
     "id": "syncAccount:btc-taproot",
     "scenarioCode": "117",
-    "label": "Bitcoin — taproot (P2TR BIP-86, bc1p)",
+    "label": "Bitcoin — taproot (P2TR BIP-86, bc1p) · 경로 축 m/86' [meta 미탑재]",
     "applicableMethodIds": [
       "account:syncAccount"
     ],
@@ -269,17 +266,14 @@
       {
         "chainId": "bip122:000000000019d6689c085ae165831e93/slip44:0",
         "keyPath": "m/86'/0'/0'/0/0",
-        "label": "BTC-TR-01",
-        "meta": {
-          "addressFormat": "taproot"
-        }
+        "label": "BTC-TR-01"
       }
     ]
   },
   {
     "id": "syncAccount:polkadot-ledger",
     "scenarioCode": "118",
-    "label": "Polkadot — Ledger 계정 (BIP32-Ed25519)",
+    "label": "Polkadot — Ledger 계정 · 경로 축 m/44'/354'/0'/0'/0' [meta 미탑재]",
     "applicableMethodIds": [
       "account:syncAccount"
     ],
@@ -287,17 +281,14 @@
       {
         "chainId": "polkadot:91b171bb158e2d3848fa23a9f1c25182/slip44:354",
         "keyPath": "m/44'/354'/0'/0'/0'",
-        "label": "DOT-LGR-01",
-        "meta": {
-          "addressFormat": "ledger"
-        }
+        "label": "DOT-LGR-01"
       }
     ]
   },
   {
     "id": "syncAccount:algorand-ledger",
     "scenarioCode": "119",
-    "label": "Algorand — Ledger 계정 (keyPath 가 base 와 동일 — addressFormat 만이 판별자)",
+    "label": "Algorand — Ledger 계정 · 🔴 오늘 -32602 (addressFormat 만이 판별자인데 하류 미개통 — bridge sdk enum 4값. wm m21-01-03 + bridge m21-03 이 열어야 도달)",
     "applicableMethodIds": [
       "account:syncAccount"
     ],
@@ -315,7 +306,7 @@
   {
     "id": "syncAccount:astar-ledger",
     "scenarioCode": "120",
-    "label": "Astar (파라체인) — Ledger 계정",
+    "label": "Astar (파라체인) — Ledger 계정 · 경로 축 [meta 미탑재]",
     "applicableMethodIds": [
       "account:syncAccount"
     ],
@@ -323,17 +314,14 @@
       {
         "chainId": "polkadot:9eb76c5184c4ab8679d2d5d819fdf90b/slip44:810",
         "keyPath": "m/44'/810'/0'/0'/0'",
-        "label": "ASTR-LGR-01",
-        "meta": {
-          "addressFormat": "ledger"
-        }
+        "label": "ASTR-LGR-01"
       }
     ]
   },
   {
     "id": "syncAccount:creditcoin-ledger",
     "scenarioCode": "121",
-    "label": "Creditcoin (파라체인) — Ledger 계정 (keyPath 가 Polkadot LGR 과 동일 — chainId 만이 판별자)",
+    "label": "Creditcoin (파라체인) — Ledger 계정 · 경로 축 (chainId 만이 Polkadot 과의 판별자) [meta 미탑재]",
     "applicableMethodIds": [
       "account:syncAccount"
     ],
@@ -341,10 +329,7 @@
       {
         "chainId": "polkadot:6673c7e2c2b7bde45a60c71ef70d9c7c/slip44:354",
         "keyPath": "m/44'/354'/0'/0'/0'",
-        "label": "CTC-LGR-01",
-        "meta": {
-          "addressFormat": "ledger"
-        }
+        "label": "CTC-LGR-01"
       }
     ]
   }

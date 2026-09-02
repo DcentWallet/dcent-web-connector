@@ -67,22 +67,41 @@ describe('m21-02 preset 배선 — 행위', () => {
   })
 
   // ──────────────────────────────────────────────────────────────────────────
-  it('T-U-CON-17: syncAccount preset 7건의 meta.addressFormat 이 전송 payload 까지 살아남는다', () => {
-    // 🔴 whitelist 에서 `meta` 가 빠지면 `algorand-ledger` 는 base 계정 요청과
-    //    **바이트 단위로 같은 요청**이 된다(keyPath 가 base 와 동일하므로).
-    const out: string[] = []
-    for (const id of LEDGER_PRESET_IDS) {
+  it('T-U-CON-17: preset 의 meta.addressFormat 이 전송 payload 까지 살아남는다', () => {
+    // 🔴 whitelist 에서 `meta` 가 빠지면 `algorand-ledger` 는 base 계정 요청과 **바이트 동일**이
+    //    된다(keyPath 가 base 와 같아 addressFormat 만이 판별자다).
+    // 🔴 meta 를 싣는 preset 은 **2건뿐**이다 — 나머지는 경로 축으로 도달하며, meta 를 실으면
+    //    하류(bridge sdk enum 4값 / wm byFormat undefined)가 **되던 경로까지 먼저 끊는다**.
+    //    그 판정의 정본은 형제 파일의 `T-U-CON-12` 다.
+    const WITH_META = ['syncAccount:algorand-ledger', 'syncAccount:btc-native-84']
+    const out = WITH_META.map((id) => {
       const preset: any = (accountPresets as any[]).find((p) => p.id === id)
       const sent = api._sanitizeSyncAccountInfos(preset.value)
-      out.push(`${id}=${sent[0].meta?.addressFormat}`)
-    }
-    const expected = LEDGER_PRESET_IDS.map((id) => {
-      const p: any = (accountPresets as any[]).find((x) => x.id === id)
-      return `${id}=${p.value[0].meta.addressFormat}`
+      return `${id}=${sent[0].meta?.addressFormat}`
     })
-    expect(out.join('\n')).toBe(expected.join('\n'))
-    // 🔴 하드코딩 방어 — 7건이 **서로 다른 값 4종**을 낸다. 한 값으로 고정하면 여기서 깨진다.
-    expect(new Set(out.map((x) => x.split('=')[1])).size).toBe(4)
+    expect(out.join('\n')).toBe(
+      [
+        'syncAccount:algorand-ledger=ledger',
+        'syncAccount:btc-native-84=segwit-native',
+      ].join('\n')
+    )
+    // 🔴 하드코딩 방어 — 두 값이 **서로 다르다**. 한 값으로 고정하면 여기서 깨진다.
+    expect(new Set(out.map((x) => x.split('=')[1])).size).toBe(2)
+
+    // meta 를 싣지 않는 5건은 payload 에도 meta 가 없어야 한다(경로 축만으로 간다).
+    const WITHOUT_META = [
+      'syncAccount:btc-segwit-wrapped',
+      'syncAccount:btc-taproot',
+      'syncAccount:polkadot-ledger',
+      'syncAccount:astar-ledger',
+      'syncAccount:creditcoin-ledger',
+    ]
+    const bare = WITHOUT_META.map((id) => {
+      const preset: any = (accountPresets as any[]).find((p) => p.id === id)
+      const sent = api._sanitizeSyncAccountInfos(preset.value)
+      return `${id}=${sent[0].meta === undefined ? 'none' : 'PRESENT'}`
+    })
+    expect(bare.join('\n')).toBe(WITHOUT_META.map((id) => `${id}=none`).join('\n'))
   })
 
   it('T-U-CON-17b: meta 는 own-enumerable 만 읽는다 (상속·비열거 값 거부)', () => {

@@ -115,31 +115,52 @@ describe('m21-02 addressFormat variant presets', () => {
     expect(`af=${a.meta?.addressFormat}`).toBe('af=ledger')
   })
 
-  it("T-U-CON-12: Ledger preset 4건의 addressFormat 이 모두 'ledger' 다", () => {
-    const ids = [
+  it("T-U-CON-12: meta.addressFormat 을 싣는 preset 은 **그것이 유일한 판별자일 때뿐**이다", () => {
+    // 🔴 2026-09-02 크로스 리뷰 R5 — 종전에는 Ledger preset 4건 전부에 `'ledger'` 를 실었다.
+    //    그런데 오늘 실측(wm HEAD):
+    //      polkadot / astar / creditcoin → **byKeyPath 가 LGR 을 고른다**(경로 축으로 도달)
+    //      algorand                      → byKeyPath 가 base 다(경로가 base 와 바이트 동일)
+    //    그리고 bridge sdk 경계의 `ADDRESS_FORMATS` 는 **4값**이라 `'ledger'` 는 -32602 다.
+    //    ⇒ meta 를 실으면 **되던 경로(경로 축)까지 하류가 먼저 끊는다.** 내가 넣은 필드가
+    //      도달 가능하던 3건을 막고 있었다.
+    // 🔴 그래서 meta 는 **경로 축으로 못 가는 것에만** 싣는다. 되돌리지 말 것.
+    const WITH_META: Record<string, string> = {
+      // 경로가 base 와 동일 → addressFormat 만이 판별자. 오늘은 -32602(하류 미개통).
+      'syncAccount:algorand-ledger': 'ledger',
+      // 형식 축·경로 축이 **둘 다 도달**하는 유일한 케이스(byFormat=BTC-SEGWIT, byKeyPath=BTC-SW-84).
+      'syncAccount:btc-native-84': 'segwit-native',
+    }
+    const WITHOUT_META = [
+      'syncAccount:btc-segwit-wrapped',
+      'syncAccount:btc-taproot',
       'syncAccount:polkadot-ledger',
-      'syncAccount:algorand-ledger',
       'syncAccount:astar-ledger',
       'syncAccount:creditcoin-ledger',
     ]
-    expect(ids.map((id) => `${id}=${first(id).meta?.addressFormat}`).join('\n')).toBe(
-      ids.map((id) => `${id}=ledger`).join('\n')
-    )
+    const actual = [
+      ...Object.keys(WITH_META).map((id) => `${id}=${first(id).meta?.addressFormat}`),
+      ...WITHOUT_META.map((id) => `${id}=${first(id).meta?.addressFormat}`),
+    ]
+    const expected = [
+      ...Object.entries(WITH_META).map(([id, v]) => `${id}=${v}`),
+      ...WITHOUT_META.map((id) => `${id}=undefined`),
+    ]
+    expect(actual.join('\n')).toBe(expected.join('\n'))
   })
 
-  it('T-U-CON-13: BTC 신규 preset 3건의 addressFormat 이 keyPath purpose 와 짝이 맞는다', () => {
-    // 🔴 두 축이 어긋나면 wm 결합 규칙 2단계(wireFormatConflicts)가 -32602 를 낸다.
-    //    preset 이 그 상태로 들어가면 "미배포" 와 구별되지 않는 가짜 실패를 가르친다.
-    const pairs: Array<[string, string, string]> = [
-      ['syncAccount:btc-segwit-wrapped', "m/49'", 'segwit-wrapped'],
-      ['syncAccount:btc-native-84', "m/84'", 'segwit-native'],
-      ['syncAccount:btc-taproot', "m/86'", 'taproot'],
+  it('T-U-CON-13: BTC 신규 preset 3건의 keyPath purpose 가 의도한 variant 를 가리킨다', () => {
+    // 🔴 판별은 이제 **keyPath 축**이 소유한다(R5 실측: byFormat 은 wrapped/taproot 에서
+    //    undefined 라 오히려 -32602 를 만든다). purpose 를 고정해 그 축을 지킨다.
+    const pairs: Array<[string, string]> = [
+      ['syncAccount:btc-segwit-wrapped', "m/49'"],
+      ['syncAccount:btc-native-84', "m/84'"],
+      ['syncAccount:btc-taproot', "m/86'"],
     ]
     const actual = pairs.map(([id]) => {
       const v = first(id)
-      return `${id}|${v.keyPath.split('/').slice(0, 2).join('/')}|${v.meta?.addressFormat}`
+      return `${id}|${v.keyPath.split('/').slice(0, 2).join('/')}`
     })
-    expect(actual.join('\n')).toBe(pairs.map(([id, p, af]) => `${id}|${p}|${af}`).join('\n'))
+    expect(actual.join('\n')).toBe(pairs.map(([id, p]) => `${id}|${p}`).join('\n'))
   })
 
   it('T-U-CON-14: syncAccount label(계정 별칭)이 신규 7건에서 서로 다르다', () => {
@@ -163,7 +184,7 @@ describe('m21-02 addressFormat variant presets', () => {
         'syncAccount:btc-segwit-wrapped',
         'bip122:000000000019d6689c085ae165831e93/slip44:0',
         "m/49'/0'/0'/0/0",
-        'segwit-wrapped',
+        'undefined',
       ],
       [
         'syncAccount:btc-native-84',
@@ -175,13 +196,13 @@ describe('m21-02 addressFormat variant presets', () => {
         'syncAccount:btc-taproot',
         'bip122:000000000019d6689c085ae165831e93/slip44:0',
         "m/86'/0'/0'/0/0",
-        'taproot',
+        'undefined',
       ],
       [
         'syncAccount:polkadot-ledger',
         'polkadot:91b171bb158e2d3848fa23a9f1c25182/slip44:354',
         "m/44'/354'/0'/0'/0'",
-        'ledger',
+        'undefined',
       ],
       [
         'syncAccount:algorand-ledger',
@@ -193,13 +214,13 @@ describe('m21-02 addressFormat variant presets', () => {
         'syncAccount:astar-ledger',
         'polkadot:9eb76c5184c4ab8679d2d5d819fdf90b/slip44:810',
         "m/44'/810'/0'/0'/0'",
-        'ledger',
+        'undefined',
       ],
       [
         'syncAccount:creditcoin-ledger',
         'polkadot:6673c7e2c2b7bde45a60c71ef70d9c7c/slip44:354',
         "m/44'/354'/0'/0'/0'",
-        'ledger',
+        'undefined',
       ],
     ]
     const actual = EXPECTED.map(([id]) => {

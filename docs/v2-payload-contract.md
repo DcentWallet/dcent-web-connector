@@ -80,6 +80,14 @@ So omitting `addressFormat` here does not fall back to "some variant" — it pro
 is indistinguishable from the base account. Unlike Polkadot and the parachains, there is **no
 hardened tail** to tell them apart; do not "fix" this path to match those.
 
+**Availability.** `'ledger'` is not accepted by the SDK boundary yet — sending it today comes back
+as `-32602`, and on Polkadot and the parachains it also **loses** the account you were trying to
+reach, because that boundary rejects the request before the keyPath is ever consulted. Until
+wallet-models and the bridge ship the `'ledger'` axis, reach the Ledger account by its **keyPath
+alone** and omit `meta.addressFormat` (Algorand is the exception — its keyPath is identical to the
+base account's, so there is no way to reach it until the axis opens). Which values are actually
+reachable is decided by wallet-models, not by the connector, and it changes over time.
+
 
 **signTransaction payload:**
 
@@ -423,6 +431,14 @@ one `chainId`, so `addressFormat` (or a Ledger `keyPath`) is what tells them apa
 
 Note the hardened tail on the Ledger path. `chains.json`'s `defaultKeyPath` holds the **base**
 path — copying it verbatim will not reach the Ledger account.
+
+**Availability.** `'ledger'` is not accepted by the SDK boundary yet — sending it today comes back
+as `-32602`, and on Polkadot and the parachains it also **loses** the account you were trying to
+reach, because that boundary rejects the request before the keyPath is ever consulted. Until
+wallet-models and the bridge ship the `'ledger'` axis, reach the Ledger account by its **keyPath
+alone** and omit `meta.addressFormat` (Algorand is the exception — its keyPath is identical to the
+base account's, so there is no way to reach it until the axis opens). Which values are actually
+reachable is decided by wallet-models, not by the connector, and it changes over time.
 
 The same applies to parachains that expose a Ledger account (Astar, Creditcoin).
 

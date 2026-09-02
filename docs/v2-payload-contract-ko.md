@@ -81,6 +81,13 @@ BIP32-Ed25519 표준으로 파생한 계정을 하나 더 들 수 있다.
 구별 불가능한 요청**을 만드는 것이다. Polkadot·파라체인과 달리 **하드닝 tail 이 없다** —
 그쪽에 맞춰 이 경로를 "정정" 하지 말 것.
 
+**가용성.** `'ledger'` 는 아직 sdk 경계가 받지 않는다 — 오늘 실으면 `-32602` 로 돌아오고,
+🔴 Polkadot·파라체인에서는 **도달하려던 계정까지 잃는다**(그 경계가 keyPath 를 보기 **전에**
+요청을 끊기 때문이다). wallet-models 와 bridge 가 `'ledger'` 축을 열기 전까지는
+**keyPath 만으로** Ledger 계정에 도달하고 `meta.addressFormat` 은 **생략한다**
+(Algorand 만 예외 — keyPath 가 base 와 동일해 축이 열리기 전에는 도달할 방법이 없다).
+어느 값이 실제로 도달 가능한지는 connector 가 아니라 wallet-models 가 정하며 시점에 따라 바뀐다.
+
 
 **signTransaction payload:**
 
@@ -424,6 +431,13 @@ BIP32-Ed25519 표준으로 파생한 계정을 하나 더 들 수 있다. 두 �
 
 🔴 Ledger 경로는 **tail 이 하드닝**이다. `chains.json` 의 `defaultKeyPath` 는 **base** 경로라
 그대로 복사하면 Ledger 계정에 도달하지 못한다.
+
+**가용성.** `'ledger'` 는 아직 sdk 경계가 받지 않는다 — 오늘 실으면 `-32602` 로 돌아오고,
+🔴 Polkadot·파라체인에서는 **도달하려던 계정까지 잃는다**(그 경계가 keyPath 를 보기 **전에**
+요청을 끊기 때문이다). wallet-models 와 bridge 가 `'ledger'` 축을 열기 전까지는
+**keyPath 만으로** Ledger 계정에 도달하고 `meta.addressFormat` 은 **생략한다**
+(Algorand 만 예외 — keyPath 가 base 와 동일해 축이 열리기 전에는 도달할 방법이 없다).
+어느 값이 실제로 도달 가능한지는 connector 가 아니라 wallet-models 가 정하며 시점에 따라 바뀐다.
 
 Ledger 계정을 노출하는 파라체인(Astar, Creditcoin)도 동일하다.
 

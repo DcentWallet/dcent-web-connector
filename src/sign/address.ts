@@ -80,7 +80,10 @@ import type { V1Response } from './types'
  *                      LGR `m/44'/354'/0'/0'/0'` — tail 하드닝 여부).
  *
  * 🔴 **Cardano 는 이 축이 아니다.** Cardano 의 legacy/LGR 판별자는 keyPath purpose(`1852'` vs
- * `44'`)라 `addressFormat: 'ledger'` 를 실으면 wm 에서 매칭 실패로 떨어진다. 실으면 안 된다.
+ * `44'`)다. `addressFormat: 'ledger'` 를 실으면 안 되는데, 🔴 **거절 지점을 정확히 알아두라** —
+ * wm 은 Cardano chainId 에 형식 축이 없어(`hasAddressFormatAxis=false`) addressFormat 을
+ * **무시하고 base 로 collapse** 한다(매칭 실패가 아니다). 실제로 끊는 곳은 **sdk 경계의 enum**
+ * 이다. 2026-09-02 정정 — 종전 주석은 "wm 에서 매칭 실패" 라고 썼으나 실측과 다르다.
  *
  * ⚠️ 어느 값이 **실제로 동작하는지는 여기서 결정되지 않는다** — sdk/wm registry 소관이고
  * 시점에 따라 바뀐다. 도달 불가한 형식은 `-32602` 로 거절된다.

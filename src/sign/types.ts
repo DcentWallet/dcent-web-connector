@@ -142,7 +142,11 @@ export interface V2AccountMeta {
   /** 주소 인코딩 variant 힌트 (3축 disambiguation의 encoding 축). sdk가 도출(m09-03-27), connector는
    *  forward만. 'segwit-native'=BIP-84 bech32 / 'legacy'=같은 chainId에 segwit 형제가 실재하는
    *  bitcoin-family base(BITCOIN/DIGIBYTE 등)에만 부여. 그 외(customAddressPathFor/legacyFor 변형)는
-   *  인코딩이 같아 keyPath로 구분(미부여). App은 BTC legacy/segwit 구분에 사용. */
+   *  인코딩이 같아 keyPath로 구분(미부여). App은 BTC legacy/segwit 구분에 사용.
+   *  🔴 [m21-02] **요청 측(`V2SyncAccountInfo.meta`)과 범위가 다르다.** 요청 측은 파생 표준 축
+   *  `'ledger'` 까지 받지만, 이 **응답** 측은 sdk 가 도출하는 값만 담고 sdk 의 도출기는 오늘
+   *  인코딩 값만 낸다 — 그래서 위 서술이 **현재는 참**이다. 🔴 sdk 가 `'ledger'` 를 도출하기
+   *  시작하면(bridge m21-03) 이 문장이 조용히 낡는다. 그때 요청 측과 함께 고칠 것 — 거울상 짝이다. */
   addressFormat?: AddressFormat
   /** forward-compat: 추후 sdk가 추가하는 account-info 부가값. connector 재배포 없이 확장.
    *  (addressFormat은 known 키로 승격되기 전부터 이 index signature로 이미 통과되어 왔다.) */

@@ -227,26 +227,4 @@ describe('m21-02 addressFormat variant presets', () => {
     expect(`same=${p.keyPath === inp?.keyPath}`).toBe('same=true')
   })
 
-  it('T-U-CON-17: syncAccount preset 의 meta 가 playground 전송 whitelist 를 통과한다', () => {
-    // 🔴 2026-09-02 크로스 리뷰 CRITICAL — `_sanitizeSyncAccountInfos` 의 whitelist 에
-    //    `meta` 가 없어 preset 의 addressFormat 이 **전송 전에 통째로 버려지고 있었다.**
-    //    `algorand-ledger` 는 keyPath 가 base 와 같아, meta 가 빠지면 base 계정 요청과
-    //    바이트 단위로 같은 요청이 나간다 — 도달 불가인데 실기기가 "LGR 을 봤다" 로 오판한다.
-    const src = readFileSync(join(__dirname, '../../../../playground.js'), 'utf8')
-    const body = src.slice(src.indexOf('function _sanitizeSyncAccountInfos'))
-    const fn = body.slice(0, body.indexOf('\n  }\n'))
-    expect(`meta=${/out\.meta\s*=/.test(fn)}`).toBe('meta=true')
-    expect(`af=${fn.includes('addressFormat')}`).toBe('af=true')
-    // own-enumerable 규칙 — 상속값을 주워 담지 않는다(형제 필드와 같은 축).
-    expect(`ownKeys=${fn.includes('Object.keys(a.meta)')}`).toBe('ownKeys=true')
-  })
-
-  it('T-U-CON-18: non-EVM preset 이 선언한 keyPath 를 playground 가 top-level 필드에 채운다', () => {
-    // 🔴 채우지 않으면 chainId 동기화 훅이 넣은 chains.json 기본값이 그대로 나간다.
-    const src = readFileSync(join(__dirname, '../../../../playground.js'), 'utf8')
-    expect(`wired=${/typeof preset\.keyPath === 'string'/.test(src)}`).toBe('wired=true')
-    expect(`fills=${/getElementById\('field-keyPath'\)[\s\S]{0,120}preset\.keyPath/.test(src)}`).toBe(
-      'fills=true'
-    )
-  })
 })

@@ -1490,11 +1490,12 @@
       inputContainer.appendChild(keyPathRow)
 
       // chainId change → keyPath default 자동 갱신 (사용자가 명시적으로 수정한 값은 유지하지 않음 — 단순 UX)
+      // 🔴 [m21-02] 이 폼에는 keyPath 를 선언하는 preset 이 아직 없어 `_applyNonEvmKeyPath` 는
+      //   여기서 항상 기본값 경로로 떨어진다(= 동작 불변). 그래도 **직접 대입을 남기지 않는다** —
+      //   top-level keyPath 를 대입하는 자리가 둘이면, 나중에 이 폼에 keyPath preset 이 생겼을 때
+      //   비-EVM 폼에서 났던 그 경합이 여기서 그대로 재발한다(그게 이 라운드의 결함이었다).
       chainSelect.addEventListener('change', function () {
-        var entry = allChainsMap[chainSelect.value]
-        if (entry && entry.defaultKeyPath) {
-          keyPathInput.value = entry.defaultKeyPath
-        }
+        _applyNonEvmKeyPath()
       })
 
       // addressFormat (optional, m09-04-09)
@@ -2530,16 +2531,10 @@
         } else {
           txEl.value = JSON.stringify(preset.transaction, null, 2)
         }
-        // 🔴 [m21-02] preset 이 keyPath 를 선언하면 **top-level keyPath 필드도 채운다.**
-        //   wm 의 경로 축(`resolveCurrencyByChainIdAndKeyPath`)이 보는 것은 payload 의
-        //   **top-level keyPath** 이지 `inputs[].keyPath` 가 아니다. 이 필드는 chainId 동기화
-        //   훅이 `chains.json` 의 defaultKeyPath(BTC = m/44'/0'/0'/0/0)로 채워 두므로,
-        //   `m/49'` 계정 preset 을 골라도 요청은 legacy 계정으로 나갔다.
-        //   🔴 선언하지 않은 preset 은 건드리지 않는다(기존 62건의 동작 불변).
-        if (typeof preset.keyPath === 'string' && preset.keyPath !== '') {
-          var kpEl = document.getElementById('field-keyPath')
-          if (kpEl) kpEl.value = preset.keyPath
-        }
+        // 🔴 [m21-02] top-level keyPath 는 `_applyNonEvmKeyPath` 하나가 정한다.
+        //   여기서 인라인으로 대입하면 자동선택 분기·chainId 훅과 사본이 셋이 된다
+        //   (2026-09-02 크로스 리뷰: 실제로 그 셋이 서로 어긋났다).
+        _applyNonEvmKeyPath()
       })
       presetRow.appendChild(presetLabel)
       presetRow.appendChild(presetSelect)
@@ -2556,6 +2551,11 @@
             txAutoEl.value = JSON.stringify(firstPreset.transaction, null, 2)
           }
         }
+        // 🔴 [m21-02] `presetSelect.value = …` 는 change 를 **발화하지 않는다** — 이 분기는
+        //   위 핸들러의 사본이라 배선을 여기에도 걸어야 한다(거울상 짝).
+        //   지금은 파일 순서상 keyPath 를 선언한 preset 이 첫째가 아니라 잠재 결함이지만,
+        //   presets JSON 을 한 번 재정렬하면 즉시 활성이 된다.
+        _applyNonEvmKeyPath()
       }
     } else {
       var noPresetEl2 = document.createElement('p')
@@ -2728,13 +2728,38 @@
   // chainId input의 변경(타이핑/datalist 선택)을 keyPath input의 defaultKeyPath로 동기화.
   // 단순 정책: chainId가 allChainsMap에 있으면 그 defaultKeyPath로 덮어쓴다.
   // 사용자가 keyPath를 직접 수정한 경우도 덮어씌워질 수 있으나, renderAccountForm과 동일한 단순 UX.
+  // 🔴 [m21-02] top-level keyPath 의 **단일 결정 지점**.
+  //   값은 (현재 chainId, 현재 선택 preset) 의 함수다. 두 입력 중 **무엇이 바뀌든** 이 함수를
+  //   다시 부르면 항상 같은 답이 나오므로, 아래 세 가지가 한 번에 닫힌다:
+  //     ① preset 선택 → keyPath 반영 (그 전에는 chains.json 기본값이 그대로 나갔다)
+  //     ② chainId 를 건드리면 preset keyPath 가 조용히 되돌아가던 경합
+  //     ③ keyPath 를 선언하지 않은 preset 으로 되돌릴 때 이전 값이 **누수**되던 것
+  //   🔴 ②·③ 이 특히 위험하다 — top-level 과 `inputs[].keyPath` 가 갈리면 wm 의 prevout
+  //   ownership 게이트가 -32602 를 내는데, 그 -32602 는 "하류 미배포" 신호와 구별되지 않는다.
+  //   🔴 `field-preset` 은 5개 폼이 공유하는 id 지만 조회 대상이 `nonEvmPresetsMap` 이라
+  //   다른 폼에서는 항상 miss → 기본값 경로로 떨어진다(종전 동작 그대로).
+  function _applyNonEvmKeyPath () {
+    var kpEl = document.getElementById('field-keyPath')
+    if (!kpEl) return
+    var presetEl = document.getElementById('field-preset')
+    var preset = presetEl ? nonEvmPresetsMap[presetEl.value] : null
+    if (preset && typeof preset.keyPath === 'string' && preset.keyPath !== '') {
+      kpEl.value = preset.keyPath
+      return
+    }
+    var chainEl = document.getElementById('field-chainId')
+    var entry = chainEl ? allChainsMap[chainEl.value] : null
+    if (entry && entry.defaultKeyPath) {
+      kpEl.value = entry.defaultKeyPath
+    }
+  }
+
   function _wireKeyPathSync (chainIdInput, keyPathInput) {
     if (!chainIdInput || !keyPathInput) return
     chainIdInput.addEventListener('input', function () {
-      var entry = allChainsMap[chainIdInput.value]
-      if (entry && entry.defaultKeyPath) {
-        keyPathInput.value = entry.defaultKeyPath
-      }
+      // 🔴 여기서 defaultKeyPath 를 직접 대입하지 않는다 — 선택된 preset 이 keyPath 를
+      //   선언했으면 그것이 이긴다(위 함수가 그 우선순위를 소유한다).
+      _applyNonEvmKeyPath()
     })
   }
 

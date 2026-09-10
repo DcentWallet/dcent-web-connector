@@ -20,7 +20,7 @@
  *
  * 룰 준수:
  *   - boundary-validation / dapp-input-sanitization: 각 add 시점에 필드 type/값 검증 (fail-fast).
- *     unsupported txType(input: p2pk/multisig/p2tr, output: p2pk/multisig)
+ *     unsupported txType(input: p2pk/multisig, output: p2pk/multisig)
  *     / 비-satoshi amount / malformed 인자 → param_error throw.
  *   - error-handling-consistency: 검증 실패는 모두 dcentException('param_error') (v2 builder는 coinType 미사용 — m09-04-15).
  *   - mutation-isolation (T-MUT-TX-01/02): getBitcoinTransactionObject는 매 호출마다 새 객체 반환.
@@ -31,13 +31,15 @@
 
 import { dcentException } from '../v1/dcent-exception'
 
-/** wm BITCOIN family wire **input** txType (wm `VALID_TX_TYPES`). p2tr/p2pk/multisig 의도적 제외.
- *  `p2tr` 이 input 에서만 빠지는 이유는 wm 입력 서명 경로에 P2TR 처리가 없기 때문이다 —
- *  **output(수신 주소)은 허용**된다(`BitcoinWireOutputTxType`). */
-export type BitcoinWireTxType = 'p2pkh' | 'p2sh' | 'p2wpkh' | 'p2wsh'
+/** wm BITCOIN family wire **input** txType (wm `VALID_TX_TYPES`). p2pk/multisig 의도적 제외.
+ *  `p2tr` 은 wm m21-01-04 이 입력 서명 경로(P2TR witness/서명능력 게이트)를 배선하면서 열렸다 —
+ *  여기서의 `p2tr` 은 "Taproot UTXO 를 **소비해 서명**한다" 는 뜻이다. */
+export type BitcoinWireTxType = 'p2pkh' | 'p2sh' | 'p2wpkh' | 'p2wsh' | 'p2tr'
 
-/** wm BITCOIN family wire **output** txType. input union 과 달리 `'p2tr'`(Taproot 수신 주소)과
- *  `'change'` 를 포함한다 — wm `BitcoinWireOutputTxType` 과 1:1. */
+/** wm BITCOIN family wire **output** txType — wm `BitcoinWireOutputTxType` 과 1:1.
+ *  🔴 `'p2tr'` 을 input union 에서 상속받지 않고 **명시적으로 다시 쓴다** — output 의 `p2tr` 은
+ *  "Taproot 주소로 **수취**"라는 별개 축이라, input union 이 어떤 이유로 좁아져도 output 은
+ *  따라 좁아지면 안 된다(축 차이는 아래 whitelist 주석 참조). */
 export type BitcoinWireOutputTxType = BitcoinWireTxType | 'p2tr' | 'change'
 
 /** flat wire input — wm `BitcoinWireInput` 1:1. */
@@ -72,19 +74,19 @@ export interface BitcoinWireTransaction {
   keyPath?: string
 }
 
-// wm 의 두 union 과 1:1. **input 과 output 은 서로 다르다** — 한 배열로 합치지 말 것.
-//   input  : wm `VALID_TX_TYPES` — P2TR 입력 서명 경로가 없어 `p2tr` 제외 (wm 이 -32602).
-//   output : wm `BitcoinWireOutputTxType` — `p2tr`(Taproot 수신 주소) **포함**. wm 은
-//            witness v1 을 선언한 currency(BITCOIN / BTC-SEGWIT 등 — **서명하는 계정** 쪽)에 한해
-//            허용하고, 주소 hrp·mislabel·change 가드까지 스스로 건다. 커넥터가 여기서 함께 막으면
-//            **wm 이 이미 연 경로를 빌더만 막는 드리프트**가 된다(실제로 그 상태였다).
-//            ⚠️ 여기서 열리는 것은 "Taproot 주소로 **보내기**" 지 "Taproot 계정으로 **서명하기**"
-//            가 아니다. 후자는 addressFormat `'taproot'` 축이고, 개통 여부는 **wm registry 가**
-//            정한다(connector 는 판정하지 않는다). 🔴 여기에 개통 상태를 적지 말 것 — wm 이
-//            열면 조용히 낡는다. input 쪽 `p2tr` 를 여는 것은 wm m21-01-04 소관이며, 이 배열은
-//            그때 wm 의 `VALID_TX_TYPES` 와 다시 대조한다.
+// wm 의 두 union 과 1:1. 🔴 **input 과 output 은 서로 다른 축이다** — 값이 겹쳐 보여도 한 배열로
+// 합치거나 한쪽을 다른 쪽에서 파생시키지 말 것. 축이 다르면 열리는 시점도 막는 이유도 다르다.
+//   input  : wm `VALID_TX_TYPES` — "그 script type 의 UTXO 를 **소비해 서명**할 수 있는가".
+//            `p2tr` 은 wm m21-01-04 이 P2TR 입력 서명 경로(서명능력 게이트 + change 조건화)를
+//            배선하면서 열렸다. 실제 어느 계정이 서명하는지는 payload 의 addressFormat/keyPath
+//            축이 정하며, 도달 가능 여부의 최종 판정은 **wm 이** 한다(connector 는 판정하지 않는다).
+//   output : wm `BitcoinWireOutputTxType` — "그 주소 형식으로 **수취**할 수 있는가".
+//            `p2tr` 은 Taproot 수신 주소(`bc1p…`)를 뜻하고, wm 이 주소 hrp·mislabel·change
+//            가드를 스스로 건다. `'change'` 는 output 전용이라 input 이 계속 거부한다.
+//   🔴 여기에 "지금 무엇이 개통됐나" 를 더 적지 말 것 — wm 이 움직이면 조용히 낡는다.
+//      미개통 조합은 wm 이 -32602 로 거절하며 **그게 정상 응답**이다.
 //   p2pk / multisig 는 양쪽 모두 미지원.
-const WIRE_INPUT_TX_TYPES: readonly string[] = ['p2pkh', 'p2sh', 'p2wpkh', 'p2wsh']
+const WIRE_INPUT_TX_TYPES: readonly string[] = ['p2pkh', 'p2sh', 'p2wpkh', 'p2wsh', 'p2tr']
 const WIRE_OUTPUT_TX_TYPES: readonly string[] = ['p2pkh', 'p2sh', 'p2wpkh', 'p2wsh', 'p2tr', 'change']
 
 /** satoshi 값 검증 — number는 safe integer(≥0), string은 canonical 10진 정수 문자열. */
@@ -129,7 +131,11 @@ export function getBitcoinTransactionObject (): BitcoinWireTransaction {
  * @param transaction `getBitcoinTransactionObject` 산출물
  * @param prevTx 이전 tx raw hex (wire `rawTransaction`)
  * @param utxoIdx prevout index (wire `index`, non-neg integer)
- * @param type p2pkh/p2sh/p2wpkh/p2wsh (wire `txType`)
+ * @param type p2pkh/p2sh/p2wpkh/p2wsh/**p2tr** (wire `txType`) — 이 input(UTXO)의 script type.
+ *   여기서의 `p2tr` 은 "Taproot UTXO 를 **소비해 서명**한다" 는 뜻이며, output 쪽 `p2tr`
+ *   ("Taproot 주소로 **수취**")과 **다른 축**이다. 도달 가능 여부의 최종 판정은 wm 이 -32602 로 한다.
+ *   ⚠️ `'p2tr'` 은 v1 호환 enum `bitcoinTxType` 에 **없다**(그 enum 은 v1 과 1:1 로 동결).
+ *   raw 문자열 `'p2tr'` 로 전달할 것.
  * @param key BIP32 signing path (wire `keyPath`)
  * @returns 같은 transaction 객체 (chaining)
  * @throws dcentException('param_error') malformed 인자 / unsupported txType
@@ -173,6 +179,9 @@ export function addBitcoinTransactionInput (
  * @param type p2pkh/p2sh/p2wpkh/p2wsh/**p2tr** 또는 'change' (wire `txType`).
  *   `p2tr` 은 Taproot 수신 주소(`bc1p…`)로 보낼 때 쓴다 — 허용 여부의 최종 판정(currency 의
  *   witness v1 선언 · 주소 hrp 일치)은 wm 이 -32602 로 한다.
+ *   🔴 input 쪽 `p2tr`(Taproot UTXO 를 **소비해 서명**)과 **다른 축**이다 — 같은 문자열이지만
+ *   여기는 "수취 주소 인식", 저기는 "서명 능력". 두 whitelist 를 합치지 말 것.
+ *   `'change'` 는 output 전용이라 input 은 계속 거부한다.
  *   ⚠️ `'p2tr'` 은 v1 호환 enum `bitcoinTxType` 에 **없다**(그 enum 은 v1 과 키·값 1:1 로 동결돼
  *   있고 `types-drift` 테스트가 그것을 강제한다). raw 문자열 `'p2tr'` 로 전달할 것.
  * @param value satoshi 금액 — number(safe int ≥0) 또는 canonical 10진 문자열 (wire `amount`로 String화, 단위 변환 없음)

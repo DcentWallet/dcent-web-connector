@@ -250,6 +250,69 @@ describe('m21-02 preset 배선 — 행위', () => {
     expect(`backToBtc=${kp()}`).toBe('backToBtc=m/44\'/0\'/0\'/0/0')
   })
 
+  it("T-U-CON-18g: taproot preset 을 고르면 top-level keyPath 가 m/86' 로 바뀐다", () => {
+    // 🔴 wrapped(m/49') 와 **다른 값**을 쓴다 — 같은 값이면 두 preset 이 서로 투명해져
+    //    배선이 한쪽만 걸려 있어도 초록이다.
+    openBitcoinSignForm()
+    selectPreset('btc-wrapped-transfer')
+    expect(`wrapped=${kp()}`).toBe("wrapped=m/49'/0'/0'/0/0")
+    selectPreset('btc-taproot-transfer')
+    expect(`taproot=${kp()}`).toBe("taproot=m/86'/0'/0'/0/0")
+    selectPreset('btc-transfer')
+    expect(`back=${kp()}`).toBe("back=m/44'/0'/0'/0/0")
+  })
+
+  it('T-U-CON-19: input txType → addressFormat 매핑 **전건**이 고정된다', () => {
+    // 🔴 이 매핑이 서명 요청의 **계정**을 정한다. p2tr 만 단언하면 나머지가 조용히 바뀌어도
+    //    초록이고, 매핑을 통째로 `'taproot'` 로 하드코딩해도 잡히지 않는다 —
+    //    그래서 매핑되는 3건 + 일부러 매핑하지 않는 2건을 **한 문자열로** 고정한다.
+    const AXES = ['p2pkh', 'p2wpkh', 'p2tr', 'p2sh', 'p2wsh']
+    const actual = AXES.map((t) => `${t}=${api._btcAddressFormatFor(t) || '(none)'}`)
+    expect(actual.join('\n')).toBe(
+      [
+        'p2pkh=legacy',
+        'p2wpkh=segwit-native',
+        // wm m21-01-04 이 P2TR 입력 서명 경로를 연 뒤 개통. 매핑하지 않으면 요청이
+        // addressFormat 없이 나가 legacy 계정으로 떨어진다.
+        'p2tr=taproot',
+        // p2sh 는 legacy multisig ↔ BIP-49 wrapped 로 **모호**해 매핑하지 않는다(의도).
+        'p2sh=(none)',
+        'p2wsh=(none)',
+      ].join('\n')
+    )
+    // 하드코딩 방어 — 매핑되는 3건의 값이 서로 다르다.
+    expect(new Set(['p2pkh', 'p2wpkh', 'p2tr'].map((t) => api._btcAddressFormatFor(t))).size).toBe(3)
+  })
+
+  // ──────────────────────────────────────────────────────────────────────────
+  // 🔴 T-U-CON-20 — **UI 도달성**. 값이 select 에 없으면 사람이 실기기로 태울 수 없고,
+  //    "태울 수 없음" 은 "wm 이 거절함" 과 구별되지 않아 회귀를 감춘다.
+  //    실측: 이 두 단언이 없을 때 select 에서 'p2tr' 을 지우는 뮤테이션이 **SURVIVE** 했다.
+  const optionValues = (id: string): string =>
+    Array.from((document.getElementById(id) as HTMLSelectElement).options)
+      .map((o) => o.value)
+      .join(',')
+
+  it('T-U-CON-20: 자동 모드 폼의 Input txType select 가 p2tr 을 노출한다', () => {
+    openBitcoinSignForm()
+    const autoRadio = document.querySelector(
+      'input[name="btx-sign-mode"][value="auto"]'
+    ) as HTMLInputElement
+    autoRadio.checked = true
+    autoRadio.dispatchEvent(new Event('change'))
+    expect(`btcTxType=${optionValues('field-btcTxType')}`).toBe('btcTxType=p2pkh,p2wpkh,p2sh,p2tr')
+  })
+
+  it('T-U-CON-20b: 빌더 addInput 폼의 type select 도 p2tr 을 노출한다 (거울상 짝)', () => {
+    // 🔴 두 폼은 **서로 다른 진입점**이다. 한쪽만 열면 다른 쪽으로 들어온 사람은 여전히 못 태운다.
+    const node = document.querySelector('[data-method-id="btx:addInput"]') as HTMLElement
+    node.click()
+    expect(`inputType=${optionValues('field-inputType')}`).toBe(
+      // p2pk/multisig 는 v1 enum 표면 보존을 위해 남아 있고 빌더가 param_error 로 거부한다.
+      'inputType=p2wpkh,p2pkh,p2pk,p2sh,multisig,p2wsh,p2tr'
+    )
+  })
+
   it('T-U-CON-18d: preset 이 없으면 chainId 기본값이 그대로 적용된다 (기존 폼 동작 불변)', () => {
     openBitcoinSignForm()
     selectPreset('btc-transfer')

@@ -104,7 +104,7 @@ describe('wm BitcoinWireTransaction 계약 (T-U-TXBLD-06)', () => {
     const tx = getBitcoinTransactionObject()
     addBitcoinTransactionInput(tx, 'raw', 0, 'p2wpkh', "m/84'/0'/0'/0/0")
     addBitcoinTransactionOutput(tx, 'p2wpkh', '200000', 'bc1qexample')
-    expect(['p2pkh', 'p2sh', 'p2wpkh', 'p2wsh']).toContain(tx.inputs[0].txType)
+    expect(['p2pkh', 'p2sh', 'p2wpkh', 'p2wsh', 'p2tr']).toContain(tx.inputs[0].txType)
     expect(BIP32_PATH_RE.test(tx.inputs[0].keyPath)).toBe(true)
     expect(tx.outputs[0].amount).toBe('200000')
     expect(Array.isArray(tx.outputs[0].addresses)).toBe(true)
@@ -134,8 +134,8 @@ describe('add 시점 boundary validation (T-U-TXBLD-VAL)', () => {
     expect(() => addBitcoinTransactionOutput(tx, 'multisig', '1', 'addr')).toThrow(PARAM_ERROR)
   })
 
-  // p2tr 은 **거울상 비대칭**이다 — output 은 허용, input 은 거부. 한쪽만 단언하면 두 배열을
-  // 하나로 합치는 리팩터가 조용히 통과한다(합치면 input 이 p2tr 을 받아 wm 에서 -32602 가 난다).
+  // p2tr 은 **양쪽 다 허용되지만 축이 다르다** — output 은 "Taproot 주소로 수취", input 은
+  // "Taproot UTXO 를 소비해 서명". 한쪽만 단언하면 다른 쪽이 조용히 닫혀도 초록이므로 둘 다 고정한다.
   test('T-U-TXBLD-VAL-03b: addOutput p2tr(Taproot 수신) → 허용 + wire 에 그대로 실린다', () => {
     const tx = getBitcoinTransactionObject()
     addBitcoinTransactionOutput(tx, 'p2tr', '200000', 'bc1p5cyxnuxmeuwuvkwfem96l0bqaq6bqqkzqvqzqqqqqqqqqqqqqqqqq')
@@ -144,10 +144,11 @@ describe('add 시점 boundary validation (T-U-TXBLD-VAL)', () => {
     expect(tx.outputs[0].amount).toBe('200000')
   })
 
-  // 클래스는 "**output 전용** txType 을 input 이 거부한다" 이고 원소는 `p2tr` 과 `change` **둘**이다.
-  // p2tr 만 단언하면 `WIRE_INPUT_TX_TYPES = WIRE_OUTPUT_TX_TYPES.filter(t => t !== 'p2tr')` 형태의
-  // 병합이 그대로 통과한다 — 그러면 'change' 가 input 으로 들어가고 wm 이 -32602 를 낸다.
-  test.each(['p2tr', 'change'])(
+  // 클래스는 "**output 전용** txType 을 input 이 거부한다" 이고, 원소는 이제 `change` **하나**다.
+  // 🔴 `p2tr` 은 이 클래스에서 빠졌다 — wm m21-01-04 이 P2TR 입력 서명 경로를 열었고 connector 도
+  //    뒤이어 열었기 때문이다(그 개통의 양성 단언은 아래 VAL-03f/03g 가 갖는다). `change` 만 남은
+  //    이유는 그것이 **wire 상의 output 전용 마커**라 input 에는 대응 개념이 없어서다.
+  test.each(['change'])(
     'T-U-TXBLD-VAL-03c: addInput %s → param_error (output 전용 txType 은 input 이 거부)',
     (outputOnlyType) => {
       const tx = getBitcoinTransactionObject()
@@ -155,6 +156,42 @@ describe('add 시점 boundary validation (T-U-TXBLD-VAL)', () => {
       expect(tx.inputs).toHaveLength(0)
     },
   )
+
+  // ──────────────────────────────────────────────────────────────────────────
+  // m21-02 후속 — input `p2tr` 개통 (wm m21-01-04 / PR #1553 이 하류를 연 뒤)
+  //
+  // 🔴 이 두 테스트는 **짝**이다. 양성(03f)만 두면 whitelist 를 통째로 무력화해도(모든 문자열 통과)
+  //    초록이고, 대조군(03g)만 두면 p2tr 이 빠져도 초록이다. 둘 다 있어야 "p2tr **만** 열렸다" 가 고정된다.
+  test('T-U-TXBLD-VAL-03f: addInput p2tr(Taproot UTXO 소비) → 허용 + wire 에 그대로 실린다', () => {
+    const tx = getBitcoinTransactionObject()
+    addBitcoinTransactionInput(tx, 'rawprev', 1, 'p2tr', "m/86'/0'/0'/0/0")
+    expect(tx.inputs).toHaveLength(1)
+    // 🔴 값을 축마다 다르게 골랐다 — index 를 0 이 아닌 1 로 둬 keyPath/txType 과 서로 투명해지지 않게 한다.
+    expect(`${tx.inputs[0].txType}|${tx.inputs[0].keyPath}|${tx.inputs[0].index}|${tx.inputs[0].rawTransaction}`)
+      .toBe("p2tr|m/86'/0'/0'/0/0|1|rawprev")
+  })
+
+  test('T-U-TXBLD-VAL-03g: 대조군 — 알 수 없는 input type 은 여전히 param_error 로 거절된다', () => {
+    const tx = getBitcoinTransactionObject()
+    expect(() => addBitcoinTransactionInput(tx, 'raw', 0, 'p2foo', "m/86'/0'/0'/0/0")).toThrow(PARAM_ERROR)
+    expect(() => addBitcoinTransactionInput(tx, 'raw', 0, 'P2TR', "m/86'/0'/0'/0/0")).toThrow(PARAM_ERROR)
+    expect(tx.inputs).toHaveLength(0)
+  })
+
+  test('T-U-TXBLD-VAL-03h: input 거절 문구의 **형태**가 유지된다 (dApp 이 분기할 수 있는 published 표면)', () => {
+    // 🔴 published API 라 문구를 바꾸면 dApp 분기가 깨진다. 접두사 + 기대값 열거 형태를 함께 고정한다.
+    const tx = getBitcoinTransactionObject()
+    let msg = ''
+    try {
+      addBitcoinTransactionInput(tx, 'raw', 0, 'p2foo', 'm/0')
+    } catch (e) {
+      // v1 호환 throw object — Error 가 아니라 `{ body: { error: { code, message } } }` 다.
+      msg = (e as { body?: { error?: { message?: string } } }).body?.error?.message ?? ''
+    }
+    expect(msg).toBe(
+      "addBitcoinTransactionInput: unsupported type 'p2foo' (expected one of p2pkh/p2sh/p2wpkh/p2wsh/p2tr)",
+    )
+  })
 
   test('T-U-TXBLD-VAL-03d: change output 은 p2tr 과 별개로 계속 허용된다', () => {
     const tx = getBitcoinTransactionObject()

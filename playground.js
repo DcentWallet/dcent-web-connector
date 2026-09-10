@@ -1566,8 +1566,9 @@
   // Bitcoin transaction builder의 4 method form 빌더.
   // methodDef.id는 'btx:{action}' 형식으로 분기 — action별 input 구성이 다르다.
   //   - btx:new           → chainId text (v2: coinType 폼 없음 — 코인은 chainId가 결정)
-  //   - btx:addInput      → prev_tx / utxo_idx / type (p2pkh/p2pk/p2sh/p2wpkh) / key 입력
-  //   - btx:addOutput     → type (p2pkh/p2pk/p2sh/p2wpkh/change) / value / to
+  //   - btx:addInput      → prev_tx / utxo_idx / type (v1 enum 6값 + p2tr) / key 입력
+  //   - btx:addOutput     → type (빌더 WIRE_OUTPUT_TX_TYPES 와 동일 집합) / value / to
+  //     🔴 두 select 의 실제 값 집합은 산문이 아니라 테스트(T-U-CON-20/20b)가 고정한다.
   //   - btx:buildAndSign  → 누적된 tx로 dcent.sign({method:'signTransaction', chainId, payload}) 호출
   //
   // 룰 준수:
@@ -1639,7 +1640,10 @@
         placeholder: '0',
       })
       // bitcoinTxType select — src/types/bitcoinTxType.ts enum 값 (p2pkh/p2pk/p2sh/multisig/p2wpkh/p2wsh)
-      var ttKeys = ['p2wpkh', 'p2pkh', 'p2pk', 'p2sh', 'multisig', 'p2wsh']
+      // + `'p2tr'`. 🔴 p2tr 은 v1 enum **밖**이라 raw 문자열로만 전달되는데, 노출하지 않으면
+      //   빌더가 받는 값을 UI 로 못 태워 **taproot input 이 도달 불가**해진다(형제 output select 와
+      //   같은 원칙). p2pk/multisig 는 v1 enum 표면 보존을 위해 남기며 빌더가 param_error 로 거부한다.
+      var ttKeys = ['p2wpkh', 'p2pkh', 'p2pk', 'p2sh', 'multisig', 'p2wsh', 'p2tr']
       var ttRow = document.createElement('div')
       ttRow.className = 'form-row'
       var ttLabel = document.createElement('label')
@@ -3731,12 +3735,15 @@
   //   - (낡음) "'segwit-wrapped' 변종은 wm registry 에 없다" — wm m21-01 에서 BTC-SW-49 가
   //     등록됐다. 이제 -32602 가 아니라 **잘못된 계정으로 매핑될** 위험이 되므로, 안 매핑하는
   //     이유가 오히려 강해졌다.
-  // 🔴 p2tr 도 매핑하지 않는다 — input 쪽 p2tr 은 `WIRE_INPUT_TX_TYPES` 에 없어 여기 도달하지
-  //   않는다(wm m21-01-04 가 열면 그때 함께 본다). 지금 매핑하면 도달 불가 분기만 는다.
+  // 🔴 p2tr 은 **매핑한다** — 종전 사유("`WIRE_INPUT_TX_TYPES` 에 없어 여기 도달하지 않는다")는
+  //   낡았다. wm m21-01-04 이 P2TR 입력 서명 경로를 열었고 connector 빌더도 `p2tr` input 을
+  //   받는다. p2sh 와 달리 p2tr 은 **모호하지 않다** — BIP-86 taproot 하나만 가리킨다.
+  //   매핑하지 않으면 서명 요청이 addressFormat 없이 나가 legacy 계정으로 떨어지고, 그러면
+  //   wm prevout ownership 게이트의 -32602 가 "하류 미배포" 신호와 구별되지 않는다.
   // 🔴 'ledger' 는 이 함수의 축이 아니다 — 여기는 **BTC input txType** 에서 도출하는 자리고,
   //   'ledger' 는 BTC 밖 파생 표준 축이다.
   function _btcAddressFormatFor (txType) {
-    var afMap = { p2pkh: 'legacy', p2wpkh: 'segwit-native' }
+    var afMap = { p2pkh: 'legacy', p2wpkh: 'segwit-native', p2tr: 'taproot' }
     return afMap[txType] || ''
   }
 
@@ -3822,7 +3829,9 @@
     }
     appendFormRow('btcChainId', 'Chain ID', 'input', { value: chainId })
     appendFormRow('btcKeyPath', 'Key Path', 'input', { value: keyPath, placeholder: keyPath })
-    _appendSelectRow('btcTxType', 'Input txType (주소 종류: legacy=p2pkh)', ['p2pkh', 'p2wpkh', 'p2sh'], a.txType || 'p2pkh')
+    // 🔴 'p2tr' 노출 — 노출하지 않으면 taproot 서명을 **UI 로 태울 수 없어** 실기기 검증이 불가능하다.
+    //   도달 불가는 "wm 이 거절한다" 와 구별되지 않아 회귀를 감춘다(형제 addressFormat select 와 같은 원칙).
+    _appendSelectRow('btcTxType', 'Input txType (주소 종류: legacy=p2pkh)', ['p2pkh', 'p2wpkh', 'p2sh', 'p2tr'], a.txType || 'p2pkh')
     appendFormRow('btcAddr', 'Address (📡 getAddress 또는 직접 입력)', 'input', { value: a.addr || '', placeholder: '내 지갑 주소' })
     var btnRow = document.createElement('div')
     btnRow.className = 'form-row'
@@ -4433,6 +4442,9 @@
       accountPresetsList.forEach(function (p) { accountPresetsMap[p.id] = p })
     },
     _sanitizeSyncAccountInfos: _sanitizeSyncAccountInfos,
+    // m21-02 후속: input txType → addressFormat 매핑. 서명 요청이 **어느 계정으로** 나가는지를
+    // 정하는 자리라, 매핑 전건을 테스트가 고정한다(정규식이 아니라 호출로).
+    _btcAddressFormatFor: _btcAddressFormatFor,
     // ── Bitcoin tx builder helpers (m11-01-03) ──
     getBitcoinTxPresetsList: function () { return bitcoinTxPresetsList },
     simulateBitcoinTxPresetsLoad: function (presets) {

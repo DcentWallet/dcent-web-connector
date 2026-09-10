@@ -87,7 +87,8 @@ export interface SignInput {
    * 시점에 따라 바뀐다(`address.ts` 의 `AddressFormat` 주석과 같은 단서). 도달 불가한 형식은
    * `-32602` 로 거부된다. 🔴 이 자리에 "지금 어느 값이 되는지" 목록을 다시 적지 말 것 —
    * registry 가 열릴 때마다 조용히 낡는다(m21-02 이전 서술이 정확히 그렇게 낡아 있었다).
-   * Taproot 주소로 **보내는 것**은 별개이며 `outputs[].txType: 'p2tr'` 로 지원된다.
+   * Taproot 는 **축이 둘**이다 — 주소로 **보내기**는 `outputs[].txType: 'p2tr'`, Taproot UTXO 를
+   * **소비해 서명**하기는 `inputs[].txType: 'p2tr'` + 이 `addressFormat: 'taproot'`. 둘은 별개다.
    */
   payload: Record<string, unknown>
   // (DC-2701) per-call transport 옵션 제거 — transport는 기기 연결 속성이므로 연결 단위

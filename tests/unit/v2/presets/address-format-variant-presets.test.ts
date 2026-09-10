@@ -51,10 +51,12 @@ const NEW_PRESET_IDS = [
   'syncAccount:astar-ledger',
   'syncAccount:creditcoin-ledger',
   'btc-wrapped-transfer',
+  // input `p2tr` 개통(wm m21-01-04 / PR #1553) 후속으로 추가된 **서명** preset.
+  'btc-taproot-transfer',
 ]
 
 describe('m21-02 addressFormat variant presets', () => {
-  it('T-U-CON-08: 신규 preset 8건이 모두 존재한다', () => {
+  it('T-U-CON-08: 신규 preset 9건이 모두 존재한다', () => {
     const missing = NEW_PRESET_IDS.filter((id) => !ALL.some((p) => p.id === id))
     expect(`missing=${missing.join(',')}`).toBe('missing=')
   })
@@ -248,4 +250,28 @@ describe('m21-02 addressFormat variant presets', () => {
     expect(`same=${p.keyPath === inp?.keyPath}`).toBe('same=true')
   })
 
+  it('T-U-CON-16b: btc-taproot-transfer 의 내용이 고정된다 (input p2tr 개통의 도달점)', () => {
+    // 🔴 이 preset 의 존재 이유는 **input 의 `p2tr`** 이다. 형제 `btc-wrapped-transfer` 와 같은
+    //    함정(존재 검사만 있고 내용 단언 0건)에 빠지지 않도록 축을 전부 고정한다.
+    // 🔴 값 선택 — output txType 은 **일부러 `p2wpkh`** 다. input 과 같은 `p2tr` 로 두면 둘이
+    //    서로 투명해져(맞바꿔도 문자열이 같다) "input 축이 열렸다" 는 주장이 검증되지 않는다.
+    const p = byId('btc-taproot-transfer') as Preset & {
+      keyPath?: string
+      applicableChainIds?: string[]
+      transaction?: {
+        inputs: Array<{ keyPath: string; txType: string }>
+        outputs: Array<{ txType: string }>
+      }
+    }
+    expect(`top=${p.keyPath}`).toBe("top=m/86'/0'/0'/0/0")
+    const inp = p.transaction?.inputs?.[0]
+    expect(`in=${inp?.keyPath}|${inp?.txType}`).toBe("in=m/86'/0'/0'/0/0|p2tr")
+    expect(`out=${p.transaction?.outputs?.[0]?.txType}`).toBe('out=p2wpkh')
+    // top-level 과 input 이 같은 계정을 가리켜야 wm prevout ownership 게이트를 통과한다.
+    expect(`same=${p.keyPath === inp?.keyPath}`).toBe('same=true')
+    // coinType 이 박힌 절대 경로 + mainnet bech32 output → BTC mainnet 하나로 좁힌다.
+    expect(`chains=${(p.applicableChainIds ?? []).join(',')}`).toBe(
+      'chains=bip122:000000000019d6689c085ae165831e93/slip44:0'
+    )
+  })
 })

@@ -322,3 +322,156 @@ describe('m21-02 preset 배선 — 행위', () => {
     expect(`bch=${kp()}`).toBe("bch=m/44'/145'/0'/0/0")
   })
 })
+
+/**
+ * m21-05 후속(2026-09-11) — preset 이 선언한 **형식 축**이 실제 payload 축까지 살아남는가.
+ *
+ * 🔴 형제 describe 는 **경로 축**(top-level keyPath)을 본다. 이 describe 는 **형식 축**이다.
+ *    두 축은 서로 다른 variant 집합을 연다: 경로 축은 Polkadot/파라체인/BTC purpose, 형식 축은
+ *    `ALGORAND-LGR`·`TEZOS-STD` 처럼 경로가 base 와 **바이트 동일**한 것들의 유일한 판별자다.
+ *    선언이 payload 까지 못 가면 그 요청은 base 요청과 바이트 단위로 같아진다(= 조용한 오통과).
+ */
+describe('m21-05 형식 축 배선 — 행위', () => {
+  let api: any
+  beforeEach(() => {
+    api = loadPlayground()
+  })
+
+  const ALGO_MAINNET = 'algorand:wGHE2Pwdvd7S12BL5FaOP20EGYesN73k/slip44:283'
+  const ALGO_TESTNET = 'algorand:SGO1GKSzyE7IEPItTxCByw9x8FmnrCDe/slip44:283'
+
+  function openAlgorandSignForm(): void {
+    api.simulateNonEvmLoad(
+      [
+        { chainId: ALGO_MAINNET, family: 'algorand', displayName: 'Algorand', defaultKeyPath: "m/44'/283'/0'/0/0" },
+        { chainId: ALGO_TESTNET, family: 'algorand', displayName: 'Algorand Testnet', defaultKeyPath: "m/44'/283'/0'/0/0" },
+      ],
+      nonEvmPresets,
+    )
+    const node = document.querySelector(
+      `[data-method-id="signTx:algorand:${ALGO_MAINNET}"]`,
+    ) as HTMLElement
+    if (!node) throw new Error('algorand 노드 없음')
+    node.click()
+  }
+  const pickPreset = (id: string): void => {
+    const sel = document.getElementById('field-preset') as HTMLSelectElement
+    sel.value = id
+    sel.dispatchEvent(new Event('change'))
+  }
+
+  it("T-U-CON-40: Ledger preset 을 고르면 형식 축이 'ledger' 로 나간다", () => {
+    openAlgorandSignForm()
+    pickPreset('algo-ledger-payment')
+    expect(`af=${api._nonEvmPresetAddressFormat()}`).toBe('af=ledger')
+  })
+
+  it('T-U-CON-40b: base preset 으로 되돌리면 형식 축이 사라진다 (누수 금지 · 과잉 개통 대조군)', () => {
+    // 🔴 `''` 가 아니라 이전 값이 남으면 base 요청이 조용히 Ledger 계정으로 간다.
+    openAlgorandSignForm()
+    pickPreset('algo-ledger-payment')
+    expect(`before=${api._nonEvmPresetAddressFormat()}`).toBe('before=ledger')
+    pickPreset('algo-payment')
+    expect(`after=${api._nonEvmPresetAddressFormat()}`).toBe('after=')
+  })
+
+  it('T-U-CON-40c: preset 이 선언하지 않은 체인으로 옮기면 형식 축을 버린다', () => {
+    // 경로 축(`_applyNonEvmKeyPath`)의 자기 교정과 **같은 규칙**이다 — 두 축이 서로 다른 체인
+    // 기준으로 결정되면 wm conflict 게이트가 -32602 를 낸다.
+    openAlgorandSignForm()
+    pickPreset('algo-ledger-payment')
+    const chainEl = document.getElementById('field-chainId') as HTMLInputElement
+    chainEl.value = ALGO_TESTNET
+    chainEl.dispatchEvent(new Event('input'))
+    expect(`moved=${api._nonEvmPresetAddressFormat()}`).toBe('moved=')
+  })
+
+  // ──────────────────────────────────────────────────────────────────────────
+  // 🔴 여기부터가 **payload 단언**이다. 위 T-U-CON-40 계열은 helper 를 직접 호출하므로
+  //    `sendSignTxNonEvm` 이 그 helper 를 **안 부르게** 바꿔도 초록이다(호출점 일부만 검출되는
+  //    전형적 생존 패턴). 실제 요청을 만들어 나간 값을 본다.
+  function signMockFor(): jest.Mock {
+    const sign = jest.fn().mockResolvedValue({ header: { status: 'success' }, body: { parameter: {} } })
+    api.simulateConnect(
+      {
+        sign,
+        getDeviceInfo: jest.fn().mockResolvedValue({ header: { status: 'success' }, body: { parameter: {} } }),
+        popupWindowClose: jest.fn(),
+        setConnectionListener: jest.fn(),
+      },
+      null,
+      { model: 'Bio', firmware: '3.0' },
+    )
+    return sign
+  }
+  const send = (): void => { (document.getElementById('btn-send') as HTMLElement).click() }
+
+  // BTC 폼 — 형제 describe 의 `openBitcoinSignForm` 은 그쪽 스코프이고 자체 connect 까지 한다.
+  // 여기서는 connect 를 `signMockFor` 가 소유하므로 폼만 연다.
+  function openBtcForm(): void {
+    api.simulateNonEvmLoad(
+      [{ chainId: BTC_MAINNET_CAIP, family: 'bitcoin', displayName: 'Bitcoin', defaultKeyPath: "m/44'/0'/0'/0/0" }],
+      nonEvmPresets,
+    )
+    const node = document.querySelector(
+      `[data-method-id="signTx:bitcoin:${BTC_MAINNET_CAIP}"]`,
+    ) as HTMLElement
+    if (!node) throw new Error('bitcoin 노드 없음')
+    node.click()
+  }
+
+  it("T-U-CON-42: Ledger preset 을 Send 하면 payload 에 addressFormat='ledger' 가 실린다", () => {
+    openAlgorandSignForm()
+    const sign = signMockFor()
+    pickPreset('algo-ledger-payment')
+    send()
+    expect(`calls=${sign.mock.calls.length}`).toBe('calls=1')
+    const input = sign.mock.calls[0][0]
+    expect(`af=${input.payload.addressFormat}|kp=${input.payload.keyPath}`).toBe(
+      "af=ledger|kp=m/44'/283'/0'/0/0",
+    )
+  })
+
+  it('T-U-CON-42b: base preset 을 Send 하면 payload 에 addressFormat 이 아예 없다 (과잉 개통 대조군)', () => {
+    // 🔴 Algorand 는 UTXO shape 이 아니라 `_btcAddressFormatForTx` 폴백도 `''` 를 준다 —
+    //    그래서 base 요청에는 형식 키 자체가 없어야 한다. 있으면 base 가 variant 로 새는 것이다.
+    openAlgorandSignForm()
+    const sign = signMockFor()
+    pickPreset('algo-payment')
+    send()
+    const input = sign.mock.calls[0][0]
+    expect(`hasAf=${Object.prototype.hasOwnProperty.call(input.payload, 'addressFormat')}`).toBe(
+      'hasAf=false',
+    )
+  })
+
+  it("T-U-CON-42c: BTC wrapped preset 은 선언 축('segwit-wrapped')이 도출 축을 이긴다", () => {
+    // 🔴 `p2sh` 는 `_btcAddressFormatFor` 가 **의도적으로 매핑하지 않는다**(legacy multisig 와
+    //    BIP-49 를 동시에 가리켜 모호). 선언이 없으면 형식 축이 통째로 빠져 wm 이 경로 축만 본다.
+    //    두 값이 **다르다**는 것이 이 단언의 판별력이다(도출='' vs 선언='segwit-wrapped').
+    openBtcForm()
+    const sign = signMockFor()
+    pickPreset('btc-wrapped-transfer')
+    send()
+    const input = sign.mock.calls[0][0]
+    expect(`af=${input.payload.addressFormat}|kp=${input.payload.keyPath}`).toBe(
+      "af=segwit-wrapped|kp=m/49'/0'/0'/0/0",
+    )
+  })
+
+  it('T-U-CON-41: allChainsMap 은 variant 엔트리를 담지 않는다 (base 기본 경로 보존)', () => {
+    // 🔴 variant 엔트리는 base 와 **chainId 가 같다**. 넣으면 뒤엣것이 base 를 덮어써
+    //    BTC mainnet 기본 경로가 m/44' → m/86' 로 바뀐다(= base legacy preset 이 taproot 계정으로
+    //    서명되는 과잉 개통). 실측으로 chains.json 의 13개 chainId 가 이 충돌 대상이다.
+    const BTC = 'bip122:000000000019d6689c085ae165831e93/slip44:0'
+    api.simulateNonEvmLoad(
+      [
+        { chainId: BTC, family: 'bitcoin', displayName: 'Bitcoin', defaultKeyPath: "m/44'/0'/0'/0/0" },
+        { chainId: BTC, family: 'bitcoin', displayName: 'Bitcoin Taproot', defaultKeyPath: "m/86'/0'/0'/0/0", addressFormat: 'taproot', variant: 'BTC-TAPROOT' },
+      ],
+      nonEvmPresets,
+    )
+    // 🔴 값을 **서로 다르게** 두었으므로 이 단언은 두 엔트리를 구별한다(투명 픽스처 방지).
+    expect(`kp=${(api.CHAIN_KEY_PATH as any)[BTC]}`).toBe("kp=m/44'/0'/0'/0/0")
+  })
+})

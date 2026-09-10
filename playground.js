@@ -515,6 +515,22 @@
   // ── chainId → default keyPath lookup (chains.json runtime data) ──
   // m06-01-03: allChainsMap으로 통합 (EVM + 비-EVM)
   // CHAIN_KEY_PATH Proxy: chains.json 로드 전에도 안전하게 접근 가능
+  // allChainsMap(= chainId 키 lookup)에 넣을 수 있는 엔트리인가.
+  //
+  // 🔴 **variant 엔트리는 안 된다.** variant 는 base 와 **chainId 가 같고**(예: BTC mainnet 에
+  //   base/BTC-SW-49/BTC-SW-84/BTC-TAPROOT 4건 — chains.json 실측 13개 chainId 가 이 충돌 대상)
+  //   `defaultKeyPath` 만 다르므로, 넣으면 뒤에 오는 variant 가 base 를 덮어써 BTC mainnet 기본
+  //   경로가 `m/44'` → `m/86'` 가 되고 datalist 라벨도 "Bitcoin" → "Bitcoin Taproot" 가 된다.
+  //   base legacy preset 이 taproot 계정으로 서명되는 **과잉 개통**이다.
+  //   variant 로 가는 길은 이 map 이 아니라 preset 이 스스로 선언하는 축이다
+  //   (`_applyNonEvmKeyPath` = 경로 축 · `_nonEvmPresetAddressFormat` = 형식 축).
+  //
+  // 🔴 프로덕션 로더(chains.json fetch)와 테스트 헬퍼(simulateNonEvmLoad)가 **이 함수 하나**를
+  //   공유한다 — 두 곳에 술어를 각자 인라인하면 한쪽만 고쳐질 때 테스트가 실물을 안 지킨다.
+  function _isSelectableChain (c) {
+    return !!c && !c.variant
+  }
+
   var CHAIN_KEY_PATH = new Proxy({}, {
     get: function (_, chainId) {
       if (allChainsMap[chainId]) return allChainsMap[chainId].defaultKeyPath
@@ -921,8 +937,16 @@
       })
       .then(function (chains) {
         // allChainsMap: 전체 chainId → entry 통합 lookup
+        // 🔴 **variant 엔트리는 넣지 않는다** (`c.variant` 보유분 — m21-05 가 chains.json 에 18건 추가).
+        //   이 map 은 chainId 를 키로 쓰는데 variant 엔트리는 base 와 **chainId 가 같다**(예:
+        //   BTC mainnet 에 base/BTC-SW-49/BTC-SW-84/BTC-TAPROOT 4건). 넣으면 뒤에 오는 variant 가
+        //   base 를 덮어써 `CHAIN_KEY_PATH` 의 BTC mainnet 기본 경로가 `m/44'` → `m/86'` 로 바뀌고
+        //   (실측: 13개 chainId 가 이 충돌 대상), 체인 datalist 라벨도 "Bitcoin" → "Bitcoin Taproot"
+        //   가 된다 — base legacy preset 이 taproot 계정으로 서명되는 **과잉 개통**이다.
+        //   variant 로 가는 길은 map 이 아니라 **preset 이 스스로 선언하는 keyPath/addressFormat**
+        //   (`_applyNonEvmKeyPath` / `_nonEvmPresetAddressFormat`)이다.
         allChainsMap = {}
-        chains.forEach(function (c) { allChainsMap[c.chainId] = c })
+        chains.forEach(function (c) { if (_isSelectableChain(c)) allChainsMap[c.chainId] = c })
 
         // EVM 분류
         var evmChains = chains.filter(function (c) { return c.family === 'ethereum' })
@@ -2783,6 +2807,27 @@
     }
   }
 
+  // preset 이 선언한 `addressFormat` — 계정 **변종 축**의 명시 선언.
+  //
+  // 🔴 `_btcAddressFormatForTx`(input txType 도출)와 **다른 축**이다. 그쪽은 BTC UTXO shape 에서만
+  //   유도되고 `p2sh` 를 의도적으로 매핑하지 않으며, Algorand/Tezos 처럼 UTXO 가 아예 없는 family 는
+  //   도달조차 못 한다. 경로가 base 와 바이트 동일한 variant(`ALGORAND-LGR`·`TEZOS-STD` 2쌍)는
+  //   **형식 축이 유일한 판별자**라, preset 이 선언한 값이 payload 까지 살아남지 않으면 그 요청은
+  //   base 계정 요청과 바이트 단위로 같아진다(= 실기기 검증이 variant 를 봤다고 오판한다).
+  //
+  // 🔴 적용 범위 판정은 `_applyNonEvmKeyPath` 와 **같은 규칙**이다 — preset 이 선언한 체인을 벗어나면
+  //   무시한다. 두 축이 서로 다른 체인 기준으로 결정되면 wm 의 conflict 게이트가 `-32602` 를 내고,
+  //   그 `-32602` 는 "하류 미배포" 신호와 구별되지 않는다.
+  function _nonEvmPresetAddressFormat () {
+    var chainEl = document.getElementById('field-chainId')
+    var chainId = chainEl ? chainEl.value : ''
+    var presetEl = document.getElementById('field-preset')
+    var preset = presetEl ? nonEvmPresetsMap[presetEl.value] : null
+    if (!preset || typeof preset.addressFormat !== 'string' || preset.addressFormat === '') return ''
+    if (Array.isArray(preset.applicableChainIds) && preset.applicableChainIds.indexOf(chainId) === -1) return ''
+    return preset.addressFormat
+  }
+
   function _wireKeyPathSync (chainIdInput, keyPathInput) {
     if (!chainIdInput || !keyPathInput) return
     chainIdInput.addEventListener('input', function () {
@@ -4032,8 +4077,13 @@
     // `inputs[].txType` 을 가진 UTXO shape 이면 거기서 addressFormat 을 도출해 함께 보낸다.
     // 이 경로는 preset/수동 JSON 서명이라 위 빌더 폼을 거치지 않으므로, 여기를 빼면 BTC preset 은
     // 여전히 wm 의 txType 추론에만 의존한다(같은 클래스의 마지막 원소).
+    // 🔴 우선순위: **preset 이 명시 선언한 축 > input txType 에서 도출한 축.**
+    //   선언은 `chains.json` 의 variant 엔트리에서 온 정본이고, 도출은 BTC UTXO shape 한정 폴백이다.
+    //   둘이 갈리는 실제 케이스: `btc-taproot-transfer`(선언 'taproot' = 도출 'taproot' — 일치) 와
+    //   `btc-wrapped-transfer`(선언 'segwit-wrapped', 도출은 `p2sh` 미매핑이라 '') — 후자는 선언이
+    //   없으면 형식 축 자체가 빠진다.
     var nonEvmPayload = { keyPath: keyPath, transaction: txObj }
-    var nonEvmAf = _btcAddressFormatForTx(txObj)
+    var nonEvmAf = _nonEvmPresetAddressFormat() || _btcAddressFormatForTx(txObj)
     if (nonEvmAf) {
       nonEvmPayload.addressFormat = nonEvmAf
       // 로그는 **실제로 보낸 것**을 남긴다 — 여기서 빠지면 로그만 보고 원인을 못 찾는다.
@@ -4413,7 +4463,10 @@
       evmChainsList.forEach(function (c) { allChainsMap[c.chainId] = c })
       var chainsList = chains || []
       chainsList.forEach(function (c) {
-        allChainsMap[c.chainId] = c
+        // 🔴 실제 로더(chains.json fetch)와 **같은 규칙** — variant 엔트리는 allChainsMap 에 넣지
+        //   않는다. 헬퍼가 프로덕션과 갈리면 여기서 통과한 테스트가 실물을 안 지킨다.
+        //   `nonEvmChainsByFamily`(트리 노드)에는 종전대로 넣는다 — 그쪽은 chainId 키 map 이 아니다.
+        if (_isSelectableChain(c)) allChainsMap[c.chainId] = c
         if (!nonEvmChainsByFamily[c.family]) nonEvmChainsByFamily[c.family] = []
         nonEvmChainsByFamily[c.family].push(c)
       })
@@ -4445,6 +4498,8 @@
     // m21-02 후속: input txType → addressFormat 매핑. 서명 요청이 **어느 계정으로** 나가는지를
     // 정하는 자리라, 매핑 전건을 테스트가 고정한다(정규식이 아니라 호출로).
     _btcAddressFormatFor: _btcAddressFormatFor,
+    _nonEvmPresetAddressFormat: _nonEvmPresetAddressFormat,
+    _isSelectableChain: _isSelectableChain,
     // ── Bitcoin tx builder helpers (m11-01-03) ──
     getBitcoinTxPresetsList: function () { return bitcoinTxPresetsList },
     simulateBitcoinTxPresetsLoad: function (presets) {

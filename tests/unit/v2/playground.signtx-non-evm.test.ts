@@ -338,7 +338,11 @@ it('T-U-NEVM-04: presets.non-evm.json — wm 등록 family preset 모두 valid J
   // 누락보강(P1)으로 NON_EVM_FAMILIES에 추가된 xahau/cardano/near/constellation preset이
   // orphan에서 활성화됨 + havah preset 신규 추가 → expectedFamilies에 포함.
   // 토큰 transfer preset(m02-05-55~68) 추가로 stacks(SIP-010)/tezos(FA1.2·FA2) family 신규 등록.
-  const expectedFamilies = ['bitcoin', 'solana', 'xrp', 'hedera', 'stellar', 'xahau', 'cardano', 'near', 'constellation', 'havah', 'stacks', 'tezos', 'vechain']
+  // m21-05 후속(2026-09-11): signTransaction variant preset 14건이 이 파일에 들어오면서
+  // algorand(Ledger 2종) / polkadot(relay+파라체인 Ledger 6종) family 가 추가됐다.
+  // 🔴 두 family 의 형제 preset 은 `presets.rest.json` 에 있지만, playground 는 두 파일을
+  //    `nonEvmPresetsList` 하나로 병합해 **같은 폼**으로 렌더하므로 파일 경계는 동작에 영향이 없다.
+  const expectedFamilies = ['bitcoin', 'solana', 'xrp', 'hedera', 'stellar', 'xahau', 'cardano', 'near', 'constellation', 'havah', 'stacks', 'tezos', 'vechain', 'algorand', 'polkadot']
 
   // CAIP-19 정규식: namespace:reference/slip44:N
   // CAIP-2 namespace는 spec상 3-8 chars 권장이나 wm registry는 더 긴 namespace 사용

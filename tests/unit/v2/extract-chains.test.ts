@@ -187,7 +187,7 @@ test('T-U-EXTRACT-08: chains.json total entry count >= 150 (regression sentinel)
   }
 
   // addressFormat 은 wm `AddressFormat` 유니온 / bridge `_sanitize.ts:ADDRESS_FORMATS` 와 1:1.
-  const ADDRESS_FORMATS = ['legacy', 'segwit-wrapped', 'segwit-native', 'taproot', 'ledger']
+  const ADDRESS_FORMATS = ['legacy', 'segwit-wrapped', 'segwit-native', 'taproot', 'ledger', 'standard']
   for (const c of chains) {
     if (c.addressFormat !== undefined) expect(ADDRESS_FORMATS).toContain(c.addressFormat)
   }
@@ -261,9 +261,13 @@ const EXPECTED_VARIANTS: Array<{ variant: string; chainId: string; defaultKeyPat
   { variant: 'PARAT-L:20012A', chainId: 'polkadot:8a2e8af69a7892d2e60a77e3df4e0fa0/slip44:354', defaultKeyPath: "m/44'/354'/0'/0'/0'" },
   { variant: 'CARDANO-LGR',    chainId: 'cip34:1-764824073', defaultKeyPath: "m/1852'/1815'/0'/0/0" },
   { variant: 'CARDANO-LGR-T',  chainId: 'cip34:0-2',         defaultKeyPath: "m/1852'/1815'/0'/0/0" },
+  // m21-01-05 — base 와 derivationFormat·chainId 가 **둘 다 동일**하고 keySpec 만 다르다
+  //   (ed25519 표준 SLIP-10 vs ed25519DcentSlip23). 그래서 형식 축이 **유일** 판별자다.
+  { variant: 'TEZOS-STD',      chainId: 'tezos:NetXdQprcVkpaWU/slip44:1729', defaultKeyPath: "m/44'/1729'/0'/0'", addressFormat: 'standard' },
+  { variant: 'TEZOS-STD-T',    chainId: 'tezos:NetXnHfVqm9iesp/slip44:1729', defaultKeyPath: "m/44'/1729'/0'/0'", addressFormat: 'standard' },
 ]
 
-test('T-U-EXTRACT-10: variant entry 16종이 판별 축과 함께 존재한다', () => {
+test('T-U-EXTRACT-10: variant entry 18종이 판별 축과 함께 존재한다', () => {
   const byVariant = new Map(chains.filter((c: any) => c.variant).map((c: any) => [c.variant, c]))
   // 🔴 `toEqual` 로 집합을 통째 단언 — 덜 넣어도, 더 넣어도 실패한다.
   expect([...byVariant.keys()].sort()).toEqual(EXPECTED_VARIANTS.map((v) => v.variant).sort())

@@ -810,6 +810,23 @@
     "isTestnet": true
   },
   {
+    "chainId": "tezos:NetXdQprcVkpaWU/slip44:1729",
+    "family": "tezos",
+    "displayName": "Tezos Standard (SLIP-10)",
+    "defaultKeyPath": "m/44'/1729'/0'/0'",
+    "addressFormat": "standard",
+    "variant": "TEZOS-STD"
+  },
+  {
+    "chainId": "tezos:NetXnHfVqm9iesp/slip44:1729",
+    "family": "tezos",
+    "displayName": "Tezos Standard Testnet (SLIP-10)",
+    "defaultKeyPath": "m/44'/1729'/0'/0'",
+    "addressFormat": "standard",
+    "variant": "TEZOS-STD-T",
+    "isTestnet": true
+  },
+  {
     "chainId": "vechain:b1ac3413d346d43539627e6be7ec1b4a/slip44:818",
     "family": "vechain",
     "displayName": "VeChain",

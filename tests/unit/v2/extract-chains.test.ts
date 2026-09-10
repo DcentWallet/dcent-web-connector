@@ -161,9 +161,36 @@ test('T-U-EXTRACT-08: chains.json total entry count >= 150 (regression sentinel)
     expect(c.defaultKeyPath).toBeTruthy()
   }
 
-  // Verify unique chainIds (T-I-SNAPSHOT-03)
-  const ids = new Set(chains.map((c: any) => c.chainId))
-  expect(ids.size).toBe(chains.length)
+  // Verify unique **identity tuples** (T-I-SNAPSHOT-03).
+  // 🔴 종전에는 `chainId` 단독 유일성이었다. variant 축(m21-05)이 열리면서 base 와 chainId 를
+  //    공유하는 entry 가 생겨 그 단독 유일성은 성립하지 않는다 — 대신 **판별 3축 전체**로
+  //    유일성을 요구한다(약화가 아니라 강화: 종전 축을 포함하고 두 축을 더한다).
+  const identityOf = (c: any) => [c.chainId, c.addressFormat ?? '', c.defaultKeyPath].join('|')
+  const identities = new Set(chains.map(identityOf))
+  expect(identities.size).toBe(chains.length)
+
+  // base entry(=`variant` 없음)는 여전히 chainId 로 유일하다 — variant 를 base 로 잘못 넣으면 실패.
+  const baseEntries = chains.filter((c: any) => c.variant === undefined)
+  expect(new Set(baseEntries.map((c: any) => c.chainId)).size).toBe(baseEntries.length)
+
+  // variant id 유일성 + **판별 축 존재**. 판별 축이 없는 variant 는 base 와 구별 불가라
+  // wire 로 도달하지 못한다 — 넣는 것 자체를 막는다.
+  const variantEntries = chains.filter((c: any) => c.variant !== undefined)
+  expect(new Set(variantEntries.map((c: any) => c.variant)).size).toBe(variantEntries.length)
+  for (const v of variantEntries) {
+    const sameChainBases = baseEntries.filter((b: any) => b.chainId === v.chainId)
+    const discriminated =
+      sameChainBases.length === 0 ||                                   // 고유 chainId 축
+      v.addressFormat !== undefined ||                                 // 형식 축
+      sameChainBases.every((b: any) => b.defaultKeyPath !== v.defaultKeyPath) // 경로 축
+    expect({ variant: v.variant, discriminated }).toEqual({ variant: v.variant, discriminated: true })
+  }
+
+  // addressFormat 은 wm `AddressFormat` 유니온 / bridge `_sanitize.ts:ADDRESS_FORMATS` 와 1:1.
+  const ADDRESS_FORMATS = ['legacy', 'segwit-wrapped', 'segwit-native', 'taproot', 'ledger']
+  for (const c of chains) {
+    if (c.addressFormat !== undefined) expect(ADDRESS_FORMATS).toContain(c.addressFormat)
+  }
 
   // All 5 new families present
   const families = new Set(chains.map((c: any) => c.family))
@@ -204,4 +231,74 @@ test('T-U-EXTRACT-09: testnet entries >= 30 (parseFamilyTs testnet inclusion wor
   expect(xahauTest).toBeDefined()
   const dagTest = chains.find((c: any) => c.family === 'constellation' && c.isTestnet)
   expect(dagTest).toBeDefined()
+})
+
+// ── T-U-EXTRACT-10: variant 축 전수 (m21-05) ─────────────────────────────────
+//
+// wm 레지스트리에는 base 와 **chainId 를 공유하는** derivation/format variant 가 있다.
+// chains.json 이 `chainId/family/displayName/defaultKeyPath` 4필드뿐이던 동안에는 그 variant
+// 들을 표현할 방법이 없어 playground / test-dapp / 시뮬레이터의 **어느 API 축에도 나타나지
+// 않았다**. `addressFormat` + `variant` 두 필드가 그 축이다.
+//
+// 🔴 아래 16종의 판별 축은 **wm 레지스트리 실측**(2026-09-10, `pickWireCurrency` +
+//    `wireFormatConflicts` 전수 호출)에서 왔다. 손으로 적은 목록이 아니다.
+//    TEZOS-STD / TEZOS-STD-T 는 **의도적으로 없다** — 그 둘은 `caip19` 도 `chainIdentifier` 도
+//    갖지 않아 wire 요청이 실을 식별자가 없다(어떤 chainId 로도 선택 불가).
+const EXPECTED_VARIANTS: Array<{ variant: string; chainId: string; defaultKeyPath: string; addressFormat?: string }> = [
+  { variant: 'BTC-SW-49',      chainId: 'bip122:000000000019d6689c085ae165831e93/slip44:0', defaultKeyPath: "m/49'/0'/0'/0/0", addressFormat: 'segwit-wrapped' },
+  { variant: 'BTC-49-TESTNET', chainId: 'bip122:000000000933ea01ad0ee984209779ba/slip44:0', defaultKeyPath: "m/49'/1'/0'/0/0", addressFormat: 'segwit-wrapped' },
+  { variant: 'BTC-SW-84',      chainId: 'bip122:000000000019d6689c085ae165831e93/slip44:0', defaultKeyPath: "m/84'/0'/0'/0/0", addressFormat: 'segwit-native' },
+  { variant: 'BTC-84-TESTNET', chainId: 'bip122:000000000933ea01ad0ee984209779ba/slip44:0', defaultKeyPath: "m/84'/1'/0'/0/0", addressFormat: 'segwit-native' },
+  { variant: 'BTC-TAPROOT',    chainId: 'bip122:000000000019d6689c085ae165831e93/slip44:0', defaultKeyPath: "m/86'/0'/0'/0/0", addressFormat: 'taproot' },
+  { variant: 'BTC-TR-TESTNET', chainId: 'bip122:000000000933ea01ad0ee984209779ba/slip44:0', defaultKeyPath: "m/86'/1'/0'/0/0", addressFormat: 'taproot' },
+  { variant: 'POLKADOT-LGR',   chainId: 'polkadot:91b171bb158e2d3848fa23a9f1c25182/slip44:354', defaultKeyPath: "m/44'/354'/0'/0'/0'" },
+  { variant: 'POLKADOT-LGR-T', chainId: 'polkadot:d6eec26135305a8ad257a20d00335728/slip44:354', defaultKeyPath: "m/44'/354'/0'/0'/0'" },
+  { variant: 'ALGORAND-LGR',   chainId: 'algorand:wGHE2Pwdvd7S12BL5FaOP20EGYesN73k/slip44:283', defaultKeyPath: "m/44'/283'/0'/0/0", addressFormat: 'ledger' },
+  { variant: 'ALGO-LGR-T',     chainId: 'algorand:SGO1GKSzyE7IEPItTxCByw9x8FmnrCDe/slip44:283', defaultKeyPath: "m/44'/283'/0'/0/0", addressFormat: 'ledger' },
+  { variant: 'PARA-L:000105',  chainId: 'polkadot:9eb76c5184c4ab8679d2d5d819fdf90b/slip44:810', defaultKeyPath: "m/44'/810'/0'/0'/0'" },
+  { variant: 'PARAT-L:200105', chainId: 'polkadot:ddb89643205c8fe1c79afeb31f48d50f/slip44:810', defaultKeyPath: "m/44'/810'/0'/0'/0'" },
+  { variant: 'PARA-L:00012A',  chainId: 'polkadot:6673c7e2c2b7bde45a60c71ef70d9c7c/slip44:354', defaultKeyPath: "m/44'/354'/0'/0'/0'" },
+  { variant: 'PARAT-L:20012A', chainId: 'polkadot:8a2e8af69a7892d2e60a77e3df4e0fa0/slip44:354', defaultKeyPath: "m/44'/354'/0'/0'/0'" },
+  { variant: 'CARDANO-LGR',    chainId: 'cip34:1-764824073', defaultKeyPath: "m/1852'/1815'/0'/0/0" },
+  { variant: 'CARDANO-LGR-T',  chainId: 'cip34:0-2',         defaultKeyPath: "m/1852'/1815'/0'/0/0" },
+]
+
+test('T-U-EXTRACT-10: variant entry 16종이 판별 축과 함께 존재한다', () => {
+  const byVariant = new Map(chains.filter((c: any) => c.variant).map((c: any) => [c.variant, c]))
+  // 🔴 `toEqual` 로 집합을 통째 단언 — 덜 넣어도, 더 넣어도 실패한다.
+  expect([...byVariant.keys()].sort()).toEqual(EXPECTED_VARIANTS.map((v) => v.variant).sort())
+  for (const exp of EXPECTED_VARIANTS) {
+    const got = byVariant.get(exp.variant)
+    expect({
+      variant: exp.variant,
+      chainId: got.chainId,
+      defaultKeyPath: got.defaultKeyPath,
+      addressFormat: got.addressFormat,
+    }).toEqual({
+      variant: exp.variant,
+      chainId: exp.chainId,
+      defaultKeyPath: exp.defaultKeyPath,
+      addressFormat: exp.addressFormat,
+    })
+    // 템플릿 placeholder 가 새어나오면 기기로 잘못된 경로가 나간다.
+    expect(got.defaultKeyPath).not.toMatch(/</)
+  }
+})
+
+// ── T-U-EXTRACT-11: 과잉 생성 대조군 ─────────────────────────────────────────
+test('T-U-EXTRACT-11: base entry 는 variant/addressFormat 축을 갖지 않는다', () => {
+  // base 150 건은 additive 변경 이후에도 그대로여야 한다 — 하나라도 축이 붙으면
+  // 소비자(`buildMethodCases`)가 base 를 variant 로 오인해 케이스를 과잉 생성한다.
+  const bases = chains.filter((c: any) => c.variant === undefined)
+  expect(bases.length).toBe(150)
+  expect(bases.filter((c: any) => c.addressFormat !== undefined)).toEqual([])
+
+  // 잘못된 조합이 생기지 않는지 — BTC 전용 인코딩 형식은 bitcoin family 밖에 붙을 수 없다.
+  const BTC_ONLY_FORMATS = ['legacy', 'segwit-wrapped', 'segwit-native', 'taproot']
+  const misplaced = chains.filter(
+    (c: any) => BTC_ONLY_FORMATS.includes(c.addressFormat) && c.family !== 'bitcoin',
+  )
+  expect(misplaced).toEqual([])
+  // 반대 방향 — `'ledger'` 는 계정 표준 축이라 BTC 에 붙으면 wm 이 undefined 를 돌려준다.
+  expect(chains.filter((c: any) => c.addressFormat === 'ledger' && c.family === 'bitcoin')).toEqual([])
 })

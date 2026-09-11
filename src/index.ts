@@ -150,6 +150,10 @@ export type {
   BitcoinWireOutput,
   BitcoinWireTxType,
   BitcoinWireOutputTxType,
+  // DC-4379: 두 union 은 **열린 문자열**이고 알려진 값은 `Known*` 이다 — `AddressFormat`/
+  // `KnownAddressFormat` 과 같은 짝으로 **둘 다 내보낸다**(자동완성은 유지, 게이트는 wm 소유).
+  KnownBitcoinWireTxType,
+  KnownBitcoinWireOutputTxType,
 } from './sign'
 // m09-04-12: SyncAccountInfo(v1) removed — replaced by V2SyncAccountInfo(chainId/keyPath)
 // getAccountInfo v2 return types(V2AccountInfo / AccountListV2Payload)도 루트 배럴에서 노출 —

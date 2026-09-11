@@ -101,6 +101,24 @@ describe('BTC preset prevout scriptPubKey ↔ inputs[].txType (DC-4379 전수 �
 describe('디코더 자체의 판별력 (이게 죽으면 위 게이트가 조용히 초록이 된다)', () => {
   const RAW = subjects[0].rawTx
 
+  // 🔴 실기기에서 잡힌 실결함의 회귀 (2026-09-11) — 이 케이스가 없으면 게이트가 거짓 초록이 된다.
+  //    sequence 를 `(-1).toString(16)` 으로 만들면 `'-1'` 이 박히는데,
+  //    `Number.parseInt('-1', 16)` 은 NaN 이 **아니라** -1 이라 NaN 검사만으로는 통과한다.
+  //    그 구멍으로 preset 7건이 깨진 채 이 스위트를 초록으로 지나갔고, wm 이
+  //    `input.rawTransaction must be hex string` 으로 뒤늦게 잡았다.
+  it("부호가 섞인 hex('-1')를 거부한다 — parseInt 가 NaN 을 안 주는 자리", () => {
+    // 정상 tx 의 sequence(ffffffff)를 -1-1-1-1 로 바꾼 것 = 당시 실제 데이터
+    const good = RAW
+    const broken = good.replace('ffffffff', '-1-1-1-1')
+    expect(broken).not.toBe(good)
+    expect(() => decodeRawTx(broken)).toThrow(/bad hex char/)
+  })
+
+  it('hex 문자만 받는다 — 공백·접두사도 거부', () => {
+    expect(() => decodeRawTx('0x' + RAW)).toThrow(/bad hex/)
+    expect(() => decodeRawTx(RAW.slice(0, -2) + ' 0')).toThrow(/bad hex/)
+  })
+
   it('끝까지 소비하지 못한 hex 는 파싱 성공으로 넘기지 않는다', () => {
     expect(() => decodeRawTx(RAW + '00')).toThrow(/trailing bytes/)
     expect(() => decodeRawTx(RAW.slice(0, RAW.length - 4))).toThrow()

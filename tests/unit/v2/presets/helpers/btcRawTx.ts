@@ -28,11 +28,18 @@ const hexToBytes = (hex: string): Uint8Array => {
   if (typeof hex !== 'string' || hex.length === 0 || hex.length % 2 !== 0) {
     throw new Error(`bad hex length: ${hex === undefined ? 'undefined' : hex.length}`)
   }
+  // 🔴 문자 집합을 **먼저** 통째로 검사한다 — `Number.parseInt` 에 맡기면 안 된다.
+  //    `parseInt('-1', 16)` 은 NaN 이 아니라 **-1** 을 돌려준다(앞의 부호를 정상 파싱).
+  //    그래서 NaN 검사만으로는 `-1` 이 섞인 hex 가 조용히 통과한다 — 실제로 그 구멍으로
+  //    sequence 를 `(-1).toString(16)` 으로 만든 preset 7건이 이 게이트를 초록으로 지나갔고,
+  //    실기기에서 wm 이 `input.rawTransaction must be hex string` 으로 잡아냈다(2026-09-11).
+  if (!/^[0-9a-fA-F]+$/.test(hex)) {
+    const at = [...hex].findIndex((c) => !/[0-9a-fA-F]/.test(c))
+    throw new Error(`bad hex char at ${at}: ${JSON.stringify(hex.slice(Math.max(0, at - 8), at + 8))}`)
+  }
   const out = new Uint8Array(hex.length / 2)
   for (let i = 0; i < out.length; i++) {
-    const b = Number.parseInt(hex.substr(i * 2, 2), 16)
-    if (Number.isNaN(b)) throw new Error(`bad hex char at ${i * 2}`)
-    out[i] = b
+    out[i] = Number.parseInt(hex.substr(i * 2, 2), 16)
   }
   return out
 }

@@ -81,7 +81,11 @@ export interface SignInput {
    *
    * `'ledger'` 는 BTC 축이 아니라 **파생 표준** 축이다 — Polkadot / Algorand / 파라체인(Astar,
    * Creditcoin) 에서 base 계정과 LGR 계정을 가른다. 🔴 Cardano 는 이 축이 아니다(판별자가
-   * keyPath purpose 다 — 실으면 wm 에서 매칭 실패로 떨어진다).
+   * keyPath purpose 다). **거절 지점은 `address.ts` 의 `AddressFormat` 주석을 보라** — wm 은
+   * Cardano chainId 에 형식 축이 없어 addressFormat 을 **무시하고 base 로 collapse** 하고
+   * (매칭 실패가 아니다), 실제로 끊는 곳은 **sdk 경계의 enum** 이다.
+   * (2026-09-11 정정 — 종전 이 자리는 "wm 에서 매칭 실패" 라고 썼다. 같은 사실을 담은 서술이
+   * `address.ts` 와 여기 **둘**인데 그쪽만 정정돼 두 문서가 어긋나 있었다.)
    *
    * ⚠️ **어느 값이 실제로 동작하는지는 connector 가 알지 못한다** — sdk/wm registry 소관이고
    * 시점에 따라 바뀐다(`address.ts` 의 `AddressFormat` 주석과 같은 단서). 도달 불가한 형식은

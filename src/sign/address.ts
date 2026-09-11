@@ -14,7 +14,7 @@
  *   - 배경: m11-02-03 PoC 결과 펌웨어가 `request_to` (= sdk가 sdk에서 사용하는 coinType 필드)
  *     단독으로 P2PKH vs Bech32를 결정 → chainId 단독으로는 BITCOIN / BTC-SEGWIT 구분 불가.
  *     v1의 coinType='BTC-SEGWIT' 신호를 v2 wire에서 회복하기 위한 generic 필드.
- *   - 알려진 값 5종은 `KnownAddressFormat` 참조. **connector 는 그 목록으로 거르지 않는다** —
+ *   - 알려진 값 6종은 `KnownAddressFormat` 참조. **connector 는 그 목록으로 거르지 않는다** —
  *     실제 수용 여부는 sdk/wm registry 가 판정한다(도달 불가한 형식은 거기서 거절).
  *   - connector-chain-addition-isolation 룰 준수: chain-specific 분기 추가 없음.
  *     `addressFormat`은 sdk/wm이 해석하는 generic payload 필드이며,
@@ -85,8 +85,19 @@ import type { V1Response } from './types'
  * **무시하고 base 로 collapse** 한다(매칭 실패가 아니다). 실제로 끊는 곳은 **sdk 경계의 enum**
  * 이다. 2026-09-02 정정 — 종전 주석은 "wm 에서 매칭 실패" 라고 썼으나 실측과 다르다.
  *
+ * BTC 밖 — **파생 표준** 축 (m21-01-05):
+ * - 'standard':        SLIP-10 표준 파생 계정. Tezos 의 `TEZOS-STD` / `TEZOS-STD-T` 를 base 와
+ *                      구분한다. 🔴 `'ledger'` 와 마찬가지로 인코딩이 아니라 **파생 표준** 축이고,
+ *                      Tezos 는 base 와 keyPath 가 **바이트 동일**(`m/44'/1729'/<n>'/0'`)이라
+ *                      이 값이 **유일한 판별자**다 — 빼면 base(`ed25519DcentSlip23`) 키로 간다.
+ *
  * ⚠️ 어느 값이 **실제로 동작하는지는 여기서 결정되지 않는다** — sdk/wm registry 소관이고
  * 시점에 따라 바뀐다. 도달 불가한 형식은 `-32602` 로 거절된다.
+ *
+ * 🔴 이 유니온은 wm `AddressFormat` · bridge `_sanitize.ADDRESS_FORMATS` 와 **1:1** 이다.
+ * 한쪽만 늘리면 조용히 어긋난다 — `AddressFormat` 이 열린 유니온(`| (string & {})`)이라
+ * **런타임은 안 깨지고 자동완성·문서만 틀려서** 발견이 늦다(2026-09-11 실제로 그렇게
+ * `'standard'` 가 여기만 빠져 있었다. chains.json 은 이미 그 값을 출하 중이었다).
  */
 export type KnownAddressFormat =
   | 'legacy'
@@ -94,6 +105,7 @@ export type KnownAddressFormat =
   | 'segwit-native'
   | 'taproot'
   | 'ledger'
+  | 'standard'
 
 /**
  * variant disambiguation — 같은 chainId 안에 계정이 둘 이상일 때 어느 쪽인지 명시하는 generic 필드.

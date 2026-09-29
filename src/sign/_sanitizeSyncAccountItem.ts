@@ -213,7 +213,9 @@ export function _sanitizeSyncAccountItem (raw: unknown): V2SyncAccountInfo {
   }
 
   // meta.addressFormat — variant disambiguation (BTC 인코딩 legacy/segwit-wrapped/segwit-native/taproot
-  //   + 파생 표준 ledger — Polkadot/Algorand/파라체인 LGR).
+  //   + 파생 표준 ledger — Polkadot/Algorand/파라체인 LGR, standard — Tezos TEZOS-STD).
+  //   🔴 열거를 늘릴 때 `'ledger'` 만 적고 `'standard'` 를 빠뜨리지 말 것 — 정본은
+  //   `address.ts:KnownAddressFormat` 이고 이 주석은 그 사본이다.
   //   dapp-input-sanitization: meta 전체를 pass-through하지 않고 known key(addressFormat)만 추출·검증한다.
   //   _sanitizeAddressFormat: 부재/null → undefined, non-string/빈 문자열/과길이/prototype 키 →
   //   param_error throw (getAddress 와 동일 helper). **enum membership 은 sdk 소관** — 여기서

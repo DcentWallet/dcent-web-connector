@@ -94,10 +94,22 @@ import type { V1Response } from './types'
  * ⚠️ 어느 값이 **실제로 동작하는지는 여기서 결정되지 않는다** — sdk/wm registry 소관이고
  * 시점에 따라 바뀐다. 도달 불가한 형식은 `-32602` 로 거절된다.
  *
- * 🔴 이 유니온은 wm `AddressFormat` · bridge `_sanitize.ADDRESS_FORMATS` 와 **1:1** 이다.
- * 한쪽만 늘리면 조용히 어긋난다 — `AddressFormat` 이 열린 유니온(`| (string & {})`)이라
- * **런타임은 안 깨지고 자동완성·문서만 틀려서** 발견이 늦다(2026-09-11 실제로 그렇게
- * `'standard'` 가 여기만 빠져 있었다. chains.json 은 이미 그 값을 출하 중이었다).
+ * 🔴 이 유니온은 wm `AddressFormat` · bridge `_sanitize.ADDRESS_FORMATS` 와 **1:1 이어야 한다** —
+ * 지금 1:1 인 것은 아니다. 셋을 한쪽만 늘리면 조용히 어긋나고, `AddressFormat` 이 열린 유니온
+ * (`| (string & {})`)이라 **런타임은 안 깨지고 자동완성·문서만 틀려서** 발견이 늦다.
+ *
+ * 🔴 **현재 상태**(2026-09-29 실측 — 이 문장을 사실로 승격하기 전에 다시 재라):
+ * - connector(여기): **6종**
+ * - wm `AddressFormat`: 6종 — 일치
+ * - bridge `origin/dev:apps/bridge/src/lib/client/_sanitize.ts:ADDRESS_FORMATS`: **4종**
+ *   (`legacy`/`segwit-wrapped`/`segwit-native`/`taproot`). ⇒ `'ledger'`·`'standard'` 는
+ *   sdk 경계에서 아직 `-32602` 다. 6종은 로컬 미커밋 작업본에만 있다.
+ *
+ * 🔴 이전 판의 두 문장은 **틀렸다**(실측으로 정정):
+ * - "bridge 와 1:1 이다" → bridge dev 는 4종이다(위).
+ * - "chains.json 은 이미 그 값을 출하 중이었다" → `origin/master:playground/chains.json` 에
+ *   `"standard"` **0건**이고 **이 PR 이 처음 출하한다**(head 2건: TEZOS-STD / TEZOS-STD-T).
+ *   2026-09-11 사고는 "union 에만 빠져 있었다" 가 아니라 **양쪽 다 없던 것**이다.
  */
 export type KnownAddressFormat =
   | 'legacy'
@@ -161,6 +173,15 @@ type _AddressFormatAcceptsUnknown = _AssertTrue<
 // 🔴 실패 분기는 `false` 다(`never extends true` 는 참이라 inert 해진다 — 위와 같은 함정).
 type _AssertLedgerKnown = _AssertTrue<
   'ledger' extends KnownAddressFormat ? true : false
+>
+// 🔴 **원소마다 하나씩** 건다 — 이 PR 이 union 에 더한 것은 `'ledger'` 와 `'standard'` **둘**인데
+//    거울상 단언이 `'ledger'` 하나뿐이었다. 그래서 union 에서 `'standard'` 만 지우면 **아무것도
+//    빨개지지 않는다**(실측: `'standard'` 제거 → 에러 0건 / `'ledger'` 제거 → TS2344. 프로브가
+//    유효함을 후자가 증명한다). 이 파일이 막으려던 드리프트(위 주석의 2026-09-11 사고)가
+//    같은 방식으로 재발할 수 있었다.
+// 🔴 union 에 값을 더하면 **여기에도 한 줄 더한다.** 앵커 없는 원소는 앵커가 없는 것과 같다.
+type _AssertStandardKnown = _AssertTrue<
+  'standard' extends KnownAddressFormat ? true : false
 >
 
 /** 값으로 실려도 prototype 오염 벡터가 되는 문자열 — `sanitize.ts` 의 동명 가드와 같은 집합. */

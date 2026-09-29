@@ -11,7 +11,8 @@
  *   displayName:    string   — human readable name
  *   defaultKeyPath: string   — default BIP32 derivation path
  *   isTestnet?:     boolean  — true if testnet entry (omitted for mainnet)
- *   addressFormat?: string   — 'legacy'|'segwit-wrapped'|'segwit-native'|'taproot'|'ledger'
+ *   addressFormat?: string   — 'legacy'|'segwit-wrapped'|'segwit-native'|'taproot'|'ledger'|'standard'
+ *                              (정본은 src/sign/address.ts:KnownAddressFormat — 여기는 사본이다)
  *   variant?:       string   — wm currency id (예: 'BTC-TAPROOT'). 존재하면 base 와 별개의 API 케이스가 생성된다
  *
  * 🔴 **variant entry 는 이 생성기가 만들지 않는다 — 손으로 유지한다** (m21-05).

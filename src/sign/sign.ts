@@ -72,7 +72,8 @@ export interface SignInput {
    * connector 경계에서 보장되는 contract는 `_validateSignPayload` 참조.
    *
    * **variant disambiguation optional 필드 `addressFormat`** (`'legacy' | 'segwit-wrapped' |
-   * 'segwit-native' | 'taproot' | 'ledger'` — `getAddress` / `getPublicKey` 와 같은 enum): BTC 는 legacy 와
+   * 'segwit-native' | 'taproot' | 'ledger' | 'standard'` — `getAddress` / `getPublicKey` 와 같은
+   * enum. 🔴 정본은 `address.ts:KnownAddressFormat` 이고 이 열거는 사본이다): BTC 는 legacy 와
    * segwit 계정이 같은 chainId 와 같은 `m/44'` keyPath 를 쓰므로 그 둘만으로는 어느 계정이
    * 서명하는지 가려지지 않는다. `getAccountInfo` 응답의 `meta.addressFormat` 을 그대로 실어
    * 보내면 된다. 생략하면 sdk/wm 이 `transaction.inputs[].txType` 에서 추론하는 종전 동작으로

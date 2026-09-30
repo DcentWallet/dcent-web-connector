@@ -1,0 +1,477 @@
+/**
+ * m21-02 — variant preset **배선 행위** 테스트 (2026-09-02 크로스 리뷰 R2 대응).
+ *
+ * 🔴 왜 별도 파일인가: 형제 `address-format-variant-presets.test.ts` 는 preset **데이터**를
+ *    본다. 이 파일은 그 데이터가 **실제로 요청까지 도달하는가**를 본다. R2 에서 이 축을
+ *    소스 문자열 정규식으로 잡았다가 **뮤테이션 5/5 가 생존**했다 —
+ *    `out.meta = {addressFormat:'legacy'}` 로 하드코딩하거나 `&& false` 를 붙여도 정규식은
+ *    그대로 매칭돼 초록이었다. 정규식은 **모양**을 지키지 **행위**를 지키지 않는다.
+ *    ⇒ jsdom 으로 playground 를 실제 로드해 함수를 호출한다.
+ */
+import * as fs from 'fs'
+import * as path from 'path'
+
+import accountPresets from '../../../../playground/presets.account.json'
+import nonEvmPresets from '../../../../playground/presets.non-evm.json'
+
+const ROOT = path.resolve(__dirname, '../../../..')
+
+function loadPlayground(): any {
+  const html = fs.readFileSync(path.join(ROOT, 'index-v2.html'), 'utf8')
+  document.documentElement.innerHTML = html
+  ;(window as any).PopupTransport = function () {
+    return {
+      send: jest.fn().mockResolvedValue({ id: 'stub', result: {} }),
+      on: jest.fn(),
+      off: jest.fn(),
+      close: jest.fn().mockResolvedValue(undefined),
+    }
+  }
+  ;(window as any).SerialRequestQueue = function () {
+    return {
+      enqueue: jest.fn((t: any) => t()),
+      size: jest.fn().mockReturnValue(0),
+      clear: jest.fn(),
+    }
+  }
+  ;(window as any).ProviderError = class extends Error {
+    code: number
+    constructor(code: number, message: string) {
+      super(message)
+      this.code = code
+    }
+  }
+  // eslint-disable-next-line no-new-func
+  new Function(fs.readFileSync(path.join(ROOT, 'playground.js'), 'utf8'))()
+  return (window as any)._playgroundTestAPI
+}
+
+const BTC_MAINNET = 'bip122:000000000019d6689c085ae165831e93'
+const BTC_MAINNET_CAIP = `${BTC_MAINNET}/slip44:0`
+const BCH_CAIP = 'bip122:000000000000000000651ef99cb9fcbe/slip44:145'
+
+const LEDGER_PRESET_IDS = [
+  'syncAccount:btc-segwit-wrapped',
+  'syncAccount:btc-native-84',
+  'syncAccount:btc-taproot',
+  'syncAccount:polkadot-ledger',
+  'syncAccount:algorand-ledger',
+  'syncAccount:astar-ledger',
+  'syncAccount:creditcoin-ledger',
+]
+
+describe('m21-02 preset 배선 — 행위', () => {
+  let api: any
+  beforeEach(() => {
+    api = loadPlayground()
+  })
+
+  // ──────────────────────────────────────────────────────────────────────────
+  it('T-U-CON-17: preset 의 meta.addressFormat 이 전송 payload 까지 살아남는다', () => {
+    // 🔴 whitelist 에서 `meta` 가 빠지면 `algorand-ledger` 는 base 계정 요청과 **바이트 동일**이
+    //    된다(keyPath 가 base 와 같아 addressFormat 만이 판별자다).
+    // 🔴 meta 를 싣는 preset 은 **2건뿐**이다 — 나머지는 경로 축으로 도달하며, meta 를 실으면
+    //    하류(bridge sdk enum 4값 / wm byFormat undefined)가 **되던 경로까지 먼저 끊는다**.
+    //    그 판정의 정본은 형제 파일의 `T-U-CON-12` 다.
+    const WITH_META = ['syncAccount:algorand-ledger', 'syncAccount:btc-native-84']
+    const out = WITH_META.map((id) => {
+      const preset: any = (accountPresets as any[]).find((p) => p.id === id)
+      const sent = api._sanitizeSyncAccountInfos(preset.value)
+      return `${id}=${sent[0].meta?.addressFormat}`
+    })
+    expect(out.join('\n')).toBe(
+      [
+        'syncAccount:algorand-ledger=ledger',
+        'syncAccount:btc-native-84=segwit-native',
+      ].join('\n')
+    )
+    // 🔴 하드코딩 방어 — 두 값이 **서로 다르다**. 한 값으로 고정하면 여기서 깨진다.
+    expect(new Set(out.map((x) => x.split('=')[1])).size).toBe(2)
+
+    // meta 를 싣지 않는 5건은 payload 에도 meta 가 없어야 한다(경로 축만으로 간다).
+    const WITHOUT_META = [
+      'syncAccount:btc-segwit-wrapped',
+      'syncAccount:btc-taproot',
+      'syncAccount:polkadot-ledger',
+      'syncAccount:astar-ledger',
+      'syncAccount:creditcoin-ledger',
+    ]
+    const bare = WITHOUT_META.map((id) => {
+      const preset: any = (accountPresets as any[]).find((p) => p.id === id)
+      const sent = api._sanitizeSyncAccountInfos(preset.value)
+      return `${id}=${sent[0].meta === undefined ? 'none' : 'PRESENT'}`
+    })
+    expect(bare.join('\n')).toBe(WITHOUT_META.map((id) => `${id}=none`).join('\n'))
+  })
+
+  it('T-U-CON-17b: meta 는 own-enumerable 만 읽는다 (상속·비열거 값 거부)', () => {
+    const inherited = Object.create({ addressFormat: 'ledger' })
+    const hidden: any = {}
+    Object.defineProperty(hidden, 'addressFormat', { value: 'ledger', enumerable: false })
+    const base = { chainId: 'c', keyPath: 'k', label: 'l' }
+    expect(`inherited=${api._sanitizeSyncAccountInfos([{ ...base, meta: inherited }])[0].meta}`).toBe(
+      'inherited=undefined'
+    )
+    expect(`hidden=${api._sanitizeSyncAccountInfos([{ ...base, meta: hidden }])[0].meta}`).toBe(
+      'hidden=undefined'
+    )
+    expect(
+      `own=${api._sanitizeSyncAccountInfos([{ ...base, meta: { addressFormat: 'ledger' } }])[0].meta?.addressFormat}`
+    ).toBe('own=ledger')
+    // meta 밖 임의 키는 여전히 버린다 (whitelist 가 넓어지지 않았다)
+    expect(
+      `extra=${(api._sanitizeSyncAccountInfos([{ ...base, extraKey: 'x' }])[0] as any).extraKey}`
+    ).toBe('extra=undefined')
+  })
+
+  // ──────────────────────────────────────────────────────────────────────────
+  // T-U-CON-18 계열 — top-level keyPath 배선. 폼을 실제로 띄워 값을 읽는다.
+  //
+  // 🔴 wm 의 경로 축이 보는 것은 payload 의 **top-level keyPath** 다. 여기가 어긋나면
+  //    `inputs[].keyPath` 와 갈려 wm prevout ownership 게이트가 -32602 를 내고, 그 -32602 는
+  //    이 트랙이 가르치려는 "하류 미배포" 신호와 **구별되지 않는다.**
+  function openBitcoinSignForm(presetsOverride?: any[]): void {
+    const chains = [
+      { chainId: BTC_MAINNET_CAIP, family: 'bitcoin', name: 'Bitcoin', defaultKeyPath: "m/44'/0'/0'/0/0" },
+      { chainId: BCH_CAIP, family: 'bitcoin', name: 'Bitcoin Cash', defaultKeyPath: "m/44'/145'/0'/0/0" },
+    ]
+    api.simulateNonEvmLoad(chains, presetsOverride ?? nonEvmPresets)
+    api.simulateConnect(
+      {
+        sign: jest.fn().mockResolvedValue({ header: { status: 'success' }, body: { parameter: {} } }),
+        getDeviceInfo: jest.fn().mockResolvedValue({ header: { status: 'success' }, body: { parameter: {} } }),
+        popupWindowClose: jest.fn(),
+        setConnectionListener: jest.fn(),
+      },
+      null,
+      { model: 'Bio', firmware: '3.0' }
+    )
+    const node = document.querySelector(
+      `[data-method-id="signTx:bitcoin:${BTC_MAINNET_CAIP}"]`
+    ) as HTMLElement
+    if (!node) {
+      const ids = Array.from(document.querySelectorAll('[data-method-id^="signTx:bitcoin"]'))
+        .map((e) => e.getAttribute('data-method-id'))
+        .join(' | ')
+      throw new Error(`bitcoin 노드 없음. 존재하는 id: ${ids}`)
+    }
+    node.click()
+  }
+
+  const kp = (): string => (document.getElementById('field-keyPath') as HTMLInputElement).value
+  const selectPreset = (id: string): void => {
+    const sel = document.getElementById('field-preset') as HTMLSelectElement
+    sel.value = id
+    sel.dispatchEvent(new Event('change'))
+  }
+
+  it("T-U-CON-18: wrapped preset 을 고르면 top-level keyPath 가 m/49' 로 바뀐다", () => {
+    openBitcoinSignForm()
+    selectPreset('btc-transfer')
+    expect(`legacy=${kp()}`).toBe("legacy=m/44'/0'/0'/0/0")
+    selectPreset('btc-wrapped-transfer')
+    expect(`wrapped=${kp()}`).toBe("wrapped=m/49'/0'/0'/0/0")
+  })
+
+  it('T-U-CON-18b: keyPath 를 선언하지 않은 preset 으로 되돌리면 기본값으로 복원된다 (누수 금지)', () => {
+    // 🔴 R2 CRITICAL 4 — 종전 배선은 되돌릴 때 값을 복원하지 않아, legacy preset 인데
+    //    top-level 이 m/49' 로 남았다(= inputs 는 m/44'). 방향만 반대인 같은 불일치다.
+    openBitcoinSignForm()
+    selectPreset('btc-wrapped-transfer')
+    expect(`before=${kp()}`).toBe("before=m/49'/0'/0'/0/0")
+    selectPreset('btc-transfer')
+    expect(`after=${kp()}`).toBe("after=m/44'/0'/0'/0/0")
+  })
+
+  it('T-U-CON-18c: 같은 chainId 로 input 이 다시 떠도 preset keyPath 가 유지된다 (경합 금지)', () => {
+    // 🔴 R2 CRITICAL 3 — `_wireKeyPathSync` 가 chainId `input` 마다 defaultKeyPath 로
+    //    **무조건 덮어써서**, preset 선택 뒤 chainId 를 만지면 조용히 legacy 로 돌아갔다.
+    //    (같은 값으로 다시 입력해도 event 는 뜬다 — 그게 원래 경합의 모양이다.)
+    openBitcoinSignForm()
+    selectPreset('btc-wrapped-transfer')
+    const chainEl = document.getElementById('field-chainId') as HTMLInputElement
+    chainEl.value = BTC_MAINNET_CAIP
+    chainEl.dispatchEvent(new Event('input'))
+    expect(`same=${kp()}`).toBe("same=m/49'/0'/0'/0/0")
+  })
+
+  it('T-U-CON-18c-2: preset 이 선언하지 않은 체인으로 옮기면 **체인 기본값으로 자기 교정**한다', () => {
+    // 🔴 R3 WARNING — `applicableChainIds` 를 BTC mainnet 으로 좁혀도 **폼은 같은 family
+    //    전체를 chainId datalist 로 제공**하므로 축소만으로는 우회가 안 막힌다.
+    //    `btc-wrapped-transfer` 의 keyPath 는 coinType 이 박힌 절대 경로라, 다른 체인에
+    //    그대로 남으면 chainId ↔ coinType 이 어긋난다(축소의 근거와 정반대 방향).
+    //    ⇒ 범위를 벗어나면 preset 을 무시한다. 범위로 돌아오면 다시 preset 이 이긴다.
+    openBitcoinSignForm()
+    selectPreset('btc-wrapped-transfer')
+    expect(`inScope=${kp()}`).toBe("inScope=m/49'/0'/0'/0/0")
+    const chainEl = document.getElementById('field-chainId') as HTMLInputElement
+    chainEl.value = BCH_CAIP
+    chainEl.dispatchEvent(new Event('input'))
+    expect(`outOfScope=${kp()}`).toBe("outOfScope=m/44'/145'/0'/0/0")
+    chainEl.value = BTC_MAINNET_CAIP
+    chainEl.dispatchEvent(new Event('input'))
+    expect(`backInScope=${kp()}`).toBe("backInScope=m/49'/0'/0'/0/0")
+  })
+
+  it('T-U-CON-18e: **자동선택**된 preset 의 keyPath 도 반영된다 (거울상 짝)', () => {
+    // 🔴 `presetSelect.value = …` 는 change 를 **발화하지 않는다.** 자동선택 분기는 change
+    //    핸들러의 사본이라, 배선을 한쪽에만 걸면 여기가 빈다(R2 CRITICAL 2).
+    // 🔴 이 결함은 실제 파일 순서에서는 `btc-transfer` 가 먼저라 **잠재**다 — 순서에 기대면
+    //    테스트가 아무것도 못 잡는다(실측: 순서를 안 바꾸면 이 뮤테이션이 SURVIVE 한다).
+    //    그래서 keyPath 를 선언한 preset 이 **첫째가 되도록 순서를 주입**해 활성화시킨다.
+    const wrapped = (nonEvmPresets as any[]).find((p) => p.id === 'btc-wrapped-transfer')
+    const reordered = [wrapped, ...(nonEvmPresets as any[]).filter((p) => p !== wrapped)]
+    openBitcoinSignForm(reordered)
+    const sel = document.getElementById('field-preset') as HTMLSelectElement
+    expect(`autoselected=${sel.value}`).toBe('autoselected=btc-wrapped-transfer')
+    expect(`keyPath=${kp()}`).toBe("keyPath=m/49'/0'/0'/0/0")
+  })
+
+  it('T-U-CON-18f: preset 선택을 비우면(null preset) chainId 기본값 경로로 떨어진다', () => {
+    // 🔴 R4 WARNING — 이 델타가 `preset.applicableChainIds` 를 **선평가**하는 식을 새로 만들면서
+    //    `!preset ||` null 가드가 그 역참조를 막는 **새 표면**이 됐다. 그런데 테스트가 0건이라
+    //    가드를 지워도 초록이었다(실측 SURVIVED). 도달성은 실재한다 — preset 을
+    //    `-- select preset --` 로 되돌린 뒤 chainId 를 만지는 경로, 그리고 `field-preset` 이
+    //    `nonEvmPresetsMap` 에 없는 **다른 폼 5종 전부**가 이 경로를 탄다.
+    //    (`review-finding-class-closure` 4문항 #3 — 내 수정이 연 표면에도 가드가 닿아야 한다.)
+    openBitcoinSignForm()
+    selectPreset('btc-wrapped-transfer')
+    expect(`picked=${kp()}`).toBe("picked=m/49'/0'/0'/0/0")
+    // 선택 해제 — preset 객체가 없는 상태로 chainId 훅이 돈다
+    const sel = document.getElementById('field-preset') as HTMLSelectElement
+    sel.value = ''
+    sel.dispatchEvent(new Event('change'))
+    const chainEl = document.getElementById('field-chainId') as HTMLInputElement
+    chainEl.value = BCH_CAIP
+    chainEl.dispatchEvent(new Event('input'))
+    expect(`cleared=${kp()}`).toBe('cleared=m/44\'/145\'/0\'/0/0')
+    chainEl.value = BTC_MAINNET_CAIP
+    chainEl.dispatchEvent(new Event('input'))
+    expect(`backToBtc=${kp()}`).toBe('backToBtc=m/44\'/0\'/0\'/0/0')
+  })
+
+  it("T-U-CON-18g: taproot preset 을 고르면 top-level keyPath 가 m/86' 로 바뀐다", () => {
+    // 🔴 wrapped(m/49') 와 **다른 값**을 쓴다 — 같은 값이면 두 preset 이 서로 투명해져
+    //    배선이 한쪽만 걸려 있어도 초록이다.
+    openBitcoinSignForm()
+    selectPreset('btc-wrapped-transfer')
+    expect(`wrapped=${kp()}`).toBe("wrapped=m/49'/0'/0'/0/0")
+    selectPreset('btc-taproot-transfer')
+    expect(`taproot=${kp()}`).toBe("taproot=m/86'/0'/0'/0/0")
+    selectPreset('btc-transfer')
+    expect(`back=${kp()}`).toBe("back=m/44'/0'/0'/0/0")
+  })
+
+  it('T-U-CON-19: input txType → addressFormat 매핑 **전건**이 고정된다', () => {
+    // 🔴 이 매핑이 서명 요청의 **계정**을 정한다. p2tr 만 단언하면 나머지가 조용히 바뀌어도
+    //    초록이고, 매핑을 통째로 `'taproot'` 로 하드코딩해도 잡히지 않는다 —
+    //    그래서 매핑되는 3건 + 일부러 매핑하지 않는 2건을 **한 문자열로** 고정한다.
+    const AXES = ['p2pkh', 'p2wpkh', 'p2tr', 'p2sh', 'p2wsh']
+    const actual = AXES.map((t) => `${t}=${api._btcAddressFormatFor(t) || '(none)'}`)
+    expect(actual.join('\n')).toBe(
+      [
+        'p2pkh=legacy',
+        'p2wpkh=segwit-native',
+        // wm m21-01-04 이 P2TR 입력 서명 경로를 연 뒤 개통. 매핑하지 않으면 요청이
+        // addressFormat 없이 나가 legacy 계정으로 떨어진다.
+        'p2tr=taproot',
+        // p2sh 는 legacy multisig ↔ BIP-49 wrapped 로 **모호**해 매핑하지 않는다(의도).
+        'p2sh=(none)',
+        'p2wsh=(none)',
+      ].join('\n')
+    )
+    // 하드코딩 방어 — 매핑되는 3건의 값이 서로 다르다.
+    expect(new Set(['p2pkh', 'p2wpkh', 'p2tr'].map((t) => api._btcAddressFormatFor(t))).size).toBe(3)
+  })
+
+  // ──────────────────────────────────────────────────────────────────────────
+  // 🔴 T-U-CON-20 — **UI 도달성**. 값이 select 에 없으면 사람이 실기기로 태울 수 없고,
+  //    "태울 수 없음" 은 "wm 이 거절함" 과 구별되지 않아 회귀를 감춘다.
+  //    실측: 이 두 단언이 없을 때 select 에서 'p2tr' 을 지우는 뮤테이션이 **SURVIVE** 했다.
+  const optionValues = (id: string): string =>
+    Array.from((document.getElementById(id) as HTMLSelectElement).options)
+      .map((o) => o.value)
+      .join(',')
+
+  it('T-U-CON-20: 자동 모드 폼의 Input txType select 가 p2tr 을 노출한다', () => {
+    openBitcoinSignForm()
+    const autoRadio = document.querySelector(
+      'input[name="btx-sign-mode"][value="auto"]'
+    ) as HTMLInputElement
+    autoRadio.checked = true
+    autoRadio.dispatchEvent(new Event('change'))
+    expect(`btcTxType=${optionValues('field-btcTxType')}`).toBe('btcTxType=p2pkh,p2wpkh,p2sh,p2tr')
+  })
+
+  it('T-U-CON-20b: 빌더 addInput 폼의 type select 도 p2tr 을 노출한다 (거울상 짝)', () => {
+    // 🔴 두 폼은 **서로 다른 진입점**이다. 한쪽만 열면 다른 쪽으로 들어온 사람은 여전히 못 태운다.
+    const node = document.querySelector('[data-method-id="btx:addInput"]') as HTMLElement
+    node.click()
+    expect(`inputType=${optionValues('field-inputType')}`).toBe(
+      // p2pk/multisig 는 v1 enum 표면 보존을 위해 남아 있고 빌더가 param_error 로 거부한다.
+      'inputType=p2wpkh,p2pkh,p2pk,p2sh,multisig,p2wsh,p2tr'
+    )
+  })
+
+  it('T-U-CON-18d: preset 이 없으면 chainId 기본값이 그대로 적용된다 (기존 폼 동작 불변)', () => {
+    openBitcoinSignForm()
+    selectPreset('btc-transfer')
+    const chainEl = document.getElementById('field-chainId') as HTMLInputElement
+    chainEl.value = BCH_CAIP
+    chainEl.dispatchEvent(new Event('input'))
+    expect(`bch=${kp()}`).toBe("bch=m/44'/145'/0'/0/0")
+  })
+})
+
+/**
+ * m21-05 후속(2026-09-11) — preset 이 선언한 **형식 축**이 실제 payload 축까지 살아남는가.
+ *
+ * 🔴 형제 describe 는 **경로 축**(top-level keyPath)을 본다. 이 describe 는 **형식 축**이다.
+ *    두 축은 서로 다른 variant 집합을 연다: 경로 축은 Polkadot/파라체인/BTC purpose, 형식 축은
+ *    `ALGORAND-LGR`·`TEZOS-STD` 처럼 경로가 base 와 **바이트 동일**한 것들의 유일한 판별자다.
+ *    선언이 payload 까지 못 가면 그 요청은 base 요청과 바이트 단위로 같아진다(= 조용한 오통과).
+ */
+describe('m21-05 형식 축 배선 — 행위', () => {
+  let api: any
+  beforeEach(() => {
+    api = loadPlayground()
+  })
+
+  const ALGO_MAINNET = 'algorand:wGHE2Pwdvd7S12BL5FaOP20EGYesN73k/slip44:283'
+  const ALGO_TESTNET = 'algorand:SGO1GKSzyE7IEPItTxCByw9x8FmnrCDe/slip44:283'
+
+  function openAlgorandSignForm(): void {
+    api.simulateNonEvmLoad(
+      [
+        { chainId: ALGO_MAINNET, family: 'algorand', displayName: 'Algorand', defaultKeyPath: "m/44'/283'/0'/0/0" },
+        { chainId: ALGO_TESTNET, family: 'algorand', displayName: 'Algorand Testnet', defaultKeyPath: "m/44'/283'/0'/0/0" },
+      ],
+      nonEvmPresets,
+    )
+    const node = document.querySelector(
+      `[data-method-id="signTx:algorand:${ALGO_MAINNET}"]`,
+    ) as HTMLElement
+    if (!node) throw new Error('algorand 노드 없음')
+    node.click()
+  }
+  const pickPreset = (id: string): void => {
+    const sel = document.getElementById('field-preset') as HTMLSelectElement
+    sel.value = id
+    sel.dispatchEvent(new Event('change'))
+  }
+
+  it("T-U-CON-40: Ledger preset 을 고르면 형식 축이 'ledger' 로 나간다", () => {
+    openAlgorandSignForm()
+    pickPreset('algo-ledger-payment')
+    expect(`af=${api._nonEvmPresetAddressFormat()}`).toBe('af=ledger')
+  })
+
+  it('T-U-CON-40b: base preset 으로 되돌리면 형식 축이 사라진다 (누수 금지 · 과잉 개통 대조군)', () => {
+    // 🔴 `''` 가 아니라 이전 값이 남으면 base 요청이 조용히 Ledger 계정으로 간다.
+    openAlgorandSignForm()
+    pickPreset('algo-ledger-payment')
+    expect(`before=${api._nonEvmPresetAddressFormat()}`).toBe('before=ledger')
+    pickPreset('algo-payment')
+    expect(`after=${api._nonEvmPresetAddressFormat()}`).toBe('after=')
+  })
+
+  it('T-U-CON-40c: preset 이 선언하지 않은 체인으로 옮기면 형식 축을 버린다', () => {
+    // 경로 축(`_applyNonEvmKeyPath`)의 자기 교정과 **같은 규칙**이다 — 두 축이 서로 다른 체인
+    // 기준으로 결정되면 wm conflict 게이트가 -32602 를 낸다.
+    openAlgorandSignForm()
+    pickPreset('algo-ledger-payment')
+    const chainEl = document.getElementById('field-chainId') as HTMLInputElement
+    chainEl.value = ALGO_TESTNET
+    chainEl.dispatchEvent(new Event('input'))
+    expect(`moved=${api._nonEvmPresetAddressFormat()}`).toBe('moved=')
+  })
+
+  // ──────────────────────────────────────────────────────────────────────────
+  // 🔴 여기부터가 **payload 단언**이다. 위 T-U-CON-40 계열은 helper 를 직접 호출하므로
+  //    `sendSignTxNonEvm` 이 그 helper 를 **안 부르게** 바꿔도 초록이다(호출점 일부만 검출되는
+  //    전형적 생존 패턴). 실제 요청을 만들어 나간 값을 본다.
+  function signMockFor(): jest.Mock {
+    const sign = jest.fn().mockResolvedValue({ header: { status: 'success' }, body: { parameter: {} } })
+    api.simulateConnect(
+      {
+        sign,
+        getDeviceInfo: jest.fn().mockResolvedValue({ header: { status: 'success' }, body: { parameter: {} } }),
+        popupWindowClose: jest.fn(),
+        setConnectionListener: jest.fn(),
+      },
+      null,
+      { model: 'Bio', firmware: '3.0' },
+    )
+    return sign
+  }
+  const send = (): void => { (document.getElementById('btn-send') as HTMLElement).click() }
+
+  // BTC 폼 — 형제 describe 의 `openBitcoinSignForm` 은 그쪽 스코프이고 자체 connect 까지 한다.
+  // 여기서는 connect 를 `signMockFor` 가 소유하므로 폼만 연다.
+  function openBtcForm(): void {
+    api.simulateNonEvmLoad(
+      [{ chainId: BTC_MAINNET_CAIP, family: 'bitcoin', displayName: 'Bitcoin', defaultKeyPath: "m/44'/0'/0'/0/0" }],
+      nonEvmPresets,
+    )
+    const node = document.querySelector(
+      `[data-method-id="signTx:bitcoin:${BTC_MAINNET_CAIP}"]`,
+    ) as HTMLElement
+    if (!node) throw new Error('bitcoin 노드 없음')
+    node.click()
+  }
+
+  it("T-U-CON-42: Ledger preset 을 Send 하면 payload 에 addressFormat='ledger' 가 실린다", () => {
+    openAlgorandSignForm()
+    const sign = signMockFor()
+    pickPreset('algo-ledger-payment')
+    send()
+    expect(`calls=${sign.mock.calls.length}`).toBe('calls=1')
+    const input = sign.mock.calls[0][0]
+    expect(`af=${input.payload.addressFormat}|kp=${input.payload.keyPath}`).toBe(
+      "af=ledger|kp=m/44'/283'/0'/0/0",
+    )
+  })
+
+  it('T-U-CON-42b: base preset 을 Send 하면 payload 에 addressFormat 이 아예 없다 (과잉 개통 대조군)', () => {
+    // 🔴 Algorand 는 UTXO shape 이 아니라 `_btcAddressFormatForTx` 폴백도 `''` 를 준다 —
+    //    그래서 base 요청에는 형식 키 자체가 없어야 한다. 있으면 base 가 variant 로 새는 것이다.
+    openAlgorandSignForm()
+    const sign = signMockFor()
+    pickPreset('algo-payment')
+    send()
+    const input = sign.mock.calls[0][0]
+    expect(`hasAf=${Object.prototype.hasOwnProperty.call(input.payload, 'addressFormat')}`).toBe(
+      'hasAf=false',
+    )
+  })
+
+  it("T-U-CON-42c: BTC wrapped preset 은 선언 축('segwit-wrapped')이 도출 축을 이긴다", () => {
+    // 🔴 `p2sh` 는 `_btcAddressFormatFor` 가 **의도적으로 매핑하지 않는다**(legacy multisig 와
+    //    BIP-49 를 동시에 가리켜 모호). 선언이 없으면 형식 축이 통째로 빠져 wm 이 경로 축만 본다.
+    //    두 값이 **다르다**는 것이 이 단언의 판별력이다(도출='' vs 선언='segwit-wrapped').
+    openBtcForm()
+    const sign = signMockFor()
+    pickPreset('btc-wrapped-transfer')
+    send()
+    const input = sign.mock.calls[0][0]
+    expect(`af=${input.payload.addressFormat}|kp=${input.payload.keyPath}`).toBe(
+      "af=segwit-wrapped|kp=m/49'/0'/0'/0/0",
+    )
+  })
+
+  it('T-U-CON-41: allChainsMap 은 variant 엔트리를 담지 않는다 (base 기본 경로 보존)', () => {
+    // 🔴 variant 엔트리는 base 와 **chainId 가 같다**. 넣으면 뒤엣것이 base 를 덮어써
+    //    BTC mainnet 기본 경로가 m/44' → m/86' 로 바뀐다(= base legacy preset 이 taproot 계정으로
+    //    서명되는 과잉 개통). 실측으로 chains.json 의 13개 chainId 가 이 충돌 대상이다.
+    const BTC = 'bip122:000000000019d6689c085ae165831e93/slip44:0'
+    api.simulateNonEvmLoad(
+      [
+        { chainId: BTC, family: 'bitcoin', displayName: 'Bitcoin', defaultKeyPath: "m/44'/0'/0'/0/0" },
+        { chainId: BTC, family: 'bitcoin', displayName: 'Bitcoin Taproot', defaultKeyPath: "m/86'/0'/0'/0/0", addressFormat: 'taproot', variant: 'BTC-TAPROOT' },
+      ],
+      nonEvmPresets,
+    )
+    // 🔴 값을 **서로 다르게** 두었으므로 이 단언은 두 엔트리를 구별한다(투명 픽스처 방지).
+    expect(`kp=${(api.CHAIN_KEY_PATH as any)[BTC]}`).toBe("kp=m/44'/0'/0'/0/0")
+  })
+})

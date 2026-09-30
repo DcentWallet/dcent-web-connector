@@ -11,6 +11,18 @@
  *   displayName:    string   — human readable name
  *   defaultKeyPath: string   — default BIP32 derivation path
  *   isTestnet?:     boolean  — true if testnet entry (omitted for mainnet)
+ *   addressFormat?: string   — 'legacy'|'segwit-wrapped'|'segwit-native'|'taproot'|'ledger'|'standard'
+ *                              (정본은 src/sign/address.ts:KnownAddressFormat — 여기는 사본이다)
+ *   variant?:       string   — wm currency id (예: 'BTC-TAPROOT'). 존재하면 base 와 별개의 API 케이스가 생성된다
+ *
+ * 🔴 **variant entry 는 이 생성기가 만들지 않는다 — 손으로 유지한다** (m21-05).
+ *   이 파서는 `seen.has(chainId)` 로 **chainId 단위 dedupe** 를 하므로, base 와 chainId 를
+ *   공유하는 derivation/format variant(`BTC-TAPROOT` · `CARDANO-LGR` · `POLKADOT-LGR` 등)는
+ *   구조적으로 탈락한다. 게다가 그 variant 다수는 `other-standard.ts` 에 있는데 아래
+ *   `familyFiles` 는 그 파일을 읽지도 않는다.
+ *   ⇒ 재생성 시 **variant entry 가 지워진다.** 다시 생성했다면 `git diff` 로 확인하고
+ *     `tests/unit/v2/extract-chains.test.ts` 의 `T-U-EXTRACT-10`(16종 전수 toEqual)이
+ *     그 손실을 잡는다. 생성기가 variant 축을 다루게 되면 이 주석을 지운다.
  *
  * 실행: node scripts/extract-chains.js
  * 또는 yarn extract-chains (package.json scripts에 등록)

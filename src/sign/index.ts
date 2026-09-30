@@ -30,7 +30,9 @@ export { info, getDeviceInfo, getAccountInfo } from './info'
 export { getAddress, getXPUB } from './address'
 // m11-01-02: v2 chainId facade input type for getAddress
 export type { GetAddressV2Input } from './address'
-// m09-04-09: BTC family multi-variant dispatch 축 (열린 `AddressFormat` + 알려진 `KnownAddressFormat`).
+// m09-04-09 / m21-02: multi-variant dispatch 축 (열린 `AddressFormat` + 알려진 `KnownAddressFormat`).
+//   🔴 **BTC family 전용이 아니다** — m21-02 에서 `'ledger'`(Polkadot / Algorand / 파라체인의
+//   파생 표준 축)가 들어오면서 범위가 넓어졌다. 축의 정의는 `address.ts` 가 유일한 출처다.
 export type { AddressFormat, KnownAddressFormat } from './address'
 // m09-04-21: v2 getPublicKey verb (chain-agnostic) — Cardano payment/stake/drep 공개키 조회
 export { getPublicKey } from './publicKey'
@@ -50,6 +52,10 @@ export type {
   BitcoinWireOutput,
   BitcoinWireTxType,
   BitcoinWireOutputTxType,
+  // DC-4379: 두 union 은 **열린 문자열**이고 알려진 값은 `Known*` 이다 — `AddressFormat`/
+  // `KnownAddressFormat` 과 같은 짝으로 **둘 다 내보낸다**(자동완성은 유지, 게이트는 wm 소유).
+  KnownBitcoinWireTxType,
+  KnownBitcoinWireOutputTxType,
 } from './bitcoinTxBuilder'
 
 // v1 validator helpers — 보존. App 표면 1:1 유지.

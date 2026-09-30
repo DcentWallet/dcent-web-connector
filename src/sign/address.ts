@@ -14,7 +14,7 @@
  *   - 배경: m11-02-03 PoC 결과 펌웨어가 `request_to` (= sdk가 sdk에서 사용하는 coinType 필드)
  *     단독으로 P2PKH vs Bech32를 결정 → chainId 단독으로는 BITCOIN / BTC-SEGWIT 구분 불가.
  *     v1의 coinType='BTC-SEGWIT' 신호를 v2 wire에서 회복하기 위한 generic 필드.
- *   - 알려진 값 4종은 `KnownAddressFormat` 참조. **connector 는 그 목록으로 거르지 않는다** —
+ *   - 알려진 값 6종은 `KnownAddressFormat` 참조. **connector 는 그 목록으로 거르지 않는다** —
  *     실제 수용 여부는 sdk/wm registry 가 판정한다(도달 불가한 형식은 거기서 거절).
  *   - connector-chain-addition-isolation 룰 준수: chain-specific 분기 추가 없음.
  *     `addressFormat`은 sdk/wm이 해석하는 generic payload 필드이며,
@@ -64,25 +64,65 @@ import { dcentException } from '../v1/dcent-exception'
 import type { V1Response } from './types'
 
 /**
- * 현재 **알려진** BTC family 주소 형식 (m09-04-09).
+ * 현재 **알려진** 주소 형식 (m09-04-09, m21-02 로 BTC 밖까지 확장).
  *
+ * BTC family — 주소 **인코딩** 축:
  * - 'legacy':          P2PKH (BITCOIN, BTC-TESTNET — 1xxx / mxxx)
  * - 'segwit-wrapped':  P2SH-P2WPKH (BIP49 wrapped SegWit — 3xxx / 2xxx)
  * - 'segwit-native':   P2WPKH bech32 (BTC-SEGWIT — bc1q... / tb1q...)
  * - 'taproot':         P2TR bech32m (BIP86 — bc1p...)
  *
+ * BTC 밖 — **파생 표준** 축 (m21-02):
+ * - 'ledger':          Ledger BIP32-Ed25519 계정 표준. Polkadot / Algorand / 파라체인(Astar,
+ *                      Creditcoin) 의 LGR variant 를 base 계정과 구분한다. 🔴 주소 인코딩이
+ *                      아니라 **어느 파생 표준으로 만든 계정인가**를 말한다 — 같은 chainId 에서
+ *                      base 와 LGR 은 keyPath 도 다르다(base `m/44'/354'/0'/0/0` vs
+ *                      LGR `m/44'/354'/0'/0'/0'` — tail 하드닝 여부).
+ *
+ * 🔴 **Cardano 는 이 축이 아니다.** Cardano 의 legacy/LGR 판별자는 keyPath purpose(`1852'` vs
+ * `44'`)다. `addressFormat: 'ledger'` 를 실으면 안 되는데, 🔴 **거절 지점을 정확히 알아두라** —
+ * wm 은 Cardano chainId 에 형식 축이 없어(`hasAddressFormatAxis=false`) addressFormat 을
+ * **무시하고 base 로 collapse** 한다(매칭 실패가 아니다). 실제로 끊는 곳은 **sdk 경계의 enum**
+ * 이다. 2026-09-02 정정 — 종전 주석은 "wm 에서 매칭 실패" 라고 썼으나 실측과 다르다.
+ *
+ * BTC 밖 — **파생 표준** 축 (m21-01-05):
+ * - 'standard':        SLIP-10 표준 파생 계정. Tezos 의 `TEZOS-STD` / `TEZOS-STD-T` 를 base 와
+ *                      구분한다. 🔴 `'ledger'` 와 마찬가지로 인코딩이 아니라 **파생 표준** 축이고,
+ *                      Tezos 는 base 와 keyPath 가 **바이트 동일**(`m/44'/1729'/<n>'/0'`)이라
+ *                      이 값이 **유일한 판별자**다 — 빼면 base(`ed25519DcentSlip23`) 키로 간다.
+ *
  * ⚠️ 어느 값이 **실제로 동작하는지는 여기서 결정되지 않는다** — sdk/wm registry 소관이고
  * 시점에 따라 바뀐다. 도달 불가한 형식은 `-32602` 로 거절된다.
+ *
+ * 🔴 이 유니온은 wm `AddressFormat` · bridge `_sanitize.ADDRESS_FORMATS` 와 **1:1 이어야 한다** —
+ * 지금 1:1 인 것은 아니다. 셋을 한쪽만 늘리면 조용히 어긋나고, `AddressFormat` 이 열린 유니온
+ * (`| (string & {})`)이라 **런타임은 안 깨지고 자동완성·문서만 틀려서** 발견이 늦다.
+ *
+ * 🔴 **현재 상태**(2026-09-29 실측 — 이 문장을 사실로 승격하기 전에 다시 재라):
+ * - connector(여기): **6종**
+ * - wm `AddressFormat`: 6종 — 일치
+ * - bridge `origin/dev:apps/bridge/src/lib/client/_sanitize.ts:ADDRESS_FORMATS`: **4종**
+ *   (`legacy`/`segwit-wrapped`/`segwit-native`/`taproot`). ⇒ `'ledger'`·`'standard'` 는
+ *   sdk 경계에서 아직 `-32602` 다. 6종은 로컬 미커밋 작업본에만 있다.
+ *
+ * 🔴 이전 판의 두 문장은 **틀렸다**(실측으로 정정):
+ * - "bridge 와 1:1 이다" → bridge dev 는 4종이다(위).
+ * - "chains.json 은 이미 그 값을 출하 중이었다" → `origin/master:playground/chains.json` 에
+ *   `"standard"` **0건**이고 **이 PR 이 처음 출하한다**(head 2건: TEZOS-STD / TEZOS-STD-T).
+ *   2026-09-11 사고는 "union 에만 빠져 있었다" 가 아니라 **양쪽 다 없던 것**이다.
  */
 export type KnownAddressFormat =
   | 'legacy'
   | 'segwit-wrapped'
   | 'segwit-native'
   | 'taproot'
+  | 'ledger'
+  | 'standard'
 
 /**
- * BTC family 주소 형식 — 같은 chainId 내 여러 주소 encoding variant 중 어느 것인지 명시하는
- * generic 필드. sdk 가 이 값을 wallet-models resolver 에 전달해 firmware `request_to` 를 결정한다.
+ * variant disambiguation — 같은 chainId 안에 계정이 둘 이상일 때 어느 쪽인지 명시하는 generic 필드.
+ * 🔴 **BTC 전용이 아니다**(m21-02): BTC 는 주소 **인코딩** variant 이고, Polkadot/Algorand/파라체인은
+ * **파생 표준** variant(`'ledger'`)다. 축이 둘이라는 사실은 `KnownAddressFormat` 주석이 정본이다. sdk 가 이 값을 wallet-models resolver 에 전달해 firmware `request_to` 를 결정한다.
  *
  * 🔴 **connector 는 이 값을 해석하지 않는다.** 알려진 값 목록은 `KnownAddressFormat` 이 문서·
  * 자동완성용으로만 들고 있고, 타입은 임의 문자열로 열려 있다 — **런타임 enum 검사는 sdk 경계
@@ -96,6 +136,11 @@ export type KnownAddressFormat =
  * 그쪽은 `_validateSignPayload` 소관이고 이 커밋의 스코프가 아니다.
  */
 export type AddressFormat = KnownAddressFormat | (string & {})
+
+// NOTE(decision-anchor: m21-02-forward-only): connector 는 wm 레지스트리에 의존하지 않아
+// SupportSegwit/hrp 같은 의미 게이트를 검사할 수단이 없다. 화이트리스트를 되살리면 새 형식마다
+// npm 재배포가 필요해지고 sdk 경계와 사본이 둘이 된다. KnownAddressFormat 은 자동완성용이지
+// 게이트가 아니다.
 
 /**
  * 🔴 **타입이 열려 있다는 것의 검출자 둘 중 하나.** 잡는 것은 **좁힘**이다 —
@@ -117,6 +162,26 @@ type _AssertTrue<T extends true> = T
 // 🔴 export 하지 않는다 — 배포 `.d.ts` 에 내부 이름을 남길 이유가 없고, 없어도 단언은 작동한다.
 type _AddressFormatAcceptsUnknown = _AssertTrue<
   string extends AddressFormat ? true : false
+>
+
+// 🔴 위 단언의 **거울상**. 저쪽은 열림(넓힘 허용)을 지키고, 이쪽은 **union 이 좁아지는 것**을 잡는다.
+//    여기서는 프로브가 리터럴이어야 한다 — 열림 단언과 반대 방향이라 `string` 프로브로는
+//    `'ledger'` 제거를 못 본다(실측: union 에서 'ledger' 를 지우면 이 단언만 RED 가 되고
+//    위 열림 단언은 에러 0건으로 침묵한다).
+// 🔴 검사 대상은 `KnownAddressFormat` 이지 `AddressFormat` 이 아니다. 후자에 걸면 열린 타입이
+//    무엇이든 흡수해 단언이 통째로 inert 해진다(실측: 그렇게 바꾸고 union 에서 지우면 exit 0).
+// 🔴 실패 분기는 `false` 다(`never extends true` 는 참이라 inert 해진다 — 위와 같은 함정).
+type _AssertLedgerKnown = _AssertTrue<
+  'ledger' extends KnownAddressFormat ? true : false
+>
+// 🔴 **원소마다 하나씩** 건다 — 이 PR 이 union 에 더한 것은 `'ledger'` 와 `'standard'` **둘**인데
+//    거울상 단언이 `'ledger'` 하나뿐이었다. 그래서 union 에서 `'standard'` 만 지우면 **아무것도
+//    빨개지지 않는다**(실측: `'standard'` 제거 → 에러 0건 / `'ledger'` 제거 → TS2344. 프로브가
+//    유효함을 후자가 증명한다). 이 파일이 막으려던 드리프트(위 주석의 2026-09-11 사고)가
+//    같은 방식으로 재발할 수 있었다.
+// 🔴 union 에 값을 더하면 **여기에도 한 줄 더한다.** 앵커 없는 원소는 앵커가 없는 것과 같다.
+type _AssertStandardKnown = _AssertTrue<
+  'standard' extends KnownAddressFormat ? true : false
 >
 
 /** 값으로 실려도 prototype 오염 벡터가 되는 문자열 — `sanitize.ts` 의 동명 가드와 같은 집합. */

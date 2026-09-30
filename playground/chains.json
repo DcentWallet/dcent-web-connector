@@ -810,6 +810,23 @@
     "isTestnet": true
   },
   {
+    "chainId": "tezos:NetXdQprcVkpaWU/slip44:1729",
+    "family": "tezos",
+    "displayName": "Tezos Standard (SLIP-10)",
+    "defaultKeyPath": "m/44'/1729'/0'/0'",
+    "addressFormat": "standard",
+    "variant": "TEZOS-STD"
+  },
+  {
+    "chainId": "tezos:NetXnHfVqm9iesp/slip44:1729",
+    "family": "tezos",
+    "displayName": "Tezos Standard Testnet (SLIP-10)",
+    "defaultKeyPath": "m/44'/1729'/0'/0'",
+    "addressFormat": "standard",
+    "variant": "TEZOS-STD-T",
+    "isTestnet": true
+  },
+  {
     "chainId": "vechain:b1ac3413d346d43539627e6be7ec1b4a/slip44:818",
     "family": "vechain",
     "displayName": "VeChain",
@@ -950,6 +967,134 @@
     "family": "solana",
     "displayName": "Solana Devnet",
     "defaultKeyPath": "m/44'/501'/0'",
+    "isTestnet": true
+  },
+  {
+    "chainId": "bip122:000000000019d6689c085ae165831e93/slip44:0",
+    "family": "bitcoin",
+    "displayName": "Bitcoin Wrapped Segwit",
+    "defaultKeyPath": "m/49'/0'/0'/0/0",
+    "addressFormat": "segwit-wrapped",
+    "variant": "BTC-SW-49"
+  },
+  {
+    "chainId": "bip122:000000000933ea01ad0ee984209779ba/slip44:0",
+    "family": "bitcoin",
+    "displayName": "Bitcoin Wrapped Segwit Testnet",
+    "defaultKeyPath": "m/49'/1'/0'/0/0",
+    "addressFormat": "segwit-wrapped",
+    "variant": "BTC-49-TESTNET",
+    "isTestnet": true
+  },
+  {
+    "chainId": "bip122:000000000019d6689c085ae165831e93/slip44:0",
+    "family": "bitcoin",
+    "displayName": "Bitcoin Native Segwit",
+    "defaultKeyPath": "m/84'/0'/0'/0/0",
+    "addressFormat": "segwit-native",
+    "variant": "BTC-SW-84"
+  },
+  {
+    "chainId": "bip122:000000000933ea01ad0ee984209779ba/slip44:0",
+    "family": "bitcoin",
+    "displayName": "Bitcoin Native Segwit Testnet",
+    "defaultKeyPath": "m/84'/1'/0'/0/0",
+    "addressFormat": "segwit-native",
+    "variant": "BTC-84-TESTNET",
+    "isTestnet": true
+  },
+  {
+    "chainId": "bip122:000000000019d6689c085ae165831e93/slip44:0",
+    "family": "bitcoin",
+    "displayName": "Bitcoin Taproot",
+    "defaultKeyPath": "m/86'/0'/0'/0/0",
+    "addressFormat": "taproot",
+    "variant": "BTC-TAPROOT"
+  },
+  {
+    "chainId": "bip122:000000000933ea01ad0ee984209779ba/slip44:0",
+    "family": "bitcoin",
+    "displayName": "Bitcoin Taproot Testnet",
+    "defaultKeyPath": "m/86'/1'/0'/0/0",
+    "addressFormat": "taproot",
+    "variant": "BTC-TR-TESTNET",
+    "isTestnet": true
+  },
+  {
+    "chainId": "polkadot:91b171bb158e2d3848fa23a9f1c25182/slip44:354",
+    "family": "polkadot",
+    "displayName": "Polkadot (Ledger)",
+    "defaultKeyPath": "m/44'/354'/0'/0'/0'",
+    "variant": "POLKADOT-LGR"
+  },
+  {
+    "chainId": "polkadot:d6eec26135305a8ad257a20d00335728/slip44:354",
+    "family": "polkadot",
+    "displayName": "Paseo (Polkadot Ledger Testnet)",
+    "defaultKeyPath": "m/44'/354'/0'/0'/0'",
+    "variant": "POLKADOT-LGR-T",
+    "isTestnet": true
+  },
+  {
+    "chainId": "algorand:wGHE2Pwdvd7S12BL5FaOP20EGYesN73k/slip44:283",
+    "family": "algorand",
+    "displayName": "Algorand (Ledger)",
+    "defaultKeyPath": "m/44'/283'/0'/0/0",
+    "addressFormat": "ledger",
+    "variant": "ALGORAND-LGR"
+  },
+  {
+    "chainId": "algorand:SGO1GKSzyE7IEPItTxCByw9x8FmnrCDe/slip44:283",
+    "family": "algorand",
+    "displayName": "Algorand (Ledger Testnet)",
+    "defaultKeyPath": "m/44'/283'/0'/0/0",
+    "addressFormat": "ledger",
+    "variant": "ALGO-LGR-T",
+    "isTestnet": true
+  },
+  {
+    "chainId": "polkadot:9eb76c5184c4ab8679d2d5d819fdf90b/slip44:810",
+    "family": "polkadot",
+    "displayName": "Astar (Ledger)",
+    "defaultKeyPath": "m/44'/810'/0'/0'/0'",
+    "variant": "PARA-L:000105"
+  },
+  {
+    "chainId": "polkadot:ddb89643205c8fe1c79afeb31f48d50f/slip44:810",
+    "family": "polkadot",
+    "displayName": "Shibuya (Ledger Testnet)",
+    "defaultKeyPath": "m/44'/810'/0'/0'/0'",
+    "variant": "PARAT-L:200105",
+    "isTestnet": true
+  },
+  {
+    "chainId": "polkadot:6673c7e2c2b7bde45a60c71ef70d9c7c/slip44:354",
+    "family": "polkadot",
+    "displayName": "Creditcoin (Ledger)",
+    "defaultKeyPath": "m/44'/354'/0'/0'/0'",
+    "variant": "PARA-L:00012A"
+  },
+  {
+    "chainId": "polkadot:8a2e8af69a7892d2e60a77e3df4e0fa0/slip44:354",
+    "family": "polkadot",
+    "displayName": "Creditcoin (Ledger Testnet)",
+    "defaultKeyPath": "m/44'/354'/0'/0'/0'",
+    "variant": "PARAT-L:20012A",
+    "isTestnet": true
+  },
+  {
+    "chainId": "cip34:1-764824073",
+    "family": "cardano",
+    "displayName": "Cardano (Ledger)",
+    "defaultKeyPath": "m/1852'/1815'/0'/0/0",
+    "variant": "CARDANO-LGR"
+  },
+  {
+    "chainId": "cip34:0-2",
+    "family": "cardano",
+    "displayName": "Cardano (Ledger Testnet)",
+    "defaultKeyPath": "m/1852'/1815'/0'/0/0",
+    "variant": "CARDANO-LGR-T",
     "isTestnet": true
   }
 ]
